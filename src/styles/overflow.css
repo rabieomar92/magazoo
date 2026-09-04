@@ -1,0 +1,140 @@
+/* Defensive text containment shared by every print template.
+   Pagination measures the same body classes off-screen, so emergency URL/DOI
+   wrapping changes both the measuring twin and the rendered page identically. */
+.header,
+.body-cols,
+.flow-fig figcaption,
+.flow-eq figcaption,
+.sidebar,
+.hl-below,
+.hl-col,
+.p2-hero-cap,
+.mag-cols,
+.mag2-cols,
+.mag-head,
+.mag2-head,
+.mag2-aside,
+.gallery {
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+/* A running bar has a fixed height, so wrapping would make its measured and
+   visible heights disagree. Keep it on one line and truncate only the label;
+   the rule/fill remains visible even for pathological masthead strings. */
+.tag-bar-tag {
+  min-width: 0;
+  max-width: calc(100% - var(--bar-h));
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mag-topbar-mast,
+.mag-topbar-vol {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mag-topbar-mast {
+  flex: 1 1 auto;
+}
+
+.mag-topbar-vol {
+  flex: 0 1 auto;
+  max-width: 50%;
+}
+
+.mag2-band-mast,
+.mag2-band-vol {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mag2-band-mast {
+  max-width: 62%;
+}
+
+.mag2-band-vol {
+  flex: 1 1 auto;
+}
+
+/* Flex children otherwise keep their min-content width, allowing a long
+   author, credit, title word, or pull-quote token to escape its page. */
+.mag-cover-top > *,
+.mag-cover-foot > *,
+.mag-gate-top > *,
+.mag-gate-foot > *,
+.mag2-byline > *,
+.mag-kicker,
+.mag-title-word,
+.mag-lede,
+.mag-cover-credits,
+.mag-hero-tag,
+.mag-hero-credit,
+.mag-quote-text,
+.mag-quote-by,
+.mag2-title,
+.mag2-lede,
+.mag2-strip-credit,
+.mag2-photo-tag,
+.mag2-quote-text,
+.mag2-quote-by,
+.mag2-hl,
+.mag-gate-lede,
+.mag-gate-quote-text,
+.mag-gate-quote-by,
+.mag-gate-credits {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+/* Fixed cover/gatefold regions cannot paginate. Let their flex tracks shrink
+   and contain excess copy inside the region instead of painting across the
+   footer or outside the sheet. */
+.mag-cover-mid,
+.mag-gate-mid {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Gallery cards live in fixed grid tracks and captions are absolutely placed.
+   Reset intrinsic minimums so long text cannot enlarge a track or overlap an
+   adjacent tile; the page remains a stable two-sheet collage. */
+.g-card,
+.g-card-body,
+.g-title,
+.g-desc,
+.g-img figcaption {
+  min-width: 0;
+  min-height: 0;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+.g-card,
+.g-img figcaption {
+  overflow: hidden;
+}
+
+.g-img figcaption {
+  max-height: 100%;
+}
+
+/* Rendered magazine columns need the same relaxed clip boundary as paper
+   columns so an emphasized first/last figure can reach the trim. Measuring
+   hosts stay `overflow:hidden`, preserving pagination overflow detection. */
+.pages .mag-cols,
+.pages .mag2-cols {
+  overflow: clip;
+  overflow-clip-margin: var(--topbleed-clip);
+}
+
+/* Drop caps are real `.drop-cap` elements now, so they are neither regenerated
+   nor repeated when RTL text fragments into another column. No RTL suppression
+   is needed: logical floats in the template styles place them at reading-start. */

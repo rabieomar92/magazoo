@@ -1,0 +1,1318 @@
+@page {
+  /* Lock to portrait A4 so the print dialog can't switch it to landscape. */
+  size: A4 portrait;
+  margin: 0;
+}
+
+/* Plain block scroll container (not flex): margin-auto centering keeps the
+   page centred when it fits, yet fully scrollable on both axes when the A4
+   sheet is taller/wider than the pane. Flex `align-items: center` would make
+   the overflow unreachable. */
+.paper-scroll {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  overflow: auto;
+  background: #e5e5e5;
+  padding: 20px;
+  text-align: center;
+  container-name: preview-pane;
+  container-type: inline-size;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+
+.page {
+  position: relative;
+  box-sizing: border-box;
+  text-align: left;
+  width: var(--page-w);
+  height: var(--page-h);
+  margin: 0 auto 20px;
+  padding: var(--margin);
+  background-color: var(--paper-bg, #fff);
+  color: var(--ink);
+  font-family: var(--sans);
+  overflow: hidden;
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.2);
+  /* Audit fix: any unbroken run wider than its box (a DOI, a URL pasted into a
+     paragraph, a long hyphen-less title word) would otherwise sail past its
+     column/box edge — `.page`'s own `overflow: hidden` above then clips it
+     invisibly instead of just breaking it, which is worse: the reader loses
+     the tail of the word with no sign anything's missing. paper2.css carries
+     the same fix on its own narrow header (`.p2-head`); setting it once here,
+     inherited by every page
+     type (`.page` wraps paper, magazine and gallery sheets alike), covers
+     the rest — the base Paper-1 header, sidebar/references (DOIs), magazine
+     titles/credits, gallery cards — without hunting down every selector.
+     Never fires on text that already fits, so normal layout is unaffected. */
+  overflow-wrap: break-word;
+  isolation: isolate;
+}
+
+/* Optional first-sheet artwork sits behind the document's opening page. Keeping
+   it on a dedicated layer lets authors tune image opacity without washing out
+   the text itself; the editable page colour remains visible underneath on page
+   1 and continues by itself across every following sheet. */
+.page::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  /* Keep the artwork inside the page's normal stacking context. A negative
+     layer can disappear behind a page/cover background in print and in some
+     browser compositing paths, which made a successfully uploaded background
+     look as if it had not been applied. */
+  z-index: 0;
+  pointer-events: none;
+  background-image: none;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  opacity: var(--page-bg-opacity, 1);
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+
+/* The background graphic is cover artwork, not stationery: apply it to the
+   first physical page only. `.pages` remains in the DOM during printing even
+   though its box becomes `display: contents`, so preview and PDF match. */
+.pages > .page:first-child::before {
+  background-image: var(--page-bg-image, none);
+}
+
+/* Content always sits above the optional first-sheet artwork. This also lets an
+   explicitly chosen page background replace/overlay a template's built-in
+   cover or gate photo instead of being silently suppressed there. */
+.page > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Article images are independent page objects, not members of the paragraph
+   flow. The layer covers the physical sheet; only an image's own rectangle
+   accepts pointer input, so text and other preview controls remain usable. */
+.page > .placed-images {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  pointer-events: none;
+}
+
+.placed-image {
+  position: absolute;
+  box-sizing: border-box;
+  margin: 0;
+  pointer-events: auto;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  background: var(--paper-bg, #fff);
+  box-shadow: 0 0 0 1px rgba(20, 30, 45, 0.18);
+}
+
+.placed-image:active {
+  cursor: grabbing;
+  box-shadow: 0 0 0 2px var(--accent), 0 2px 8px rgba(0, 0, 0, 0.24);
+}
+
+.placed-highlights {
+  position: absolute;
+  box-sizing: border-box;
+  max-height: var(--page-h);
+  margin: 0;
+  padding: 0 0.8em 0.75em;
+  overflow: hidden;
+  pointer-events: auto;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  direction: var(--text-dir, ltr);
+  text-align: start;
+  font-family: var(--sans);
+  font-size: calc(var(--fs-body) * 0.9);
+  color: var(--ink);
+  background: var(--accent-soft);
+  border-inline-start: 3px solid var(--accent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 24%, transparent),
+    0 4px 14px rgba(0, 0, 0, 0.12);
+}
+
+.placed-highlights:active {
+  cursor: grabbing;
+  box-shadow: 0 0 0 2px var(--accent), 0 6px 18px rgba(0, 0, 0, 0.2);
+}
+
+.placed-highlights h3 {
+  margin: 0.6em 0 0.3em;
+  color: var(--accent);
+  font-size: calc(var(--fs-eyebrow) + 1pt);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.placed-highlights ul.highlights,
+.placed-highlights ol.references {
+  margin: 0;
+  padding-inline-start: 1.1em;
+}
+
+.placed-highlights ul.highlights li,
+.placed-highlights ol.references li {
+  margin-bottom: 0.5em;
+}
+
+.placed-highlights ol.references {
+  font-size: calc(var(--fs-body) * 0.75);
+  line-height: 1.3;
+}
+
+.placed-image > img {
+  display: block;
+  width: 100%;
+  height: var(--placed-image-h);
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.placed-image--bleed > img {
+  object-fit: cover;
+}
+
+.placed-image > figcaption {
+  box-sizing: border-box;
+  width: var(--placed-caption-width, 100%);
+  margin-left: var(--placed-caption-left, 0);
+  padding-top: 0.3em;
+  font-size: calc(var(--fs-body) * 0.85);
+  line-height: 1.3;
+  color: var(--ink);
+  background: var(--paper-bg, #fff);
+  white-space: pre-wrap;
+}
+
+/* A caption cannot live below artwork that reaches the bottom trim. Keep it
+   inside the selected column footprint on a translucent paper-colour panel. */
+.placed-image--caption-overlay > figcaption {
+  position: absolute;
+  left: var(--placed-caption-left, 0);
+  bottom: 0;
+  margin-left: 0;
+  padding: 0.45em 0.55em;
+  background: color-mix(in srgb, var(--paper-bg, #fff) 88%, transparent);
+  backdrop-filter: blur(2px);
+}
+
+.hero {
+  position: relative;
+  height: var(--hero-slot-h, var(--hero-h));
+  /* Full-bleed: pull out of the page padding so the hero meets the sheet edges
+     on top and both sides. `.page` overflow:hidden clips it; the body below
+     reclaims the released top margin (see .body-cols--p1 height). Margins are
+     part of layout, so this stays true through preview zoom and print. */
+  margin: calc(-1 * var(--margin)) calc(-1 * var(--margin)) 0;
+  background: var(--hero);
+  overflow: hidden;
+}
+
+.hero--hidden {
+  background: transparent;
+}
+
+.hero img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* A hero photo always wins the top strip: the bar underneath it exists (for
+     pages with no photo) but never shows through one. */
+  z-index: 2;
+}
+
+.header {
+  margin-top: var(--gutter);
+  /* RTL (Design panel's Text direction): the title/subtitle/byline are running
+     text like the body, so they read right-to-left too. `direction` is
+     inherited by children, so this alone also flips any logical (start/end)
+     rule below it — but `.page` sets a PHYSICAL `text-align: left`, which
+     children would otherwise just inherit as-is regardless of direction, so
+     `start` has to be set explicitly here too. Doesn't affect the top bar,
+     hero or sidebar placement (they don't read --text-dir). */
+  direction: var(--text-dir, ltr);
+  text-align: start;
+}
+
+.header .eyebrow {
+  margin: 0;
+  font-family: var(--font-category);
+  font-size: var(--fs-eyebrow);
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.header .title {
+  margin: 0.1em 0;
+  font-family: var(--serif);
+  font-size: var(--fs-title);
+  line-height: 1.05;
+  color: var(--ink);
+}
+
+.header .subtitle {
+  margin: 0;
+  font-family: var(--font-subtitle);
+  font-size: var(--fs-subtitle);
+  color: var(--ink);
+  opacity: 0.8;
+}
+
+.header .byline {
+  margin: 0.3em 0 0;
+  font-family: var(--font-author);
+  font-size: var(--fs-author);
+  color: var(--ink);
+}
+
+.header .byline .affiliation {
+  font-family: var(--font-affil);
+  font-size: var(--fs-affil);
+  opacity: 0.75;
+}
+
+/* Rule with a tag block, drawn by the paper templates that want one. The tag
+   hugs its text; the rule fills whatever is left. Colours are author-controlled
+   (Desain panel) and default to a black rule with a grey tag. */
+.tag-bar {
+  display: flex;
+  align-items: stretch;
+  height: var(--bar-h);
+  /* Bleeds to both sheet edges on every plain (non-hero) page it appears on —
+     a continuation sheet or paper-2's later sheets — same negative-margin
+     trick as .hero: `.page` clips at its own edge (overflow: hidden), so this
+     never actually escapes the sheet. Default gap before whatever follows it
+     in normal flow (a continuation page's body, sheet 1's header). Contexts
+     that place their own gap after the bar (paper-2's full-bleed band) zero
+     this. */
+  margin: calc(var(--topbar-offset, 0mm) - var(--margin)) calc(-1 * var(--margin)) var(--gutter);
+}
+
+/* Overlaid on a hero: the bar sits at the box's own top edge, behind the
+   photo (see .hero img's z-index) rather than pushing it down. */
+.hero .tag-bar {
+  position: absolute;
+  inset: var(--topbar-offset, 0mm) 0 auto 0;
+  margin: 0;
+  z-index: 1;
+}
+
+.tag-bar-mark {
+  flex: none;
+  width: var(--bar-h); /* square */
+  background: var(--bar-color);
+}
+
+.tag-bar-tag {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 0.9em;
+  background: var(--bar-tag);
+  color: var(--bar-ink);
+  font-family: var(--font-category);
+  font-size: calc(var(--fs-eyebrow) * 0.85);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.tag-bar-fill {
+  flex: 1;
+  min-width: 0;
+  background: var(--bar-color);
+}
+
+/* Verso: the square and tag mirror to the right end of the rule. */
+.tag-bar--flip {
+  flex-direction: row-reverse;
+}
+
+.body-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--gutter);
+  margin-top: var(--gutter);
+}
+
+.body-cols {
+  column-fill: auto;
+  column-gap: var(--gutter);
+  /* Alignment is author-controlled (Desain panel), default justify. Hyphens
+     auto keeps narrow justified/left columns from opening rivers of whitespace;
+     it's harmless for center/right. */
+  text-align: var(--body-align, justify);
+  hyphens: auto;
+  -webkit-hyphens: auto;
+  font-size: var(--fs-body);
+  font-family: var(--sans);
+  line-height: 1.4;
+  box-sizing: border-box;
+  /* RTL: reverses which column fills first (a multi-column box's reading
+     order follows `direction` — column 1 becomes the rightmost), and — being
+     inherited — flips `text-indent` (spec'd to indent from the *start* edge,
+     left or right depending on direction), with no separate rule needed. */
+  direction: var(--text-dir, ltr);
+}
+
+.body-cols p {
+  margin: 0 0 0.8em;
+  /* First-line indent ("menjorok") marks each new paragraph. */
+  text-indent: 1.5em;
+}
+
+@media screen {
+  .flow-source-paragraph {
+    cursor: pointer;
+    outline: 1px solid transparent;
+    outline-offset: 2px;
+    transition: outline-color 0.12s, background-color 0.12s;
+  }
+
+  .flow-source-paragraph:hover {
+    outline-color: color-mix(in srgb, var(--accent, #4f46e5) 35%, transparent);
+    background-color: color-mix(in srgb, var(--accent-soft, #eef2ff) 42%, transparent);
+  }
+}
+
+/* Never indent: the drop-cap first paragraph (indent would shove the cap), nor
+   a `.cont` run — the tail of a paragraph split across a page/column is the same
+   paragraph continuing, not a new one, so its first line stays flush. */
+.body-cols--p1 p.flow-opener,
+.body-cols p.cont {
+  text-indent: 0;
+}
+
+/* Explicit per-paragraph override (BodySection's indent toggle). Same
+   specificity as the two rules above (two classes/pseudo-classes + one
+   element), so source order decides — placed after them, an explicit choice
+   always wins, even on the opener paragraph. `.cont` never carries one of
+   these classes (paint()/Flow.tsx keep them mutually exclusive), so a
+   continuation is never in play here. */
+.body-cols p.indent-on {
+  text-indent: 1.5em;
+}
+.body-cols p.indent-off {
+  text-indent: 0;
+}
+
+/* Inline figure: text flows above and below it — never over it. The measuring
+   host renders a same-class placeholder div, so the break is computed against
+   the real displaced height. Full = spans all columns; col = one column wide. */
+.flow-fig {
+  margin: 0.2em 0 0.8em;
+  break-inside: avoid;
+}
+
+.flow-fig--full {
+  column-span: all;
+}
+
+.flow-fig--col {
+  column-span: none;
+}
+
+/* Span-1 figure with `wrap` set to 'box'/'tight' (see the figure Block's own
+   doc comment) — floated to one side of its column instead of sitting in the
+   block flow, so the paragraph text around it in the DOM wraps down its edge
+   rather than always breaking above/below it. Width is capped well under
+   100% so a real width of running text is still left to wrap into — a
+   float that filled the whole column would leave nothing beside it. Kept as
+   its own class rather than reusing `.flow-fig--pos-left/right` (the 2–4
+   column spanner row's positioning) so the two mechanisms' margin rules can
+   never collide — a spanner is never floated, and this is never a spanner.
+   Physical left/right on purpose, not logical: like `pos` everywhere else in
+   this schema, the wrap side is an explicit author choice that doesn't
+   mirror when `--text-dir` flips to rtl. `shape-outside` itself (the part
+   that makes 'tight' hug an image's actual silhouette instead of this
+   rectangle) is set inline per-figure in Flow.tsx, since it needs the
+   image's own src. */
+.flow-fig--wrap {
+  width: 55%;
+  shape-margin: 0.8em;
+}
+.flow-fig--wrap-left {
+  float: left;
+  margin-right: 1em;
+}
+.flow-fig--wrap-right {
+  float: right;
+  margin-left: 1em;
+}
+
+/* Partial-width spanner (span 2 | 3 | 4): a row-breaking block sized to N of
+   the box's own flowing columns, out of --fcols total (set by whichever body
+   box it's actually in — see .body-cols--p1/--p2, .mag-cols, .mag2-cols).
+   Same arithmetic paint() uses to measure it (n*colW + (n-1)*gap), expressed
+   as a percentage of the spanner's own 100%-wide containing block so no JS
+   is needed to keep the two in sync. --bl/--br (see the bleed rules below)
+   let a bled edge grow the box outward without moving its other edge. */
+.flow-fig--n {
+  column-span: all;
+  --bl: 0px;
+  --br: 0px;
+  width: min(
+    100%,
+    calc(
+      100% * (var(--n, 1) / var(--fcols, 1)) - var(--gutter) *
+        ((var(--fcols, 1) - var(--n, 1)) / var(--fcols, 1)) + var(--bl) + var(--br)
+    )
+  );
+}
+
+.flow-fig--pos-left {
+  margin-left: 0;
+  margin-right: auto;
+}
+
+.flow-fig--pos-right {
+  margin-left: auto;
+  margin-right: 0;
+}
+
+.flow-fig--pos-center {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Emphasize: carry whichever edge is already flush against the content box
+   out to the physical sheet edge. Which edge(s) that is falls out of span+pos
+   alone — pos-left's box already touches the left edge of the (full-width)
+   spanner containing block, so only that side needs to move; a centered
+   partial figure touches neither edge, so the toggle has no visible effect. */
+.flow-fig--bleed.flow-fig--pos-left {
+  --bl: var(--margin);
+  margin-left: calc(-1 * var(--margin));
+}
+
+.flow-fig--bleed.flow-fig--pos-right {
+  --br: var(--margin);
+  margin-right: calc(-1 * var(--margin));
+}
+
+.flow-fig--bleed.flow-fig--full {
+  margin-left: calc(-1 * var(--margin));
+  margin-right: calc(-1 * var(--margin));
+}
+
+/* Except where the rail owns the outer column: bleeding right would run the
+   band under the highlights box, so on a railed body a figure only bleeds
+   towards the free edge (left). paint() measures the result rather than
+   assuming it. */
+.body-cols--railed .flow-fig--bleed.flow-fig--full,
+.body-cols--railed .flow-fig--bleed.flow-fig--pos-right {
+  margin-right: 0;
+  --br: 0px;
+}
+
+/* Vertical bleed (see Flow.tsx's comment for exactly when these are applied):
+   a bled figure that's the first or last thing on its page also reaches the
+   physical top/bottom sheet edge, on top of whatever left/right bleed its
+   span+pos already gave it. `.flow-fig`'s own top/bottom margin (0.2em /
+   0.8em) is overridden outright rather than added to, same as the left/right
+   rules above replace margin-left/right rather than layering onto them.
+   Positioned + stacked above its own preceding siblings (the tag bar, on a
+   continuation page) so it paints over them exactly like the real hero
+   already paints over ITS tag bar on page 1 — a bled figure at the top of a
+   page acts like that page's own mini-hero.
+   Top and bottom are NOT symmetric: nothing sits between `.body-cols`' own
+   bottom edge and the page's padding-bottom, so cancelling `--margin` alone
+   reaches the sheet's bottom edge exactly. The TOP has the tag bar in the way
+   — every continuation page carrying `allowTopBleed` always
+   draws its `.tag-bar` (height `--bar-h`) above the body box first, with
+   `--gutter` between them (the bar's own bottom margin and `.body-row`'s top
+   margin are equal siblings that collapse to one `--gutter`, not two, so it's
+   counted once here) — so reaching the physical top edge means cancelling
+   that whole stack, not just `--margin`. */
+.flow-fig--bleed-top {
+  margin-top: calc(0.2em - var(--edge-top, 0px));
+  position: relative;
+  z-index: 2;
+}
+
+.flow-fig--bleed-bottom {
+  margin-bottom: calc(0.8em - var(--edge-bottom, 0px));
+  position: relative;
+}
+
+.flow-fig--bleed-top img,
+.flow-fig--bleed-bottom img {
+  object-fit: cover;
+}
+
+/* When the photo itself reaches the bottom edge, a normal caption below it
+   would necessarily keep the image boundary above the sheet edge. Overlay the
+   caption on a quiet translucent strip instead, so both requirements survive:
+   the image bleeds and the caption remains readable. */
+.flow-fig--bleed-bottom > figcaption,
+.flow-wraprow--bleed-bottom .flow-wraprow-fig > figcaption {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0.35em 0.5em;
+  background: rgba(255, 255, 255, 0.84);
+  color: var(--ink);
+  opacity: 1;
+}
+
+/* The body box clips its columns, which would also clip the bleed. `clip` plus
+   a clip-margin keeps the column spill hidden while letting a figure reach the
+   sheet edge — and `.page` still clips anything past that. Rendered sheets only:
+   the measuring twins in .measure-root keep `overflow: hidden`, because that is
+   what makes scrollWidth report the sideways spill the break depends on.
+   Browsers without `overflow: clip` fall back to the hidden above: no bleed,
+   nothing broken.
+   The margin has to cover the LARGEST escape any bleed direction needs, since
+   one clip-margin applies to all four sides: left/right/bottom only ever
+   escape by `--margin` (nothing sits outside the body box on those sides but
+   the page's own padding), but `.flow-fig--bleed-top` escapes by the tag bar's
+   height + gutter on top of that (see its own comment) — so this has to match
+   that larger figure, not just `--margin`, or the top bleed would visibly cut
+   off partway instead of reaching the sheet edge. Being more generous on the
+   other three sides than they themselves ever use is harmless: nothing there
+   escapes far enough for the extra margin to reveal anything unintended.
+   `--topbleed-clip` (PaperPreview.tsx) is that sum pre-computed in JS, not a
+   calc() here — Chromium computes overflow-clip-margin's used value to 0px
+   whenever calc() appears anywhere in it, even nested inside a var(), which
+   silently disabled the whole vertical bleed (confirmed empirically: the
+   figure's box reached the sheet edge per getBoundingClientRect, but nothing
+   painted past the old, calc()-broken clip boundary). */
+.pages .body-cols {
+  overflow: clip;
+  overflow-clip-margin: var(--topbleed-clip);
+}
+
+.flow-fig img {
+  display: block;
+  width: 100%;
+}
+
+.flow-fig figcaption {
+  margin-top: 0.3em;
+  font-size: calc(var(--fs-body) * 0.85);
+  line-height: 1.3;
+  color: var(--ink);
+  opacity: 0.7;
+  text-align: left;
+}
+
+/* Real text-wrap beside a partial-width figure — see lib/textWrap.ts. CSS
+   `column-span` is only none/all, so the ONLY way to keep some
+   columns flowing text beside a spanner is to stop spanning and hand-place
+   the figure and text as a grid instead. Still a `column-span: all` row in
+   the outer flow — it just isn't blank beside the figure anymore. Every
+   track is an equal 1fr, matching the flowing columns' own equal width, so
+   the figure and the free text line up with the columns on either side of
+   this row exactly. */
+.flow-wraprow {
+  column-span: all;
+  display: grid;
+  grid-template-columns: repeat(var(--fcols, 1), 1fr);
+  column-gap: var(--gutter);
+  break-inside: avoid;
+  margin: 0.2em 0 0.8em;
+}
+
+.flow-wraprow-fig {
+  margin: 0;
+  min-width: 0;
+}
+
+.flow-wraprow-fig--bleed-left {
+  width: 100%;
+  margin-left: 0;
+}
+
+.flow-wraprow-fig--bleed-right {
+  width: 100%;
+  margin-right: 0;
+}
+
+/* Grow only the image pixels beyond the assigned grid tracks. Growing the
+   grid item itself changes its alignment area and can pull a right-bleeding
+   figure left into the neighbouring text column. Keeping the figure's grid
+   footprint fixed makes the gutter inviolable while the image still reaches
+   the physical sheet edge. */
+.flow-wraprow-fig--bleed-left > img {
+  width: calc(100% + var(--margin));
+  max-width: none;
+  margin-left: calc(-1 * var(--margin));
+}
+
+.flow-wraprow-fig--bleed-right > img {
+  width: calc(100% + var(--margin));
+  max-width: none;
+}
+
+.body-cols--railed .flow-wraprow-fig--bleed-right {
+  width: 100%;
+  margin-right: 0;
+}
+
+.body-cols--railed .flow-wraprow-fig--bleed-right > img {
+  width: 100%;
+}
+
+.flow-wraprow--bleed-top {
+  /* Keep neighbouring text on the normal body line. Only the image pixels
+     travel into the top margin; moving the whole grid row would drag its free
+     text columns over the masthead and outside the readable area. */
+  margin-top: 0.2em;
+  position: relative;
+  z-index: 2;
+}
+
+.flow-wraprow--bleed-top .flow-wraprow-fig > img {
+  margin-top: calc(-1 * var(--edge-top, 0px));
+}
+
+.flow-wraprow--bleed-bottom {
+  margin-bottom: calc(0.8em - var(--edge-bottom, 0px));
+}
+
+.flow-wraprow--bleed-bottom .flow-wraprow-fig {
+  position: relative;
+}
+
+.flow-wraprow--bleed-top img,
+.flow-wraprow--bleed-bottom img {
+  object-fit: cover;
+}
+
+/* Same sequential-fill technique as columnFill.ts, applied to just this row's
+   free columns — colBreak-marked pieces (see textWrap.ts) carry the explicit
+   break-before, so this doesn't depend on Chromium's own column-fill:auto
+   being reliable here either. No margin/indent rules of its own: `p` inside
+   here is still a descendant of `.body-cols` / `.mag-cols` / `.mag2-cols`, so
+   that family's own paragraph rules (margin, text-indent, .indent-on/.cont)
+   apply exactly as they do to any other paragraph in the same flow — no
+   height/overflow clamp either, so a rare measurement/render mismatch grows
+   the row a little rather than silently clipping text. */
+.flow-wraprow-sidecol {
+  grid-row: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.flow-wraprow-sidecol > p:last-child,
+.flow-wrap-probe > p:last-child {
+  margin-bottom: 0;
+}
+
+/* Final rendering for columnFill.ts's already-computed text-only columns.
+   This is one full-width atom in the outer multicolumn flow; each inner track
+   is an ordinary block, so no browser column-balancing pass can reopen a
+   computed break or create a blank middle column. */
+.flow-textgrid {
+  column-span: all;
+  display: grid;
+  grid-template-columns: repeat(var(--fcols, var(--flow-text-cols, 1)), minmax(0, 1fr));
+  column-gap: var(--gutter);
+  align-items: stretch;
+  width: 100%;
+}
+
+.flow-textgrid-col {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  /* Baseline correction is calculated from the real rendered line boxes in
+     Flow.tsx. Ordinary block flow keeps figure/caption spacing untouched;
+     only paragraph-to-paragraph gaps are varied. Line height is invariant. */
+  display: block;
+}
+
+/* One invisible float per affected explicit column. Its alpha-based CSS Shape
+   excludes only the image-height bands; text remains free above and below.
+   The visible image is still painted by .placed-images, so dragging remains
+   independent from paragraph content. */
+.flow-column-shape {
+  display: block;
+  float: left;
+  width: 100%;
+  height: 100%;
+  shape-image-threshold: 0.5;
+  pointer-events: none;
+}
+
+/* Image-aware flow is measured into concrete writable rectangles. Each
+   segment is independent, so a full-width image can never make Chromium skip
+   the space below it or strand copy in only one of the page's columns. */
+.flow-image-grid {
+  column-span: all;
+  display: grid;
+  grid-template-columns: repeat(var(--flow-image-cols, 1), minmax(0, 1fr));
+  column-gap: var(--gutter);
+  width: 100%;
+  position: relative;
+}
+
+.flow-image-grid-col {
+  min-width: 0;
+  position: relative;
+  overflow-wrap: break-word;
+  word-break: normal;
+  line-break: auto;
+}
+
+.flow-image-segment {
+  position: absolute;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* Text immediately above/below an image on a mixed page is its own balanced
+   column band. This gives every column the same visual baseline against the
+   image edge instead of leaving irregular wedges of white space. The outer
+   flow still sees one full-width atom, so figure pagination/bleed is unchanged. */
+.flow-balanced-row {
+  column-span: all;
+  column-count: var(--fcols, 1);
+  column-gap: var(--gutter);
+  column-fill: balance;
+  width: 100%;
+  break-inside: avoid;
+}
+
+.body-cols--p1 {
+  width: var(--body-1);
+  column-count: var(--cols-1);
+  /* How many flowing columns a spanning figure divides itself across — see
+     .flow-fig--n. */
+  --fcols: var(--cols-1);
+  /* One --margin only: the hero now bleeds into the top margin, so the body
+     reclaims it and still bottoms out exactly on the bottom-margin line. */
+  height: calc(var(--page-h) - var(--margin) - var(--hero-slot-h, var(--hero-h)) - var(--header-h) - 2 * var(--gutter));
+  overflow: hidden;
+}
+
+.body-cols--p2 {
+  width: var(--body-2);
+  column-count: var(--cols-2);
+  --fcols: var(--cols-2);
+  /* The bar now runs at the top of every continuation sheet too — its own
+     height plus the gap its margin-bottom adds (see .tag-bar). */
+  height: calc(
+    var(--page-h) - var(--margin) - var(--topbar-offset, 0mm) - var(--footer-h) -
+      var(--bar-h) - var(--gutter)
+  );
+  overflow: hidden;
+}
+
+/* Drop cap: first paragraph of page 1 only. This is an explicit inline element,
+   not `::first-letter`: generated first letters may be cloned by Chromium at
+   RTL multicolumn fragment boundaries. `float: inline-start` and logical
+   padding place Arabic/Jawi caps on the right and LTR caps on the left. */
+.body-cols--p1 p.flow-opener .drop-cap {
+  display: block;
+  float: inline-start;
+  font-family: var(--serif);
+  font-size: calc(var(--fs-title) * 1.1);
+  line-height: 0.8;
+  padding-inline-end: 6px;
+  color: var(--ink);
+}
+
+.sidebar {
+  box-sizing: border-box;
+  width: var(--col);
+  /* Box hugs its content instead of spanning the full column height. */
+  height: auto;
+  /* Anchored to the bottom of the body row: a short box sits at the foot of
+     the rail and grows upward, so little content leaves the gap on top. */
+  align-self: flex-end;
+  background: var(--accent-soft);
+  /* Logical start-edge border + direction — see .body-cols's RTL comment. The
+     accent stripe belongs on the box's reading-start edge in either
+     direction, same as a printed callout would place it. */
+  border-inline-start: 3px solid var(--accent);
+  padding: 0 0.6em 0.8em;
+  font-family: var(--sans);
+  font-size: calc(var(--fs-body) * 0.9);
+  /* direction alone flips reading order, but `.page` sets a PHYSICAL
+     `text-align: left` that this box would otherwise just inherit as-is —
+     same gotcha `.header` has its own comment for. Without this, the box
+     mirrors correctly (bullets/border move to the right edge in rtl) but
+     the text itself stays visibly left-aligned. */
+  direction: var(--text-dir, ltr);
+  text-align: start;
+}
+
+.sidebar[data-image-avoidance='unresolved'] {
+  outline: 2px dashed var(--accent);
+  outline-offset: 2px;
+}
+
+.sidebar-relocated {
+  position: absolute !important;
+  right: var(--margin);
+  bottom: var(--margin);
+  width: var(--col);
+  z-index: 7 !important;
+}
+
+/* When a rail box cannot fit wholly above or below an image, its single-column
+   contents can use both free regions. The parent mask punches the same band
+   out of the callout background, while this shape keeps every glyph out. */
+.sidebar[data-image-avoidance='split'],
+.hl-below[data-image-avoidance='split'],
+.hl-col[data-image-avoidance='split'] {
+  align-self: flex-start;
+  height: var(--sidebar-avoid-height);
+  -webkit-mask-image: var(--sidebar-avoid-mask);
+  mask-image: var(--sidebar-avoid-mask);
+}
+
+.sidebar-image-shape {
+  display: none;
+}
+
+.sidebar[data-image-avoidance='split'] > .sidebar-image-shape,
+.hl-below[data-image-avoidance='split'] > .sidebar-image-shape,
+.hl-col[data-image-avoidance='split'] > .sidebar-image-shape {
+  display: block;
+  float: left;
+  width: 100%;
+  height: 100%;
+  shape-outside: var(--sidebar-avoid-shape);
+  shape-image-threshold: 0.5;
+  pointer-events: none;
+}
+
+/* Highlights placed below the article: a full-width band spanning all columns
+   at the end of the flow. Shares the rail's inner styling via grouped selectors. */
+.hl-below {
+  column-span: all;
+  break-inside: avoid;
+  box-sizing: border-box;
+  /* Keep the same total vertical footprint as the measuring placeholder
+     (1em), but put it above the panel where it visibly separates the callout
+     from the last line of article copy. */
+  margin: max(1.2em, 3mm) 0 0;
+  padding: 0 0.9em 0.7em;
+  background: var(--accent-soft);
+  border-inline-start: 3px solid var(--accent);
+  font-family: var(--sans);
+  font-size: calc(var(--fs-body) * 0.9);
+  /* See .sidebar's comment: direction alone doesn't beat `.page`'s physical
+     text-align: left, which this box would otherwise just inherit. */
+  direction: var(--text-dir, ltr);
+  text-align: start;
+}
+
+/* The lists flow in two columns inside the wide band so it stays short. */
+.hl-below ul.highlights,
+.hl-below ol.references {
+  columns: 2;
+  column-gap: var(--gutter);
+}
+
+/* In-flow highlights ('page1-flow'): a one-column box kept whole at the end of
+   the page-1 body, so text fills the columns and the gap above it first. Same
+   inner styling as the rail via the grouped selectors below. */
+.hl-col {
+  column-span: none;
+  break-inside: avoid;
+  box-sizing: border-box;
+  margin: 0.2em 0 0;
+  padding: 0 0.6em 0.8em;
+  background: var(--accent-soft);
+  border-inline-start: 3px solid var(--accent);
+  font-family: var(--sans);
+  font-size: calc(var(--fs-body) * 0.9);
+  /* See .sidebar's comment: direction alone doesn't beat `.page`'s physical
+     text-align: left, which this box would otherwise just inherit. */
+  direction: var(--text-dir, ltr);
+  text-align: start;
+}
+
+.sidebar h3,
+.hl-below h3,
+.hl-col h3 {
+  margin: 0.6em 0 0.3em;
+  font-size: calc(var(--fs-eyebrow) + 1pt);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--accent);
+}
+
+.sidebar ul.highlights,
+.hl-below ul.highlights,
+.hl-col ul.highlights {
+  margin: 0;
+  padding-inline-start: 1.1em;
+}
+
+.sidebar ul.highlights li,
+.hl-below ul.highlights li,
+.hl-col ul.highlights li {
+  margin-bottom: 0.5em;
+}
+
+.sidebar ol.references,
+.hl-below ol.references,
+.hl-col ol.references {
+  margin: 0;
+  padding-inline-start: 1.1em;
+  font-size: calc(var(--fs-body) * 0.75);
+  line-height: 1.3;
+}
+
+.sidebar ol.references li,
+.hl-below ol.references li,
+.hl-col ol.references li {
+  margin-bottom: 0.5em;
+}
+
+.fit-badge {
+  display: inline-block;
+  min-width: 0;
+  max-width: min(360px, 100%);
+  margin-bottom: 16px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font: 11px/1.4 system-ui, sans-serif;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fit-badge-short {
+  display: none;
+}
+
+.fit-badge.fit-ok {
+  background: #dcf5e3;
+  color: #1a7a3a;
+}
+
+.fit-badge.fit-warn {
+  background: #fdf0d5;
+  color: #94660a;
+}
+
+.fit-badge.fit-bad {
+  background: #fbe0e0;
+  color: #a3242f;
+}
+
+/* Preview-only zoom. The pt/mm sizes stay physically correct (export prints at
+   true A4); this only scales how big the sheet looks on screen — like Word's
+   zoom. transform (not `zoom`) so offsetHeight stays layout-true and pagination
+   is unaffected; the frame carries the scaled footprint so scrollbars track. */
+.preview-bar {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.preview-bar .fit-badge {
+  margin-bottom: 0;
+}
+
+@container preview-pane (max-width: 620px) {
+  .preview-bar {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    width: 100%;
+  }
+
+  .preview-bar .format-bar {
+    grid-column: 1;
+    grid-row: 1;
+    justify-self: start;
+  }
+
+  .preview-bar .zoom-bar {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+  }
+
+  .preview-bar .view-bar {
+    grid-column: 1;
+    grid-row: 2;
+    justify-self: start;
+  }
+
+  .preview-bar .fit-badge {
+    grid-column: 2;
+    grid-row: 2;
+    justify-self: end;
+    max-width: 100%;
+  }
+
+  .preview-bar:not(:has(.view-bar)) .fit-badge {
+    grid-column: 1 / -1;
+    justify-self: center;
+  }
+
+  .fit-badge-long {
+    display: none;
+  }
+
+  .fit-badge-short {
+    display: inline;
+  }
+
+  .zoom-bar .zoom-btn:last-child {
+    display: none;
+  }
+}
+
+.format-bar {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
+.format-btn {
+  width: 26px;
+  height: 24px;
+  border: 0;
+  background: none;
+  border-radius: 6px;
+  font: 13px/1 Georgia, serif;
+  color: #333;
+  cursor: pointer;
+}
+
+.format-btn:hover {
+  background: #eee;
+}
+
+.format-btn--b {
+  font-weight: 700;
+}
+
+.format-btn--i {
+  font-style: italic;
+}
+
+.format-btn--u {
+  text-decoration: underline;
+}
+
+.format-btn--math {
+  font-size: 15px;
+}
+
+/* Standalone display equation: an atomic full-width block in the text flow.
+   column-span:all makes it a spanner (its overflow shows on scrollHeight, which
+   paginate() already reads). Centered, with an optional caption underneath. */
+.flow-eq {
+  column-span: all;
+  margin: 2mm 0 2.5mm;
+  text-align: center;
+  break-inside: avoid;
+}
+.flow-eq-tex {
+  display: block;
+  overflow: hidden;
+}
+.flow-eq-tex .katex-display {
+  margin: 0;
+}
+.flow-eq figcaption {
+  margin-top: 1mm;
+  font-family: var(--sans);
+  font-size: 8pt;
+  line-height: 1.35;
+  color: #555;
+}
+
+/* Inline KaTeX span: keep formulas on the text baseline and let a wide one
+   shrink rather than blow out the narrow column. */
+.tex {
+  display: inline-block;
+  max-width: 100%;
+}
+.tex .katex {
+  font-size: 1em;
+}
+
+.zoom-bar {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
+.zoom-btn {
+  border: 0;
+  background: none;
+  padding: 4px 9px;
+  border-radius: 6px;
+  font: 11px/1 system-ui, sans-serif;
+  color: #333;
+  cursor: pointer;
+}
+
+.zoom-btn:hover {
+  background: #eee;
+}
+
+.zoom-btn.is-active {
+  background: #111418;
+  color: #fff;
+}
+
+.zoom-val {
+  min-width: 46px;
+  text-align: center;
+  font: 11px/1 system-ui, sans-serif;
+  color: #555;
+  font-variant-numeric: tabular-nums;
+}
+
+.pages-frame {
+  margin: 0 auto;
+}
+
+.pages {
+  width: var(--page-w);
+  transform-origin: top left;
+}
+
+/* Spread view: sheets two-up, like an open magazine. View-only. */
+.pages--spread {
+  display: grid;
+  /* Fixed A4 width — the per-sheet --page-w var isn't defined on this container. */
+  grid-template-columns: repeat(2, 210mm);
+  gap: 20px;
+  width: auto;
+  /* Page 2 sits flush at the top beside page 1 (never sinks if it's shorter). */
+  align-items: start;
+}
+
+.pages--spread .page {
+  margin: 0;
+}
+
+/* Spread toggle in the preview bar, next to Fit. */
+.view-bar {
+  display: inline-flex;
+  padding: 3px;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
+.view-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  background: none;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font: 11px/1 system-ui, sans-serif;
+  color: #333;
+  cursor: pointer;
+}
+
+.view-btn:hover {
+  background: #eee;
+}
+
+.view-btn.is-active {
+  background: #111418;
+  color: #fff;
+}
+
+.view-btn-ico {
+  font-size: 10px;
+  letter-spacing: -2px;
+}
+
+.measure-root {
+  position: fixed;
+  top: 0;
+  left: -99999px;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+@media print {
+  .paper-scroll {
+    background: none;
+    padding: 0;
+    gap: 0;
+    display: block;
+  }
+
+  .page {
+    box-shadow: none;
+    margin: 0;
+    width: 210mm;
+    /* A hair under A4 (297mm). At exactly 297mm the browser — Safari especially,
+       which ignores break-inside — fragments the sheet and shoves the body row
+       onto the next page. The real content ends at the 281mm padding edge, so
+       this only trims 1mm of empty bottom padding. */
+    height: 296mm;
+    overflow: hidden;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Page break only BETWEEN sheets — never a trailing blank page after the
+     last one. */
+  .page + .page {
+    break-before: page;
+  }
+
+  /* The hidden measuring rig must not reach the printer — its fixed position
+     otherwise adds width and stray pages. */
+  .measure-root {
+    display: none !important;
+  }
+
+  .preview-bar {
+    display: none;
+  }
+
+  .placed-image,
+  .placed-image:active {
+    box-shadow: none;
+  }
+
+  /* Zoom wrappers must not exist in the paged layout. `display: contents`
+     removes their boxes entirely so each .page sheet is an effective child of
+     .paper-scroll again — the flat structure the whole-sheet rules below are
+     tuned for. With a box in between, Safari (which ignores break-inside)
+     fragments the sheet into pieces. This is a screen-only affordance. */
+  .pages-frame,
+  .pages {
+    display: contents;
+  }
+}

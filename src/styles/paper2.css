@@ -1,0 +1,180 @@
+/* paper-2 only. Sheet 1 splits its top: header on the leading columns, hero on
+   the last two — so the text beside the header starts higher than the text under
+   the hero. Two separate multicolumn boxes, because one box cannot start its
+   columns at different heights. Sheets 2+ reuse page.css untouched. */
+
+.page--p2,
+.measure-root {
+  /* Height of everything below the band. The two region boxes and their hidden
+     measuring twins subtract from this same number, so the break is measured
+     against the box the text really lands in. */
+  --p2-start: max(
+    calc(var(--topbar-offset, 0mm) + var(--bar-h) + var(--gutter)),
+    var(--first-page-top, 0mm)
+  );
+  --p2-body-h: calc(var(--page-h) - var(--margin) - var(--p2-start));
+}
+
+/* The bar itself lives in page.css (.tag-bar). Here it only bleeds sideways
+   out of the page padding, and not to the top edge. */
+.page--p2 .tag-bar {
+  margin: calc(var(--topbar-offset, 0mm) - var(--margin)) calc(-1 * var(--margin)) 0;
+}
+
+/* ---- Header / hero split ------------------------------------------------- */
+
+.p2-cols {
+  display: flex;
+  align-items: stretch;
+  gap: var(--gutter);
+  margin-top: calc(var(--p2-start) - var(--topbar-offset, 0mm) - var(--bar-h));
+  height: var(--p2-body-h);
+}
+
+.p2-left,
+.p2-right {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.p2-left {
+  width: var(--p2-left-w);
+  flex: none;
+}
+
+.p2-right {
+  width: var(--p2-hero-w);
+  flex: none;
+}
+
+/* padding, not margin, so offsetHeight carries the gap the flow box subtracts. */
+.p2-left .p2-head {
+  flex: none;
+  margin-top: 0;
+  padding-bottom: var(--gutter);
+  /* The header is only a couple of columns wide here, not the full sheet, so a
+     display-size word can be wider than its measure and would otherwise sail out
+     of the box and under the hero. Containment beats a pretty break: `hyphens:
+     auto` reads better but Chrome stops hyphenating as soon as break-word is in
+     play, and it alone does not contain an over-wide word. At the preset's own
+     sizes nothing needs breaking; this only bites once the measure is squeezed. */
+  overflow-wrap: break-word;
+}
+
+.p2-heroblock {
+  flex: none;
+}
+
+.p2-hero {
+  position: relative;
+  height: var(--hero-h);
+  background: var(--hero);
+  overflow: hidden;
+}
+
+.p2-hero img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.p2-hero-cap {
+  margin: 0.35em 0 0;
+  font-size: calc(var(--fs-body) * 0.85);
+  line-height: 1.3;
+  color: var(--ink);
+  opacity: 0.7;
+  text-align: right;
+}
+
+.p2-right-row {
+  display: flex;
+  align-items: stretch;
+  gap: var(--gutter);
+  flex: 1;
+  min-height: 0;
+  margin-top: var(--gutter);
+}
+
+/* ---- The two text regions ------------------------------------------------ */
+
+.p2-flow-l,
+.p2-flow-r {
+  overflow: hidden;
+}
+
+.p2-flow-l {
+  flex: 1;
+  min-height: 0;
+  column-count: var(--p2-cols-left);
+  /* How many flowing columns a spanning figure (.flow-fig--n) divides itself
+     across — see page.css's .body-cols--p1/--p2 for the same wiring on the
+     other templates. Missing here meant --fcols silently fell back to its
+     1-column default instead of this region's real column count. Currently
+     inert in practice: paper-2's regions never carry more than 2 flowing
+     columns (see lib/paper2.ts's headCols/rightCols), while a spanner's span
+     is always 2–4, so .flow-fig--n's width formula was already hitting its
+     min(100%, …) clamp either way — this doesn't change today's rendering,
+     it just stops --fcols from silently disagreeing with the box it's
+     actually in, in case that headroom (region cols vs. span) ever changes. */
+  --fcols: var(--p2-cols-left);
+}
+
+.p2-flow-r {
+  flex: none;
+  width: var(--p2-right-w);
+  column-count: var(--p2-cols-right);
+  --fcols: var(--p2-cols-right);
+}
+
+/* Drop cap opens the article, so it belongs to the left region's first
+   paragraph — the same role .body-cols--p1 plays on the other papers. */
+.p2-flow-l p.flow-opener {
+  text-indent: 0;
+}
+
+.p2-flow-l p.flow-opener .drop-cap {
+  display: block;
+  float: inline-start;
+  font-family: var(--serif);
+  font-size: calc(var(--fs-title) * 1.1);
+  line-height: 0.8;
+  padding-inline-end: 6px;
+  color: var(--ink);
+}
+
+/* ---- Hidden measuring twins --------------------------------------------- */
+
+.p2-host-l {
+  width: var(--p2-left-w);
+  column-count: var(--p2-cols-left);
+  --fcols: var(--p2-cols-left);
+  height: calc(var(--p2-body-h) - var(--p2-head-h));
+  overflow: hidden;
+}
+
+.p2-host-r {
+  width: var(--p2-right-w);
+  column-count: var(--p2-cols-right);
+  --fcols: var(--p2-cols-right);
+  height: calc(var(--p2-body-h) - var(--p2-heroblock-h) - var(--gutter));
+  overflow: hidden;
+}
+
+/* The measuring twin of the left region carries the drop cap too — it is wider
+   than a plain letter, so the break must be measured with it in place. */
+.p2-host-l p.flow-opener {
+  text-indent: 0;
+}
+
+.p2-host-l p.flow-opener .drop-cap {
+  display: block;
+  float: inline-start;
+  font-family: var(--serif);
+  font-size: calc(var(--fs-title) * 1.1);
+  line-height: 0.8;
+  padding-inline-end: 6px;
+}
