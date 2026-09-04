@@ -16,6 +16,7 @@ export function sampleDoc(): Doc {
     subtitle: 'Valley-Hall edge states for robust on-chip photonic routing',
     author: 'A. Rahman, S. Tan & M. Yusof',
     affiliation: 'Universiti Sains Malaysia',
+    masthead: 'Research Highlights',
   };
   d.blocks = P.map((text) => ({ id: uid(), type: 'paragraph', text }));
   d.highlights = [
