@@ -6,6 +6,7 @@ import { Sidebar } from './Sidebar';
 import { Flow } from './Flow';
 import { TagBar } from './TagBar';
 import { PlacedImages } from './PlacedImages';
+import { FramedImage } from '../components/FramedImage';
 
 interface Props {
   doc: Doc;
@@ -28,14 +29,7 @@ export function Page1({ doc, vars, pieces, allowShortLastColumn = false }: Props
             hero-colour backdrop. */}
         <TagBar doc={doc} pageIndex={0} />
         {design.showHero !== false && heroAsset && (
-          <img
-            src={heroAsset.src}
-            alt=""
-            style={{
-              objectFit: hero.scale < 1 ? 'contain' : 'cover',
-              transform: `translate(${hero.offsetX}%, ${hero.offsetY}%) scale(${hero.scale})`,
-            }}
-          />
+          <FramedImage asset={heroAsset} frame={hero} />
         )}
       </div>
       <header className="header">

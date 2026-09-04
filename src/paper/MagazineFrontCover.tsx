@@ -5,6 +5,7 @@ import {
   frontCoverTextVars,
   frontCoverTextVisible,
 } from '../lib/frontCoverDesign';
+import { FramedImage } from '../components/FramedImage';
 
 type Paragraph = Extract<Block, { type: 'paragraph' }>;
 
@@ -62,14 +63,7 @@ export function MagazineFrontCover({ doc, vars }: { doc: Doc; vars: CSSPropertie
   const style: CSSProperties & { '--front-teaser-count': string } = {
     ...vars,
     ...coverVars,
-    ...(photo
-      ? {
-          backgroundImage: `url("${photo.src}")`,
-          backgroundPosition: `${50 + cover.offsetX}% ${50 + cover.offsetY}%`,
-          backgroundSize: cover.scale === 1 ? 'cover' : `${cover.scale * 100}%`,
-          backgroundRepeat: 'no-repeat',
-        }
-      : { backgroundColor: doc.design.colors.hero }),
+    backgroundColor: doc.design.colors.hero,
     '--front-teaser-count': String(Math.max(1, teasers.length)),
   };
 
@@ -80,6 +74,7 @@ export function MagazineFrontCover({ doc, vars }: { doc: Doc; vars: CSSPropertie
       }${(doc.design.firstPageTopMargin ?? 0) > 0 ? ' page--first-offset' : ''}`}
       style={style}
     >
+      {photo && <FramedImage className="front-cover-photo" asset={photo} frame={cover} />}
       <div className="front-cover-scrim" />
       <div className="front-cover-inner">
         <header className="front-cover-brand">

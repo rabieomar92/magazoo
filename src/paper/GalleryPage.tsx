@@ -53,6 +53,7 @@ function ImageCell({ doc, block, area }: { doc: Doc; block?: Block; area: string
     height: `${geometry.height}%`,
     left: `${geometry.left}%`,
     top: `${geometry.top}%`,
+    objectFit: geometry.objectFit,
     objectPosition: `${geometry.objectX}% ${geometry.objectY}%`,
   };
   return (
@@ -78,7 +79,7 @@ function FoldCell({ doc, block, area, half }: { doc: Doc; block?: Block; area: s
     height: `${geometry.height}%`,
     width: `${geometry.width}%`,
     left: `${geometry.left - (half === 'right' ? 100 : 0)}%`,
-    objectFit: 'cover',
+    objectFit: geometry.objectFit,
     objectPosition: `${geometry.objectX}% ${geometry.objectY}%`,
   };
   return (

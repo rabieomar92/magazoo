@@ -2,9 +2,11 @@ import { useRef, useState } from 'react';
 import { useDoc } from '../../store/useDoc';
 import { uid, type Doc } from '../../schema/document';
 import { loadImage, ImageLoadError } from '../../lib/loadImage';
+import type { ImageFrame } from '../../lib/imageFrame';
+import { FramedImage } from '../../components/FramedImage';
 import { LabeledNumber, LabeledRange, Section } from '../Field';
 
-type Frame = { assetId: string | null; offsetX: number; offsetY: number; scale: number };
+type Frame = ImageFrame & { assetId: string | null };
 const EMPTY_FRAME: Frame = { assetId: null, offsetX: 0, offsetY: 0, scale: 1 };
 
 const assetStillUsed = (doc: Doc, assetId: string) =>
@@ -77,15 +79,8 @@ function ImagePicker({ slot, title, blurb }: { slot: 'hero' | 'cover'; title: st
 
       {asset ? (
         <>
-          <div className="hero-thumb" style={{ aspectRatio: `${asset.naturalWidth} / ${asset.naturalHeight}` }}>
-            <img
-              src={asset.src}
-              alt=""
-              style={{
-                objectFit: frame.scale < 1 ? 'contain' : 'cover',
-                transform: `translate(${frame.offsetX}%, ${frame.offsetY}%) scale(${frame.scale})`,
-              }}
-            />
+          <div className="hero-thumb" style={{ aspectRatio: slot === 'cover' ? '210 / 297' : '16 / 7' }}>
+            <FramedImage asset={asset} frame={frame} />
           </div>
           <div className="hero-actions">
             <button type="button" className="add-btn" onClick={() => fileRef.current?.click()}>
@@ -100,6 +95,13 @@ function ImagePicker({ slot, title, blurb }: { slot: 'hero' | 'cover'; title: st
           <LabeledRange label="Shift vertically" value={frame.offsetY} min={-50} max={50} step={1} format={(v) => `${v}%`} onChange={setKey('offsetY')} />
           <LabeledRange label="Zoom" value={frame.scale} min={0.5} max={3} step={0.05} format={(v) => `${v.toFixed(2)}×`} onChange={setKey('scale')} />
           <p className="hint">Below 1× reveals more of the image; 1× fills the frame.</p>
+          <button
+            type="button"
+            className="add-btn"
+            onClick={() => update((d) => setFrame(d, { ...frame, offsetX: 0, offsetY: 0, scale: 1 }))}
+          >
+            Reset image framing
+          </button>
         </>
       ) : (
         <button type="button" className="add-btn hero-upload" onClick={() => fileRef.current?.click()}>

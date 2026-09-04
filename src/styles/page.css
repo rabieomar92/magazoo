@@ -166,15 +166,23 @@
   line-height: 1.3;
 }
 
-.placed-image > img {
-  display: block;
+.placed-image-frame {
+  position: relative;
   width: 100%;
   height: var(--placed-image-h);
+  overflow: hidden;
+  background: var(--paper-bg, #fff);
+}
+
+.placed-image-frame > img {
+  display: block;
+  width: 100%;
+  height: 100%;
   object-fit: contain;
   pointer-events: none;
 }
 
-.placed-image--bleed > img {
+.placed-image--bleed .placed-image-frame > img {
   object-fit: cover;
 }
 

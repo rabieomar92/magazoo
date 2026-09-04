@@ -20,10 +20,18 @@
 /* ---- Page 1: full-bleed photo cover / masthead ---------------------------- */
 
 .mag-cover {
+  overflow: hidden;
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
   color: #fff;
+}
+
+.page > .mag-cover-photo,
+.page > .front-cover-photo {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
 }
 
 .mag-cover-scrim {
@@ -479,12 +487,16 @@
 .mag-hero {
   position: relative;
   margin: 0;
+  aspect-ratio: 16 / 7;
+  overflow: hidden;
+  background: var(--hero);
 }
 
 .mag-hero img {
-  display: block;
+  position: absolute;
+  inset: 0;
   width: 100%;
-  aspect-ratio: 16 / 7;
+  height: 100%;
   object-fit: cover;
 }
 

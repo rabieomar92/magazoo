@@ -28,6 +28,17 @@ describe('gallery image framing', () => {
     }
   });
 
+  it('allows zooming out to reveal the whole image and keeps it inside the tile', () => {
+    const geometry = galleryFrameGeometry({ scale: 0.5, offsetX: 50, offsetY: -50 });
+    expect(geometry).toMatchObject({
+      width: 50,
+      height: 50,
+      left: 50,
+      top: 0,
+      objectFit: 'contain',
+    });
+  });
+
   it('clamps corrupt persisted values to the supported frame range', () => {
     const geometry = galleryFrameGeometry(
       { scale: Number.NaN, offsetX: 999, offsetY: -999 },
@@ -40,6 +51,7 @@ describe('gallery image framing', () => {
       top: 0,
       objectX: 0,
       objectY: 100,
+      objectFit: 'cover',
     });
   });
 });

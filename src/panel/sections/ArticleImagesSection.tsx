@@ -4,7 +4,9 @@ import { loadImage, ImageLoadError } from '../../lib/loadImage';
 import { placedImageGeometry } from '../../lib/placedImage';
 import { uid, type Doc, type PlacedImage } from '../../schema/document';
 import { useDoc } from '../../store/useDoc';
-import { LabeledNumber, RowButtons, Section, SegmentField } from '../Field';
+import { LabeledNumber, LabeledRange, RowButtons, Section, SegmentField } from '../Field';
+
+const DEFAULT_FRAME = { scale: 1, offsetX: 0, offsetY: 0 };
 
 const assetIsUsed = (doc: Doc, assetId: string) =>
   doc.hero.assetId === assetId ||
@@ -157,6 +159,52 @@ export function ArticleImagesSection() {
                 ]}
                 onChange={(align) => change(image.id, (current) => { current.align = align; })}
               />
+              <LabeledRange
+                label="Image zoom"
+                value={image.frame?.scale ?? 1}
+                min={0.5}
+                max={3}
+                step={0.05}
+                format={(value) => `${value.toFixed(2)}×`}
+                onChange={(scale) =>
+                  change(image.id, (current) => {
+                    current.frame = { ...DEFAULT_FRAME, ...current.frame, scale };
+                  })
+                }
+              />
+              <LabeledRange
+                label="Image shift horizontally"
+                value={image.frame?.offsetX ?? 0}
+                min={-50}
+                max={50}
+                step={1}
+                format={(value) => `${value}%`}
+                onChange={(offsetX) =>
+                  change(image.id, (current) => {
+                    current.frame = { ...DEFAULT_FRAME, ...current.frame, offsetX };
+                  })
+                }
+              />
+              <LabeledRange
+                label="Image shift vertically"
+                value={image.frame?.offsetY ?? 0}
+                min={-50}
+                max={50}
+                step={1}
+                format={(value) => `${value}%`}
+                onChange={(offsetY) =>
+                  change(image.id, (current) => {
+                    current.frame = { ...DEFAULT_FRAME, ...current.frame, offsetY };
+                  })
+                }
+              />
+              <button
+                type="button"
+                className="add-btn"
+                onClick={() => change(image.id, (current) => { current.frame = { ...DEFAULT_FRAME }; })}
+              >
+                Reset image framing
+              </button>
               <SegmentField<'none' | 'left' | 'right' | 'both'>
                 label="Horizontal bleed"
                 value={

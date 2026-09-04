@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react';
 import type { Doc } from '../schema/document';
 import { PlacedImages } from './PlacedImages';
+import { FramedImage } from '../components/FramedImage';
 
 /** Magazine page 1: a full-bleed photo cover / masthead. Giant stacked title
  *  with its last word in red, kicker above it, masthead + volume on top, and the
@@ -20,14 +21,6 @@ export function MagazineCover({ doc, vars }: { doc: Doc; vars: CSSProperties }) 
 
   const style: CSSProperties = {
     ...vars,
-    ...(photo
-      ? {
-          backgroundImage: `url("${photo.src}")`,
-          backgroundPosition: `${50 + cover.offsetX}% ${50 + cover.offsetY}%`,
-          backgroundSize: cover.scale === 1 ? 'cover' : `${cover.scale * 100}%`,
-          backgroundRepeat: 'no-repeat',
-        }
-      : null),
   };
 
   return (
@@ -37,6 +30,7 @@ export function MagazineCover({ doc, vars }: { doc: Doc; vars: CSSProperties }) 
       }`}
       style={style}
     >
+      {photo && <FramedImage className="mag-cover-photo" asset={photo} frame={cover} />}
       <div className="mag-cover-scrim" />
       <div className="mag-cover-inner">
         <div className={`mag-cover-top${flip ? ' mag-cover-top--flip' : ''}`}>

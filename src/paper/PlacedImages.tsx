@@ -11,6 +11,7 @@ import { placedImageGeometry, snapImageColumn } from '../lib/placedImage';
 import { defaultPlacedHighlights, placedHighlightsGeometry } from '../lib/placedHighlights';
 import { useDoc } from '../store/useDoc';
 import { HighlightsBody } from './Sidebar';
+import { FramedImage } from '../components/FramedImage';
 
 interface DragState {
   pointerId: number;
@@ -185,7 +186,9 @@ function PlacedImageItem({
       onPointerUp={finishDrag}
       onPointerCancel={finishDrag}
     >
-      <img src={asset.src} alt="" draggable={false} />
+      <div className="placed-image-frame">
+        <FramedImage asset={asset} frame={image.frame} />
+      </div>
       {image.caption.trim() && (
         <figcaption
           dir={design.textDirection ?? 'ltr'}

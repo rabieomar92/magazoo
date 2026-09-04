@@ -6,6 +6,7 @@ import { Sidebar } from './Sidebar';
 import { TagBar } from './TagBar';
 import { Flow } from './Flow';
 import { PlacedImages } from './PlacedImages';
+import { FramedImage } from '../components/FramedImage';
 
 interface Props {
   doc: Doc;
@@ -63,14 +64,7 @@ export function PaperTwoPage({
             <div className="p2-heroblock">
               <div className="p2-hero">
                 {heroAsset && (
-                <img
-                  src={heroAsset.src}
-                  alt=""
-                  style={{
-                    objectFit: hero.scale < 1 ? 'contain' : 'cover',
-                    transform: `translate(${hero.offsetX}%, ${hero.offsetY}%) scale(${hero.scale})`,
-                  }}
-                />
+                  <FramedImage asset={heroAsset} frame={hero} />
                 )}
               </div>
               {meta.heroCaption && <p className="p2-hero-cap">{meta.heroCaption}</p>}

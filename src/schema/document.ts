@@ -114,7 +114,7 @@ export type Block =
       /**
        * Zoom/pan of the image inside its box, used by the gallery tiles to
        * reframe a photo without changing the tile size. Absent = fill (scale 1,
-       * no shift). scale ≥ 1; offsets are percent of the box.
+       * no shift). scale is 0.5–3; offsets are percent of the box.
        */
       frame?: { scale: number; offsetX: number; offsetY: number };
     };
@@ -141,6 +141,8 @@ export interface PlacedImage {
   anchor: { page: number; column: number; y: number };
   /** Caption text alignment. Absent = left for old/imported images. */
   align?: 'left' | 'center' | 'right';
+  /** Zoom/pan inside the placed rectangle. Absent = centred 1× fill. */
+  frame?: { scale: number; offsetX: number; offsetY: number };
   /** Extend artwork from its column-sized layout footprint to selected trim
    * edges. The source keeps its aspect ratio via cover-cropping; captions stay
    * aligned to the original footprint. */

@@ -24,6 +24,7 @@ function docWithPageImage(page = 1): Doc {
     caption: 'Caption',
     widthCols: 2,
     anchor: { page, column: 0, y: 20 },
+    frame: { scale: 1.4, offsetX: 18, offsetY: -12 },
   });
   return doc;
 }
@@ -72,7 +73,9 @@ describe('placed-image template coverage', () => {
     ];
 
     for (const sheet of sheets) {
-      expect(renderToStaticMarkup(sheet)).toContain('class="placed-image');
+      const html = renderToStaticMarkup(sheet);
+      expect(html).toContain('class="placed-image');
+      expect(html).toContain('data-frame-scale="1.4"');
     }
   });
 

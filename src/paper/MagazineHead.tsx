@@ -1,5 +1,6 @@
 import type { Doc } from '../schema/document';
 import { barStartsRight } from '../lib/barSide';
+import { FramedImage } from '../components/FramedImage';
 
 /** The masthead rule every spread page opens with — the same "always exists"
  *  bar as the paper templates' TagBar, in the magazine's own thin-rule idiom
@@ -31,7 +32,7 @@ export function MagazineHead({ doc }: { doc: Doc }) {
     <div className="mag-head">
       {photo && (
         <figure className="mag-hero">
-          <img src={photo.src} alt="" />
+          <FramedImage asset={photo} frame={hero} />
           {meta.location && <figcaption className="mag-hero-tag">{meta.location}</figcaption>}
         </figure>
       )}

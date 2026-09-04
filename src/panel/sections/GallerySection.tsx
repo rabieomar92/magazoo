@@ -184,6 +184,7 @@ export function GallerySection() {
                     height: `${frameGeometry.height}%`,
                     left: `${frameGeometry.left}%`,
                     top: `${frameGeometry.top}%`,
+                    objectFit: frameGeometry.objectFit,
                     objectPosition: `${frameGeometry.objectX}% ${frameGeometry.objectY}%`,
                   }}
                 />
@@ -215,9 +216,22 @@ export function GallerySection() {
             )}
             {canFrame && (
               <>
-                <LabeledRange label="Zoom" value={frame.scale} min={1} max={3} step={0.05} format={(v) => `${v.toFixed(2)}×`} onChange={setFrame(bi, 'scale')} />
+                <LabeledRange label="Zoom" value={frame.scale} min={0.5} max={3} step={0.05} format={(v) => `${v.toFixed(2)}×`} onChange={setFrame(bi, 'scale')} />
                 <LabeledRange label="Shift horizontally" value={frame.offsetX} min={-50} max={50} step={1} format={(v) => `${v}%`} onChange={setFrame(bi, 'offsetX')} />
                 <LabeledRange label="Shift vertically" value={frame.offsetY} min={-50} max={50} step={1} format={(v) => `${v}%`} onChange={setFrame(bi, 'offsetY')} />
+                <p className="gallery-slot-hint">Below 1× reveals more of the image; 1× fills the tile.</p>
+                <button
+                  type="button"
+                  className="add-btn"
+                  onClick={() =>
+                    update((d) => {
+                      const current = d.blocks[bi];
+                      if (current?.type === 'figure') current.frame = { ...DEFAULT_FRAME };
+                    })
+                  }
+                >
+                  Reset image framing
+                </button>
               </>
             )}
             {isFold && (

@@ -1,4 +1,5 @@
 import { PAGE_H, PAGE_W } from './geometry';
+import { framedAxis, normalizeImageFrame, type ImageFrame } from './imageFrame';
 
 /**
  * magazine-2 ("Particle Feature") runs a single photo across two sheets: a strip
@@ -24,24 +25,7 @@ export interface SplitPhoto {
   y: number;
 }
 
-export interface PhotoFrame {
-  scale: number;
-  offsetX: number;
-  offsetY: number;
-}
-
-const clamp = (value: number, low: number, high: number) =>
-  Math.min(high, Math.max(low, value));
-
-/** Keep an image covering its region when enlarged, or wholly inside the region
- *  when zoomed out. Offsets consume only available crop/free space, so panning
- *  can never push the bitmap past a viewport edge. */
-function framedAxis(container: number, content: number, offset: number): number {
-  const room = Math.abs(content - container);
-  const centred = (container - content) / 2;
-  const safeOffset = Number.isFinite(offset) ? clamp(offset, -50, 50) : 0;
-  return centred + (safeOffset / 50) * (room / 2);
-}
+export type PhotoFrame = ImageFrame;
 
 export function framedSpreadPhoto(
   ar: number,
@@ -50,7 +34,7 @@ export function framedSpreadPhoto(
   frame?: Partial<PhotoFrame>,
 ): SplitPhoto {
   const safeAr = Number.isFinite(ar) && ar > 0 ? ar : 16 / 9;
-  const scale = clamp(Number.isFinite(frame?.scale) ? frame!.scale! : 1, 0.5, 3);
+  const { scale, offsetX, offsetY } = normalizeImageFrame(frame);
   const baseW = Math.max(regionW, regionH * safeAr);
   const baseH = baseW / safeAr;
   const w = baseW * scale;
@@ -58,8 +42,8 @@ export function framedSpreadPhoto(
   return {
     w,
     h,
-    x: framedAxis(regionW, w, frame?.offsetX ?? 0),
-    y: framedAxis(regionH, h, frame?.offsetY ?? 0),
+    x: framedAxis(regionW, w, offsetX),
+    y: framedAxis(regionH, h, offsetY),
   };
 }
 
