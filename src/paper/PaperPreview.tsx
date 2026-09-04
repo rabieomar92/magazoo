@@ -35,6 +35,7 @@ import { HighlightsBody } from './Sidebar';
 import { HIGHLIGHTS_BLOCK_ID, MAG2_ASIDE_ID } from './Flow';
 import { GalleryPage } from './GalleryPage';
 import { MagGateA, MagGateB } from './MagGate';
+import { MagazineFrontCover } from './MagazineFrontCover';
 
 type PreviewPagination = Pagination & { layoutRevision: number };
 const EMPTY: PreviewPagination = { pages: [], fill: 0, spill: 0, layoutRevision: 0 };
@@ -256,6 +257,9 @@ const PaperPreviewLayout = memo(function PaperPreviewLayout({
   // magazine-3 is a gatefold: two facing cover sheets share one photo across the
   // fold, then the article flows as plain columns (no lead hero) from sheet 3.
   const isGate = doc.templateId === 'magazine-3';
+  // magazine-4 is intentionally one fixed front-cover sheet. Its Content
+  // paragraphs are cover teasers, never a flow that creates later pages.
+  const isFrontCover = doc.templateId === 'magazine-4';
   // paper-2 splits sheet 1 into two text regions (beside the header, then under
   // the hero) that start at different heights, so it breaks across three hosts.
   const isP2 = doc.templateId === 'paper-2';
@@ -353,7 +357,7 @@ const PaperPreviewLayout = memo(function PaperPreviewLayout({
   // sizes and the PDF are untouched.
   const [spread, setSpread] = useState(false);
   // Gallery is a two-page spread too — the fold image only reads right side-by-side.
-  const spreadOn = (isMag || isGallery) && spread;
+  const spreadOn = ((isMag && !isFrontCover) || isGallery) && spread;
   const cols = spreadOn ? 2 : 1;
 
   useEffect(() => {
@@ -380,8 +384,9 @@ const PaperPreviewLayout = memo(function PaperPreviewLayout({
     const commitPagination = (next: Pagination) =>
       setPagination({ ...next, layoutRevision: layoutRevision.current });
 
-    // Gallery is a fixed collage — nothing to break, so skip the measuring rig.
-    if (isGallery) {
+    // Gallery and the dedicated cover are fixed compositions — nothing to
+    // break, so skip the article measuring rig entirely.
+    if (isGallery || isFrontCover) {
       commitPagination(EMPTY);
       return;
     }
@@ -607,7 +612,7 @@ const PaperPreviewLayout = memo(function PaperPreviewLayout({
       ];
     }
     commitPagination(withColFill(paginate(h1, h2, flow), [h1, h2]));
-  }, [baseVars, items, doc, doc.meta, doc.design, doc.highlights, doc.references, hlBelow, hlFlow, imageExclusions, isMag, isSplit, isGate, isP2, isGallery, fontEpoch, layoutEpoch, wrapSafetyBoost]);
+  }, [baseVars, items, doc, doc.meta, doc.design, doc.highlights, doc.references, hlBelow, hlFlow, imageExclusions, isMag, isSplit, isGate, isFrontCover, isP2, isGallery, fontEpoch, layoutEpoch, wrapSafetyBoost]);
 
   // Post-render column-overflow safety net — every template, not just the
   // gatefold this was first caught on.
@@ -669,12 +674,13 @@ const PaperPreviewLayout = memo(function PaperPreviewLayout({
     isMag,
     isSplit,
     isGate,
+    isFrontCover,
     isP2,
     isGallery,
   ]);
 
   useLayoutEffect(() => {
-    if (isGallery) return;
+    if (isGallery || isFrontCover) return;
     // This effect is part of the same commit as the paginator above, so its
     // closure may still hold the PREVIOUS pagination object. Never let that
     // stale object overwrite the just-computed layout.
@@ -895,7 +901,7 @@ const PaperPreviewLayout = memo(function PaperPreviewLayout({
     // this staggers a few checks rather than betting on a single number.
     const settleTimers = [150, 500, 1200].map((ms) => window.setTimeout(check, ms));
     return () => settleTimers.forEach((t) => window.clearTimeout(t));
-  }, [isGallery, isSplit, pagination, doc.blocks]);
+  }, [isGallery, isFrontCover, isSplit, pagination, doc.blocks]);
 
   const vars = {
     ...baseVars,
@@ -942,6 +948,8 @@ const PaperPreviewLayout = memo(function PaperPreviewLayout({
   // has to count sheets, not regions.
   const fit = isGallery
     ? ({ level: 'ok', text: '2 pages · spread' } as const)
+    : isFrontCover
+      ? ({ level: 'ok', text: '1 page · cover' } as const)
     : fitMessage(isP2 ? paper2Fit(pagination) : pagination);
   const pages = pagination.pages;
 
@@ -973,8 +981,10 @@ const PaperPreviewLayout = memo(function PaperPreviewLayout({
   const pct = Math.round(scale * 100);
   // Magazine adds the cover sheet on top of the flowed content pages. magazine-2
   // instead puts the flow's first page ON sheet 1 and spends sheet 2 on the photo.
-  const flowPageCount = isGallery
-    ? 2
+  const flowPageCount = isFrontCover
+    ? 1
+    : isGallery
+      ? 2
     : isSplit
       ? 2 + Math.max(0, pages.length - 1)
       : isGate
@@ -984,11 +994,11 @@ const PaperPreviewLayout = memo(function PaperPreviewLayout({
           : isP2
           ? 1 + Math.max(0, pages.length - 2)
           : Math.max(1, pages.length);
-  const lastPlacedImagePage = isGallery
+  const lastPlacedImagePage = isGallery || isFrontCover
     ? 0
     : (doc.images ?? []).reduce((last, image) => Math.max(last, image.anchor.page), 0);
   const highlightPage =
-    !isGallery && hlFree
+    !isGallery && !isFrontCover && hlFree
       ? (doc.highlightBox ?? defaultPlacedHighlights(doc.design)).anchor.page
       : 0;
   const nPages = Math.max(flowPageCount, lastPlacedImagePage, highlightPage, calloutPageCount);
@@ -1000,7 +1010,7 @@ const PaperPreviewLayout = memo(function PaperPreviewLayout({
   useLayoutEffect(() => {
     const root = pagesRef.current;
     const hasPlacedObstacles =
-      !isGallery && ((doc.images ?? []).length > 0 || hlFree);
+      !isGallery && !isFrontCover && ((doc.images ?? []).length > 0 || hlFree);
     if (!root) return;
     const pageNodes = Array.from(root.children).filter(
       (child): child is HTMLElement => child instanceof HTMLElement && child.classList.contains('page'),
@@ -1091,6 +1101,7 @@ const PaperPreviewLayout = memo(function PaperPreviewLayout({
     doc.references,
     hlFree,
     isGallery,
+    isFrontCover,
     nPages,
     pagination.layoutRevision,
     zoom,
@@ -1108,7 +1119,7 @@ const PaperPreviewLayout = memo(function PaperPreviewLayout({
   }, [items, doc.images, doc.design, fontEpoch]);
 
   useLayoutEffect(() => {
-    if (isGallery || !Object.keys(imageExclusions).length) return;
+    if (isGallery || isFrontCover || !Object.keys(imageExclusions).length) return;
     const revision = pagination.layoutRevision;
     if (revision !== layoutRevision.current) return;
 
@@ -1131,7 +1142,7 @@ const PaperPreviewLayout = memo(function PaperPreviewLayout({
     check();
     const settleTimers = [120, 400, 900].map((ms) => window.setTimeout(check, ms));
     return () => settleTimers.forEach((timer) => window.clearTimeout(timer));
-  }, [imageExclusions, isGallery, pagination.layoutRevision, wrapSafetyBoost]);
+  }, [imageExclusions, isGallery, isFrontCover, pagination.layoutRevision, wrapSafetyBoost]);
 
   const fitShort = fit.text.split(' ·', 1)[0];
   const rows = Math.ceil(nPages / cols);
@@ -1176,7 +1187,7 @@ const PaperPreviewLayout = memo(function PaperPreviewLayout({
         <span className="fit-badge-long">{fit.text}</span>
         <span className="fit-badge-short">{fitShort}</span>
       </span>
-      {(isMag || isGallery) && (
+      {((isMag && !isFrontCover) || isGallery) && (
         <div className="view-bar">
           <button
             type="button"
@@ -1234,6 +1245,8 @@ const PaperPreviewLayout = memo(function PaperPreviewLayout({
         >
           {isGallery ? (
             <GalleryPage doc={doc} vars={vars} />
+          ) : isFrontCover ? (
+            <MagazineFrontCover doc={doc} vars={vars} />
           ) : isSplit ? (
             <>
               <MagSplitCover
@@ -1355,7 +1368,7 @@ const PaperPreviewLayout = memo(function PaperPreviewLayout({
             </div>
             <div className="mag-cols mag-cols--p2" ref={magHost2Ref} />
           </>
-        ) : isMag ? (
+        ) : isMag && !isFrontCover ? (
           <>
             {/* Header sized first (sets --mag-head-h), then the two 2-col hosts. */}
             <div

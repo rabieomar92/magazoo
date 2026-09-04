@@ -29,6 +29,8 @@ export function BodySection() {
   const blocks = useDoc((state) => state.doc.blocks);
   const update = useDoc((state) => state.update);
   const isGallery = useDoc((state) => familyOf(state.doc.templateId) === 'gallery');
+  const isFrontCover = useDoc((state) => state.doc.templateId === 'magazine-4');
+  const isCardContent = isGallery || isFrontCover;
   const templateBodySize = useDoc((state) => state.doc.design.sizes.body);
   const templateInk = useDoc((state) => state.doc.design.colors.ink);
   const templateBodyAlign = useDoc((state) => state.doc.design.bodyAlign ?? 'left');
@@ -215,13 +217,17 @@ export function BodySection() {
     );
 
   return (
-    <Section title={isGallery ? 'Text cards' : 'Content'}>
+    <Section title={isGallery ? 'Text cards' : isFrontCover ? 'Cover teasers' : 'Content'}>
       <details className="formatting-help">
         <summary>Formatting shortcuts</summary>
         <p>
           <code>**bold**</code> · <code>*italic*</code> · <code>__underline__</code> · math
           with <code>$E = mc^2$</code>.
-          {!isGallery && <> Pictures are managed in <strong>Images</strong>.</>}
+          {isFrontCover ? (
+            <> The first line is the teaser title; the remaining lines are its description.</>
+          ) : !isGallery ? (
+            <> Pictures are managed in <strong>Images</strong>.</>
+          ) : null}
         </p>
       </details>
 
@@ -260,7 +266,7 @@ export function BodySection() {
               className="drag-handle block-drag-handle"
               title="Drag to reorder — the insertion line shows where it will land"
               draggable
-              aria-label={`Reorder ${block.type === 'paragraph' ? 'paragraph' : 'equation'} ${viewIndex + 1}`}
+              aria-label={`Reorder ${isFrontCover ? 'cover teaser' : block.type === 'paragraph' ? 'paragraph' : 'equation'} ${viewIndex + 1}`}
               onDragStart={(event) => {
                 dragFrom.current = index;
                 setDragging(index);
@@ -274,7 +280,7 @@ export function BodySection() {
               }}
             >
               <span className="block-drag-icon" aria-hidden="true">⠿</span>
-              <span>{block.type === 'paragraph' ? `Paragraph ${viewIndex + 1}` : `Equation ${viewIndex + 1}`}</span>
+              <span>{block.type === 'paragraph' ? `${isFrontCover ? 'Teaser' : 'Paragraph'} ${viewIndex + 1}` : `Equation ${viewIndex + 1}`}</span>
             </span>
             <RowButtons
               onUp={() => swap(index, isGallery ? paragraphNeighbour(index, -1) : index - 1)}
@@ -307,7 +313,7 @@ export function BodySection() {
                   dir="auto"
                   value={block.text}
                   rows={4}
-                  placeholder="Write a paragraph…"
+                  placeholder={isFrontCover ? 'TEASER TITLE\nShort cover line…' : 'Write a paragraph…'}
                   onFocus={(event) =>
                     setActiveEditor({
                       el: event.currentTarget,
@@ -337,7 +343,7 @@ export function BodySection() {
                   <span aria-hidden="true">↕</span>
                 </button>
               </div>
-              <div className="paragraph-indent">
+              {!isFrontCover && <div className="paragraph-indent">
                 <SegmentField<'default' | 'on' | 'off'>
                   label="Indent"
                   value={block.indent === true ? 'on' : block.indent === false ? 'off' : 'default'}
@@ -350,8 +356,8 @@ export function BodySection() {
                     setIndent(index, value === 'on' ? true : value === 'off' ? false : undefined)
                   }
                 />
-              </div>
-              {isGallery && (
+              </div>}
+              {isCardContent && (
                 <div className="paragraph-alignment">
                   <SegmentField<'left' | 'center' | 'right' | 'justify'>
                     label="Alignment"
@@ -431,12 +437,12 @@ export function BodySection() {
             <button
               type="button"
               className="paragraph-insert-btn"
-              title={`Insert ${isGallery ? 'text card' : 'paragraph'} here`}
-              aria-label={`Insert ${isGallery ? 'text card' : 'paragraph'} between items ${viewIndex + 1} and ${viewIndex + 2}`}
+              title={`Insert ${isGallery ? 'text card' : isFrontCover ? 'cover teaser' : 'paragraph'} here`}
+              aria-label={`Insert ${isGallery ? 'text card' : isFrontCover ? 'cover teaser' : 'paragraph'} between items ${viewIndex + 1} and ${viewIndex + 2}`}
               onClick={() => insertParagraph(view[viewIndex + 1].index)}
             >
               <b aria-hidden="true">+</b>
-              <span>{isGallery ? 'Text card' : 'Paragraph'}</span>
+              <span>{isGallery ? 'Text card' : isFrontCover ? 'Cover teaser' : 'Paragraph'}</span>
             </button>
             <span aria-hidden="true" />
           </div>
@@ -450,9 +456,9 @@ export function BodySection() {
           className="add-btn"
           onClick={() => insertParagraph(blocks.length)}
         >
-          {isGallery ? '+ Text card' : '+ Paragraph'}
+          {isGallery ? '+ Text card' : isFrontCover ? '+ Cover teaser' : '+ Paragraph'}
         </button>
-        {!isGallery && (
+        {!isGallery && !isFrontCover && (
           <button
             type="button"
             className="add-btn"

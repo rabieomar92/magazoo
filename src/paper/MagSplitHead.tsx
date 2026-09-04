@@ -27,7 +27,7 @@ export function MagSplitHead({ doc }: { doc: Doc }) {
   return (
     <div className="mag2-head">
       <div className={`mag2-band${flip ? ' mag2-band--flip' : ''}`}>
-        <span className="mag2-band-mast">{meta.masthead || meta.affiliation}</span>
+        <span className="mag2-band-mast">{meta.masthead}</span>
         <span className="mag2-band-vol">{meta.volume}</span>
       </div>
       <div className="mag2-head-content">

@@ -14,6 +14,10 @@
 .mag-head,
 .mag2-head,
 .mag2-aside,
+.front-cover,
+.front-cover-brand,
+.front-cover-story,
+.front-cover-teaser,
 .gallery {
   overflow-wrap: anywhere;
   word-break: normal;
@@ -88,6 +92,14 @@
 .mag-gate-quote-text,
 .mag-gate-quote-by,
 .mag-gate-credits {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+.front-cover-brand > *,
+.front-cover-story > *,
+.front-cover-credit-row > * {
   min-width: 0;
   overflow-wrap: anywhere;
   word-break: normal;

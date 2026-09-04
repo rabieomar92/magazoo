@@ -124,8 +124,11 @@ export function HeroSection() {
   // magazine-3 is a gatefold: one cover photo split across both cover sheets, and
   // no article hero — so it shows only the cover picker.
   const isGate = templateId === 'magazine-3';
+  // magazine-4 is a true one-sheet cover: it has a cover photo, but no second
+  // article hero or hero-height control because there is no article page.
+  const isCoverOnly = templateId === 'magazine-4';
   // magazine-1 splits the cover (page 1) from the hero (page 2, top).
-  const hasCover = templateId === 'magazine-1' || isGate;
+  const hasCover = templateId === 'magazine-1' || isGate || isCoverOnly;
 
   return (
     <>
@@ -133,10 +136,10 @@ export function HeroSection() {
         <ImagePicker
           slot="cover"
           title={isGate ? 'Gatefold Photo' : 'Cover Image'}
-          blurb={isGate ? 'Split across both cover sheets (use a wide photo)' : 'Page 1 · full-bleed cover'}
+          blurb={isGate ? 'Split across both cover sheets (use a wide photo)' : isCoverOnly ? 'The full-bleed image on this one-page cover' : 'Page 1 · full-bleed cover'}
         />
       )}
-      {!isGate && (
+      {!isGate && !isCoverOnly && (
         <>
           <ImagePicker slot="hero" title="Hero Image" blurb={hasCover ? 'Page 2 · photo above the article' : undefined} />
           <Section title="Hero height">

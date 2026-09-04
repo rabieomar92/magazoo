@@ -6,9 +6,9 @@ export function MetaSection() {
   const meta = useDoc((s) => s.doc.meta);
   const isMag = useDoc((s) => familyOf(s.doc.templateId) === 'magazine');
   const isGallery = useDoc((s) => familyOf(s.doc.templateId) === 'gallery');
+  const isFrontCover = useDoc((s) => s.doc.templateId === 'magazine-4');
   const barColor = useDoc((s) => s.doc.design.barColor ?? s.doc.design.colors.accent);
   const isP2 = useDoc((s) => s.doc.templateId === 'paper-2');
-  const hasBar = useDoc((s) => s.doc.templateId === 'paper-2');
   const update = useDoc((s) => s.update);
 
   const set = (key: keyof typeof meta) => (v: string) =>
@@ -23,16 +23,15 @@ export function MetaSection() {
 
   return (
     <Section title={isGallery ? 'Header' : 'Title & Author'}>
+      <LabeledInput
+        label="Top bar text"
+        value={meta.masthead ?? ''}
+        onChange={set('masthead')}
+        placeholder="Publication or section name"
+      />
+
       {isGallery ? (
-        <>
-          <LabeledInput
-            label="Header text"
-            value={meta.masthead ?? ''}
-            onChange={set('masthead')}
-            placeholder="PHYSICS GALLERY"
-          />
-          <LabeledColor label="Bar color" value={barColor} onChange={setBarColor} />
-        </>
+        <LabeledColor label="Bar color" value={barColor} onChange={setBarColor} />
       ) : (
         <>
           <LabeledInput
@@ -58,41 +57,31 @@ export function MetaSection() {
         </>
       )}
 
-      {hasBar && (
-        <>
-          <p className="group-label">Top bar</p>
-          <LabeledInput
-            label="Top bar text"
-            value={meta.masthead ?? ''}
-            onChange={set('masthead')}
-            placeholder="Publication name"
-          />
-          {isP2 && (
-            <LabeledInput
-              label="Hero caption"
-              value={meta.heroCaption ?? ''}
-              onChange={set('heroCaption')}
-              placeholder="Hero image caption"
-            />
-          )}
-        </>
+      {isP2 && (
+        <LabeledInput
+          label="Hero caption"
+          value={meta.heroCaption ?? ''}
+          onChange={set('heroCaption')}
+          placeholder="Hero image caption"
+        />
       )}
 
       {isMag && (
         <>
-          <p className="group-label">Magazine elements</p>
-          <LabeledInput label="Masthead" value={meta.masthead ?? ''} onChange={set('masthead')} placeholder="KUANTA" />
+          <p className="group-label">{isFrontCover ? 'Cover details' : 'Magazine elements'}</p>
+          {!isFrontCover && (
+            <LabeledInput
+              label="Volume / Date"
+              value={meta.volume ?? ''}
+              onChange={set('volume')}
+              placeholder="VOL. IX · NO.2 · MARCH 2026"
+            />
+          )}
           <LabeledInput
-            label="Volume / Date"
-            value={meta.volume ?? ''}
-            onChange={set('volume')}
-            placeholder="VOL. IX · NO.2 · MARCH 2026"
-          />
-          <LabeledInput
-            label="Location (photo tag)"
+            label={isFrontCover ? 'Story tag' : 'Location (photo tag)'}
             value={meta.location ?? ''}
             onChange={set('location')}
-            placeholder="MAUNA OBSERVATORY · 4,200 M ASL"
+            placeholder={isFrontCover ? 'SPECIAL COVER STORY' : 'MAUNA OBSERVATORY · 4,200 M ASL'}
           />
           <LabeledInput
             label="Photo credit"
@@ -100,18 +89,22 @@ export function MetaSection() {
             onChange={set('photoCredit')}
             placeholder="L. HAKIM"
           />
-          <LabeledTextarea
-            label="Pull-quote"
-            value={meta.pullQuote ?? ''}
-            onChange={set('pullQuote')}
-            placeholder="Large quote shown across the spread…"
-          />
-          <LabeledInput
-            label="Quote attribution"
-            value={meta.pullQuoteBy ?? ''}
-            onChange={set('pullQuoteBy')}
-            placeholder="— DR. ARIA PRATAMA, FEB 2026"
-          />
+          {!isFrontCover && (
+            <>
+              <LabeledTextarea
+                label="Pull-quote"
+                value={meta.pullQuote ?? ''}
+                onChange={set('pullQuote')}
+                placeholder="Large quote shown across the spread…"
+              />
+              <LabeledInput
+                label="Quote attribution"
+                value={meta.pullQuoteBy ?? ''}
+                onChange={set('pullQuoteBy')}
+                placeholder="— DR. ARIA PRATAMA, FEB 2026"
+              />
+            </>
+          )}
         </>
       )}
     </Section>

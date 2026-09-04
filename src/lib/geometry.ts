@@ -1,4 +1,5 @@
 import type { Design } from '../schema/document';
+import { fontStack } from './fonts';
 
 export const PAGE_W = 210; // mm, A4
 export const PAGE_H = 297;
@@ -43,18 +44,6 @@ export function grid(d: Design) {
     span,
   };
 }
-
-/** Serif-ish families get a serif fallback; everything else falls back to sans.
- *  Fallback is cosmetic — the named families are either bundled or web-safe. */
-const SERIF_FAMILIES = new Set([
-  'Source Serif 4',
-  'Georgia',
-  'Times New Roman',
-  'Palatino',
-  'Playfair Display',
-]);
-const fontStack = (name: string) =>
-  `"${name}", ${SERIF_FAMILIES.has(name) ? 'Georgia, serif' : 'system-ui, sans-serif'}`;
 
 /** Feed straight into style={{...}} on the page wrapper. */
 /** Black or white ink, whichever reads on `hex`. WCAG relative luminance;
@@ -110,8 +99,8 @@ export function cssVars(d: Design): Record<string, string> {
     '--accent': d.colors.accent,
     '--accent-soft': d.colors.accentSoft,
     '--ink': d.colors.ink,
-    '--serif': `"${d.fontDisplay}", Georgia, serif`,
-    '--sans': `"${d.fontBody}", system-ui, sans-serif`,
+    '--serif': fontStack(d.fontDisplay),
+    '--sans': fontStack(d.fontBody),
     // Per-element fonts. Undefined → the family the element used before this
     // setting existed, so old files render identically.
     '--font-category': d.fontCategory ? fontStack(d.fontCategory) : 'var(--sans)',

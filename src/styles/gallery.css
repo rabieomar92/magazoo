@@ -89,7 +89,7 @@
 }
 .g-title {
   margin: 0 0 1mm;
-  font-family: var(--sans);
+  font-family: var(--serif);
   font-weight: 800;
   letter-spacing: 0.02em;
   text-transform: uppercase;

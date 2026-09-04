@@ -1,5 +1,37 @@
 const PRINT_FRAME_CLASS = 'pdf-print-frame';
 
+/** Export changes only the preview chrome (zoom/spread/box shadow) and page
+ *  fragmentation. It must never replace a template's own page layout mode:
+ *  gallery sheets are grids, while article and magazine sheets are blocks. */
+export const PDF_EXPORT_CSS = `
+  @page { size: A4 portrait; margin: 0; }
+  html, body { margin: 0 !important; padding: 0 !important; width: 210mm; background: #fff; }
+  body { overflow: visible !important; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .pdf-pages { display: block !important; width: 210mm !important; transform: none !important; }
+  .pdf-pages > .page {
+    width: 210mm !important;
+    height: 297mm !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    overflow: hidden !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+    break-after: page !important;
+    page-break-after: always !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  .pdf-pages > .page + .page {
+    break-before: auto !important;
+    page-break-before: auto !important;
+  }
+  .pdf-pages > .page:last-child {
+    break-after: auto !important;
+    page-break-after: auto !important;
+  }
+  .placed-image, .placed-image:active { box-shadow: none !important; }
+`;
+
 function safeFileStem(title: string) {
   const printableTitle = Array.from(title, (character) =>
     character.charCodeAt(0) < 32 ? ' ' : character,
@@ -67,35 +99,7 @@ export async function exportPreviewPdf(title: string) {
   if (authoredCss) printDocument.head.appendChild(printDocument.importNode(authoredCss, true));
 
   const exportCss = printDocument.createElement('style');
-  exportCss.textContent = `
-    @page { size: A4 portrait; margin: 0; }
-    html, body { margin: 0 !important; padding: 0 !important; width: 210mm; background: #fff; }
-    body { overflow: visible !important; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
-    .pdf-pages { display: block !important; width: 210mm !important; transform: none !important; }
-    .pdf-pages > .page {
-      display: block !important;
-      width: 210mm !important;
-      height: 297mm !important;
-      margin: 0 !important;
-      box-shadow: none !important;
-      overflow: hidden !important;
-      break-inside: avoid !important;
-      page-break-inside: avoid !important;
-      break-after: page !important;
-      page-break-after: always !important;
-      print-color-adjust: exact;
-      -webkit-print-color-adjust: exact;
-    }
-    .pdf-pages > .page + .page {
-      break-before: auto !important;
-      page-break-before: auto !important;
-    }
-    .pdf-pages > .page:last-child {
-      break-after: auto !important;
-      page-break-after: auto !important;
-    }
-    .placed-image, .placed-image:active { box-shadow: none !important; }
-  `;
+  exportCss.textContent = PDF_EXPORT_CSS;
   printDocument.head.appendChild(exportCss);
 
   const pages = printDocument.importNode(source, true) as HTMLElement;

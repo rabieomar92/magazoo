@@ -136,6 +136,52 @@ const PHOTO_COSMOS_WIDE = svgWide(
    </g>`,
 );
 
+const svgPortrait = (inner: string) =>
+  'data:image/svg+xml;utf8,' +
+  encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="2000">${inner}</svg>`,
+  );
+
+/** An organic microscopy-inspired portrait for the dedicated cover preset. */
+const PHOTO_MICROSCAPE = svgPortrait(
+  `<defs>
+    <radialGradient id="m0" cx="54%" cy="48%" r="72%">
+      <stop offset="0" stop-color="#b8a34d"/><stop offset="0.48" stop-color="#5f6225"/>
+      <stop offset="1" stop-color="#171d0e"/>
+    </radialGradient>
+    <radialGradient id="m1" cx="42%" cy="36%" r="64%">
+      <stop offset="0" stop-color="#e2c76b"/><stop offset="0.58" stop-color="#8f6c29"/>
+      <stop offset="1" stop-color="#3d2b19"/>
+    </radialGradient>
+    <filter id="blur"><feGaussianBlur stdDeviation="34"/></filter>
+    <filter id="soft"><feGaussianBlur stdDeviation="8"/></filter>
+  </defs>
+  <rect width="1400" height="2000" fill="url(#m0)"/>
+  <g opacity=".45" filter="url(#blur)" fill="#dfcf77">
+    <circle cx="180" cy="520" r="180"/><circle cx="1220" cy="300" r="230"/>
+    <circle cx="1120" cy="1470" r="260"/><circle cx="240" cy="1740" r="210"/>
+  </g>
+  <g transform="translate(770 1080) rotate(-11)">
+    <ellipse rx="430" ry="510" fill="url(#m1)" stroke="#f0d27b" stroke-width="18"/>
+    <ellipse rx="330" ry="405" fill="#8a6c31" opacity=".38"/>
+    <g fill="#3f2b18" opacity=".86">
+      <circle cx="-155" cy="-205" r="40"/><circle cx="95" cy="-268" r="54"/>
+      <circle cx="175" cy="-70" r="34"/><circle cx="-90" cy="52" r="62"/>
+      <circle cx="165" cy="190" r="48"/><circle cx="-170" cy="275" r="38"/>
+    </g>
+    <g fill="none" stroke="#2b2114" stroke-width="13" stroke-linecap="round">
+      <path d="M-310-280 C-520-430-610-650-690-790"/><path d="M300-250 C500-400 610-560 700-720"/>
+      <path d="M-390-40 C-620-70-770-10-930 80"/><path d="M390 35 C650 75 790 180 930 350"/>
+      <path d="M-330 330 C-510 500-590 680-650 850"/><path d="M310 360 C470 560 500 740 520 900"/>
+    </g>
+    <g fill="#f4df92" opacity=".8" filter="url(#soft)">
+      <circle cx="-210" cy="-335" r="28"/><circle cx="235" cy="-310" r="22"/>
+      <circle cx="-260" cy="155" r="24"/><circle cx="230" cy="290" r="31"/>
+    </g>
+  </g>
+  <path d="M0 1690 C330 1580 560 1740 820 1670 C1080 1600 1220 1510 1400 1570 L1400 2000 L0 2000Z" fill="#11170d" opacity=".6"/>`,
+);
+
 const paras = (texts: string[]): Doc['blocks'] =>
   texts.map((text) => ({ id: uid(), type: 'paragraph' as const, text }));
 
@@ -375,6 +421,78 @@ const makeMagazine3 = (): Doc => {
   return d;
 };
 
+/** A single-sheet front cover. Body paragraphs are repurposed as the three
+ * editable teaser cards at the foot instead of flowing onto article pages. */
+const makeMagazine4 = (): Doc => {
+  const d = makeMagazine({
+    id: 'magazine-4',
+    photo: PHOTO_MICROSCAPE,
+    accent: '#f59e0b',
+    accentSoft: '#fef3c7',
+    categoryLabel: 'MICROBIOLOGY',
+    title: 'THE HIDDEN ARCHITECTS OF LIFE',
+    subtitle: 'Inside the microscopic communities that quietly shape every living system.',
+    author: 'DR. MAYA ISKANDAR',
+    affiliation: 'RESEARCH · SCIENCE FOR A BETTER FUTURE',
+    volume: '',
+    location: 'SPECIAL COVER STORY',
+    photoCredit: 'IMAGING SCIENCE UNIT',
+    pullQuote: '',
+    pullQuoteBy: '',
+    body: [
+      'QUANTUM POWER\nNew instruments reveal how energy moves at nature’s smallest scales.',
+      'MICROBES AT WORK\nThe cooperative networks sustaining soil, oceans, and human health.',
+      'DETECTING THE INVISIBLE\nA new generation of sensors turns faint signals into clear evidence.',
+    ],
+  });
+  const heroId = d.hero.assetId;
+  const coverId = d.cover?.assetId;
+  if (heroId) d.assets[heroId] = { src: PHOTO_MICROSCAPE, naturalWidth: 1400, naturalHeight: 2000 };
+  if (coverId) d.assets[coverId] = { src: PHOTO_MICROSCAPE, naturalWidth: 1400, naturalHeight: 2000 };
+  d.design = {
+    ...d.design,
+    bodyAlign: 'left',
+    sidebar: false,
+    highlightsPlacement: 'page1',
+    fontDisplay: 'Avenir Next',
+    fontBody: 'Avenir Next',
+    fontCategory: 'Avenir Next',
+    fontSubtitle: 'Avenir Next',
+    fontAuthor: 'Avenir Next',
+    fontAffiliation: 'Avenir Next',
+    frontCover: {
+      alignment: 'left',
+      storyTop: 15,
+      storyWidth: 88,
+      overlayOpacity: 0.68,
+      kickerBackground: '#f59e0b',
+      teaserBackground: '#071006',
+      teaserBackgroundOpacity: 0.45,
+    },
+    margin: 11,
+    gutter: 5,
+    sizes: {
+      ...d.design.sizes,
+      categoryLabel: 8,
+      title: 43,
+      subtitle: 11,
+      author: 8,
+      affiliation: 7.5,
+      body: 7.5,
+    },
+    colors: {
+      hero: '#252d16',
+      accent: '#f59e0b',
+      accentSoft: '#fef3c7',
+      ink: '#f8fafc',
+    },
+  };
+  d.highlights = [];
+  d.references = [];
+  d.images = [];
+  return d;
+};
+
 // ---- Registry --------------------------------------------------------------
 
 export const TEMPLATES: (TemplateMeta & { make: () => Doc })[] = [
@@ -383,6 +501,7 @@ export const TEMPLATES: (TemplateMeta & { make: () => Doc })[] = [
   { id: 'magazine-1', family: 'magazine', name: 'Magazine 1', kind: 'Modern Editorial', make: makeMagazine1 },
   { id: 'magazine-2', family: 'magazine', name: 'Magazine 2', kind: 'Particle Feature', make: makeMagazine2 },
   { id: 'magazine-3', family: 'magazine', name: 'Magazine 3', kind: 'Cosmos Gatefold', make: makeMagazine3 },
+  { id: 'magazine-4', family: 'magazine', name: 'Magazine Cover', kind: 'Front Page Only', make: makeMagazine4 },
   { id: 'gallery-1', family: 'gallery', name: 'Gallery 1', kind: 'Photo Spread', make: makeGallery1 },
   { id: 'gallery-2', family: 'gallery', name: 'Gallery 2', kind: 'Centre Fold', make: makeGallery2 },
   { id: 'gallery-3', family: 'gallery', name: 'Gallery 3', kind: 'Mosaic Band', make: makeGallery3 },

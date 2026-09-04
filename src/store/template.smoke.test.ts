@@ -19,11 +19,11 @@ describe('template registry', () => {
     }
   });
 
-  it('magazine presets ship a hero photo and pull-quote; each has its own accent', () => {
+  it('magazine presets ship a hero photo; editorial spreads have pull-quotes and each has its own accent', () => {
     const mags = TEMPLATES.filter((t) => t.family === 'magazine').map((t) => t.make());
     for (const d of mags) {
       expect(d.hero.assetId).toBeTruthy();
-      expect(d.meta.pullQuote).toBeTruthy();
+      if (d.templateId !== 'magazine-4') expect(d.meta.pullQuote).toBeTruthy();
     }
     const accents = mags.map((d) => d.design.colors.accent);
     expect(new Set(accents).size).toBe(accents.length); // all distinct

@@ -41,6 +41,7 @@ export function Panel() {
   const templateId = useDoc((s) => s.doc.templateId ?? 'paper-1');
   const switchTemplate = useDoc((s) => s.switchTemplate);
   const isGallery = familyOf(templateId) === 'gallery';
+  const isCoverOnly = templateId === 'magazine-4';
 
   useEffect(() => {
     const onFocusBlock = (event: Event) => {
@@ -120,7 +121,7 @@ export function Panel() {
           ) : (
             <>
               <HeroSection />
-              <ArticleImagesSection />
+              {!isCoverOnly && <ArticleImagesSection />}
             </>
           ))}
         {tab === 'highlights' && (

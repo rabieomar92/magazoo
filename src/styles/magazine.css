@@ -118,7 +118,7 @@
 
 .mag-title {
   margin: 0;
-  font-family: 'Helvetica Neue', Arial, sans-serif;
+  font-family: var(--serif);
   font-weight: 800;
   font-size: 44pt;
   line-height: 0.92;
@@ -162,6 +162,270 @@
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: #cbd5e1;
+}
+
+/* ---- Dedicated one-page front cover (magazine-4) ------------------------- */
+
+.front-cover {
+  padding: var(--margin);
+  color: #fff;
+  background-color: var(--hero);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  font-family: var(--sans);
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+
+.front-cover-scrim {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  background:
+    linear-gradient(
+      180deg,
+      rgb(10 14 8 / var(--front-overlay, 0.68)) 0%,
+      rgb(10 14 8 / calc(var(--front-overlay, 0.68) * 0.12)) 27%,
+      rgb(10 14 8 / calc(var(--front-overlay, 0.68) * 0.08)) 55%,
+      rgb(10 14 8 / min(1, calc(var(--front-overlay, 0.68) * 1.3))) 100%
+    ),
+    linear-gradient(
+      90deg,
+      rgb(10 14 8 / calc(var(--front-overlay, 0.68) * 0.44)) 0%,
+      transparent 62%
+    );
+  pointer-events: none;
+}
+
+.front-cover-inner {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  width: 100%;
+  /* A concrete content-box height avoids Chromium's print fragmentation
+     interpreting grid percentage height against the page border box. */
+  height: calc(var(--page-h) - 2 * var(--margin));
+  min-width: 0;
+  min-height: 0;
+}
+
+.front-cover-brand {
+  display: flex;
+  align-items: flex-start;
+  justify-content: var(--front-items, flex-start);
+  gap: 6mm;
+  min-width: 0;
+  height: 23mm;
+  box-sizing: border-box;
+  margin: calc(var(--topbar-offset, 0mm) - var(--margin)) calc(-1 * var(--margin)) 0;
+  padding: 4mm var(--margin) 3mm;
+  text-align: var(--front-align, left);
+}
+
+.front-cover-brand-copy {
+  min-width: 0;
+  width: 100%;
+}
+
+.front-cover-masthead {
+  overflow: hidden;
+  color: var(--front-masthead-color, var(--accent));
+  font-family: var(--front-masthead-font, var(--serif));
+  font-size: var(--front-masthead-size, 34pt);
+  font-weight: var(--front-masthead-weight, 900);
+  line-height: 0.88;
+  letter-spacing: var(--front-masthead-tracking, -0.055em);
+  text-transform: uppercase;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.front-cover-strap {
+  overflow: hidden;
+  margin-top: 2mm;
+  color: var(--front-strapline-color, #fff);
+  font-family: var(--front-strapline-font, var(--font-affil));
+  font-size: var(--front-strapline-size, var(--fs-affil));
+  font-weight: var(--front-strapline-weight, 700);
+  letter-spacing: var(--front-strapline-tracking, 0.11em);
+  line-height: 1.2;
+  text-transform: uppercase;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.front-cover-story {
+  display: flex;
+  flex-direction: column;
+  align-items: var(--front-items, flex-start);
+  align-self: start;
+  width: min(var(--front-story-width, 88%), 158mm);
+  min-width: 0;
+  margin-top: var(--front-story-top, 15mm);
+  overflow: hidden;
+  text-align: var(--front-align, left);
+}
+
+.front-cover-kicker {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  margin-bottom: 3mm;
+  padding: 1.6mm 2.6mm;
+  color: var(--front-kicker-color, #111);
+  background: var(--front-kicker-bg, var(--accent));
+  font-family: var(--front-kicker-font, var(--font-category));
+  font-size: var(--front-kicker-size, var(--fs-eyebrow));
+  font-weight: var(--front-kicker-weight, 900);
+  letter-spacing: var(--front-kicker-tracking, 0.13em);
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.front-cover-story h1 {
+  width: 100%;
+  max-height: 4.05em;
+  overflow: hidden;
+  margin: 0;
+  color: var(--front-title-color, #fff);
+  font-family: var(--front-title-font, var(--serif));
+  font-size: var(--front-title-size, var(--fs-title));
+  font-weight: var(--front-title-weight, 900);
+  line-height: 0.93;
+  letter-spacing: var(--front-title-tracking, -0.04em);
+  text-transform: uppercase;
+  text-shadow: 0 2px 22px rgba(0, 0, 0, 0.45);
+}
+
+.front-cover-lede {
+  width: min(82%, 112mm);
+  max-height: 4.3em;
+  overflow: hidden;
+  margin: 4mm 0 0;
+  color: var(--front-subtitle-color, #fff);
+  font-family: var(--front-subtitle-font, var(--font-subtitle));
+  font-size: var(--front-subtitle-size, var(--fs-subtitle));
+  font-weight: var(--front-subtitle-weight, 600);
+  letter-spacing: var(--front-subtitle-tracking, 0);
+  line-height: 1.42;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.7);
+}
+
+.front-cover-byline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2mm 5mm;
+  justify-content: var(--front-items, flex-start);
+  width: 100%;
+  margin-top: 4mm;
+  line-height: 1.25;
+  text-transform: uppercase;
+}
+
+.front-cover-author {
+  color: var(--front-author-color, #fff);
+  font-family: var(--front-author-font, var(--font-author));
+  font-size: var(--front-author-size, var(--fs-author));
+  font-weight: var(--front-author-weight, 800);
+  letter-spacing: var(--front-author-tracking, 0.1em);
+}
+
+.front-cover-story-tag {
+  color: var(--front-story-tag-color, #fff);
+  font-family: var(--front-story-tag-font, var(--sans));
+  font-size: var(--front-story-tag-size, var(--fs-author));
+  font-weight: var(--front-story-tag-weight, 800);
+  letter-spacing: var(--front-story-tag-tracking, 0.1em);
+}
+
+.front-cover-footer {
+  min-width: 0;
+  padding-top: 4mm;
+  background: linear-gradient(
+    180deg,
+    transparent,
+    color-mix(
+      in srgb,
+      var(--front-teaser-bg, #071006) var(--front-teaser-bg-opacity, 45%),
+      transparent
+    )
+  );
+}
+
+.front-cover-teasers {
+  display: grid;
+  grid-template-columns: repeat(var(--front-teaser-count, 3), minmax(0, 1fr));
+  gap: var(--gutter);
+  min-width: 0;
+  padding: 4mm 0;
+}
+
+.front-cover-teaser {
+  min-width: 0;
+  max-height: 28mm;
+  overflow: hidden;
+  padding-inline-start: 2.4mm;
+  border-inline-start: 2px solid var(--front-kicker-bg, var(--accent));
+  line-height: 1.25;
+  direction: var(--text-dir, ltr);
+}
+
+.front-cover-teaser h2 {
+  margin: 0 0 1.4mm;
+  color: var(--front-card-color, var(--front-teaser-title-color, #fff));
+  font-family: var(--front-teaser-title-font, var(--sans));
+  font-size: var(--front-card-title-size, var(--front-teaser-title-size, var(--fs-body)));
+  font-weight: var(--front-teaser-title-weight, 900);
+  letter-spacing: var(--front-teaser-title-tracking, 0.055em);
+  line-height: 1.05;
+  text-transform: uppercase;
+}
+
+.front-cover-teaser p {
+  margin: 0;
+  color: var(--front-card-color, var(--front-teaser-body-color, #fff));
+  font-family: var(--front-teaser-body-font, var(--sans));
+  font-size: var(--front-card-body-size, var(--front-teaser-body-size, calc(var(--fs-body) * 0.88)));
+  font-weight: var(--front-teaser-body-weight, 400);
+  letter-spacing: var(--front-teaser-body-tracking, 0);
+  line-height: 1.28;
+  opacity: 0.86;
+}
+
+.front-cover-credit-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 5mm;
+  min-width: 0;
+  padding-top: 2.6mm;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.front-cover-footer-brand {
+  color: var(--front-footer-brand-color, #fff);
+  font-family: var(--front-footer-brand-font, var(--sans));
+  font-size: var(--front-footer-brand-size, 5.9pt);
+  font-weight: var(--front-footer-brand-weight, 800);
+  letter-spacing: var(--front-footer-brand-tracking, 0.13em);
+}
+
+.front-cover-photo-credit {
+  color: var(--front-photo-credit-color, #fff);
+  font-family: var(--front-photo-credit-font, var(--sans));
+  font-size: var(--front-photo-credit-size, 5.9pt);
+  font-weight: var(--front-photo-credit-weight, 800);
+  letter-spacing: var(--front-photo-credit-tracking, 0.13em);
+}
+
+.front-cover-credit-row span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* ---- Page 2+: 2-column justified spread ----------------------------------- */

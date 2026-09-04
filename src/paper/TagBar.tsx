@@ -13,6 +13,7 @@ export function TagBar({
   fullBleed?: boolean;
 }) {
   const flip = barStartsRight(doc.design.barSide, pageIndex);
+  const topBarText = doc.meta.masthead?.trim();
   return (
     <div
       className={`tag-bar${flip ? ' tag-bar--flip' : ''}`}
@@ -28,9 +29,7 @@ export function TagBar({
       <span className="tag-bar-mark" />
       {/* Hugs its text: a longer tag simply lengthens the block and eats into
           the rule beside it. */}
-      {(doc.meta.masthead || doc.meta.affiliation) && (
-        <span className="tag-bar-tag">{doc.meta.masthead || doc.meta.affiliation}</span>
-      )}
+      {topBarText && <span className="tag-bar-tag">{topBarText}</span>}
       <span className="tag-bar-fill" />
     </div>
   );

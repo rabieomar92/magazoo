@@ -48,7 +48,7 @@ export function MagGateA({ doc, vars }: { doc: Doc; vars: CSSProperties }) {
       <div className="mag-gate-scrim mag-gate-scrim--a" />
       <div className="mag-gate-inner">
         <div className={`mag-gate-top${flip ? ' mag-gate-top--flip' : ''}`}>
-          <span className="mag-masthead">{meta.masthead || meta.affiliation}</span>
+          <span className="mag-masthead">{meta.masthead}</span>
           <span className="mag-gate-vol">{meta.volume}</span>
         </div>
 

@@ -11,6 +11,7 @@ export type TemplateId =
   | 'magazine-1'
   | 'magazine-2'
   | 'magazine-3'
+  | 'magazine-4'
   | 'gallery-1'
   | 'gallery-2'
   | 'gallery-3'
@@ -164,6 +165,46 @@ export interface Reference {
   doi: string;
 }
 
+export type FrontCoverTextRole =
+  | 'masthead'
+  | 'strapline'
+  | 'kicker'
+  | 'title'
+  | 'subtitle'
+  | 'author'
+  | 'storyTag'
+  | 'teaserTitle'
+  | 'teaserBody'
+  | 'footerBrand'
+  | 'photoCredit';
+
+/** Independent styling for one visible text object on magazine-4. */
+export interface FrontCoverTextStyle {
+  fontFamily?: string;
+  fontSize?: number;
+  color?: string;
+  fontWeight?: number;
+  /** em units. */
+  letterSpacing?: number;
+  visible?: boolean;
+}
+
+/** Dedicated controls for the fixed one-sheet front-cover composition. */
+export interface FrontCoverDesign {
+  alignment?: 'left' | 'center' | 'right';
+  /** Distance from the masthead to the main story, in millimetres. */
+  storyTop?: number;
+  /** Percent of the safe page width occupied by the main story. */
+  storyWidth?: number;
+  /** 0..1 darkness placed over the cover photograph. */
+  overlayOpacity?: number;
+  kickerBackground?: string;
+  teaserBackground?: string;
+  /** 0..1 opacity of the teaser panel colour. */
+  teaserBackgroundOpacity?: number;
+  text?: Partial<Record<FrontCoverTextRole, FrontCoverTextStyle>>;
+}
+
 export interface Design {
   /** Body columns on page 1. Page 2 turns the sidebar slot into a text column. */
   bodyCols: 2 | 3 | 4;
@@ -203,6 +244,8 @@ export interface Design {
   fontSubtitle?: string;
   fontAuthor?: string;
   fontAffiliation?: string;
+  /** Per-object typography and cover-only composition controls. */
+  frontCover?: FrontCoverDesign;
   colors: { hero: string; accent: string; accentSoft: string; ink: string };
   /** Page/sheet background colour for every template. Absent = white. */
   paperBg?: string;
@@ -262,10 +305,10 @@ export interface Doc {
     subtitle: string;
     author: string;
     affiliation: string;
-    /** Magazine-only fields (ignored by paper-1). All optional for back-compat. */
-    /** Masthead logo/name on the cover + spread header, e.g. "KUANTA".
-     *  paper-2 reuses it as the tag text inside its top band. */
+    /** Dedicated top-bar label used by every template, e.g. "Research
+     *  Highlights" or "KUANTA". It is deliberately independent of affiliation. */
     masthead?: string;
+    /** Additional magazine fields. All optional for back-compat. */
     /** Caption under paper-2's top-right hero. */
     heroCaption?: string;
     /** Volume/date line, e.g. "VOL. IX · NO.2 · MARET 2026". */
@@ -295,7 +338,7 @@ export interface Doc {
   references: Reference[];
   hero: { assetId: string | null; offsetX: number; offsetY: number; scale: number };
   /**
-   * Page-1 cover photo, distinct from the page-2 hero. Only magazine-1/-3 read
+   * Page-1 cover photo, distinct from the page-2 hero. Only magazine-1/-3/-4 read
    * it (their MagazineCover). Absent = fall back to `hero`, so v1 files and the
    * other templates keep their look — the cover only diverges once it's set.
    */

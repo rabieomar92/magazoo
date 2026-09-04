@@ -4,11 +4,12 @@ import { emptyDoc } from '../schema/document';
 import { TagBar } from './TagBar';
 
 describe('TagBar', () => {
-  it('falls back to the affiliation when a paper has no separate masthead', () => {
+  it('never substitutes the affiliation for dedicated top-bar text', () => {
     const doc = emptyDoc();
     doc.meta.affiliation = 'School of Physics';
     const html = renderToStaticMarkup(<TagBar doc={doc} pageIndex={0} />);
-    expect(html).toContain('School of Physics');
+    expect(html).not.toContain('School of Physics');
+    expect(html).not.toContain('tag-bar-tag');
   });
 
   it('alternates from the author-selected first-page side', () => {

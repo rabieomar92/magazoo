@@ -40,7 +40,7 @@ export function MagazineCover({ doc, vars }: { doc: Doc; vars: CSSProperties }) 
       <div className="mag-cover-scrim" />
       <div className="mag-cover-inner">
         <div className={`mag-cover-top${flip ? ' mag-cover-top--flip' : ''}`}>
-          <span className="mag-masthead">{meta.masthead || meta.affiliation}</span>
+          <span className="mag-masthead">{meta.masthead}</span>
           <span className="mag-vol">{meta.volume}</span>
         </div>
 

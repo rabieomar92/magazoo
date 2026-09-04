@@ -13,7 +13,7 @@ export function MagTopBar({ doc, pageIndex = 0 }: { doc: Doc; pageIndex?: number
   const flip = barStartsRight(doc.design.barSide, pageIndex);
   return (
     <div className={`mag-topbar${flip ? ' mag-topbar--flip' : ''}`}>
-      <span className="mag-topbar-mast">{doc.meta.masthead || doc.meta.affiliation}</span>
+      <span className="mag-topbar-mast">{doc.meta.masthead}</span>
       <span className="mag-topbar-vol">{doc.meta.volume}</span>
     </div>
   );
