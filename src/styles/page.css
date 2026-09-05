@@ -330,12 +330,15 @@
   flex: none;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   padding: 0 0.9em;
   background: var(--bar-tag);
   color: var(--bar-ink);
   font-family: var(--font-category);
   font-size: calc(var(--fs-eyebrow) * 0.85);
+  line-height: 1;
   letter-spacing: 0.14em;
+  text-align: center;
   text-transform: uppercase;
   white-space: nowrap;
 }
@@ -1337,11 +1340,9 @@
     box-shadow: none;
     margin: 0;
     width: 210mm;
-    /* A hair under A4 (297mm). At exactly 297mm the browser — Safari especially,
-       which ignores break-inside — fragments the sheet and shoves the body row
-       onto the next page. The real content ends at the 281mm padding edge, so
-       this only trims 1mm of empty bottom padding. */
-    height: 296mm;
+    /* Keep print geometry identical to the editor. Reducing this to 296 mm
+       changes percentage tracks and can reflow the final lines of columns. */
+    height: 297mm;
     overflow: hidden;
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;

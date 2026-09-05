@@ -67,13 +67,14 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding-bottom: 10px;
+  padding: 5px 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.28);
   font-size: 9pt;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: #e5e7eb;
   margin-top: calc(var(--topbar-offset, 0mm) - var(--margin));
+  line-height: 1;
 }
 
 /* Cover is the document's page 1 — doc.design.barSide picks which end the
@@ -84,9 +85,19 @@
 }
 
 .mag-masthead {
+  display: inline-flex;
+  align-items: center;
   font-weight: 800;
   letter-spacing: 0.42em;
   font-size: 12pt;
+  line-height: 1;
+}
+
+.mag-vol,
+.mag-gate-vol {
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
 }
 
 .mag-cover-mid {
@@ -221,14 +232,14 @@
 
 .front-cover-brand {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: var(--front-items, flex-start);
   gap: 6mm;
   min-width: 0;
   height: 23mm;
   box-sizing: border-box;
   margin: calc(var(--topbar-offset, 0mm) - var(--margin)) calc(-1 * var(--margin)) 0;
-  padding: 4mm var(--margin) 3mm;
+  padding: 3.5mm var(--margin);
   text-align: var(--front-align, left);
 }
 
@@ -458,13 +469,22 @@
   gap: 12px;
   height: var(--bar-h);
   margin: calc(var(--topbar-offset, 0mm) - var(--margin)) calc(-1 * var(--margin)) var(--gutter);
-  padding: 0 var(--margin) 6px;
+  padding: 3px var(--margin);
   border-bottom: 1px solid var(--mag-red);
   font-family: var(--sans);
   font-size: 8pt;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--ink);
+  line-height: 1;
+}
+
+.mag-topbar-mast,
+.mag-topbar-vol {
+  display: inline-flex;
+  align-items: center;
+  height: 100%;
+  line-height: 1;
 }
 
 .mag-topbar-mast {
@@ -735,6 +755,7 @@
   background: var(--mag-red);
   font-size: 9pt;
   font-weight: 800;
+  line-height: 1;
   letter-spacing: 0.4em;
   text-transform: uppercase;
   print-color-adjust: exact;
@@ -742,8 +763,12 @@
 }
 
 .mag2-band-vol {
+  align-self: stretch;
+  display: flex;
+  align-items: center;
   padding: 0 4mm;
   font-size: 7pt;
+  line-height: 1;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: #cbd5e1;
@@ -1063,13 +1088,14 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding-bottom: 10px;
+  padding: 5px 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.28);
   font-size: 9pt;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: #e5e7eb;
   margin-top: calc(var(--topbar-offset, 0mm) - var(--margin));
+  line-height: 1;
 }
 .mag-gate-vol {
   font-size: 8.5pt;
