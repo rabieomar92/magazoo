@@ -33,44 +33,9 @@
   text-overflow: ellipsis;
 }
 
-.mag-topbar-mast,
-.mag-topbar-vol {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.mag-topbar-mast {
-  flex: 1 1 auto;
-}
-
-.mag-topbar-vol {
-  flex: 0 1 auto;
-  max-width: 50%;
-}
-
-.mag2-band-mast,
-.mag2-band-vol {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.mag2-band-mast {
-  max-width: 62%;
-}
-
-.mag2-band-vol {
-  flex: 1 1 auto;
-}
-
 /* Flex children otherwise keep their min-content width, allowing a long
    author, credit, title word, or pull-quote token to escape its page. */
-.mag-cover-top > *,
 .mag-cover-foot > *,
-.mag-gate-top > *,
 .mag-gate-foot > *,
 .mag2-byline > *,
 .mag-kicker,

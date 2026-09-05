@@ -53,6 +53,16 @@ describe('retired templates', () => {
   });
 });
 
+describe('subtitle spacing migration', () => {
+  it('restores the selected template native gap in older saved files', () => {
+    const legacy = emptyDoc();
+    legacy.templateId = 'magazine-2';
+    delete (legacy.design as Partial<typeof legacy.design>).subtitleGap;
+
+    expect(migrate(legacy).design.subtitleGap).toBe(3);
+  });
+});
+
 describe('article image migration', () => {
   it('moves inline figures out of paragraph flow and rejoins split text', () => {
     const legacy = emptyDoc();

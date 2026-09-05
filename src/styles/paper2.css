@@ -136,16 +136,6 @@
   text-indent: 0;
 }
 
-.p2-flow-l p.flow-opener .drop-cap {
-  display: block;
-  float: inline-start;
-  font-family: var(--serif);
-  font-size: calc(var(--fs-title) * 1.1);
-  line-height: 0.8;
-  padding-inline-end: 6px;
-  color: var(--ink);
-}
-
 /* ---- Hidden measuring twins --------------------------------------------- */
 
 .p2-host-l {
@@ -168,13 +158,4 @@
    than a plain letter, so the break must be measured with it in place. */
 .p2-host-l p.flow-opener {
   text-indent: 0;
-}
-
-.p2-host-l p.flow-opener .drop-cap {
-  display: block;
-  float: inline-start;
-  font-family: var(--serif);
-  font-size: calc(var(--fs-title) * 1.1);
-  line-height: 0.8;
-  padding-inline-end: 6px;
 }

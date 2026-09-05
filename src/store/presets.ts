@@ -1,4 +1,11 @@
-import { emptyDoc, uid, type Doc, type TemplateFamily, type TemplateId } from '../schema/document';
+import {
+  defaultSubtitleGap,
+  emptyDoc,
+  uid,
+  type Doc,
+  type TemplateFamily,
+  type TemplateId,
+} from '../schema/document';
 import { sampleDoc } from '../sample';
 import { makeGallery1, makeGallery2, makeGallery3, makeGallery4 } from './gallery';
 
@@ -289,6 +296,7 @@ function makeMagazine(m: MagInput): Doc {
   // body size/fonts/colors all feed the magazine CSS via CSS vars).
   d.design = {
     ...d.design,
+    subtitleGap: defaultSubtitleGap(m.id),
     bodyCols: 2,
     gutter: 8,
     bodyAlign: 'justify',

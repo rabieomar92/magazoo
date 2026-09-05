@@ -50,10 +50,9 @@
   isolation: isolate;
 }
 
-/* Optional first-sheet artwork sits behind the document's opening page. Keeping
-   it on a dedicated layer lets authors tune image opacity without washing out
-   the text itself; the editable page colour remains visible underneath on page
-   1 and continues by itself across every following sheet. */
+/* Keep ::before available as a neutral author-CSS layer. Uploaded first-sheet
+   artwork is a real .page-artwork <img>; unlike a multi-megabyte data URL in a
+   CSS declaration it cannot be silently dropped by Chromium under pressure. */
 .page::before {
   content: '';
   position: absolute;
@@ -68,21 +67,11 @@
   background-position: center;
   background-size: cover;
   background-repeat: no-repeat;
-  opacity: var(--page-bg-opacity, 1);
   print-color-adjust: exact;
   -webkit-print-color-adjust: exact;
 }
 
-/* The background graphic is cover artwork, not stationery: apply it to the
-   first physical page only. `.pages` remains in the DOM during printing even
-   though its box becomes `display: contents`, so preview and PDF match. */
-.pages > .page:first-child::before {
-  background-image: var(--page-bg-image, none);
-}
-
-/* Content always sits above the optional first-sheet artwork. This also lets an
-   explicitly chosen page background replace/overlay a template's built-in
-   cover or gate photo instead of being silently suppressed there. */
+/* Content always sits above the optional first-sheet artwork. */
 .page > * {
   position: relative;
   z-index: 1;
@@ -277,7 +266,7 @@
 }
 
 .header .title {
-  margin: 0.1em 0;
+  margin: 0.1em 0 0;
   font-family: var(--serif);
   font-size: var(--fs-title);
   line-height: 1.05;
@@ -285,7 +274,7 @@
 }
 
 .header .subtitle {
-  margin: 0;
+  margin: var(--subtitle-gap, 1mm) 0 0;
   font-family: var(--font-subtitle);
   font-size: var(--fs-subtitle);
   color: var(--ink);
@@ -318,6 +307,10 @@
      image paints on the higher image layer. */
   width: var(--page-w);
   height: var(--bar-h);
+  background: var(--bar-color);
+  color: var(--bar-detail-ink, #cbd5e1);
+  font-family: var(--font-category);
+  line-height: 1;
   /* Bleeds to both sheet edges on every plain (non-hero) page it appears on —
      a continuation sheet or paper-2's later sheets — same negative-margin
      trick as .hero: `.page` clips at its own edge (overflow: hidden), so this
@@ -351,7 +344,7 @@
   padding: 0 0.9em;
   background: var(--bar-tag);
   color: var(--bar-ink);
-  font-family: var(--font-category);
+  font-family: inherit;
   font-size: calc(var(--fs-eyebrow) * 0.85);
   line-height: 1;
   letter-spacing: 0.14em;
@@ -363,12 +356,34 @@
 .tag-bar-fill {
   flex: 1;
   min-width: 0;
+  display: flex;
+  align-items: center;
   background: var(--bar-color);
+  overflow: hidden;
+}
+
+.tag-bar-detail {
+  min-width: 0;
+  padding: 0 1.15em;
+  overflow: hidden;
+  color: var(--bar-detail-ink, #cbd5e1);
+  font-family: inherit;
+  font-size: calc(var(--fs-eyebrow) * 0.68);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.16em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 /* Verso: the square and tag mirror to the right end of the rule. */
 .tag-bar--flip {
   flex-direction: row-reverse;
+}
+
+.tag-bar--flip .tag-bar-fill {
+  justify-content: flex-end;
 }
 
 .body-row {
@@ -847,18 +862,26 @@
   overflow: hidden;
 }
 
-/* Drop cap: first paragraph of page 1 only. This is an explicit inline element,
-   not `::first-letter`: generated first letters may be cloned by Chromium at
-   RTL multicolumn fragment boundaries. `float: inline-start` and logical
-   padding place Arabic/Jawi caps on the right and LTR caps on the left. */
-.body-cols--p1 p.flow-opener .drop-cap {
+/* One drop-cap geometry for every article template. `font-size-adjust` makes
+   the selected font's cap height predictable, while the explicit line-height
+   reserves the first three body lines. The explicit span also avoids
+   Chromium cloning ::first-letter at RTL multicolumn fragment boundaries. */
+.body-cols--p1 p.flow-opener .drop-cap,
+.p2-flow-l p.flow-opener .drop-cap,
+.p2-host-l p.flow-opener .drop-cap,
+.mag-cols--p1 p.flow-opener .drop-cap,
+.mag2-cols p.flow-opener .drop-cap {
   display: block;
   float: inline-start;
   font-family: var(--serif);
-  font-size: calc(var(--fs-title) * 1.1);
-  line-height: 0.8;
-  padding-inline-end: 6px;
-  color: var(--ink);
+  font-size: var(--drop-cap-font-size, calc(var(--fs-body) * 4.9));
+  font-size-adjust: cap-height 0.72;
+  font-weight: var(--drop-cap-weight, inherit);
+  line-height: var(--drop-cap-line-height, calc(var(--fs-body) * 3.55));
+  margin: 0;
+  padding: 0;
+  padding-inline-end: 0.18em;
+  color: var(--drop-cap-color, var(--ink));
 }
 
 .sidebar {

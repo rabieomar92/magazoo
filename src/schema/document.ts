@@ -21,6 +21,22 @@ export type TemplateId =
 export const familyOf = (id: TemplateId | undefined): TemplateFamily =>
   id?.startsWith('gallery') ? 'gallery' : id?.startsWith('magazine') ? 'magazine' : 'paper';
 
+/** Native title-to-subtitle spacing for each layout, in millimetres. */
+export const defaultSubtitleGap = (id: TemplateId | undefined): number => {
+  switch (id) {
+    case 'magazine-1':
+      return 6;
+    case 'magazine-2':
+      return 3;
+    case 'magazine-3':
+      return 0;
+    case 'magazine-4':
+      return 4;
+    default:
+      return 1;
+  }
+};
+
 /** A block never knows which page it lands on. Pages are computed, never stored. */
 export type Block =
   | {
@@ -284,6 +300,8 @@ export interface Design {
    * template's native first-page composition.
    */
   firstPageTopMargin?: number;
+  /** Physical distance from the title box to the subtitle/lede, in mm. */
+  subtitleGap: number;
   /** millimetres */
   margin: number;
   gutter: number;
@@ -379,6 +397,7 @@ export const emptyDoc = (): Doc => ({
     showHero: true,
     topBarOffset: 0,
     firstPageTopMargin: 0,
+    subtitleGap: defaultSubtitleGap('paper-1'),
     margin: 16,
     gutter: 5,
     heroHeight: 95,
@@ -394,22 +413,19 @@ export const emptyDoc = (): Doc => ({
   },
 });
 
+/** True while any editor/template slot still points at this embedded asset. */
+export function assetIsReferenced(doc: Doc, assetId: string): boolean {
+  return doc.hero?.assetId === assetId ||
+    doc.cover?.assetId === assetId ||
+    doc.design?.pageBackgroundAssetId === assetId ||
+    doc.blocks.some((block) => block.type === 'figure' && block.assetId === assetId) ||
+    (doc.images ?? []).some((image) => image.assetId === assetId);
+}
+
 /** Remove unused image asset data URLs from the doc's assets dictionary. */
 export function cleanOrphanedAssets(doc: Doc): Doc {
-  const used = new Set<string>();
-  if (doc.hero?.assetId) used.add(doc.hero.assetId);
-  if (doc.cover?.assetId) used.add(doc.cover.assetId);
-  if (doc.design?.pageBackgroundAssetId) used.add(doc.design.pageBackgroundAssetId);
-  for (const b of doc.blocks) {
-    if (b.type === 'figure' && b.assetId) {
-      used.add(b.assetId);
-    }
-  }
-  for (const image of doc.images ?? []) {
-    if (image.assetId) used.add(image.assetId);
-  }
   for (const key of Object.keys(doc.assets || {})) {
-    if (!used.has(key)) {
+    if (!assetIsReferenced(doc, key)) {
       delete doc.assets[key];
     }
   }
@@ -422,6 +438,10 @@ export function migrate(raw: any): Doc {
     // Paper 3 was retired. Keep older saved files usable by opening their
     // content in the standard paper engine rather than rejecting the file.
     if ((raw as { templateId?: string }).templateId === 'paper-3') raw.templateId = 'paper-1';
+
+    // Preserve each template's original composition when an older saved file
+    // is opened after title-to-subtitle spacing became user-editable.
+    raw.design.subtitleGap ??= defaultSubtitleGap(raw.templateId);
 
     // v1 article figures lived between paragraphs. Move them into the page
     // image collection on read, while leaving gallery slot figures alone.
