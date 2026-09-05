@@ -453,6 +453,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  box-sizing: border-box;
+  width: var(--page-w);
   gap: 12px;
   height: var(--bar-h);
   margin: calc(var(--topbar-offset, 0mm) - var(--margin)) calc(-1 * var(--margin)) var(--gutter);
@@ -673,6 +675,12 @@
   -webkit-print-color-adjust: exact;
 }
 
+/* The hero/photo layer always wins where it overlaps the full-width band.
+   Use a direct-child selector so it outranks page.css's shared z-index:1 rule. */
+.mag2-page > .mag2-strip {
+  z-index: 2;
+}
+
 .mag2-strip-credit {
   position: absolute;
   bottom: var(--margin);
@@ -699,6 +707,10 @@
   display: flex;
   align-items: center;
   gap: 0;
+  box-sizing: border-box;
+  /* Sheet-wide even though MagSplitHead lives in the deliberately narrow
+     article column. The right-hand hero strip overlays this layer. */
+  width: var(--page-w);
   height: 7mm;
   /* Bleeds to the sheet's left/right edges like .mag-topbar/.tag-bar: pulled
      out of the page padding with a negative margin, then padded back in by

@@ -124,6 +124,8 @@ export function MagazineFrontCover({ doc, vars }: { doc: Doc; vars: CSSPropertie
                     style={{
                       ...teaserOverrides,
                       textAlign: teaser.align ?? doc.design.bodyAlign ?? 'left',
+                      paddingTop:
+                        teaser.topPadding !== undefined ? `${teaser.topPadding}px` : undefined,
                     }}
                   >
                     {frontCoverTextVisible(doc.design, 'teaserTitle') && heading && (

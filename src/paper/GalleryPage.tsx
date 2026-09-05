@@ -28,14 +28,16 @@ function TileText({
   text,
   className,
   style,
+  containerStyle,
 }: {
   text: string;
   className: string;
   style?: CSSProperties;
+  containerStyle?: CSSProperties;
 }) {
   const { title, desc } = titled(text);
   return (
-    <div className={className} style={style}>
+    <div className={className} style={containerStyle}>
       {title && <p className="g-title" style={style}>{renderRuns(title)}</p>}
       {desc && <p className="g-desc" style={style}>{renderRuns(desc)}</p>}
     </div>
@@ -103,6 +105,10 @@ function CardCell({ block, area }: { block?: Block; area: string }) {
           textAlign: block.align,
         }
       : undefined;
+  const paragraphTopStyle: CSSProperties | undefined =
+    block?.type === 'paragraph' && block.topPadding !== undefined
+      ? { paddingTop: `${block.topPadding}px` }
+      : undefined;
   const indentClass =
     block && block.type === 'paragraph'
       ? block.indent === true
@@ -113,7 +119,14 @@ function CardCell({ block, area }: { block?: Block; area: string }) {
       : '';
   return (
     <div className={`g-card${indentClass}`} style={{ gridArea: area }}>
-      {text.trim() && <TileText text={text} className="g-card-body" style={textStyle} />}
+      {text.trim() && (
+        <TileText
+          text={text}
+          className="g-card-body"
+          style={textStyle}
+          containerStyle={paragraphTopStyle}
+        />
+      )}
     </div>
   );
 }

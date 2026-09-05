@@ -15,8 +15,6 @@ interface Props {
   left: Piece[];
   /** Text for the column under the hero. */
   right: Piece[];
-  leftIsFinal?: boolean;
-  rightIsFinal?: boolean;
 }
 
 /** paper-2's sheet 1: a full-bleed tag band, then a header/hero split across the
@@ -26,8 +24,6 @@ export function PaperTwoPage({
   vars,
   left,
   right,
-  leftIsFinal = false,
-  rightIsFinal = false,
 }: Props) {
   const { meta, hero, design } = doc;
   const heroAsset = hero.assetId ? doc.assets[hero.assetId] : null;
@@ -54,7 +50,6 @@ export function PaperTwoPage({
               pieces={left}
               doc={doc}
               allowBottomBleed
-              allowShortLastColumn={leftIsFinal}
             />
           </div>
         </div>
@@ -77,7 +72,6 @@ export function PaperTwoPage({
                 pieces={right}
                 doc={doc}
                 allowBottomBleed
-                allowShortLastColumn={rightIsFinal}
               />
             </div>
             {rail && <Sidebar doc={doc} />}

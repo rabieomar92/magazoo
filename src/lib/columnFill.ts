@@ -109,6 +109,7 @@ function paintText(el: HTMLElement, items: TextPiece[], opener = false) {
     if (classes.length) p.className = classes.join(' ');
     if (it.fontSize !== undefined) p.style.fontSize = `${it.fontSize}pt`;
     if (it.color) p.style.color = it.color;
+    if (!it.cont && it.topPadding !== undefined) p.style.paddingTop = `${it.topPadding}px`;
     p.innerHTML = runsToHtml(it.text, isOpener);
     el.appendChild(p);
   }
@@ -147,6 +148,7 @@ function paintStamped(el: HTMLElement, items: TextPiece[]) {
     }
     if (it.fontSize !== undefined) p.style.fontSize = `${it.fontSize}pt`;
     if (it.color) p.style.color = it.color;
+    if (!it.cont && it.topPadding !== undefined) p.style.paddingTop = `${it.topPadding}px`;
     p.innerHTML = runsToHtml(it.text, itemIndex === 0);
     el.appendChild(p);
   }
@@ -544,6 +546,7 @@ function paintInlineFlow(el: HTMLElement, items: InlinePiece[], doc: Doc, opener
       if (classes.length) p.className = classes.join(' ');
       if (it.fontSize !== undefined) p.style.fontSize = `${it.fontSize}pt`;
       if (it.color) p.style.color = it.color;
+      if (!it.cont && it.topPadding !== undefined) p.style.paddingTop = `${it.topPadding}px`;
       p.innerHTML = runsToHtml(it.text, isOpener);
       el.appendChild(p);
       continue;
@@ -768,6 +771,17 @@ export function columnizePage(
   // but bounds-safe) column balancing, exactly like `withColFill`'s own
   // try/catch falls back one level up.
   if (remainder.length) return pieces;
+  // Verify the exact concrete tracks that Flow.tsx will render. Rechecking
+  // forced breaks inside Chromium's native multicolumn fragmenter can reject
+  // a valid explicit-grid split because that engine tries to balance the
+  // breaks again. The independent one-column probe is the authoritative
+  // geometry for this sequential renderer, including inline figures.
+  const columnsFit = columns.every((column, columnIndex) => {
+    if (textOnly) paintText(probe, column as TextPiece[], columnIndex === 0);
+    else paintInlineFlow(probe, column as InlinePiece[], doc!, columnIndex === 0);
+    return !overflowsY(probe);
+  });
+  if (!columnsFit) return pieces;
   const out: Piece[] = [];
   columns.forEach((col, ci) => {
     col.forEach((p, pi) => {
@@ -778,12 +792,6 @@ export function columnizePage(
       out.push(pi === 0 ? { ...p, colBreak: ci > 0 } : p);
     });
   });
-  // A transformed on-screen page can still disagree with its hidden measuring
-  // twin by a pixel at a stamped break. Keep the verified safe fallback: a
-  // ragged native page is preferable to clipping copy or manufacturing an
-  // extra page. Pages that pass render through Flow.tsx's explicit grid and
-  // receive the fixed-line-height paragraph-gap levelling pass.
-  if (textOnly && !fitsStamped(host, out as TextPiece[])) return pieces;
   return out;
 }
 
@@ -888,7 +896,7 @@ export function columnizeAllAroundImages(
           columns: filled.columns.map((column) => ({
             segments: column.segments.map((segment) => ({
               ...segment,
-              pieces: segment.pieces.map(({ kind, sourceId, text, cont, indent, fontSize, color }) => ({
+              pieces: segment.pieces.map(({ kind, sourceId, text, cont, indent, fontSize, color, topPadding }) => ({
                 kind,
                 sourceId,
                 text,
@@ -896,6 +904,7 @@ export function columnizeAllAroundImages(
                 indent,
                 fontSize,
                 color,
+                topPadding,
               })),
             })),
           })),
@@ -920,7 +929,7 @@ export function columnizeAllAroundImages(
         columns: filled.columns.map((column) => ({
           segments: column.segments.map((segment) => ({
             ...segment,
-            pieces: segment.pieces.map(({ kind, sourceId, text, cont, indent, fontSize, color }) => ({
+            pieces: segment.pieces.map(({ kind, sourceId, text, cont, indent, fontSize, color, topPadding }) => ({
               kind,
               sourceId,
               text,
@@ -928,6 +937,7 @@ export function columnizeAllAroundImages(
               indent,
               fontSize,
               color,
+              topPadding,
             })),
           })),
         })),
@@ -1036,12 +1046,8 @@ export function columnizePageBalanced(
       out.push(pi === 0 ? { ...p, colBreak: ci > 0 } : p);
     });
   });
-  // Same extra check as columnizePage(): the single-column probe can be a
-  // little too generous about what fits per column even when it never
-  // reports a remainder. `host` still carries its full (un-balanced) real
-  // height here, which is correct — findBalancedHeight() only changes how
-  // much content each colBreak segment gets, never the real box's own CSS
-  // height, so verifying against `host` as-is matches what actually renders.
+  // Keep the verified bounds-safe fallback when the browser's native
+  // fragmenter disagrees with the independently measured balanced split.
   if (!fitsStamped(host, out as TextPiece[])) return pieces;
   return out;
 }

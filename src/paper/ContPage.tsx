@@ -14,12 +14,11 @@ interface Props {
   /** Absolute sheet index across the whole document (sheet 1 = 0). Odd sheets
    *  mirror the bar, so it alternates left/right/left/right down the run. */
   pageIndex: number;
-  allowShortLastColumn?: boolean;
 }
 
 /** A continuation sheet: no hero/header, just the taller body box. Every page
  *  after page 1 shares this geometry, so one component renders them all. */
-export function ContPage({ doc, vars, pieces, pageIndex, allowShortLastColumn = false }: Props) {
+export function ContPage({ doc, vars, pieces, pageIndex }: Props) {
   const { railEvery } = grid(doc.design);
   const body = (
     <div data-flow-host className={`body-cols body-cols--p2${railEvery ? ' body-cols--railed' : ''}`}>
@@ -30,7 +29,6 @@ export function ContPage({ doc, vars, pieces, pageIndex, allowShortLastColumn = 
         doc={doc}
         allowTopBleed
         allowBottomBleed
-        allowShortLastColumn={allowShortLastColumn}
       />
     </div>
   );

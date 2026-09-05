@@ -1342,7 +1342,7 @@ select.select-control::-ms-expand {
 
 .paragraph-style-grid {
   display: grid;
-  grid-template-columns: 108px minmax(0, 1fr) auto;
+  grid-template-columns: 108px 124px minmax(0, 1fr) auto;
   align-items: center;
   gap: 7px;
   padding-top: 7px;

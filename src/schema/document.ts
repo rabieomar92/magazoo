@@ -39,6 +39,10 @@ export type Block =
        * the active template's body size and ink colour. */
       fontSize?: number;
       color?: string;
+      /** Space inside this paragraph before its first rendered text line, in
+       * CSS pixels. This is deliberately independent from line-height and the
+       * margin between paragraphs. Continuation fragments never re-apply it. */
+      topPadding?: number;
       /** Gallery text-card alignment. Article/editorial engines intentionally
        *  ignore it and keep using their template-level column alignment. */
       align?: 'left' | 'center' | 'right' | 'justify';

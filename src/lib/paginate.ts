@@ -46,6 +46,7 @@ export type FlowItem =
       cont?: boolean;
       fontSize?: number;
       color?: string;
+      topPadding?: number;
     }
   | {
       kind: 'figure';
@@ -85,6 +86,7 @@ type PaintItem =
       indent?: boolean;
       fontSize?: number;
       color?: string;
+      topPadding?: number;
     }
   | {
       kind: 'figure';
@@ -124,6 +126,7 @@ export type Piece =
       colBreak?: boolean;
       fontSize?: number;
       color?: string;
+      topPadding?: number;
       /** Rectangular vertical bands occupied by independently positioned page
        * images in this physical column, measured in unscaled CSS pixels from
        * the top of the flow box. Present only on a column's first piece. */
@@ -151,6 +154,7 @@ export type Piece =
             indent?: boolean;
             fontSize?: number;
             color?: string;
+            topPadding?: number;
           }[];
         }[];
       }[];
@@ -196,6 +200,7 @@ const toPieces = (items: PaintItem[]): Piece[] =>
             indent: it.indent,
             fontSize: it.fontSize,
             color: it.color,
+            topPadding: it.topPadding,
           },
   );
 
@@ -333,6 +338,7 @@ function paint(el: HTMLElement, items: PaintItem[]) {
       p.innerHTML = runsToHtml(it.text, itemIndex === 0);
       if (it.fontSize !== undefined) p.style.fontSize = `${it.fontSize}pt`;
       if (it.color) p.style.color = it.color;
+      if (!it.cont && it.topPadding !== undefined) p.style.paddingTop = `${it.topPadding}px`;
       el.appendChild(p);
     }
   }

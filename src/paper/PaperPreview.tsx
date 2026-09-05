@@ -11,7 +11,7 @@ import {
   type Pagination,
 } from '../lib/paginate';
 import {
-  columnizeAllBalanced,
+  columnizeAll,
   columnizeAllAroundImages,
   hasClippedTextLine,
   type PageImageExclusions,
@@ -236,6 +236,7 @@ const PaperPreviewLayout = memo(function PaperPreviewLayout({
               cont: Boolean(b.continuationOf),
               fontSize: b.fontSize,
               color: b.color,
+              topPadding: b.topPadding,
             },
           ];
         if (b.type === 'equation')
@@ -419,7 +420,7 @@ const PaperPreviewLayout = memo(function PaperPreviewLayout({
               doc,
               wrapSafetyBoost,
             )
-          : columnizeAllBalanced(wrapped, hosts, colProbeRef.current, doc);
+          : columnizeAll(wrapped, hosts, colProbeRef.current, doc);
         return { ...p, pages: filled };
       } catch (err) {
         console.error('withColFill: post-pass failed, falling back to unpolished pagination', err);
@@ -1253,7 +1254,6 @@ const PaperPreviewLayout = memo(function PaperPreviewLayout({
                 doc={doc}
                 vars={vars}
                 pieces={pages[0] ?? []}
-                allowShortLastColumn={pages.length <= 1}
               />
               <MagPhotoPage doc={doc} vars={vars} pageIndex={1} />
               {Array.from({ length: Math.max(0, nPages - 2) }, (_, i) => (
@@ -1264,7 +1264,6 @@ const PaperPreviewLayout = memo(function PaperPreviewLayout({
                   pieces={pages[i + 1] ?? []}
                   lead={false}
                   pageIndex={i + 2}
-                  allowShortLastColumn={i === pages.length - 2}
                 />
               ))}
             </>
@@ -1281,7 +1280,6 @@ const PaperPreviewLayout = memo(function PaperPreviewLayout({
                   lead={i === 0}
                   head={false}
                   pageIndex={i + 2}
-                  allowShortLastColumn={i === pages.length - 1}
                 />
               ))}
             </>
@@ -1296,7 +1294,6 @@ const PaperPreviewLayout = memo(function PaperPreviewLayout({
                   pieces={pages[i] ?? []}
                   lead={i === 0}
                   pageIndex={i + 1}
-                  allowShortLastColumn={i === pages.length - 1}
                 />
               ))}
             </>
@@ -1307,8 +1304,6 @@ const PaperPreviewLayout = memo(function PaperPreviewLayout({
                 vars={vars}
                 left={pages[0] ?? []}
                 right={pages[1] ?? []}
-                leftIsFinal={pages.length <= 1}
-                rightIsFinal={pages.length <= 2}
               />
               {Array.from({ length: Math.max(0, nPages - 1) }, (_, i) => (
                 <ContPage
@@ -1317,7 +1312,6 @@ const PaperPreviewLayout = memo(function PaperPreviewLayout({
                   vars={vars}
                   pieces={pages[i + 2] ?? []}
                   pageIndex={i + 1}
-                  allowShortLastColumn={i === pages.length - 3}
                 />
               ))}
             </>
@@ -1327,7 +1321,6 @@ const PaperPreviewLayout = memo(function PaperPreviewLayout({
                 doc={doc}
                 vars={vars}
                 pieces={pages[0] ?? []}
-                allowShortLastColumn={pages.length <= 1}
               />
               {Array.from({ length: Math.max(0, nPages - 1) }, (_, i) => (
                 <ContPage
@@ -1336,7 +1329,6 @@ const PaperPreviewLayout = memo(function PaperPreviewLayout({
                   vars={vars}
                   pieces={pages[i + 1] ?? []}
                   pageIndex={i + 1}
-                  allowShortLastColumn={i === pages.length - 2}
                 />
               ))}
             </>

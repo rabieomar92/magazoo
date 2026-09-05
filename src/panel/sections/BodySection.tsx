@@ -138,7 +138,7 @@ export function BodySection() {
 
   const setParagraphStyle = (
     index: number,
-    patch: { fontSize?: number; color?: string },
+    patch: { fontSize?: number; color?: string; topPadding?: number },
     reset = false,
   ) =>
     update((doc) => {
@@ -147,10 +147,14 @@ export function BodySection() {
       if (reset) {
         delete block.fontSize;
         delete block.color;
+        delete block.topPadding;
         return;
       }
       if (patch.fontSize !== undefined) block.fontSize = Math.min(72, Math.max(5, patch.fontSize));
       if (patch.color !== undefined) block.color = patch.color;
+      if (patch.topPadding !== undefined) {
+        block.topPadding = Math.min(200, Math.max(0, patch.topPadding));
+      }
     });
 
   const setTex = (index: number, tex: string) =>
@@ -382,12 +386,23 @@ export function BodySection() {
                   step={0.5}
                   onChange={(fontSize) => setParagraphStyle(index, { fontSize })}
                 />
+                <LabeledNumber
+                  label="Top to text"
+                  unit="px"
+                  value={block.topPadding ?? 0}
+                  min={0}
+                  max={200}
+                  step={1}
+                  onChange={(topPadding) => setParagraphStyle(index, { topPadding })}
+                />
                 <LabeledColor
                   label="Color"
                   value={block.color ?? templateInk}
                   onChange={(color) => setParagraphStyle(index, { color })}
                 />
-                {(block.fontSize !== undefined || block.color !== undefined) && (
+                {(block.fontSize !== undefined ||
+                  block.color !== undefined ||
+                  block.topPadding !== undefined) && (
                   <button
                     type="button"
                     className="style-reset-btn"

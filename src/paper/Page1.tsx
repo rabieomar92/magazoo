@@ -12,10 +12,9 @@ interface Props {
   doc: Doc;
   vars: CSSProperties;
   pieces: Piece[];
-  allowShortLastColumn?: boolean;
 }
 
-export function Page1({ doc, vars, pieces, allowShortLastColumn = false }: Props) {
+export function Page1({ doc, vars, pieces }: Props) {
   const { meta, hero, design } = doc;
   const heroAsset = hero.assetId ? doc.assets[hero.assetId] : null;
   const { rail } = grid(design);
@@ -50,7 +49,6 @@ export function Page1({ doc, vars, pieces, allowShortLastColumn = false }: Props
             pieces={pieces}
             doc={doc}
             allowBottomBleed
-            allowShortLastColumn={allowShortLastColumn}
           />
         </div>
         {rail && <Sidebar doc={doc} />}

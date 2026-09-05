@@ -18,13 +18,12 @@ interface Props {
   doc: Doc;
   vars: CSSProperties;
   pieces: Piece[];
-  allowShortLastColumn?: boolean;
 }
 
 /** magazine-2 sheet 1: the article (band, title, columns, quote, highlights) with
  *  the left slice of the hero photo bleeding down the right edge. The rest of the
  *  photo continues on sheet 2 — see MagPhotoPage. */
-export function MagSplitCover({ doc, vars, pieces, allowShortLastColumn = false }: Props) {
+export function MagSplitCover({ doc, vars, pieces }: Props) {
   const photo = photoOf(doc);
   const p = splitPhoto(arOf(doc), doc.hero);
 
@@ -39,7 +38,6 @@ export function MagSplitCover({ doc, vars, pieces, allowShortLastColumn = false 
             pieces={pieces}
             doc={doc}
             allowBottomBleed
-            allowShortLastColumn={allowShortLastColumn}
           />
         </div>
       </div>

@@ -6,6 +6,7 @@ import { fitEquation } from '../lib/mathfit';
 import { HighlightsBody } from './Sidebar';
 import { MagSplitAside } from './MagSplitHead';
 import { exclusionGradient, mergeExclusions, type ColumnExclusion } from '../lib/columnFill';
+import { fullColumnsForLevelling, type FullColumnMetric } from '../lib/fullColumnLevel';
 import { requestBlockEditorFocus } from '../lib/editorNavigation';
 
 /** A standalone display equation with an optional caption. KaTeX can't wrap math,
@@ -225,6 +226,7 @@ function TextP({ pc, opener = false }: { pc: TextPiece; opener?: boolean }) {
     : {}) as CSSProperties;
   if (pc.fontSize !== undefined) style.fontSize = `${pc.fontSize}pt`;
   if (pc.color) style.color = pc.color;
+  if (!pc.cont && pc.topPadding !== undefined) style.paddingTop = `${pc.topPadding}px`;
   return (
     <p
       className={`${cls ?? ''}${pc.sourceId ? `${cls ? ' ' : ''}flow-source-paragraph` : ''}` || undefined}
@@ -269,214 +271,173 @@ function InlineColumnFigure({ piece, doc }: { piece: FigurePiece; doc: Doc }) {
   );
 }
 
-/** Finish every non-final reading-order column on the same visual baseline.
- * Line height is an invariant: this pass may vary only the whitespace between
- * adjacent paragraphs. The last logical column is exempt only when this grid
- * really contains the end of the article; the last column of an earlier page
- * must align with its neighbours too. */
-function useEvenColumnBaselines(
+type MeasuredFullColumn = FullColumnMetric & {
+  column: HTMLElement;
+  container: HTMLElement;
+  lastParagraph: HTMLElement;
+};
+
+/**
+ * Align only columns that are already full. A full column has less than one
+ * complete line left before the page's writable bottom; short columns never
+ * participate. Corrections are bounded by that sub-line remainder and are
+ * distributed exclusively through existing paragraph-to-paragraph gaps.
+ * Line-height, paragraph position, and the figure-wrap geometry are untouched.
+ */
+function useFullColumnParagraphLevelling(
   gridRef: RefObject<HTMLDivElement | null>,
-  allowShortLastColumn: boolean,
-  layoutPieces: readonly ColumnPiece[],
+  layoutSignal: unknown,
+  mode: 'text' | 'image' = 'text',
 ) {
   useLayoutEffect(() => {
     const grid = gridRef.current;
     if (!grid) return;
     let frame = 0;
+    let disposed = false;
+
+    const restoreOwnedGaps = () => {
+      grid.querySelectorAll<HTMLElement>('[data-full-column-gap]').forEach((paragraph) => {
+        const original = paragraph.dataset.fullColumnOriginalMargin ?? '';
+        if (original) paragraph.style.marginBottom = original;
+        else paragraph.style.removeProperty('margin-bottom');
+        delete paragraph.dataset.fullColumnGap;
+        delete paragraph.dataset.fullColumnOriginalMargin;
+      });
+    };
 
     const align = () => {
-      const columns = Array.from(grid.querySelectorAll<HTMLElement>(':scope > .flow-textgrid-col'));
-      for (const column of columns) {
-        column.removeAttribute('data-baseline-adjust');
-        for (const child of Array.from(column.children)) {
-          if (!(child instanceof HTMLElement)) continue;
-          child.style.removeProperty('position');
-          child.style.removeProperty('top');
-        }
-        for (const paragraph of column.querySelectorAll<HTMLElement>(':scope > p')) {
-          paragraph.style.removeProperty('margin-bottom');
-          paragraph.style.removeProperty('line-height');
-        }
-      }
+      if (disposed) return;
+      restoreOwnedGaps();
+      const host = grid.closest<HTMLElement>('[data-flow-host]');
+      if (!host) return;
+      const columnSelector =
+        mode === 'image' ? ':scope > .flow-image-grid-col' : ':scope > .flow-textgrid-col';
+      const columns = Array.from(grid.querySelectorAll<HTMLElement>(columnSelector));
       if (columns.length < 2) return;
-
-      // Empty image-covered/trailing tracks have no baseline to align. Every
-      // column that does contain copy participates, including the final one;
-      // a genuinely short final column is protected by the small-adjustment
-      // limits below rather than being categorically exempted.
-      const adjustable = columns.filter((column) =>
-        Array.from(column.querySelectorAll(':scope > p')).some((p) => Boolean(p.textContent?.trim())),
-      );
-      const lastChildBottom = (column: HTMLElement) => {
-        const child = column.lastElementChild;
-        return child instanceof HTMLElement ? child.getBoundingClientRect().bottom : null;
-      };
-      const bottoms = adjustable
-        .map(lastChildBottom)
-        .filter((bottom): bottom is number => bottom !== null);
-      if (bottoms.length < 2) return;
-      const target = Math.max(...bottoms);
 
       const renderedScale = grid.offsetWidth
         ? grid.getBoundingClientRect().width / grid.offsetWidth
         : 1;
       const scale = renderedScale || 1;
+      const hostBottom = host.getBoundingClientRect().bottom;
 
-      for (const column of adjustable) {
-        const naturalBottom = lastChildBottom(column);
-        if (naturalBottom === null) continue;
-        const delta = target - naturalBottom;
-        if (delta <= 0.1) continue;
+      const measured = columns.flatMap<MeasuredFullColumn>((column) => {
+        let container = column;
+        let usableBottom = hostBottom;
 
-        const children = Array.from(column.children).filter(
+        if (mode === 'image') {
+          const segments = Array.from(
+            column.querySelectorAll<HTMLElement>(':scope > .flow-image-segment'),
+          );
+          const finalSegment = segments.at(-1);
+          if (!finalSegment) return [];
+          const segmentBottom = finalSegment.getBoundingClientRect().bottom;
+          // If an image owns the foot of this column, its text does not reach
+          // the page bottom and therefore cannot be a full-column candidate.
+          if (Math.abs(segmentBottom - grid.getBoundingClientRect().bottom) > 1 * scale) return [];
+          container = finalSegment;
+          usableBottom = segmentBottom;
+        }
+
+        const children = Array.from(container.children).filter(
+          (child): child is HTMLElement =>
+            child instanceof HTMLElement && !child.classList.contains('flow-column-shape'),
+        );
+        const lastContent = children.at(-1);
+        if (!lastContent || lastContent.tagName !== 'P' || !lastContent.textContent?.trim()) return [];
+        // Moving paragraph gaps around an inline figure would change its wrap
+        // relationship. Such columns stay exactly as the figure engine placed
+        // them and are never levelled here.
+        if (children.some((child) => child.tagName !== 'P')) return [];
+
+        const computed = getComputedStyle(lastContent);
+        const parsedLineHeight = parseFloat(computed.lineHeight);
+        const parsedFontSize = parseFloat(computed.fontSize);
+        const lineHeight = Number.isFinite(parsedLineHeight)
+          ? parsedLineHeight
+          : Math.max(1, parsedFontSize * 1.2);
+        return [
+          {
+            column,
+            container,
+            lastParagraph: lastContent,
+            contentBottom: lastContent.getBoundingClientRect().bottom,
+            usableBottom,
+            lineHeight: lineHeight * scale,
+          },
+        ];
+      });
+
+      const fullColumns = fullColumnsForLevelling(measured);
+      if (!fullColumns.length) return;
+      const targetBottom = Math.max(...fullColumns.map((column) => column.contentBottom));
+
+      for (const { container, lastParagraph, usableBottom } of fullColumns) {
+        const naturalBottom = lastParagraph.getBoundingClientRect().bottom;
+        const desiredCorrection = Math.min(
+          targetBottom - naturalBottom,
+          usableBottom - naturalBottom,
+        );
+        if (desiredCorrection <= 0.1) continue;
+
+        const children = Array.from(container.children).filter(
           (child): child is HTMLElement => child instanceof HTMLElement,
         );
-        const paragraphGaps: HTMLElement[] = [];
-        for (let i = 0; i < children.length - 1; i++) {
-          if (children[i].tagName === 'P' && children[i + 1].tagName === 'P') {
-            paragraphGaps.push(children[i]);
+        const gaps: HTMLElement[] = [];
+        for (let index = 0; index < children.length - 1; index += 1) {
+          if (children[index].tagName === 'P' && children[index + 1].tagName === 'P') {
+            gaps.push(children[index]);
           }
         }
-        const unscaledDelta = delta / scale;
-        const gapAdd = paragraphGaps.length ? unscaledDelta / paragraphGaps.length : Infinity;
-        let lineTargets: HTMLElement[] = [];
-        let lineCount = 0;
-        let shiftedBelowImage = false;
-        if (gapAdd <= 24) {
-          for (const paragraph of paragraphGaps) {
-            const base = parseFloat(getComputedStyle(paragraph).marginBottom) || 0;
-            paragraph.style.marginBottom = `${base + gapAdd}px`;
-          }
-        } else {
-          // A column made from one long paragraph has no inter-paragraph gaps
-          // to tune. Spread a sub-pixel correction over its real line boxes;
-          // this preserves wrapping and is visually imperceptible while making
-          // the final baseline exact. Refuse large leading changes on a truly
-          // short final column—those should remain honestly short.
-          lineTargets = Array.from(column.querySelectorAll<HTMLElement>(':scope > p')).filter(
-            (paragraph) => Boolean(paragraph.textContent?.trim()),
-          );
-          const shape = column.querySelector<HTMLElement>(':scope > .flow-column-shape');
-          const exclusionBottom = Number(shape?.dataset.exclusionBottom);
-          const columnTop = column.getBoundingClientRect().top;
-          const firstTextTop = lineTargets[0]?.getBoundingClientRect().top;
-          // If all copy in this track begins below the image, moving that copy
-          // as one unit is the cleanest correction: leading remains unchanged,
-          // no line can enter the image shape, and the bottom becomes exact.
-          if (
-            shape &&
-            Number.isFinite(exclusionBottom) &&
-            firstTextTop !== undefined &&
-            (firstTextTop - columnTop) / scale >= exclusionBottom - 0.5
-          ) {
-            for (const paragraph of lineTargets) {
-              paragraph.style.position = 'relative';
-              paragraph.style.top = `${unscaledDelta}px`;
-            }
-            shiftedBelowImage = true;
-          }
-          if (shiftedBelowImage) {
-            column.dataset.baselineAdjust = delta.toFixed(2);
-          } else {
-          lineCount = lineTargets.reduce((total, paragraph) => {
-            const range = document.createRange();
-            range.selectNodeContents(paragraph);
-            const tops = new Set(
-              Array.from(range.getClientRects()).map((rect) => Math.round(rect.top * 10) / 10),
-            );
-            return total + Math.max(1, tops.size);
-          }, 0);
-          const lineAdd = lineCount ? unscaledDelta / lineCount : Infinity;
-          if (lineAdd > 2.5) {
-            column.dataset.baselineAdjust = allowShortLastColumn
-              ? 'short-final-column'
-              : 'pagination-required';
-            continue;
-          }
-          for (const paragraph of lineTargets) {
-            const base = parseFloat(getComputedStyle(paragraph).lineHeight) || 0;
-            paragraph.style.lineHeight = `${base + lineAdd}px`;
-          }
-          }
-        }
+        // No legal paragraph gap means no correction. Never substitute line
+        // height, letter spacing, transforms, or paragraph positioning.
+        if (!gaps.length) continue;
 
-        // Chromium quantizes layout to 1/64 px. Feed the tiny residual back
-        // into the same paragraph gaps until their final baselines coincide.
-        for (let pass = 0; pass < 8; pass++) {
-          const correctedBottom = lastChildBottom(column) ?? target;
-          const correction = target - correctedBottom;
-          if (Math.abs(correction) <= 0.02) break;
-          if (gapAdd <= 24 && paragraphGaps.length) {
-            for (const paragraph of paragraphGaps) {
-              const current = parseFloat(getComputedStyle(paragraph).marginBottom) || 0;
-              paragraph.style.marginBottom = `${Math.max(
-                0,
-                current + correction / scale / paragraphGaps.length,
-              )}px`;
-            }
-          } else if (shiftedBelowImage && lineTargets.length) {
-            for (const paragraph of lineTargets) {
-              const current = parseFloat(paragraph.style.top) || 0;
-              paragraph.style.top = `${current + correction / scale}px`;
-            }
-          } else if (lineTargets.length && lineCount) {
-            for (const paragraph of lineTargets) {
-              const current = parseFloat(getComputedStyle(paragraph).lineHeight) || 0;
-              paragraph.style.lineHeight = `${Math.max(
-                1,
-                current + correction / scale / lineCount,
-              )}px`;
-            }
+        for (const paragraph of gaps) {
+          paragraph.dataset.fullColumnGap = 'true';
+          paragraph.dataset.fullColumnOriginalMargin = paragraph.style.marginBottom;
+        }
+        for (let pass = 0; pass < 4; pass += 1) {
+          const remaining = targetBottom - lastParagraph.getBoundingClientRect().bottom;
+          if (Math.abs(remaining) <= 0.05) break;
+          const perGap = remaining / scale / gaps.length;
+          for (const paragraph of gaps) {
+            const current = parseFloat(getComputedStyle(paragraph).marginBottom) || 0;
+            paragraph.style.marginBottom = `${Math.max(0, current + perGap)}px`;
           }
         }
-        // Shape transitions can make line-height response slightly discrete:
-        // a line may jump from above an image to below it. Use the reserved
-        // 4px wrap gutter for a final sub-gutter correction on the last text
-        // block, which makes the visible baseline exact without touching a
-        // glyph or allowing it into the image rectangle.
-        const finalBottom = lastChildBottom(column) ?? target;
-        const finalResidual = target - finalBottom;
-        if (Math.abs(finalResidual) > 0.02 && Math.abs(finalResidual / scale) <= 4) {
-          const lastText = Array.from(column.querySelectorAll<HTMLElement>(':scope > p'))
-            .filter((paragraph) => Boolean(paragraph.textContent?.trim()))
-            .at(-1);
-          if (lastText) {
-            const currentTop = parseFloat(lastText.style.top) || 0;
-            lastText.style.position = 'relative';
-            lastText.style.top = `${currentTop + finalResidual / scale}px`;
-          }
-        }
-        column.dataset.baselineAdjust = delta.toFixed(2);
       }
     };
 
     const schedule = () => {
+      if (disposed) return;
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(align);
     };
     align();
+    frame = requestAnimationFrame(align);
     grid.addEventListener('load', schedule, true);
-    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(schedule);
-    observer?.observe(grid);
+    document.fonts?.addEventListener('loadingdone', schedule);
+    void document.fonts?.ready.then(schedule);
     return () => {
+      disposed = true;
       cancelAnimationFrame(frame);
       grid.removeEventListener('load', schedule, true);
-      observer?.disconnect();
+      document.fonts?.removeEventListener('loadingdone', schedule);
+      restoreOwnedGaps();
     };
-  }, [allowShortLastColumn, gridRef, layoutPieces]);
+  }, [gridRef, layoutSignal, mode]);
 }
 
 function ExplicitFlowColumns({
   pieces,
   doc,
-  allowShortLastColumn,
 }: {
   pieces: ColumnPiece[];
   doc: Doc;
-  allowShortLastColumn: boolean;
 }) {
   const gridRef = useRef<HTMLDivElement>(null);
-  useEvenColumnBaselines(gridRef, allowShortLastColumn, pieces);
+  useFullColumnParagraphLevelling(gridRef, pieces);
   const columns: ColumnPiece[][] = [];
   for (const piece of pieces) {
     if (piece.colBreak && columns.length) columns.push([]);
@@ -522,45 +483,40 @@ function ColumnImageShape({ exclusions }: { exclusions: ColumnExclusion[] }) {
 }
 
 function ImageColumnsFlow({ piece }: { piece: Extract<Piece, { kind: 'image-columns' }> }) {
+  const gridRef = useRef<HTMLDivElement>(null);
+  useFullColumnParagraphLevelling(gridRef, piece, 'image');
   let opened = false;
-  const columnCount = Math.max(1, piece.columns.length);
-  const segments = piece.columns
-    .flatMap((column, columnIndex) =>
-      column.segments.map((segment) => ({ ...segment, columnIndex })),
-    )
-    .sort((a, b) => a.order - b.order);
   return (
     <div
+      ref={gridRef}
       className="flow-image-grid"
       style={{
         '--flow-image-cols': piece.columns.length,
         height: `${piece.height}px`,
       } as CSSProperties}
     >
-      {segments.map((segment) => {
-        const widthPercent = 100 / columnCount;
-        const gapShare = (columnCount - 1) / columnCount;
-        const startPercent = segment.columnIndex * widthPercent;
-        const startGapShare = segment.columnIndex / columnCount;
-        return (
-          <div
-            className="flow-image-segment"
-            style={{
-              top: `${segment.top}px`,
-              height: `${segment.bottom - segment.top}px`,
-              width: `calc(${widthPercent}% - var(--gutter) * ${gapShare})`,
-              insetInlineStart: `calc(${startPercent}% + var(--gutter) * ${startGapShare})`,
-            }}
-            key={`${segment.columnIndex}-${segment.order}`}
-          >
-            {segment.pieces.map((textPiece, pieceIndex) => {
-              const opener = !opened;
-              opened = true;
-              return <TextP pc={textPiece} opener={opener} key={pieceIndex} />;
-            })}
-          </div>
-        );
-      })}
+      {piece.columns.map((column, columnIndex) => (
+        <div className="flow-image-grid-col" key={columnIndex}>
+          {[...column.segments]
+            .sort((a, b) => a.order - b.order)
+            .map((segment) => (
+              <div
+                className="flow-image-segment"
+                style={{
+                  top: `${segment.top}px`,
+                  height: `${segment.bottom - segment.top}px`,
+                }}
+                key={`${columnIndex}-${segment.order}`}
+              >
+                {segment.pieces.map((textPiece, pieceIndex) => {
+                  const opener = !opened;
+                  opened = true;
+                  return <TextP pc={textPiece} opener={opener} key={pieceIndex} />;
+                })}
+              </div>
+            ))}
+        </div>
+      ))}
     </div>
   );
 }
@@ -579,14 +535,11 @@ export function Flow({
   doc,
   allowTopBleed = false,
   allowBottomBleed = false,
-  allowShortLastColumn = false,
 }: {
   pieces: Piece[];
   doc: Doc;
   allowTopBleed?: boolean;
   allowBottomBleed?: boolean;
-  /** True only for the region containing the article's actual final column. */
-  allowShortLastColumn?: boolean;
 }) {
   if (pieces.length === 1 && pieces[0].kind === 'image-columns') {
     return <ImageColumnsFlow piece={pieces[0]} />;
@@ -602,11 +555,7 @@ export function Flow({
   );
   if (explicitCompatible && pieces.some((piece) => piece.colBreak !== undefined)) {
     return (
-      <ExplicitFlowColumns
-        pieces={pieces}
-        doc={doc}
-        allowShortLastColumn={allowShortLastColumn}
-      />
+      <ExplicitFlowColumns pieces={pieces} doc={doc} />
     );
   }
 
@@ -751,7 +700,9 @@ export function Flow({
             />
           );
         }
-        if (pc.kind === 'image-columns') return <ImageColumnsFlow piece={pc} key={i} />;
+        if (pc.kind === 'image-columns') {
+          return <ImageColumnsFlow piece={pc} key={i} />;
+        }
         return <TextP pc={pc} opener={i === 0} key={i} />;
       })}
     </>

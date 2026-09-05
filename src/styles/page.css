@@ -294,6 +294,12 @@
 .tag-bar {
   display: flex;
   align-items: stretch;
+  box-sizing: border-box;
+  /* A top bar is always a sheet-wide layer, even when a specialised template
+     mounts it inside a narrower content region. The negative inline margins
+     below pin this fixed width to the physical trim; any overlapping hero
+     image paints on the higher image layer. */
+  width: var(--page-w);
   height: var(--bar-h);
   /* Bleeds to both sheet edges on every plain (non-hero) page it appears on —
      a continuation sheet or paper-2's later sheets — same negative-margin
@@ -738,9 +744,6 @@
 .flow-textgrid-col {
   min-width: 0;
   overflow-wrap: anywhere;
-  /* Baseline correction is calculated from the real rendered line boxes in
-     Flow.tsx. Ordinary block flow keeps figure/caption spacing untouched;
-     only paragraph-to-paragraph gaps are varied. Line height is invariant. */
   display: block;
 }
 
@@ -771,6 +774,7 @@
 
 .flow-image-grid-col {
   min-width: 0;
+  height: 100%;
   position: relative;
   overflow-wrap: break-word;
   word-break: normal;
@@ -779,6 +783,8 @@
 
 .flow-image-segment {
   position: absolute;
+  inset-inline: 0;
+  width: 100%;
   box-sizing: border-box;
   overflow: hidden;
 }

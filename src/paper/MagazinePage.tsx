@@ -16,7 +16,6 @@ interface Props {
   head?: boolean;
   /** Absolute physical sheet index (sheet 1 = 0). */
   pageIndex: number;
-  allowShortLastColumn?: boolean;
 }
 
 /** Magazine page 2+: a 2-column justified spread. The lead sheet opens with the
@@ -28,7 +27,6 @@ export function MagazinePage({
   lead,
   head = true,
   pageIndex,
-  allowShortLastColumn = false,
 }: Props) {
   return (
     <div className="page mag-page" style={vars}>
@@ -40,7 +38,6 @@ export function MagazinePage({
           doc={doc}
           allowTopBleed={!lead || !head}
           allowBottomBleed
-          allowShortLastColumn={allowShortLastColumn}
         />
       </div>
       <PlacedImages doc={doc} pageIndex={pageIndex} />

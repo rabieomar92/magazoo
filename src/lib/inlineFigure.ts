@@ -73,6 +73,7 @@ export function insertArticleFigure(doc: Doc, assetId: string, at?: ImageInserti
     continuationOf: id,
     fontSize: paragraph.fontSize,
     color: paragraph.color,
+    topPadding: paragraph.topPadding,
   };
   doc.blocks.splice(index + 1, 0, figure, continuation);
   return id;

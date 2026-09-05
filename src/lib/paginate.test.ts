@@ -41,6 +41,7 @@ describe('paginate', () => {
       text: 'Alpha beta gamma delta echo foxtrot golf hotel india juliet kilo lima mike november.',
       fontSize: 13.5,
       color: '#6b21a8',
+      topPadding: 16,
     };
 
     const result = paginate(
@@ -56,7 +57,14 @@ describe('paginate', () => {
       );
 
     expect(pieces.length).toBeGreaterThan(1);
-    expect(pieces.every((piece) => piece.fontSize === 13.5 && piece.color === '#6b21a8')).toBe(true);
+    expect(
+      pieces.every(
+        (piece) =>
+          piece.fontSize === 13.5 &&
+          piece.color === '#6b21a8' &&
+          piece.topPadding === 16,
+      ),
+    ).toBe(true);
   });
 
   it('never splits a figure — a straddling figure moves whole to page 2', () => {
