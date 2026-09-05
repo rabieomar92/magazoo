@@ -23,6 +23,7 @@ export function ArticleImagesSection() {
   const fileRef = useRef<HTMLInputElement>(null);
   const pendingReplace = useRef<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
   const maxWidth = Math.min(4, grid(design).totalCols);
   const widthOptions = Array.from({ length: maxWidth }, (_, index) => ({
     value: (index + 1) as PlacedImage['widthCols'],
@@ -37,6 +38,7 @@ export function ArticleImagesSection() {
   const onFile = async (file: File | undefined) => {
     if (!file) return;
     setError(null);
+    setLoading(true);
     try {
       const loaded = await loadImage(file);
       update((doc) => {
@@ -72,6 +74,7 @@ export function ArticleImagesSection() {
       setError(cause instanceof ImageLoadError ? cause.message : 'Failed to load image.');
     } finally {
       pendingReplace.current = null;
+      setLoading(false);
     }
   };
 
@@ -262,8 +265,8 @@ export function ArticleImagesSection() {
               {(image.bleed?.bottom || image.bleed?.left || image.bleed?.right) && (
                 <p className="hint">Bleed crops the artwork; the caption remains on the selected columns.</p>
               )}
-              <button type="button" className="add-btn" onClick={() => chooseFile(image.id)}>
-                Replace image
+              <button type="button" className="add-btn" disabled={loading} onClick={() => chooseFile(image.id)}>
+                {loading && pendingReplace.current === image.id ? 'Optimising image…' : 'Replace image'}
               </button>
             </div>
             <RowButtons onRemove={() => remove(image.id)} />
@@ -271,8 +274,8 @@ export function ArticleImagesSection() {
         );
       })}
 
-      <button type="button" className="add-btn hero-upload" onClick={() => chooseFile()}>
-        + Add page image
+      <button type="button" className="add-btn hero-upload" disabled={loading} onClick={() => chooseFile()}>
+        {loading && pendingReplace.current === null ? 'Optimising image…' : '+ Add page image'}
       </button>
       {error && <p className="hint hint--warn" role="alert">{error}</p>}
     </Section>

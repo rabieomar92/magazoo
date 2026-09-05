@@ -26,6 +26,7 @@ function ImagePicker({ slot, title, blurb }: { slot: 'hero' | 'cover'; title: st
   const update = useDoc((s) => s.update);
   const fileRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const setFrame = (d: Doc, f: Frame) => {
     if (slot === 'hero') d.hero = f;
@@ -35,6 +36,7 @@ function ImagePicker({ slot, title, blurb }: { slot: 'hero' | 'cover'; title: st
   const onFile = async (file: File | undefined) => {
     if (!file) return;
     setError(null);
+    setLoading(true);
     try {
       const { src, naturalWidth, naturalHeight } = await loadImage(file);
       update((d) => {
@@ -46,6 +48,8 @@ function ImagePicker({ slot, title, blurb }: { slot: 'hero' | 'cover'; title: st
       });
     } catch (e) {
       setError(e instanceof ImageLoadError ? e.message : 'Failed to load image.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -83,8 +87,8 @@ function ImagePicker({ slot, title, blurb }: { slot: 'hero' | 'cover'; title: st
             <FramedImage asset={asset} frame={frame} />
           </div>
           <div className="hero-actions">
-            <button type="button" className="add-btn" onClick={() => fileRef.current?.click()}>
-              Replace image
+            <button type="button" className="add-btn" disabled={loading} onClick={() => fileRef.current?.click()}>
+              {loading ? 'Optimising image…' : 'Replace image'}
             </button>
             <button type="button" className="icon-btn icon-btn--danger" title="Remove image" onClick={removeImage}>
               ✕
@@ -104,8 +108,8 @@ function ImagePicker({ slot, title, blurb }: { slot: 'hero' | 'cover'; title: st
           </button>
         </>
       ) : (
-        <button type="button" className="add-btn hero-upload" onClick={() => fileRef.current?.click()}>
-          + Upload image
+        <button type="button" className="add-btn hero-upload" disabled={loading} onClick={() => fileRef.current?.click()}>
+          {loading ? 'Optimising image…' : '+ Upload image'}
         </button>
       )}
 

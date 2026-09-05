@@ -150,30 +150,60 @@ export function Toolbar({ onPreviewToolsHost }: { onPreviewToolsHost: (host: HTM
         className="toolbar-preview-tools"
         aria-label="Preview tools"
       />
-      <div className="toolbar-group">
-        <button className="tool-btn" onClick={undo} disabled={!canUndo} title="Undo (⌘Z)">
-          Undo
-        </button>
-        <button className="tool-btn" onClick={redo} disabled={!canRedo} title="Redo (⌘⇧Z)">
-          Redo
-        </button>
-      </div>
-      <div className="toolbar-group">
-        <button className="tool-btn" onClick={open} title="Open a Magazoo! project">
-          Open
-        </button>
-        <button className="tool-btn" onClick={() => void saveAs()} title="Save As… (⌘S)">
-          Save As…
-        </button>
-        <button
-          className="tool-btn tool-btn--primary"
-          onClick={() => void exportPdf()}
-          disabled={exporting}
-          aria-busy={exporting}
-          title="Export clean A4 pages to PDF"
-        >
-          {exporting ? 'Preparing…' : 'Export PDF'}
-        </button>
+      <div className="toolbar-actions">
+        <div className="toolbar-group toolbar-group--history">
+          <button
+            className="tool-btn"
+            onClick={undo}
+            disabled={!canUndo}
+            title="Undo (⌘Z)"
+            aria-label="Undo"
+          >
+            <span className="tool-btn-icon" aria-hidden="true">↶</span>
+            <span className="tool-btn-label">Undo</span>
+          </button>
+          <button
+            className="tool-btn"
+            onClick={redo}
+            disabled={!canRedo}
+            title="Redo (⌘⇧Z)"
+            aria-label="Redo"
+          >
+            <span className="tool-btn-icon" aria-hidden="true">↷</span>
+            <span className="tool-btn-label">Redo</span>
+          </button>
+        </div>
+        <div className="toolbar-group toolbar-group--files">
+          <button
+            className="tool-btn"
+            onClick={open}
+            title="Open a Magazoo! project"
+            aria-label="Open a Magazoo! project"
+          >
+            <span className="tool-btn-icon" aria-hidden="true">↗</span>
+            <span className="tool-btn-label">Open</span>
+          </button>
+          <button
+            className="tool-btn"
+            onClick={() => void saveAs()}
+            title="Save As… (⌘S)"
+            aria-label="Save As"
+          >
+            <span className="tool-btn-icon" aria-hidden="true">↓</span>
+            <span className="tool-btn-label">Save As…</span>
+          </button>
+          <button
+            className="tool-btn tool-btn--primary"
+            onClick={() => void exportPdf()}
+            disabled={exporting}
+            aria-busy={exporting}
+            title="Export clean A4 pages to PDF"
+            aria-label={exporting ? 'Preparing PDF' : 'Export PDF'}
+          >
+            <span className="tool-btn-icon tool-btn-icon--pdf" aria-hidden="true" />
+            <span className="tool-btn-label">{exporting ? 'Preparing…' : 'Export PDF'}</span>
+          </button>
+        </div>
       </div>
     </header>
   );

@@ -31,6 +31,7 @@ export function DesignSection() {
   const update = useDoc((s) => s.update);
   const backgroundFileRef = useRef<HTMLInputElement>(null);
   const [backgroundError, setBackgroundError] = useState<string | null>(null);
+  const [backgroundLoading, setBackgroundLoading] = useState(false);
 
   const set = <K extends keyof Design>(key: K, value: Design[K]) =>
     update((d) => {
@@ -52,6 +53,7 @@ export function DesignSection() {
   const onBackgroundFile = async (file: File | undefined) => {
     if (!file) return;
     setBackgroundError(null);
+    setBackgroundLoading(true);
     try {
       const loaded = await loadImage(file);
       update((d) => {
@@ -64,6 +66,8 @@ export function DesignSection() {
       });
     } catch (error) {
       setBackgroundError(error instanceof ImageLoadError ? error.message : 'Failed to load image.');
+    } finally {
+      setBackgroundLoading(false);
     }
   };
 
@@ -204,8 +208,8 @@ export function DesignSection() {
             <img src={backgroundAsset.src} alt="Current first-page background" />
           </div>
           <div className="hero-actions">
-            <button type="button" className="add-btn" onClick={() => backgroundFileRef.current?.click()}>
-              Replace first-page graphic
+            <button type="button" className="add-btn" disabled={backgroundLoading} onClick={() => backgroundFileRef.current?.click()}>
+              {backgroundLoading ? 'Optimising image…' : 'Replace first-page graphic'}
             </button>
             <button type="button" className="icon-btn icon-btn--danger" title="Remove background" onClick={removeBackground}>
               ✕
@@ -222,8 +226,8 @@ export function DesignSection() {
           />
         </>
       ) : (
-        <button type="button" className="add-btn hero-upload" onClick={() => backgroundFileRef.current?.click()}>
-          + Upload first-page graphic
+        <button type="button" className="add-btn hero-upload" disabled={backgroundLoading} onClick={() => backgroundFileRef.current?.click()}>
+          {backgroundLoading ? 'Optimising image…' : '+ Upload first-page graphic'}
         </button>
       )}
       {backgroundError && <p className="hint hint--warn" role="alert">{backgroundError}</p>}

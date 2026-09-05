@@ -65,7 +65,7 @@ export function MagSplitAside({ doc }: { doc: Doc }) {
           <h3>{meta.highlightsLabel || 'Highlights'}</h3>
           <ul>
             {highlights.map((h, i) => (
-              <li key={i}>{renderRuns(h)}</li>
+              <li key={i}><span className="callout-list-copy">{renderRuns(h)}</span></li>
             ))}
           </ul>
         </aside>

@@ -992,6 +992,56 @@
   margin-bottom: 0.5em;
 }
 
+/* Callout markers begin on exactly the same logical start edge as the section
+   heading. Native outside markers reserve browser-dependent indentation, which
+   made bullets/numbers drift to the right of HIGHLIGHTS/REFERENCES. A fixed
+   marker track keeps the marker itself aligned while the copy forms a clean,
+   independent second track. `direction` mirrors the grid for RTL documents. */
+:is(.sidebar, .hl-below, .hl-col, .placed-highlights)
+  :is(ul.highlights, ol.references) {
+  margin-inline: 0;
+  padding-inline: 0;
+  list-style: none;
+}
+
+:is(.sidebar, .hl-below, .hl-col, .placed-highlights)
+  :is(ul.highlights, ol.references) > li {
+  display: grid;
+  grid-template-columns: var(--callout-marker-w, 1.3em) minmax(0, 1fr);
+  column-gap: 0.12em;
+  align-items: start;
+}
+
+:is(.sidebar, .hl-below, .hl-col, .placed-highlights)
+  ul.highlights > li::before {
+  content: '•';
+  grid-column: 1;
+  text-align: start;
+}
+
+:is(.sidebar, .hl-below, .hl-col, .placed-highlights) ol.references {
+  counter-reset: callout-reference;
+}
+
+:is(.sidebar, .hl-below, .hl-col, .placed-highlights)
+  ol.references > li {
+  --callout-marker-w: 1.8em;
+  counter-increment: callout-reference;
+}
+
+:is(.sidebar, .hl-below, .hl-col, .placed-highlights)
+  ol.references > li::before {
+  content: counter(callout-reference) '.';
+  grid-column: 1;
+  text-align: start;
+  font-variant-numeric: tabular-nums;
+}
+
+.callout-list-copy {
+  grid-column: 2;
+  min-width: 0;
+}
+
 .fit-badge {
   display: inline-block;
   min-width: 0;

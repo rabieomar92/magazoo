@@ -26,7 +26,7 @@ export function HighlightsBody({ doc, hideRefs = false }: { doc: Doc; hideRefs?:
       <h3>{doc.meta.highlightsLabel || 'Highlights'}</h3>
       <ul className="highlights">
         {highlights.map((h, i) => (
-          <li key={i}>{renderRuns(h)}</li>
+          <li key={i}><span className="callout-list-copy">{renderRuns(h)}</span></li>
         ))}
       </ul>
       {!hideRefs && doc.references.length > 0 && (
@@ -35,8 +35,10 @@ export function HighlightsBody({ doc, hideRefs = false }: { doc: Doc; hideRefs?:
           <ol className="references">
             {doc.references.map((r) => (
               <li key={r.id}>
-                {r.authors} ({r.year}). {r.title}. <em>{r.journal}</em>.
-                {r.doi && <> doi:{r.doi}</>}
+                <span className="callout-list-copy">
+                  {r.authors} ({r.year}). {r.title}. <em>{r.journal}</em>.
+                  {r.doi && <> doi:{r.doi}</>}
+                </span>
               </li>
             ))}
           </ol>

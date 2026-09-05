@@ -965,6 +965,26 @@
   margin-bottom: 1.5mm;
 }
 
+/* Match the shared callout marker geometry: the bullet begins at the same
+   logical edge as the HIGHLIGHTS heading, including in RTL. */
+.mag2-hl ul {
+  padding-inline: 0;
+  list-style: none;
+}
+
+.mag2-hl li {
+  display: grid;
+  grid-template-columns: 1.3em minmax(0, 1fr);
+  column-gap: 0.12em;
+  align-items: start;
+}
+
+.mag2-hl li::before {
+  content: '•';
+  grid-column: 1;
+  text-align: start;
+}
+
 /* Sheet 2: the photo's other half. No padding — the image owns the sheet. */
 .mag2-photo {
   padding: 0;

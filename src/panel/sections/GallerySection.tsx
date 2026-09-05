@@ -1,6 +1,8 @@
+import { useRef, useState } from 'react';
 import { useDoc } from '../../store/useDoc';
 import { uid, type Doc } from '../../schema/document';
 import { galleryFrameGeometry } from '../../lib/galleryFrame';
+import { ImageLoadError, loadImage } from '../../lib/loadImage';
 import { LabeledColor, LabeledRange, Section } from '../Field';
 
 const DEFAULT_FRAME = { scale: 1, offsetX: 0, offsetY: 0 };
@@ -70,24 +72,16 @@ function joinCaption(title: string, desc: string): string {
   return `${title ? `**${title}**` : ''}\n${desc}`;
 }
 
-/** Open a native file picker without a persistent <input> in the tree. */
-function pickImage(onPick: (file: File) => void) {
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = 'image/*';
-  input.onchange = () => {
-    const f = input.files?.[0];
-    if (f) onPick(f);
-  };
-  input.click();
-}
-
 export function GallerySection() {
   const blocks = useDoc((s) => s.doc.blocks);
   const assets = useDoc((s) => s.doc.assets);
   const paperBg = useDoc((s) => s.doc.design.paperBg ?? '#ffffff');
   const templateId = useDoc((s) => s.doc.templateId ?? 'gallery-1');
   const update = useDoc((s) => s.update);
+  const [imageError, setImageError] = useState<string | null>(null);
+  const [loadingSlot, setLoadingSlot] = useState<number | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const pendingSlot = useRef<number | null>(null);
 
   const layout = LAYOUTS[templateId] ?? LAYOUTS['gallery-1'];
   const SLOTS = layout.slots;
@@ -104,29 +98,29 @@ export function GallerySection() {
     return acc;
   }, []);
 
-  const readAsset = (file: File, then: (aid: string, d: Doc) => void) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const src = reader.result as string;
-      const img = new Image();
-      img.onload = () =>
-        update((d) => {
-          const aid = uid();
-          d.assets[aid] = { src, naturalWidth: img.naturalWidth, naturalHeight: img.naturalHeight };
-          then(aid, d);
-        });
-      img.src = src;
-    };
-    reader.readAsDataURL(file);
-  };
-
   const stillUsed = (d: Doc, assetId: string) =>
     d.blocks.some((b) => b.type === 'figure' && b.assetId === assetId) || d.hero.assetId === assetId;
 
-  const setImage = (slot: number) =>
-    pickImage((file) =>
-      readAsset(file, (aid, d) => {
-        const bi = d.blocks.reduce<number[]>((a, b, i) => (b.type === 'figure' ? [...a, i] : a), [])[slot];
+  const chooseImage = (slot: number) => {
+    pendingSlot.current = slot;
+    fileRef.current?.click();
+  };
+
+  const onFile = async (file: File | undefined) => {
+    const slot = pendingSlot.current;
+    pendingSlot.current = null;
+    if (!file || slot === null) return;
+    setImageError(null);
+    setLoadingSlot(slot);
+    try {
+      const loaded = await loadImage(file);
+      update((d) => {
+        const aid = uid();
+        d.assets[aid] = loaded;
+        const bi = d.blocks.reduce<number[]>(
+          (a, b, i) => (b.type === 'figure' ? [...a, i] : a),
+          [],
+        )[slot];
         if (bi === undefined) {
           // No figure for this slot yet — create one so the layout fills.
           d.blocks.push({ id: uid(), type: 'figure', assetId: aid, caption: '', span: 1 });
@@ -137,8 +131,13 @@ export function GallerySection() {
           b.assetId = aid;
           if (!stillUsed(d, old)) delete d.assets[old];
         }
-      }),
-    );
+      });
+    } catch (error) {
+      setImageError(error instanceof ImageLoadError ? error.message : 'Failed to load image.');
+    } finally {
+      setLoadingSlot(null);
+    }
+  };
 
   const setCaption = (blockIdx: number, caption: string) =>
     update((d) => {
@@ -155,8 +154,19 @@ export function GallerySection() {
 
   return (
     <Section title="Gallery images">
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*"
+        hidden
+        onChange={(event) => {
+          void onFile(event.target.files?.[0]);
+          event.target.value = '';
+        }}
+      />
       <LabeledColor label="Paper background" value={paperBg} onChange={setPaperBg} />
       <p className="gallery-slot-hint">Text flips to black on light sheets, white on dark.</p>
+      {imageError && <p className="hint hint--warn" role="alert">{imageError}</p>}
       {SLOTS.map((s, n) => {
         const bi = figIndex[n];
         const block = bi === undefined ? undefined : blocks[bi];
@@ -192,8 +202,13 @@ export function GallerySection() {
                 <span className="figure-missing">No image</span>
               )}
             </div>
-            <button type="button" className="add-btn" onClick={() => setImage(n)}>
-              {asset ? 'Replace image' : `Upload ${s.label}`}
+            <button
+              type="button"
+              className="add-btn"
+              disabled={loadingSlot !== null}
+              onClick={() => chooseImage(n)}
+            >
+              {loadingSlot === n ? 'Optimising image…' : asset ? 'Replace image' : `Upload ${s.label}`}
             </button>
             {bi !== undefined && (
               <>

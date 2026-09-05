@@ -32,8 +32,12 @@
 .app {
   display: flex;
   flex-direction: column;
+  width: 100%;
   height: 100%;
+  min-height: 100dvh;
   overflow: hidden;
+  container-name: app;
+  container-type: inline-size;
 }
 
 .workspace {
@@ -981,6 +985,13 @@
   gap: 4px;
 }
 
+.toolbar-actions {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
 .toolbar-group + .toolbar-group {
   margin-left: 2px;
   padding-left: 8px;
@@ -1025,10 +1036,20 @@
   box-shadow: inset 0 0 0 2px rgba(79, 70, 229, 0.28);
 }
 
-.tool-btn--primary > span {
+.tool-btn-icon {
+  flex: 0 0 auto;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.tool-btn-icon--pdf {
   font-size: 9px;
   font-weight: 850;
   letter-spacing: 0.04em;
+}
+
+.tool-btn-icon--pdf::before {
+  content: 'PDF';
 }
 
 .tool-btn--primary:hover:not(:disabled) {
@@ -1342,11 +1363,25 @@ select.select-control::-ms-expand {
 
 .paragraph-style-grid {
   display: grid;
-  grid-template-columns: 108px 124px minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr) auto;
   align-items: center;
   gap: 7px;
   padding-top: 7px;
   border-top: 1px solid var(--line-soft);
+}
+
+.paragraph-style-grid > .field:nth-child(3) {
+  grid-column: 1 / -1;
+}
+
+.paragraph-style-grid:has(.style-reset-btn) > .field:nth-child(3) {
+  grid-column: 1 / 3;
+}
+
+.paragraph-style-grid > .style-reset-btn {
+  grid-column: 3;
+  grid-row: 1 / span 2;
+  align-self: center;
 }
 
 .paragraph-style-grid .field {
@@ -1843,9 +1878,237 @@ select.select-control::-ms-expand {
   .toolbar { gap: 8px; padding-inline: 10px; }
   .toolbar-tagline,
   .save-status,
-  .tool-btn > span { display: none; }
+  .tool-btn-label { display: none; }
   .toolbar-identity { min-width: auto; }
   .tool-btn { padding-inline: 9px; }
+}
+
+/* ---- Responsive editor chrome -------------------------------------------
+   The A4 document itself remains a fixed physical sheet and continues using
+   preview zoom. Only the surrounding editor changes shape. Container queries
+   make the same rules work in a narrow embedded window as well as a phone. */
+
+@container app (max-width: 900px) {
+  .toolbar-tagline,
+  .save-status,
+  .tool-btn-label {
+    display: none;
+  }
+
+  .toolbar-identity {
+    min-width: auto;
+  }
+
+  .tool-btn {
+    width: 36px;
+    min-width: 36px;
+    padding-inline: 0;
+  }
+
+  .tool-btn--primary {
+    width: 46px;
+    min-width: 46px;
+  }
+
+  .paper-scroll {
+    padding: 16px;
+  }
+}
+
+@container app (max-width: 720px) {
+  .toolbar {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 7px 10px;
+    min-height: 0;
+    padding: max(7px, env(safe-area-inset-top)) 10px 7px;
+  }
+
+  .toolbar-actions {
+    justify-self: end;
+  }
+
+  .toolbar-preview-tools {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    width: 100%;
+    justify-content: flex-start;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    overscroll-behavior-inline: contain;
+  }
+
+  .toolbar-preview-tools::-webkit-scrollbar {
+    display: none;
+  }
+
+  .toolbar-preview-tools .preview-bar {
+    width: max-content;
+    min-width: 100%;
+    justify-content: center;
+  }
+
+  .workspace {
+    --mobile-panel-w: min(calc(100cqw - 32px), 400px);
+    position: relative;
+  }
+
+  .workspace .panel {
+    position: absolute;
+    inset: 0 auto 0 0;
+    display: flex !important;
+    width: var(--mobile-panel-w);
+    max-width: var(--mobile-panel-w);
+    flex-basis: var(--mobile-panel-w);
+    z-index: 20;
+    transform: translateX(0);
+    visibility: visible;
+    box-shadow: 8px 0 24px rgba(16, 24, 40, 0.16);
+    transition: transform 0.18s ease, visibility 0.18s;
+  }
+
+  .workspace.is-collapsed .panel {
+    display: flex !important;
+    transform: translateX(-100%);
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .workspace .splitter {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: var(--mobile-panel-w);
+    height: 100%;
+    z-index: 21;
+    cursor: default;
+    transition: left 0.18s ease;
+  }
+
+  .workspace.is-collapsed .splitter {
+    left: 0;
+    border-left: 0;
+  }
+
+  .workspace .splitter-toggle {
+    top: 58px;
+    width: 28px;
+    height: 48px;
+    transform: translate(-50%, 0);
+  }
+
+  .paper-scroll {
+    width: 100%;
+    min-width: 0;
+    padding: 10px;
+    overscroll-behavior: contain;
+  }
+
+  .panel-tabs {
+    padding-inline: 4px;
+  }
+
+  .panel-tab {
+    min-height: 44px;
+    padding-inline: 4px;
+  }
+
+  .panel-scroll {
+    padding-inline: 8px;
+    overscroll-behavior: contain;
+  }
+
+  .section {
+    padding: 10px;
+  }
+
+  .field--inline {
+    flex-wrap: wrap;
+  }
+
+  .field--inline select.field-input.select-control {
+    width: min(190px, 62%);
+  }
+
+  .segment {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
+  .add-row,
+  .hero-actions {
+    flex-wrap: wrap;
+  }
+
+  .icon-btn,
+  .hero-actions .icon-btn {
+    min-width: 36px;
+    min-height: 36px;
+  }
+}
+
+@container app (max-width: 520px) {
+  .toolbar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .toolbar-identity {
+    grid-column: 1;
+    grid-row: 1;
+    justify-self: start;
+  }
+
+  .toolbar-actions {
+    grid-column: 1;
+    grid-row: 2;
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .toolbar-preview-tools {
+    grid-column: 1;
+    grid-row: 3;
+  }
+
+  .toolbar-brand {
+    font-size: 18px;
+  }
+
+  .tool-btn {
+    width: 40px;
+    min-width: 40px;
+    height: 40px;
+    min-height: 40px;
+  }
+
+  .tool-btn--primary {
+    width: 52px;
+    min-width: 52px;
+  }
+
+  .toolbar-group + .toolbar-group {
+    margin-left: 6px;
+    padding-left: 7px;
+  }
+
+  .toolbar-preview-tools .preview-bar {
+    justify-content: flex-start;
+  }
+
+  .template-switch-field {
+    grid-template-columns: 1fr;
+    gap: 5px;
+  }
+
+  .template-switch-field select {
+    width: 100%;
+  }
+
+  .paragraph-style-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  }
 }
 
 /* ---- Print: panel disappears, only the paper prints ----------------------- */
