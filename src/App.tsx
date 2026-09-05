@@ -16,6 +16,7 @@ import './styles/panel.css';
 
 const DEFAULT_PANEL_W = 380;
 const MIN_PANEL_W = 320;
+const MOBILE_WORKSPACE_MAX = 720;
 
 const clamp = (n: number, min: number, max: number) => Math.min(max, Math.max(min, n));
 
@@ -23,7 +24,11 @@ export default function App() {
   const [ready, setReady] = useState(false);
   const [loadFailed, setLoadFailed] = useState(false);
   const [panelWidth, setPanelWidth] = useState(DEFAULT_PANEL_W);
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(
+    () =>
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia(`(max-width: ${MOBILE_WORKSPACE_MAX}px)`).matches,
+  );
   const [isDragging, setIsDragging] = useState(false);
   const [toolbarPreviewHost, setToolbarPreviewHost] = useState<HTMLDivElement | null>(null);
   const draggingRef = useRef(false);
@@ -73,13 +78,28 @@ export default function App() {
     };
   }, []);
 
-  const startDragging = useCallback((e: React.MouseEvent) => {
-    if (e.button !== 0) return;
+  // A phone opens on the useful full-width preview; its editor is a drawer
+  // reached through the same splitter toggle. Crossing back to tablet/desktop
+  // restores the side-by-side workspace automatically.
+  useEffect(() => {
+    if (typeof window.matchMedia !== 'function') return;
+    const compact = window.matchMedia(`(max-width: ${MOBILE_WORKSPACE_MAX}px)`);
+    const onViewportChange = (event: MediaQueryListEvent) => setIsCollapsed(event.matches);
+    compact.addEventListener('change', onViewportChange);
+    return () => compact.removeEventListener('change', onViewportChange);
+  }, []);
+
+  const startDragging = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if (
+      e.button !== 0 ||
+      window.innerWidth <= MOBILE_WORKSPACE_MAX ||
+      (e.target as HTMLElement).closest('button')
+    ) return;
     e.preventDefault();
     draggingRef.current = true;
     setIsDragging(true);
 
-    const onMouseMove = (moveEvent: MouseEvent) => {
+    const onPointerMove = (moveEvent: PointerEvent) => {
       if (!draggingRef.current) return;
       const maxW = Math.min(650, window.innerWidth - 300);
       const newW = clamp(moveEvent.clientX, MIN_PANEL_W, maxW);
@@ -87,15 +107,15 @@ export default function App() {
       setIsCollapsed(false);
     };
 
-    const onMouseUp = () => {
+    const onPointerUp = () => {
       draggingRef.current = false;
       setIsDragging(false);
-      window.removeEventListener('mousemove', onMouseMove);
-      window.removeEventListener('mouseup', onMouseUp);
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
     };
 
-    window.addEventListener('mousemove', onMouseMove);
-    window.addEventListener('mouseup', onMouseUp);
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerUp);
   }, []);
 
   const toggleCollapse = useCallback((e: React.MouseEvent) => {
@@ -127,7 +147,7 @@ export default function App() {
           <Panel />
           <div
             className={`splitter${isDragging ? ' is-dragging' : ''}`}
-            onMouseDown={startDragging}
+            onPointerDown={startDragging}
             onDoubleClick={resetWidth}
             title="Drag to resize sidebar · Double-click to reset width"
           >
