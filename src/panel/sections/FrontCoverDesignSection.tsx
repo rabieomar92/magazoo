@@ -1,7 +1,8 @@
-import type {
-  FrontCoverDesign,
-  FrontCoverTextRole,
-  FrontCoverTextStyle,
+import {
+  defaultSubtitleGap,
+  type FrontCoverDesign,
+  type FrontCoverTextRole,
+  type FrontCoverTextStyle,
 } from '../../schema/document';
 import { ALL_FONTS, fontOptions } from '../../lib/fonts';
 import {
@@ -149,6 +150,15 @@ export function FrontCoverDesignSection() {
           max={100}
           step={1}
           onChange={(value) => setCover('storyWidth', value)}
+        />
+        <LabeledNumber
+          label="Title to subtitle gap"
+          unit="mm"
+          value={design.subtitleGap ?? defaultSubtitleGap('magazine-4')}
+          min={0}
+          max={40}
+          step={0.5}
+          onChange={(value) => update((doc) => { doc.design.subtitleGap = value; })}
         />
         <LabeledNumber
           label="Teaser gap"

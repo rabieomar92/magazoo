@@ -1,23 +1,10 @@
 import type { Doc } from '../schema/document';
-import { barStartsRight } from '../lib/barSide';
 import { FramedImage } from '../components/FramedImage';
+import { TagBar } from './TagBar';
 
-/** The masthead rule every spread page opens with — the same "always exists"
- *  bar as the paper templates' TagBar, in the magazine's own thin-rule idiom
- *  (matching .mag-cover-top / .mag-gate-top). Fixed height (`--bar-h`, same
- *  var the paper bar uses), so it costs nothing to account for in the height
- *  formulas beyond one more constant. `doc.design.barSide` picks which end
- *  the masthead starts on; the volume/date sits at the other end. `mirror`
- *  (page-index-derived, same convention as TagBar) flips that for the sheet,
- *  so the masthead alternates left/right/left/right down the spread. */
+/** Magazine pages use the exact same bar structure as paper and gallery pages. */
 export function MagTopBar({ doc, pageIndex = 0 }: { doc: Doc; pageIndex?: number }) {
-  const flip = barStartsRight(doc.design.barSide, pageIndex);
-  return (
-    <div className={`mag-topbar${flip ? ' mag-topbar--flip' : ''}`}>
-      <span className="mag-topbar-mast">{doc.meta.masthead}</span>
-      <span className="mag-topbar-vol">{doc.meta.volume}</span>
-    </div>
-  );
+  return <TagBar doc={doc} pageIndex={pageIndex} detail={doc.meta.volume} fullBleed />;
 }
 
 /** The page-2 spread header: a full-width hero photo with a location tag, its

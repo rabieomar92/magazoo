@@ -906,9 +906,6 @@ const PaperPreviewLayout = memo(function PaperPreviewLayout({
 
   const vars = {
     ...baseVars,
-    '--page-bg-image': doc.design.pageBackgroundAssetId && doc.assets[doc.design.pageBackgroundAssetId]
-      ? `url("${doc.assets[doc.design.pageBackgroundAssetId].src}")`
-      : 'none',
     '--header-h': `${headerPx}px`,
     '--footer-h': '0mm',
     '--mag-head-h': `${magHeadPx}px`,
@@ -937,8 +934,9 @@ const PaperPreviewLayout = memo(function PaperPreviewLayout({
     // Absent = the wireframe's black rule with a grey tag block. Gallery files
     // created before they adopted TagBar keep their authored accent as the rule.
     '--bar-color': doc.design.barColor ?? (isGallery ? doc.design.colors.accent : '#111418'),
-    '--bar-tag': doc.design.barTagColor ?? '#bfbfbf',
-    '--bar-ink': doc.design.barTagInk ?? '#111418',
+    '--bar-tag': doc.design.barTagColor ?? (isMag ? doc.design.colors.accent : '#bfbfbf'),
+    '--bar-ink': doc.design.barTagInk ?? (isMag ? '#ffffff' : '#111418'),
+    '--bar-detail-ink': isMag ? '#cbd5e1' : '#ffffff',
     // Read by the running-text selectors only (see page.css's comment by
     // `.body-cols` and `.header`) — not by the top bar, hero or sidebar
     // placement, which stay put regardless of this setting.

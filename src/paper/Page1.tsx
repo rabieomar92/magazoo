@@ -7,6 +7,7 @@ import { Flow } from './Flow';
 import { TagBar } from './TagBar';
 import { PlacedImages } from './PlacedImages';
 import { FramedImage } from '../components/FramedImage';
+import { PageArtwork } from '../components/PageArtwork';
 
 interface Props {
   doc: Doc;
@@ -21,6 +22,7 @@ export function Page1({ doc, vars, pieces }: Props) {
 
   return (
     <div className="page" style={vars}>
+      <PageArtwork doc={doc} />
       <div className={`hero${design.showHero === false ? ' hero--hidden' : ''}`}>
         {/* The bar always exists — it's the first paint in this box. A hero
             photo sits above it in z-order, so once a photo is set it simply

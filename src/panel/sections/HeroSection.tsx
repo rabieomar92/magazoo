@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { useDoc } from '../../store/useDoc';
-import { uid, type Doc } from '../../schema/document';
+import { assetIsReferenced, uid, type Doc } from '../../schema/document';
 import { loadImage, ImageLoadError } from '../../lib/loadImage';
 import type { ImageFrame } from '../../lib/imageFrame';
 import { FramedImage } from '../../components/FramedImage';
@@ -8,13 +8,6 @@ import { LabeledNumber, LabeledRange, Section } from '../Field';
 
 type Frame = ImageFrame & { assetId: string | null };
 const EMPTY_FRAME: Frame = { assetId: null, offsetX: 0, offsetY: 0, scale: 1 };
-
-const assetStillUsed = (doc: Doc, assetId: string) =>
-  doc.hero.assetId === assetId ||
-  doc.cover?.assetId === assetId ||
-  doc.design.pageBackgroundAssetId === assetId ||
-  doc.blocks.some((block) => block.type === 'figure' && block.assetId === assetId) ||
-  (doc.images ?? []).some((image) => image.assetId === assetId);
 
 /** One uploadable, framable image bound to either `doc.hero` or `doc.cover`. */
 function ImagePicker({ slot, title, blurb }: { slot: 'hero' | 'cover'; title: string; blurb?: string }) {
@@ -44,7 +37,7 @@ function ImagePicker({ slot, title, blurb }: { slot: 'hero' | 'cover'; title: st
         const id = uid();
         d.assets[id] = { src, naturalWidth, naturalHeight };
         setFrame(d, { assetId: id, offsetX: 0, offsetY: 0, scale: 1 });
-        if (prev && prev !== id && !assetStillUsed(d, prev)) delete d.assets[prev];
+        if (prev && prev !== id && !assetIsReferenced(d, prev)) delete d.assets[prev];
       });
     } catch (e) {
       setError(e instanceof ImageLoadError ? e.message : 'Failed to load image.');
@@ -57,7 +50,7 @@ function ImagePicker({ slot, title, blurb }: { slot: 'hero' | 'cover'; title: st
     update((d) => {
       const prev = (d[slot] as Frame | undefined)?.assetId ?? null;
       setFrame(d, { assetId: null, offsetX: 0, offsetY: 0, scale: 1 });
-      if (prev && !assetStillUsed(d, prev)) delete d.assets[prev];
+      if (prev && !assetIsReferenced(d, prev)) delete d.assets[prev];
     });
 
   const setKey = (key: 'offsetX' | 'offsetY' | 'scale') => (v: number) =>

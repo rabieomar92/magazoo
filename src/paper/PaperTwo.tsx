@@ -7,6 +7,7 @@ import { TagBar } from './TagBar';
 import { Flow } from './Flow';
 import { PlacedImages } from './PlacedImages';
 import { FramedImage } from '../components/FramedImage';
+import { PageArtwork } from '../components/PageArtwork';
 
 interface Props {
   doc: Doc;
@@ -31,6 +32,7 @@ export function PaperTwoPage({
 
   return (
     <div className="page page--p2" style={vars}>
+      <PageArtwork doc={doc} />
       <TagBar doc={doc} pageIndex={0} />
 
       <div className="p2-cols">

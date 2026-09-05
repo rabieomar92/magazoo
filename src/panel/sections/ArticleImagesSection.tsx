@@ -2,18 +2,11 @@ import { useRef, useState } from 'react';
 import { grid } from '../../lib/geometry';
 import { loadImage, ImageLoadError } from '../../lib/loadImage';
 import { placedImageGeometry } from '../../lib/placedImage';
-import { uid, type Doc, type PlacedImage } from '../../schema/document';
+import { assetIsReferenced, uid, type Doc, type PlacedImage } from '../../schema/document';
 import { useDoc } from '../../store/useDoc';
 import { LabeledNumber, LabeledRange, RowButtons, Section, SegmentField } from '../Field';
 
 const DEFAULT_FRAME = { scale: 1, offsetX: 0, offsetY: 0 };
-
-const assetIsUsed = (doc: Doc, assetId: string) =>
-  doc.hero.assetId === assetId ||
-  doc.cover?.assetId === assetId ||
-  doc.design.pageBackgroundAssetId === assetId ||
-  doc.blocks.some((block) => block.type === 'figure' && block.assetId === assetId) ||
-  (doc.images ?? []).some((image) => image.assetId === assetId);
 
 export function ArticleImagesSection() {
   const images = useDoc((state) => state.doc.images ?? []);
@@ -55,7 +48,7 @@ export function ArticleImagesSection() {
           const geometry = placedImageGeometry(existing, loaded, doc.design);
           existing.anchor.column = geometry.column;
           existing.anchor.y = geometry.top;
-          if (!assetIsUsed(doc, oldAssetId)) delete doc.assets[oldAssetId];
+          if (!assetIsReferenced(doc, oldAssetId)) delete doc.assets[oldAssetId];
         } else {
           const widthCols = Math.min(2, grid(doc.design).totalCols) as PlacedImage['widthCols'];
           const image: PlacedImage = {
@@ -89,7 +82,7 @@ export function ArticleImagesSection() {
       const index = (doc.images ?? []).findIndex((image) => image.id === id);
       if (index < 0) return;
       const [removed] = doc.images.splice(index, 1);
-      if (!assetIsUsed(doc, removed.assetId)) delete doc.assets[removed.assetId];
+      if (!assetIsReferenced(doc, removed.assetId)) delete doc.assets[removed.assetId];
     });
 
   return (

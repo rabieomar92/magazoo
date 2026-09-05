@@ -110,6 +110,7 @@ export function cssVars(d: Design): Record<string, string> {
     '--fs-body': `${d.sizes.body}pt`,
     '--fs-title': `${d.sizes.title}pt`,
     '--fs-subtitle': `${d.sizes.subtitle}pt`,
+    '--subtitle-gap': `${Math.max(0, d.subtitleGap ?? 1)}mm`,
     '--fs-eyebrow': `${d.sizes.categoryLabel}pt`,
     '--fs-author': `${d.sizes.author}pt`,
     '--fs-affil': `${d.sizes.affiliation}pt`,

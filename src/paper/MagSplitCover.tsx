@@ -1,11 +1,13 @@
 import type { CSSProperties } from 'react';
 import type { Doc } from '../schema/document';
 import type { Piece } from '../lib/paginate';
-import { splitPhoto, stripBg, photoPageBg } from '../lib/magSplit';
+import { MAG2_STRIP, splitPhoto } from '../lib/magSplit';
 import { Flow } from './Flow';
 import { MagSplitHead } from './MagSplitHead';
 import { MagTopBar } from './MagazineHead';
 import { PlacedImages } from './PlacedImages';
+import { SpreadPhotoImage } from '../components/SpreadPhotoImage';
+import { PageArtwork } from '../components/PageArtwork';
 
 const photoOf = (doc: Doc) =>
   doc.design.showHero !== false && doc.hero.assetId ? doc.assets[doc.hero.assetId] : null;
@@ -29,6 +31,7 @@ export function MagSplitCover({ doc, vars, pieces }: Props) {
 
   return (
     <div className="page mag2-page" style={vars}>
+      <PageArtwork doc={doc} />
       <div className="mag2-inner">
         <MagSplitHead doc={doc} />
         {/* The pull-quote + highlights ride the flow's tail (MAG2_ASIDE_ID), so
@@ -42,10 +45,8 @@ export function MagSplitCover({ doc, vars, pieces }: Props) {
         </div>
       </div>
       {photo && (
-        <div
-          className="mag2-strip"
-          style={{ backgroundImage: `url("${photo.src}")`, ...stripBg(p) }}
-        >
+        <div className="mag2-strip">
+          <SpreadPhotoImage asset={photo} geometry={p} />
           {doc.meta.photoCredit && <span className="mag2-strip-credit">FOTO — {doc.meta.photoCredit}</span>}
         </div>
       )}
@@ -67,13 +68,11 @@ export function MagPhotoPage({
 }) {
   const photo = photoOf(doc);
   const p = splitPhoto(arOf(doc), doc.hero);
-  const style: CSSProperties = {
-    ...vars,
-    ...(photo ? { backgroundImage: `url("${photo.src}")`, ...photoPageBg(p) } : null),
-  };
+  const photoGeometry = { ...p, x: p.x - MAG2_STRIP };
 
   return (
-    <div className={`page mag2-photo${photo ? ' page--dedicated-bg' : ' mag2-photo--empty'}`} style={style}>
+    <div className={`page mag2-photo${photo ? ' page--dedicated-bg' : ' mag2-photo--empty'}`} style={vars}>
+      {photo && <SpreadPhotoImage asset={photo} geometry={photoGeometry} behind />}
       {!photo && <MagTopBar doc={doc} pageIndex={pageIndex} />}
       {doc.meta.location && <span className="mag2-photo-tag">{doc.meta.location}</span>}
       <PlacedImages doc={doc} pageIndex={pageIndex} />

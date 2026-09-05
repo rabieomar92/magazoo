@@ -6,6 +6,7 @@ import {
   frontCoverTextVisible,
 } from '../lib/frontCoverDesign';
 import { FramedImage } from '../components/FramedImage';
+import { PageArtwork } from '../components/PageArtwork';
 
 type Paragraph = Extract<Block, { type: 'paragraph' }>;
 
@@ -74,6 +75,7 @@ export function MagazineFrontCover({ doc, vars }: { doc: Doc; vars: CSSPropertie
       }${(doc.design.firstPageTopMargin ?? 0) > 0 ? ' page--first-offset' : ''}`}
       style={style}
     >
+      <PageArtwork doc={doc} />
       {photo && <FramedImage className="front-cover-photo" asset={photo} frame={cover} />}
       <div className="front-cover-scrim" />
       <div className="front-cover-inner">

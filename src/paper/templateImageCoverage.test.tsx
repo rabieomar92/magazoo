@@ -30,12 +30,49 @@ function docWithPageImage(page = 1): Doc {
 }
 
 describe('placed-image template coverage', () => {
-  it('starts every photo-essay top bar 10 mm from the page trim', () => {
+  it('renders split and gatefold photos as durable image elements, not data-URL CSS', () => {
+    const split = TEMPLATES.find((template) => template.id === 'magazine-2')!.make();
+    const gate = TEMPLATES.find((template) => template.id === 'magazine-3')!.make();
+
+    const splitHtml = renderToStaticMarkup(
+      <>
+        <MagSplitCover doc={split} vars={{}} pieces={[]} />
+        <MagPhotoPage doc={split} vars={{}} pageIndex={1} />
+      </>,
+    );
+    const gateHtml = renderToStaticMarkup(
+      <>
+        <MagGateA doc={gate} vars={{}} />
+        <MagGateB doc={gate} vars={{}} />
+      </>,
+    );
+
+    for (const html of [splitHtml, gateHtml]) {
+      expect(html).toContain('class="spread-photo-image"');
+      expect(html).not.toContain('background-image:url(data:image');
+    }
+  });
+
+  it('renders optional first-page artwork as an image that PDF export can await', () => {
+    const doc = emptyDoc();
+    doc.design.pageBackgroundAssetId = 'artwork';
+    doc.assets.artwork = {
+      src: 'data:image/png;base64,artwork',
+      naturalWidth: 1200,
+      naturalHeight: 1600,
+    };
+
+    const html = renderToStaticMarkup(<Page1 doc={doc} vars={{}} pieces={[]} />);
+    expect(html).toContain('class="page-artwork"');
+    expect(html).toContain('src="data:image/png;base64,artwork"');
+  });
+
+  it('starts every photo-essay top bar at the page trim by default', () => {
     const galleryTemplates = TEMPLATES.filter((template) => template.family === 'gallery');
 
     expect(galleryTemplates).toHaveLength(4);
     for (const template of galleryTemplates) {
-      expect(template.make().design.topBarOffset).toBe(10);
+      expect(template.make().design.topBarOffset).toBe(0);
     }
   });
 

@@ -1,6 +1,7 @@
 import { Fragment, type ReactNode } from 'react';
 import type { Doc } from '../schema/document';
 import { parseRuns, renderTex } from '../lib/richtext';
+import { TagBar } from './TagBar';
 
 /** Inline **bold** / *italic* / __underline__ + `$…$` math → styled nodes.
  *  Same helper as Flow.tsx/GalleryPage.tsx/Sidebar.tsx's own copy. */
@@ -21,15 +22,9 @@ function renderRuns(text: string): ReactNode {
  *  body columns is always exact. */
 export function MagSplitHead({ doc }: { doc: Doc }) {
   const { meta } = doc;
-  // Sheet 1 is the document's page 1 — same base-side rule as MagazineCover/
-  // MagGateA/TagBar's mirror=false case: barSide picks the starting side directly.
-  const flip = doc.design.barSide === 'right';
   return (
     <div className="mag2-head">
-      <div className={`mag2-band${flip ? ' mag2-band--flip' : ''}`}>
-        <span className="mag2-band-mast">{meta.masthead}</span>
-        <span className="mag2-band-vol">{meta.volume}</span>
-      </div>
+      <TagBar doc={doc} pageIndex={0} detail={meta.volume} fullBleed />
       <div className="mag2-head-content">
         {meta.categoryLabel && <p className="mag2-kicker">{meta.categoryLabel}</p>}
         <h1 className="mag2-title">{meta.title}</h1>

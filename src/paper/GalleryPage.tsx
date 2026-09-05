@@ -3,6 +3,7 @@ import type { Doc, Block } from '../schema/document';
 import { parseRuns, renderTex } from '../lib/richtext';
 import { galleryFrameGeometry } from '../lib/galleryFrame';
 import { TagBar } from './TagBar';
+import { PageArtwork } from '../components/PageArtwork';
 
 /** Inline **bold** / *italic* / __underline__ + `$…$` math → styled nodes. */
 function renderRuns(text: string): ReactNode {
@@ -147,6 +148,7 @@ export function GalleryPage({ doc, vars }: { doc: Doc; vars: CSSProperties }) {
   return (
     <>
       <div className="page gallery gallery--p1" style={vars}>
+        <PageArtwork doc={doc} />
         <TagBar doc={doc} pageIndex={0} fullBleed />
         <ImageCell doc={doc} block={figures[0]} area="img-1" />
         <FoldCell doc={doc} block={figures[1]} area="img-2" half="left" />
@@ -181,6 +183,7 @@ function GalleryTwo({ doc, vars }: { doc: Doc; vars: CSSProperties }) {
   return (
     <>
       <div className="page gallery gallery--p1 gallery2--p1" style={vars}>
+        <PageArtwork doc={doc} />
         <TagBar doc={doc} pageIndex={0} fullBleed />
         <FoldCell doc={doc} block={figures[0]} area="fold" half="left" />
         <ImageCell doc={doc} block={figures[1]} area="img-1" />
@@ -217,6 +220,7 @@ function GalleryThree({ doc, vars }: { doc: Doc; vars: CSSProperties }) {
   return (
     <>
       <div className="page gallery gallery--p1 gallery3--p1" style={vars}>
+        <PageArtwork doc={doc} />
         <TagBar doc={doc} pageIndex={0} fullBleed />
         <ImageCell doc={doc} block={figures[1]} area="img-1" />
         <ImageCell doc={doc} block={figures[2]} area="img-2" />
@@ -253,6 +257,7 @@ function GalleryFour({ doc, vars }: { doc: Doc; vars: CSSProperties }) {
   return (
     <>
       <div className="page gallery gallery--p1 gallery4--p1" style={vars}>
+        <PageArtwork doc={doc} />
         <TagBar doc={doc} pageIndex={0} fullBleed />
         <FoldCell doc={doc} block={figures[0]} area="fold" half="left" />
         <CardCell block={cards[0]} area="card-1" />

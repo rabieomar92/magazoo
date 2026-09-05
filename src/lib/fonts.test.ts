@@ -21,4 +21,11 @@ describe('font stacks', () => {
     expect(vars['--serif']).toBe(fontStack('Avenir Next'));
     expect(vars['--sans']).toBe(fontStack('Avenir Next'));
   });
+
+  it('publishes the editable title-to-subtitle gap as a physical CSS length', () => {
+    const design = emptyDoc().design;
+    design.subtitleGap = 4.5;
+
+    expect(cssVars(design)['--subtitle-gap']).toBe('4.5mm');
+  });
 });

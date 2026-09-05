@@ -7,16 +7,20 @@ export function TagBar({
   doc,
   pageIndex,
   fullBleed = false,
+  detail,
 }: {
   doc: Doc;
   pageIndex: number;
   fullBleed?: boolean;
+  /** Optional issue/date copy shown inside the rule on magazine bars. */
+  detail?: string;
 }) {
   const flip = barStartsRight(doc.design.barSide, pageIndex);
   const topBarText = doc.meta.masthead?.trim();
+  const detailText = detail?.trim();
   return (
     <div
-      className={`tag-bar${flip ? ' tag-bar--flip' : ''}`}
+      className={`tag-bar${flip ? ' tag-bar--flip' : ''}${detailText ? ' tag-bar--detailed' : ''}`}
       style={
         fullBleed
           ? {
@@ -30,7 +34,9 @@ export function TagBar({
       {/* Hugs its text: a longer tag simply lengthens the block and eats into
           the rule beside it. */}
       {topBarText && <span className="tag-bar-tag">{topBarText}</span>}
-      <span className="tag-bar-fill" />
+      <span className="tag-bar-fill">
+        {detailText && <span className="tag-bar-detail">{detailText}</span>}
+      </span>
     </div>
   );
 }

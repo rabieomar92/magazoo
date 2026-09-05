@@ -91,9 +91,9 @@ function waitForImage(image: HTMLImageElement) {
   );
 }
 
-/** Extract URL resources from a computed CSS image value. This covers split
- * magazine photos and page artwork, which are backgrounds rather than <img>
- * elements and therefore are not included in HTMLImageElement collections. */
+/** Extract URL resources from author/template CSS backgrounds. Publication
+ * assets use real <img> elements, but custom CSS may still introduce images
+ * that must finish loading before the page is captured. */
 export function cssImageUrls(value: string): string[] {
   const urls: string[] = [];
   const matcher = /url\(\s*(?:"([^"]*)"|'([^']*)'|([^)]*?))\s*\)/g;

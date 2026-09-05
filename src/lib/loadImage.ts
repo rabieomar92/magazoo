@@ -19,10 +19,10 @@ export interface LoadedImage {
 export const MAX_SOURCE_IMAGE_BYTES = 64 * 1024 * 1024;
 /** Keep embedded assets compact enough for reliable autosave and JSON export. */
 export const MAX_EMBEDDED_IMAGE_BYTES = 8 * 1024 * 1024;
-/** 4096 px comfortably exceeds the editor/PDF raster resolution for an A4 page. */
-export const MAX_IMAGE_EDGE = 4096;
-/** Also guard unusually square images that would otherwise use excessive RAM. */
-export const MAX_IMAGE_PIXELS = 16 * 1024 * 1024;
+/** 3200 px remains print-sharp on A4 while avoiding oversized decode surfaces. */
+export const MAX_IMAGE_EDGE = 3200;
+/** A decoded image uses roughly four bytes per pixel; cap each asset near 32 MB. */
+export const MAX_IMAGE_PIXELS = 8 * 1024 * 1024;
 
 /** @deprecated Use MAX_SOURCE_IMAGE_BYTES for upload validation. */
 export const MAX_IMAGE_BYTES = MAX_SOURCE_IMAGE_BYTES;

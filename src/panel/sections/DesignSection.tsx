@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { useDoc } from '../../store/useDoc';
-import { familyOf, uid, type Design } from '../../schema/document';
+import { assetIsReferenced, defaultSubtitleGap, familyOf, uid, type Design } from '../../schema/document';
 import { cplWarning } from '../../lib/geometry';
 import { ImageLoadError, loadImage } from '../../lib/loadImage';
 import { ALL_FONTS, SANS_FONTS, SERIF_FONTS, fontOptions } from '../../lib/fonts';
@@ -22,11 +22,12 @@ export function DesignSection() {
     return id ? s.doc.assets[id] : null;
   });
   const family = useDoc((s) => familyOf(s.doc.templateId));
+  const templateId = useDoc((s) => s.doc.templateId);
   const isFrontCover = useDoc((s) => s.doc.templateId === 'magazine-4');
   // Paper and gallery sheets carry the same shared TagBar, so its rule, tag,
   // and ink colours are author-controlled for both families. Magazine keeps
   // its own masthead treatment and exposes only the side control here.
-  const hasBar = family === 'paper' || family === 'gallery';
+  const hasBar = !isFrontCover;
   const hasBarSide = true;
   const update = useDoc((s) => s.update);
   const backgroundFileRef = useRef<HTMLInputElement>(null);
@@ -62,7 +63,7 @@ export function DesignSection() {
         d.assets[id] = loaded;
         d.design.pageBackgroundAssetId = id;
         d.design.pageBackgroundOpacity = d.design.pageBackgroundOpacity ?? 1;
-        if (previous && previous !== id) delete d.assets[previous];
+        if (previous && previous !== id && !assetIsReferenced(d, previous)) delete d.assets[previous];
       });
     } catch (error) {
       setBackgroundError(error instanceof ImageLoadError ? error.message : 'Failed to load image.');
@@ -75,7 +76,7 @@ export function DesignSection() {
     update((d) => {
       const previous = d.design.pageBackgroundAssetId;
       d.design.pageBackgroundAssetId = undefined;
-      if (previous) delete d.assets[previous];
+      if (previous && !assetIsReferenced(d, previous)) delete d.assets[previous];
     });
 
   if (isFrontCover) return <FrontCoverDesignSection />;
@@ -144,6 +145,15 @@ export function DesignSection() {
       <LabeledNumber label="Gutter" unit="mm" value={design.gutter} min={2} max={12} step={0.5} onChange={(v) => set('gutter', v)} />
       {family !== 'gallery' && (
         <>
+          <LabeledNumber
+            label="Title to subtitle gap"
+            unit="mm"
+            value={design.subtitleGap ?? defaultSubtitleGap(templateId)}
+            min={0}
+            max={40}
+            step={0.5}
+            onChange={(v) => set('subtitleGap', v)}
+          />
           <LabeledNumber
             label="First-page top margin"
             unit="mm"
@@ -247,8 +257,8 @@ export function DesignSection() {
           <LabeledNumber
             label="Distance from top edge"
             unit="mm"
-            value={family === 'gallery' ? Math.max(10, design.topBarOffset ?? 10) : design.topBarOffset ?? 0}
-            min={family === 'gallery' ? 10 : 0}
+            value={design.topBarOffset ?? 0}
+            min={0}
             max={40}
             step={1}
             onChange={(v) => set('topBarOffset', v)}

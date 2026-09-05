@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { useDoc } from '../../store/useDoc';
-import { uid, type Doc } from '../../schema/document';
+import { assetIsReferenced, uid } from '../../schema/document';
 import { galleryFrameGeometry } from '../../lib/galleryFrame';
 import { ImageLoadError, loadImage } from '../../lib/loadImage';
 import { LabeledColor, LabeledRange, Section } from '../Field';
@@ -98,9 +98,6 @@ export function GallerySection() {
     return acc;
   }, []);
 
-  const stillUsed = (d: Doc, assetId: string) =>
-    d.blocks.some((b) => b.type === 'figure' && b.assetId === assetId) || d.hero.assetId === assetId;
-
   const chooseImage = (slot: number) => {
     pendingSlot.current = slot;
     fileRef.current?.click();
@@ -129,7 +126,7 @@ export function GallerySection() {
           if (b.type !== 'figure') return;
           const old = b.assetId;
           b.assetId = aid;
-          if (!stillUsed(d, old)) delete d.assets[old];
+          if (!assetIsReferenced(d, old)) delete d.assets[old];
         }
       });
     } catch (error) {

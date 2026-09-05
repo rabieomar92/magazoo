@@ -2,6 +2,8 @@ import type { CSSProperties } from 'react';
 import type { Doc } from '../schema/document';
 import { PlacedImages } from './PlacedImages';
 import { FramedImage } from '../components/FramedImage';
+import { PageArtwork } from '../components/PageArtwork';
+import { TagBar } from './TagBar';
 
 /** Magazine page 1: a full-bleed photo cover / masthead. Giant stacked title
  *  with its last word in red, kicker above it, masthead + volume on top, and the
@@ -14,11 +16,6 @@ export function MagazineCover({ doc, vars }: { doc: Doc; vars: CSSProperties }) 
   const photo = doc.design.showHero !== false && cover.assetId ? assets[cover.assetId] : null;
   const words = meta.title.trim().split(/\s+/).filter(Boolean);
   const mag1 = doc.templateId === 'magazine-1';
-  // The cover is every document's page 1 — the page doc.design.barSide picks
-  // a *starting* side for, same convention as TagBar/MagTopBar's `mirror=false`
-  // base case. No mirror prop here: there's nothing before it to alternate from.
-  const flip = doc.design.barSide === 'right';
-
   const style: CSSProperties = {
     ...vars,
   };
@@ -30,13 +27,11 @@ export function MagazineCover({ doc, vars }: { doc: Doc; vars: CSSProperties }) 
       }`}
       style={style}
     >
+      <PageArtwork doc={doc} />
       {photo && <FramedImage className="mag-cover-photo" asset={photo} frame={cover} />}
       <div className="mag-cover-scrim" />
       <div className="mag-cover-inner">
-        <div className={`mag-cover-top${flip ? ' mag-cover-top--flip' : ''}`}>
-          <span className="mag-masthead">{meta.masthead}</span>
-          <span className="mag-vol">{meta.volume}</span>
-        </div>
+        <TagBar doc={doc} pageIndex={0} detail={meta.volume} fullBleed />
 
         <div className="mag-cover-mid">
           {meta.categoryLabel && (
