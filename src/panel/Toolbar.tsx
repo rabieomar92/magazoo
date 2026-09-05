@@ -6,7 +6,7 @@ import { useSaveStatus, type SaveState } from '../store/saveStatus';
 import { exportPreviewPdf } from '../lib/pdfExport';
 
 const SAVE_LABEL: Record<SaveState, string> = {
-  idle: '',
+  idle: 'Ready',
   saving: 'Saving…',
   saved: 'Saved',
   error: 'Failed to save',
@@ -137,13 +137,12 @@ export function Toolbar({ onPreviewToolsHost }: { onPreviewToolsHost: (host: HTM
 
   return (
     <header className="toolbar">
-      <span
-        className={`save-status${saveState === 'error' ? ' save-status--error' : ''}${saveState === 'idle' ? ' is-idle' : ''}`}
-        role="status"
-        aria-live="polite"
-      >
-        <span className="save-status-dot" aria-hidden="true" />
-        {saveState === 'idle' ? 'Ready' : SAVE_LABEL[saveState]}
+      <div className="toolbar-identity" title={`Autosave: ${SAVE_LABEL[saveState]}`}>
+        <span className="toolbar-brand" aria-label="Magazoo! editor">Magazoo!</span>
+        {saveState === 'error' && <span className="toolbar-save-error">Autosave failed</span>}
+      </div>
+      <span className="visually-hidden" role="status" aria-live="polite">
+        Autosave: {SAVE_LABEL[saveState]}
       </span>
       <div
         ref={onPreviewToolsHost}
@@ -153,18 +152,18 @@ export function Toolbar({ onPreviewToolsHost }: { onPreviewToolsHost: (host: HTM
       />
       <div className="toolbar-group">
         <button className="tool-btn" onClick={undo} disabled={!canUndo} title="Undo (⌘Z)">
-          ↶ Undo
+          Undo
         </button>
         <button className="tool-btn" onClick={redo} disabled={!canRedo} title="Redo (⌘⇧Z)">
-          ↷ Redo
+          Redo
         </button>
       </div>
       <div className="toolbar-group">
         <button className="tool-btn" onClick={open} title="Open a Magazoo! project">
-          <span aria-hidden="true">↗</span> Open
+          Open
         </button>
         <button className="tool-btn" onClick={() => void saveAs()} title="Save As… (⌘S)">
-          <span aria-hidden="true">↓</span> Save As…
+          Save As…
         </button>
         <button
           className="tool-btn tool-btn--primary"
@@ -173,7 +172,7 @@ export function Toolbar({ onPreviewToolsHost }: { onPreviewToolsHost: (host: HTM
           aria-busy={exporting}
           title="Export clean A4 pages to PDF"
         >
-          <span aria-hidden="true">PDF</span> {exporting ? 'Preparing…' : 'Export PDF'}
+          {exporting ? 'Preparing…' : 'Export PDF'}
         </button>
       </div>
     </header>

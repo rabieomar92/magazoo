@@ -426,10 +426,12 @@ function fillTextRegion(
   };
 }
 
-/** Fill explicit rectangular regions in editorial band order: every available
- * column above an image, then columns beside it, then every column below it.
- * This preserves the established wrap behaviour: narrow spaces adjacent to
- * any image are considered before the flow moves below that image. */
+/** Fill explicit rectangles in magazine reading order: finish every writable
+ * segment of the leading logical column from top to bottom, then advance to
+ * the next column. An image at the top of column 1 therefore sends the opening
+ * copy directly below itself; the story can never jump to column 2 and later
+ * return beneath the image. PaperPreview maps physical columns into logical
+ * order first, so this same loop reads right-to-left for RTL documents. */
 export function fillColumnsAroundImages(
   items: TextPiece[],
   probe: HTMLElement,
@@ -460,30 +462,11 @@ export function fillColumnsAroundImages(
     Math.max(0, safetyBoost);
 
   const mergedByColumn = exclusionsByColumn.map(mergeExclusions);
-  const boundaries = Array.from(
-    new Set([
-      0,
-      columnHeight,
-      ...mergedByColumn.flatMap((column) =>
-        column.flatMap((band) => [
-          Math.min(columnHeight, Math.max(0, band.top)),
-          Math.min(columnHeight, Math.max(0, band.bottom)),
-        ]),
-      ),
-    ]),
-  ).sort((a, b) => a - b);
-
-  for (let bandIndex = 0; bandIndex < boundaries.length - 1; bandIndex += 1) {
-    const bounds = { top: boundaries[bandIndex], bottom: boundaries[bandIndex + 1] };
-    const height = bounds.bottom - bounds.top;
-    if (height <= 0) continue;
-
-    for (let columnIndex = 0; columnIndex < mergedByColumn.length; columnIndex += 1) {
-      const blocked = mergedByColumn[columnIndex].some(
-        (exclusion) => exclusion.top < bounds.bottom - 0.01 && exclusion.bottom > bounds.top + 0.01,
-      );
-      if (blocked) continue;
-
+  for (let columnIndex = 0; columnIndex < mergedByColumn.length; columnIndex += 1) {
+    const segments = writableSegments(mergedByColumn[columnIndex], columnHeight);
+    for (const bounds of segments) {
+      const height = bounds.bottom - bounds.top;
+      if (height <= 0) continue;
       probe.style.height = `${Math.max(0, height - segmentSafety)}px`;
       const filled = fillTextRegion(rest, probe, isOverflowing, !opened);
       columns[columnIndex].segments.push({ ...bounds, order: segmentOrder, pieces: filled.placed });

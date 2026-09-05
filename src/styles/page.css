@@ -757,9 +757,9 @@
   pointer-events: none;
 }
 
-/* Image-aware flow is measured into concrete writable rectangles. Each
-   segment is independent, so a full-width image can never make Chromium skip
-   the space below it or strand copy in only one of the page's columns. */
+/* Image-aware flow is measured into concrete writable rectangles. Segments
+   follow logical column order (top-to-bottom, then the next column), so an
+   image can never create a middle-column start followed by a jump back left. */
 .flow-image-grid {
   column-span: all;
   display: grid;

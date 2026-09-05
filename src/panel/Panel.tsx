@@ -91,6 +91,7 @@ export function Panel() {
         <label className="template-switch-field">
           <span>Layout</span>
           <select
+            className="select-control"
             value={templateId}
             aria-label="Layout template"
             onChange={(event) => switchTemplate(event.target.value as TemplateId)}

@@ -126,7 +126,7 @@ export function LabeledSelect({ label, value, options, onChange }: SelectProps) 
   return (
     <label className="field field--inline">
       <span className="field-label">{label}</span>
-      <select className="field-input" value={value} onChange={(e) => onChange(e.target.value)}>
+      <select className="field-input select-control" value={value} onChange={(e) => onChange(e.target.value)}>
         {options.map((o) => (
           <option key={o.value} value={o.value}>
             {o.label}

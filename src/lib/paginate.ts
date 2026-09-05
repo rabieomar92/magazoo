@@ -139,7 +139,7 @@ export type Piece =
       height: number;
       columns: {
         segments: {
-          /** Reading order across horizontal image bands. */
+          /** Reading order across logical columns and their vertical segments. */
           order: number;
           top: number;
           bottom: number;

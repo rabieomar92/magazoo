@@ -247,6 +247,44 @@ describe('image-shaped columns', () => {
     ).toEqual([4, 8]);
     expect(remainder).toEqual([]);
     expect(imageWordsInReadingOrder(columns)).toEqual(words(source.text));
+    expect(columns.map((column) => column.segments.map((segment) => segment.order))).toEqual([
+      [0, 1],
+      [2],
+    ]);
+  });
+
+  it('finishes the space below a leading-column image before moving to the next column', () => {
+    const probe = document.createElement('div');
+    const source = text('one two three four five six seven eight nine ten eleven twelve thirteen fourteen');
+    const isOverflowing = (element: HTMLElement) => {
+      const wordCount = words(element.textContent ?? '').length;
+      return wordCount > Math.floor((parseFloat(element.style.height) || 0) / 10);
+    };
+
+    const { columns, remainder } = fillColumnsAroundImages(
+      [source],
+      probe,
+      [[{ top: 0, bottom: 60 }], [], []],
+      100,
+      isOverflowing,
+    );
+
+    expect(remainder).toEqual([]);
+    expect(
+      columns.map((column) =>
+        column.segments.flatMap((segment) => segment.pieces).flatMap((piece) => words(piece.text)),
+      ),
+    ).toEqual([
+      ['one', 'two', 'three', 'four'],
+      ['five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen'],
+      [],
+    ]);
+    expect(columns.map((column) => column.segments.map((segment) => segment.order))).toEqual([
+      [0],
+      [1],
+      [2],
+    ]);
+    expect(imageWordsInReadingOrder(columns)).toEqual(words(source.text));
   });
 
   it('fills both sides of a wide image in every covered column', () => {
@@ -274,6 +312,11 @@ describe('image-shaped columns', () => {
       [1, 1],
       [1, 1],
       [1, 1],
+    ]);
+    expect(columns.map((column) => column.segments.map((segment) => segment.order))).toEqual([
+      [0, 1],
+      [2, 3],
+      [4, 5],
     ]);
     expect(imageWordsInReadingOrder(columns)).toEqual(words(source.text));
   });
