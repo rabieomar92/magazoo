@@ -206,6 +206,7 @@ export interface FrontCoverTextStyle {
   fontSize?: number;
   color?: string;
   fontWeight?: number;
+  fontStyle?: 'normal' | 'italic';
   /** em units. */
   letterSpacing?: number;
   visible?: boolean;
@@ -266,6 +267,16 @@ export interface Design {
   fontSubtitle?: string;
   fontAuthor?: string;
   fontAffiliation?: string;
+  /** Independent heading-copy styles. Unset colours follow theme Ink. */
+  subtitleColor?: string;
+  authorColor?: string;
+  affiliationColor?: string;
+  subtitleWeight?: number;
+  authorWeight?: number;
+  affiliationWeight?: number;
+  subtitleItalic?: boolean;
+  authorItalic?: boolean;
+  affiliationItalic?: boolean;
   /** Per-object typography and cover-only composition controls. */
   frontCover?: FrontCoverDesign;
   colors: { hero: string; accent: string; accentSoft: string; ink: string };

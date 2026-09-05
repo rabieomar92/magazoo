@@ -297,11 +297,22 @@ function makeMagazine(m: MagInput): Doc {
   d.design = {
     ...d.design,
     subtitleGap: defaultSubtitleGap(m.id),
+    // These photo-cover presets deliberately begin with light heading copy.
+    // Clearing either override in Design restores live theme-Ink inheritance.
+    ...(m.id === 'magazine-1' || m.id === 'magazine-3' ? {
+      subtitleColor: '#eef2f7',
+      authorColor: '#cbd5e1',
+    } : {}),
     bodyCols: 2,
     gutter: 8,
     bodyAlign: 'justify',
     fontDisplay: 'Playfair Display', // serif elements (quote, lede, drop cap)
-    sizes: { ...d.design.sizes, body: 10.5 },
+    sizes: {
+      ...d.design.sizes,
+      body: 10.5,
+      ...(m.id === 'magazine-1' ? { subtitle: 13, author: 8.5 } : {}),
+      ...(m.id === 'magazine-3' ? { subtitle: 14, author: 8.5 } : {}),
+    },
     colors: { hero: '#0b1220', accent: m.accent, accentSoft: m.accentSoft, ink: '#14181f' },
   };
   d.hero = { assetId: photoId, offsetX: 0, offsetY: 0, scale: 1 };

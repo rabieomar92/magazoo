@@ -104,7 +104,7 @@
   font-size: 44pt;
   line-height: 0.92;
   letter-spacing: -0.03em;
-  text-transform: uppercase;
+  text-transform: none;
   text-shadow: 0 2px 24px rgba(0, 0, 0, 0.35);
 }
 
@@ -120,11 +120,12 @@
 .mag-lede {
   max-width: 74%;
   margin: var(--subtitle-gap, 6mm) 0 0;
-  font-family: var(--serif);
-  font-style: italic;
-  font-size: 13pt;
+  font-family: var(--font-subtitle);
+  font-style: var(--subtitle-style, italic);
+  font-weight: var(--subtitle-weight, 400);
+  font-size: var(--fs-subtitle);
   line-height: 1.45;
-  color: #e5e7eb;
+  color: var(--subtitle-color, #e5e7eb);
 }
 
 .mag-cover-foot {
@@ -143,6 +144,15 @@
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: #cbd5e1;
+}
+
+.mag-cover-author {
+  color: var(--author-color, #cbd5e1);
+  font-family: var(--font-author);
+  font-size: var(--fs-author);
+  font-weight: var(--author-weight, 400);
+  font-style: var(--author-style, normal);
+  text-transform: none;
 }
 
 /* ---- Dedicated one-page front cover (magazine-4) ------------------------- */
@@ -216,9 +226,10 @@
   font-family: var(--front-masthead-font, var(--serif));
   font-size: var(--front-masthead-size, 34pt);
   font-weight: var(--front-masthead-weight, 900);
+  font-style: var(--front-masthead-style, normal);
   line-height: 0.88;
   letter-spacing: var(--front-masthead-tracking, -0.055em);
-  text-transform: uppercase;
+  text-transform: none;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -230,9 +241,10 @@
   font-family: var(--front-strapline-font, var(--font-affil));
   font-size: var(--front-strapline-size, var(--fs-affil));
   font-weight: var(--front-strapline-weight, 700);
+  font-style: var(--front-strapline-style, normal);
   letter-spacing: var(--front-strapline-tracking, 0.11em);
   line-height: 1.2;
-  text-transform: uppercase;
+  text-transform: none;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -260,6 +272,7 @@
   font-family: var(--front-kicker-font, var(--font-category));
   font-size: var(--front-kicker-size, var(--fs-eyebrow));
   font-weight: var(--front-kicker-weight, 900);
+  font-style: var(--front-kicker-style, normal);
   letter-spacing: var(--front-kicker-tracking, 0.13em);
   line-height: 1.1;
   text-overflow: ellipsis;
@@ -276,9 +289,10 @@
   font-family: var(--front-title-font, var(--serif));
   font-size: var(--front-title-size, var(--fs-title));
   font-weight: var(--front-title-weight, 900);
+  font-style: var(--front-title-style, normal);
   line-height: 0.93;
   letter-spacing: var(--front-title-tracking, -0.04em);
-  text-transform: uppercase;
+  text-transform: none;
   text-shadow: 0 2px 22px rgba(0, 0, 0, 0.45);
 }
 
@@ -291,6 +305,7 @@
   font-family: var(--front-subtitle-font, var(--font-subtitle));
   font-size: var(--front-subtitle-size, var(--fs-subtitle));
   font-weight: var(--front-subtitle-weight, 600);
+  font-style: var(--front-subtitle-style, normal);
   letter-spacing: var(--front-subtitle-tracking, 0);
   line-height: 1.42;
   text-shadow: 0 1px 12px rgba(0, 0, 0, 0.7);
@@ -312,6 +327,8 @@
   font-family: var(--front-author-font, var(--font-author));
   font-size: var(--front-author-size, var(--fs-author));
   font-weight: var(--front-author-weight, 800);
+  font-style: var(--front-author-style, normal);
+  text-transform: none;
   letter-spacing: var(--front-author-tracking, 0.1em);
 }
 
@@ -320,6 +337,7 @@
   font-family: var(--front-story-tag-font, var(--sans));
   font-size: var(--front-story-tag-size, var(--fs-author));
   font-weight: var(--front-story-tag-weight, 800);
+  font-style: var(--front-story-tag-style, normal);
   letter-spacing: var(--front-story-tag-tracking, 0.1em);
 }
 
@@ -361,9 +379,10 @@
   font-family: var(--front-teaser-title-font, var(--sans));
   font-size: var(--front-card-title-size, var(--front-teaser-title-size, var(--fs-body)));
   font-weight: var(--front-teaser-title-weight, 900);
+  font-style: var(--front-teaser-title-style, normal);
   letter-spacing: var(--front-teaser-title-tracking, 0.055em);
   line-height: 1.05;
-  text-transform: uppercase;
+  text-transform: none;
 }
 
 .front-cover-teaser p {
@@ -372,6 +391,7 @@
   font-family: var(--front-teaser-body-font, var(--sans));
   font-size: var(--front-card-body-size, var(--front-teaser-body-size, calc(var(--fs-body) * 0.88)));
   font-weight: var(--front-teaser-body-weight, 400);
+  font-style: var(--front-teaser-body-style, normal);
   letter-spacing: var(--front-teaser-body-tracking, 0);
   line-height: 1.28;
   opacity: 0.86;
@@ -392,6 +412,8 @@
   font-family: var(--front-footer-brand-font, var(--sans));
   font-size: var(--front-footer-brand-size, 5.9pt);
   font-weight: var(--front-footer-brand-weight, 800);
+  font-style: var(--front-footer-brand-style, normal);
+  text-transform: none;
   letter-spacing: var(--front-footer-brand-tracking, 0.13em);
 }
 
@@ -400,6 +422,7 @@
   font-family: var(--front-photo-credit-font, var(--sans));
   font-size: var(--front-photo-credit-size, 5.9pt);
   font-weight: var(--front-photo-credit-weight, 800);
+  font-style: var(--front-photo-credit-style, normal);
   letter-spacing: var(--front-photo-credit-tracking, 0.13em);
 }
 
@@ -652,17 +675,18 @@
   font-size: var(--fs-title);
   line-height: 1.02;
   letter-spacing: -0.015em;
-  text-transform: uppercase;
+  text-transform: none;
   color: var(--ink);
 }
 
 .mag2-lede {
   margin: var(--subtitle-gap, 3mm) 0 0;
   font-family: var(--font-subtitle);
-  font-style: italic;
+  font-style: var(--subtitle-style, italic);
+  font-weight: var(--subtitle-weight, 400);
   font-size: var(--fs-subtitle);
   line-height: 1.4;
-  color: #475569;
+  color: var(--subtitle-color, var(--ink));
 }
 
 .mag2-byline {
@@ -677,18 +701,21 @@
 .mag2-author {
   font-family: var(--font-author);
   font-size: var(--fs-author);
-  font-weight: 800;
+  font-weight: var(--author-weight, 800);
+  font-style: var(--author-style, normal);
   letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--ink);
+  text-transform: none;
+  color: var(--author-color, var(--ink));
 }
 
 .mag2-affil {
   font-family: var(--font-affil);
   font-size: var(--fs-affil);
   letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #64748b;
+  text-transform: none;
+  color: var(--affiliation-color, var(--ink));
+  font-weight: var(--affiliation-weight, 400);
+  font-style: var(--affiliation-style, normal);
 }
 
 /* Body box: narrower than .mag-cols by the strip. Fixed at 2 columns — the
@@ -916,11 +943,12 @@
 .mag-gate-lede {
   margin: var(--subtitle-gap, 0mm) 0 18px auto;
   max-width: 84%;
-  font-family: var(--serif);
-  font-style: italic;
-  font-size: 14pt;
+  font-family: var(--font-subtitle);
+  font-style: var(--subtitle-style, italic);
+  font-weight: var(--subtitle-weight, 400);
+  font-size: var(--fs-subtitle);
   line-height: 1.45;
-  color: #eef2f7;
+  color: var(--subtitle-color, #eef2f7);
 }
 .mag-gate-quote {
   margin: 0 0 0 auto;
@@ -965,4 +993,13 @@
   text-transform: uppercase;
   color: #cbd5e1;
   text-align: left;
+}
+
+.mag-gate-author {
+  color: var(--author-color, #cbd5e1);
+  font-family: var(--font-author);
+  font-size: var(--fs-author);
+  font-weight: var(--author-weight, 400);
+  font-style: var(--author-style, normal);
+  text-transform: none;
 }

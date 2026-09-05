@@ -73,8 +73,8 @@
   font-size: 9.5pt;
 }
 .g-img figcaption .g-desc {
-  color: #e5e7eb;
-  font-size: 7.5pt;
+  color: var(--caption-subtitle-color, #e5e7eb);
+  font-size: calc(var(--fs-subtitle) * 0.75);
 }
 
 /* Text card: bold title + description, no image. Alignment is author-controlled
@@ -92,17 +92,19 @@
   font-family: var(--serif);
   font-weight: 800;
   letter-spacing: 0.02em;
-  text-transform: uppercase;
+  text-transform: none;
   font-size: 12pt;
   line-height: 1.2;
   color: var(--paper-ink, #111418);
 }
 .g-desc {
   margin: 0;
-  font-family: var(--sans);
-  font-size: 10pt;
+  font-family: var(--font-subtitle);
+  font-weight: var(--subtitle-weight, 400);
+  font-style: var(--subtitle-style, normal);
+  font-size: var(--fs-subtitle);
   line-height: 1.45;
-  color: var(--paper-ink-soft, #334155);
+  color: var(--subtitle-color, var(--ink));
 }
 
 /* Content's per-paragraph choice applies to gallery text cards too. The title

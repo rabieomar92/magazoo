@@ -271,27 +271,33 @@
   font-size: var(--fs-title);
   line-height: 1.05;
   color: var(--ink);
+  text-transform: none;
 }
 
 .header .subtitle {
   margin: var(--subtitle-gap, 1mm) 0 0;
   font-family: var(--font-subtitle);
   font-size: var(--fs-subtitle);
-  color: var(--ink);
-  opacity: 0.8;
+  color: var(--subtitle-color, var(--ink));
+  font-weight: var(--subtitle-weight, 400);
+  font-style: var(--subtitle-style, normal);
 }
 
 .header .byline {
   margin: 0.3em 0 0;
   font-family: var(--font-author);
   font-size: var(--fs-author);
-  color: var(--ink);
+  color: var(--author-color, var(--ink));
+  font-weight: var(--author-weight, 400);
+  font-style: var(--author-style, normal);
 }
 
 .header .byline .affiliation {
   font-family: var(--font-affil);
   font-size: var(--fs-affil);
-  opacity: 0.75;
+  color: var(--affiliation-color, var(--ink));
+  font-weight: var(--affiliation-weight, 400);
+  font-style: var(--affiliation-style, normal);
 }
 
 /* Rule with a tag block, drawn by the paper templates that want one. The tag
@@ -862,10 +868,15 @@
   overflow: hidden;
 }
 
-/* One drop-cap geometry for every article template. `font-size-adjust` makes
-   the selected font's cap height predictable, while the explicit line-height
-   reserves the first three body lines. The explicit span also avoids
-   Chromium cloning ::first-letter at RTL multicolumn fragment boundaries. */
+/* One drop-cap geometry for every article template. Keep the selected display
+   font at its authored size: `font-size-adjust: cap-height` used to enlarge or
+   shrink the actual glyph independently for every font, while the float still
+   reserved the old box. That is what produced the detached first syllable and
+   occasional overlap seen with wide capitals such as H and W. The explicit
+   line-height remains the three-line reservation used by the paginator; only
+   a body-font-sized gap is added, so changing display fonts cannot create a
+   giant margin beside the letter. The real span also avoids Chromium cloning
+   ::first-letter at RTL multicolumn fragment boundaries. */
 .body-cols--p1 p.flow-opener .drop-cap,
 .p2-flow-l p.flow-opener .drop-cap,
 .p2-host-l p.flow-opener .drop-cap,
@@ -875,12 +886,13 @@
   float: inline-start;
   font-family: var(--serif);
   font-size: var(--drop-cap-font-size, calc(var(--fs-body) * 4.9));
-  font-size-adjust: cap-height 0.72;
+  font-size-adjust: none;
   font-weight: var(--drop-cap-weight, inherit);
   line-height: var(--drop-cap-line-height, calc(var(--fs-body) * 3.55));
   margin: 0;
+  margin-inline-end: calc(var(--fs-body) * 0.28);
   padding: 0;
-  padding-inline-end: 0.18em;
+  letter-spacing: 0;
   color: var(--drop-cap-color, var(--ink));
 }
 
