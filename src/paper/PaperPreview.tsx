@@ -222,7 +222,7 @@ const PaperPreviewLayout = memo(function PaperPreviewLayout({
 
   const updateDoc = useDoc((state) => state.update);
 
-  const baseVars = useMemo(() => cssVars(doc.design), [doc.design]);
+  const baseVars = useMemo(() => cssVars(doc.design, doc.templateId), [doc.design, doc.templateId]);
   const items = useMemo<FlowItem[]>(
     () =>
       doc.blocks.flatMap<FlowItem>((b) => {

@@ -24,6 +24,9 @@ describe('DesignSection font choices', () => {
       expect([...select.options].map((option) => option.value)).toContain('Avenir Next');
     }
     expect(host.textContent).toContain('Title to subtitle gap');
+    expect(host.textContent).toContain('Subtitle / lede');
+    expect(host.textContent).toContain('Author bold');
+    expect(host.textContent).toContain('Affiliation italic');
 
     act(() => root.unmount());
   });

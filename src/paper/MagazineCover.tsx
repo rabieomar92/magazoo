@@ -56,7 +56,7 @@ export function MagazineCover({ doc, vars }: { doc: Doc; vars: CSSProperties }) 
         <div className="mag-cover-foot">
           <div className="mag-cover-credits">
             {/* magazine-1 shows the raw values; other magazines keep the labels. */}
-            {meta.author && <span>{mag1 ? meta.author : `OLEH ${meta.author}`}</span>}
+            {meta.author && <span className="mag-cover-author">{mag1 ? meta.author : `OLEH ${meta.author}`}</span>}
             {meta.photoCredit && (
               <span>{mag1 ? meta.photoCredit : `FOTO: ${meta.photoCredit}`}</span>
             )}

@@ -1,10 +1,17 @@
 import { useRef, useState } from 'react';
 import { useDoc } from '../../store/useDoc';
-import { assetIsReferenced, defaultSubtitleGap, familyOf, uid, type Design } from '../../schema/document';
+import {
+  assetIsReferenced,
+  defaultSubtitleGap,
+  familyOf,
+  uid,
+  type Design,
+} from '../../schema/document';
 import { cplWarning } from '../../lib/geometry';
 import { ImageLoadError, loadImage } from '../../lib/loadImage';
 import { ALL_FONTS, SANS_FONTS, SERIF_FONTS, fontOptions } from '../../lib/fonts';
 import { FrontCoverDesignSection } from './FrontCoverDesignSection';
+import { HeadingTextEditor } from './HeadingTextEditor';
 import {
   LabeledColor,
   LabeledNumber,
@@ -24,9 +31,7 @@ export function DesignSection() {
   const family = useDoc((s) => familyOf(s.doc.templateId));
   const templateId = useDoc((s) => s.doc.templateId);
   const isFrontCover = useDoc((s) => s.doc.templateId === 'magazine-4');
-  // Paper and gallery sheets carry the same shared TagBar, so its rule, tag,
-  // and ink colours are author-controlled for both families. Magazine keeps
-  // its own masthead treatment and exposes only the side control here.
+  // Every template except the dedicated front cover uses the shared TagBar.
   const hasBar = !isFrontCover;
   const hasBarSide = true;
   const update = useDoc((s) => s.update);
@@ -179,7 +184,7 @@ export function DesignSection() {
       <LabeledSelect label="Display" value={design.fontDisplay} options={fontOptions(SERIF_FONTS)} onChange={(v) => set('fontDisplay', v)} />
       <LabeledSelect label="Body" value={design.fontBody} options={fontOptions(SANS_FONTS)} onChange={(v) => set('fontBody', v)} />
       <LabeledSelect label="Category" value={design.fontCategory ?? design.fontBody} options={fontOptions(ALL_FONTS)} onChange={(v) => set('fontCategory', v)} />
-      <LabeledSelect label="Subtitle" value={design.fontSubtitle ?? design.fontDisplay} options={fontOptions(ALL_FONTS)} onChange={(v) => set('fontSubtitle', v)} />
+      <LabeledSelect label="Subtitle" value={design.fontSubtitle ?? (family === 'gallery' ? design.fontBody : design.fontDisplay)} options={fontOptions(ALL_FONTS)} onChange={(v) => set('fontSubtitle', v)} />
       <LabeledSelect label="Author" value={design.fontAuthor ?? design.fontBody} options={fontOptions(ALL_FONTS)} onChange={(v) => set('fontAuthor', v)} />
       <LabeledSelect label="Affiliation" value={design.fontAffiliation ?? design.fontBody} options={fontOptions(ALL_FONTS)} onChange={(v) => set('fontAffiliation', v)} />
 
@@ -189,6 +194,29 @@ export function DesignSection() {
       <LabeledColor label="Accent" value={design.colors.accent} onChange={setColor('accent')} />
       <LabeledColor label="Soft accent" value={design.colors.accentSoft} onChange={setColor('accentSoft')} />
       <LabeledColor label="Ink (text)" value={design.colors.ink} onChange={setColor('ink')} />
+      <p className="group-label">Text appearance</p>
+      <div className="cover-style-list">
+        <HeadingTextEditor role="subtitle" label={family === 'gallery' ? 'Descriptions' : 'Subtitle / lede'} />
+        {family !== 'gallery' && <>
+          <HeadingTextEditor role="author" label="Author" />
+          <HeadingTextEditor role="affiliation" label="Affiliation" />
+        </>}
+      </div>
+      {(design.subtitleColor || design.authorColor || design.affiliationColor) && (
+        <button
+          type="button"
+          className="add-btn"
+          onClick={() => update((d) => {
+            delete d.design.subtitleColor;
+            delete d.design.authorColor;
+            delete d.design.affiliationColor;
+          })}
+        >
+          Follow theme colors
+        </button>
+      )}
+      <p className="hint">Text colors follow Ink unless customized. Titles keep the capitalization you type.</p>
+      {family === 'gallery' && <p className="hint">Photo captions use light text by default. A custom description color also applies to photo captions.</p>}
 
       {family !== 'gallery' && (
         <Toggle

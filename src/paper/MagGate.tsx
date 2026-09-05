@@ -94,7 +94,7 @@ export function MagGateB({ doc, vars }: { doc: Doc; vars: CSSProperties }) {
 
         <div className="mag-gate-foot mag-gate-foot--b">
           <div className="mag-gate-credits">
-            {meta.author && <span>{meta.author}</span>}
+            {meta.author && <span className="mag-gate-author">{meta.author}</span>}
             {meta.photoCredit && <span>FOTO: {meta.photoCredit}</span>}
           </div>
         </div>

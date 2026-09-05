@@ -29,6 +29,7 @@ describe('MagazineFrontCover', () => {
         fontSize: 51,
         color: '#123456',
         fontWeight: 400,
+        fontStyle: 'italic',
         letterSpacing: 0.02,
       },
       photoCredit: { visible: false },
@@ -40,6 +41,7 @@ describe('MagazineFrontCover', () => {
     expect(pageStyle?.getPropertyValue('--front-title-font')).toContain('Arial');
     expect(pageStyle?.getPropertyValue('--front-title-size')).toBe('51pt');
     expect(pageStyle?.getPropertyValue('--front-title-color')).toBe('#123456');
+    expect(pageStyle?.getPropertyValue('--front-title-style')).toBe('italic');
     expect(host.querySelector('.front-cover-credit')).toBeNull();
   });
 });

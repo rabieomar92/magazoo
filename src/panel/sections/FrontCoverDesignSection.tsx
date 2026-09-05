@@ -69,6 +69,10 @@ function CoverTextEditor({ role, label }: { role: FrontCoverTextRole; label: str
           step={100}
           onChange={(value) => set('fontWeight', value)}
         />
+        <Toggle label="Bold" checked={style.fontWeight >= 700}
+          onChange={(value) => set('fontWeight', value ? 700 : 400)} />
+        <Toggle label="Italic" checked={style.fontStyle === 'italic'}
+          onChange={(value) => set('fontStyle', value ? 'italic' : 'normal')} />
         <LabeledNumber
           label="Letter spacing"
           unit="em"
@@ -79,6 +83,13 @@ function CoverTextEditor({ role, label }: { role: FrontCoverTextRole; label: str
           onChange={(value) => set('letterSpacing', value)}
         />
         <LabeledColor label="Color" value={style.color} onChange={(value) => set('color', value)} />
+        {(['subtitle', 'author', 'strapline'] as FrontCoverTextRole[]).includes(role) && (
+          <button type="button" className="add-btn cover-style-reset" onClick={() => update((doc) => {
+            const headingRole = role === 'strapline' ? 'affiliation' : role === 'subtitle' ? 'subtitle' : 'author';
+            delete doc.design[`${headingRole}Color`];
+            if (doc.design.frontCover?.text?.[role]) delete doc.design.frontCover.text[role].color;
+          })}>Use theme color</button>
+        )}
         <button type="button" className="add-btn cover-style-reset" onClick={reset}>
           Reset this object
         </button>
@@ -196,6 +207,8 @@ export function FrontCoverDesignSection() {
           value={design.colors.accent}
           onChange={(value) => update((doc) => { doc.design.colors.accent = value; })}
         />
+        <LabeledColor label="Ink (text)" value={design.colors.ink}
+          onChange={(value) => update((doc) => { doc.design.colors.ink = value; })} />
         <LabeledColor
           label="Category background"
           value={cover.kickerBackground ?? design.colors.accent}
@@ -219,9 +232,9 @@ export function FrontCoverDesignSection() {
 
       <Section title="Cover object styles">
         <p className="hint">
-          Every visible text object has independent visibility, font, size, weight, spacing,
-          and color. Avenir Next uses the installed face when available and a geometric
-          sans-serif fallback otherwise.
+          Every text object has its own font, size, bold, italic, spacing, and color.
+          Subtitle, author, and publication strapline follow Ink until customized.
+          Headlines keep the capitalization you type.
         </p>
         <div className="cover-style-list">
           {FRONT_COVER_TEXT_ROLES.map(({ role, label }) => (

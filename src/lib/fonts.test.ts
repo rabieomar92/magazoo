@@ -28,4 +28,28 @@ describe('font stacks', () => {
 
     expect(cssVars(design)['--subtitle-gap']).toBe('4.5mm');
   });
+
+  it('makes article subtitle and author colors follow Ink until overridden', () => {
+    const design = emptyDoc().design;
+    design.colors.ink = '#f8fafc';
+
+    expect(cssVars(design, 'magazine-2')['--subtitle-color']).toBe('#f8fafc');
+    expect(cssVars(design, 'magazine-2')['--author-color']).toBe('#f8fafc');
+
+    design.subtitleColor = '#22d3ee';
+    design.authorColor = '#f59e0b';
+    expect(cssVars(design, 'magazine-2')['--subtitle-color']).toBe('#22d3ee');
+    expect(cssVars(design, 'magazine-2')['--author-color']).toBe('#f59e0b');
+  });
+
+  it('follows theme Ink on every template, including photographic covers', () => {
+    const design = emptyDoc().design;
+    design.colors.ink = '#eeeeff';
+    for (const template of ['paper-1', 'paper-2', 'magazine-1', 'magazine-2', 'magazine-3', 'magazine-4', 'gallery-1', 'gallery-2', 'gallery-3', 'gallery-4'] as const) {
+      const vars = cssVars(design, template);
+      expect(vars['--subtitle-color']).toBe('#eeeeff');
+      expect(vars['--author-color']).toBe('#eeeeff');
+      expect(vars['--affiliation-color']).toBe('#eeeeff');
+    }
+  });
 });

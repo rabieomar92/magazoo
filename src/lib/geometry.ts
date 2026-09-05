@@ -1,5 +1,6 @@
-import type { Design } from '../schema/document';
+import { type Design, type TemplateId } from '../schema/document';
 import { fontStack } from './fonts';
+import { headingTextVars } from './headingText';
 
 export const PAGE_W = 210; // mm, A4
 export const PAGE_H = 297;
@@ -61,7 +62,7 @@ function readableInk(hex: string): string {
   return L > 0.4 ? '#111418' : '#f8fafc';
 }
 
-export function cssVars(d: Design): Record<string, string> {
+export function cssVars(d: Design, templateId?: TemplateId): Record<string, string> {
   const g = grid(d);
   const paperBg = d.paperBg ?? '#ffffff';
   const topBarOffset = Math.max(0, d.topBarOffset ?? 0);
@@ -104,9 +105,11 @@ export function cssVars(d: Design): Record<string, string> {
     // Per-element fonts. Undefined → the family the element used before this
     // setting existed, so old files render identically.
     '--font-category': d.fontCategory ? fontStack(d.fontCategory) : 'var(--sans)',
-    '--font-subtitle': d.fontSubtitle ? fontStack(d.fontSubtitle) : 'var(--serif)',
+    '--font-subtitle': d.fontSubtitle ? fontStack(d.fontSubtitle)
+      : templateId?.startsWith('gallery') ? 'var(--sans)' : 'var(--serif)',
     '--font-author': d.fontAuthor ? fontStack(d.fontAuthor) : 'var(--sans)',
     '--font-affil': d.fontAffiliation ? fontStack(d.fontAffiliation) : 'var(--sans)',
+    ...headingTextVars(d, templateId),
     '--fs-body': `${d.sizes.body}pt`,
     '--fs-title': `${d.sizes.title}pt`,
     '--fs-subtitle': `${d.sizes.subtitle}pt`,

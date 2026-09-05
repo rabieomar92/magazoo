@@ -4,6 +4,7 @@ import type {
   FrontCoverTextStyle,
 } from '../schema/document';
 import { fontStack } from './fonts';
+import { headingTextStyle } from './headingText';
 
 export const FRONT_COVER_TEXT_ROLES: { role: FrontCoverTextRole; label: string }[] = [
   { role: 'masthead', label: 'Publication title' },
@@ -33,20 +34,27 @@ export function defaultFrontCoverTextStyle(
   const author = design.fontAuthor ?? body;
   const affiliation = design.fontAffiliation ?? body;
 
-  const defaults: Record<FrontCoverTextRole, ResolvedFrontCoverTextStyle> = {
+  const defaults: Record<FrontCoverTextRole, Omit<ResolvedFrontCoverTextStyle, 'fontStyle'>> = {
     masthead: { fontFamily: display, fontSize: 34, color: design.colors.accent, fontWeight: 900, letterSpacing: -0.055, visible: true },
-    strapline: { fontFamily: affiliation, fontSize: design.sizes.affiliation, color: white, fontWeight: 700, letterSpacing: 0.11, visible: true },
+    strapline: { fontFamily: affiliation, fontSize: design.sizes.affiliation, color: design.colors.ink, fontWeight: 700, letterSpacing: 0.11, visible: true },
     kicker: { fontFamily: category, fontSize: design.sizes.categoryLabel, color: '#111111', fontWeight: 900, letterSpacing: 0.13, visible: true },
     title: { fontFamily: display, fontSize: design.sizes.title, color: white, fontWeight: 900, letterSpacing: -0.04, visible: true },
-    subtitle: { fontFamily: subtitle, fontSize: design.sizes.subtitle, color: white, fontWeight: 600, letterSpacing: 0, visible: true },
-    author: { fontFamily: author, fontSize: design.sizes.author, color: white, fontWeight: 800, letterSpacing: 0.1, visible: true },
+    subtitle: { fontFamily: subtitle, fontSize: design.sizes.subtitle, color: design.colors.ink, fontWeight: 600, letterSpacing: 0, visible: true },
+    author: { fontFamily: author, fontSize: design.sizes.author, color: design.colors.ink, fontWeight: 800, letterSpacing: 0.1, visible: true },
     storyTag: { fontFamily: body, fontSize: design.sizes.author, color: white, fontWeight: 800, letterSpacing: 0.1, visible: true },
     teaserTitle: { fontFamily: body, fontSize: design.sizes.body, color: white, fontWeight: 900, letterSpacing: 0.055, visible: true },
     teaserBody: { fontFamily: body, fontSize: Math.max(5, design.sizes.body * 0.88), color: white, fontWeight: 400, letterSpacing: 0, visible: true },
     footerBrand: { fontFamily: body, fontSize: 5.9, color: white, fontWeight: 800, letterSpacing: 0.13, visible: true },
     photoCredit: { fontFamily: body, fontSize: 5.9, color: white, fontWeight: 800, letterSpacing: 0.13, visible: true },
   };
-  return { ...defaults[role], ...(design.frontCover?.text?.[role] ?? {}) };
+  const headingRole = role === 'strapline' ? 'affiliation'
+    : role === 'subtitle' || role === 'author' ? role : null;
+  return {
+    ...defaults[role],
+    fontStyle: 'normal',
+    ...(headingRole ? headingTextStyle(design, 'magazine-4', headingRole) : {}),
+    ...(design.frontCover?.text?.[role] ?? {}),
+  };
 }
 
 const cssRole = (role: FrontCoverTextRole) =>
@@ -61,6 +69,7 @@ export function frontCoverTextVars(design: Design): Record<string, string> {
     vars[`--front-${key}-size`] = `${style.fontSize}pt`;
     vars[`--front-${key}-color`] = style.color;
     vars[`--front-${key}-weight`] = String(style.fontWeight);
+    vars[`--front-${key}-style`] = style.fontStyle;
     vars[`--front-${key}-tracking`] = `${style.letterSpacing}em`;
   }
   return vars;
