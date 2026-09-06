@@ -9,7 +9,7 @@
      measuring twins subtract from this same number, so the break is measured
      against the box the text really lands in. */
   --p2-start: max(
-    calc(var(--topbar-offset, 0mm) + var(--bar-h) + var(--gutter)),
+    calc(var(--topbar-offset, 10mm) + var(--bar-h) + var(--gutter)),
     var(--first-page-top, 0mm)
   );
   --p2-body-h: calc(var(--page-h) - var(--margin) - var(--p2-start));
@@ -18,7 +18,7 @@
 /* The bar itself lives in page.css (.tag-bar). Here it only bleeds sideways
    out of the page padding, and not to the top edge. */
 .page--p2 .tag-bar {
-  margin: calc(var(--topbar-offset, 0mm) - var(--margin)) calc(-1 * var(--margin)) 0;
+  margin: calc(var(--topbar-offset, 10mm) - var(--margin)) calc(-1 * var(--margin)) 0;
 }
 
 /* ---- Header / hero split ------------------------------------------------- */
@@ -27,8 +27,14 @@
   display: flex;
   align-items: stretch;
   gap: var(--gutter);
-  margin-top: calc(var(--p2-start) - var(--topbar-offset, 0mm) - var(--bar-h));
+  margin-top: calc(var(--p2-start) - var(--topbar-offset, 10mm) - var(--bar-h));
   height: var(--p2-body-h);
+}
+
+/* Keep the original region geometry and pagination; only exchange their
+   physical positions. This avoids a second, divergent Paper 2 flow engine. */
+.p2-cols--hero-left {
+  flex-direction: row-reverse;
 }
 
 .p2-left,

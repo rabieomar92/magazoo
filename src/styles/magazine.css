@@ -74,7 +74,7 @@
 .page--first-offset .mag-gate-mid {
   margin: max(
       0mm,
-      calc(var(--first-page-top, 0mm) - var(--topbar-offset, 0mm) - var(--bar-h))
+      calc(var(--first-page-top, 0mm) - var(--topbar-offset, 10mm) - var(--bar-h))
     )
     0 auto;
 }
@@ -210,7 +210,7 @@
   min-width: 0;
   height: 23mm;
   box-sizing: border-box;
-  margin: calc(var(--topbar-offset, 0mm) - var(--margin)) calc(-1 * var(--margin)) 0;
+  margin: calc(var(--topbar-offset, 10mm) - var(--margin)) calc(-1 * var(--margin)) 0;
   padding: 3.5mm var(--margin);
   text-align: var(--front-align, left);
 }
@@ -541,7 +541,7 @@
    TagBar. */
 .mag-cols--p2 {
   height: calc(
-    var(--page-h) - var(--margin) - var(--topbar-offset, 0mm) - var(--footer-h) -
+    var(--page-h) - var(--margin) - var(--topbar-offset, 10mm) - var(--footer-h) -
       var(--bar-h) - var(--gutter)
   );
 }
@@ -549,7 +549,7 @@
 /* Lead spread: shorter still by the measured hero-header height. */
 .mag-cols--p1 {
   height: calc(
-    var(--page-h) - var(--margin) - var(--topbar-offset, 0mm) - var(--footer-h) - var(--bar-h) - var(--gutter) - var(
+    var(--page-h) - var(--margin) - var(--topbar-offset, 10mm) - var(--footer-h) - var(--bar-h) - var(--gutter) - var(
         --mag-head-h,
         0px
       )
@@ -654,7 +654,7 @@
 .mag2-head-content {
   padding-top: max(
     0mm,
-    calc(var(--first-page-top, 0mm) - var(--topbar-offset, 0mm) - var(--bar-h) - var(--gutter))
+    calc(var(--first-page-top, 0mm) - var(--topbar-offset, 10mm) - var(--bar-h) - var(--gutter))
   );
 }
 
@@ -749,7 +749,7 @@
 .mag2-cols--p1 {
   flex: none;
   height: calc(
-    var(--page-h) - var(--margin) - var(--topbar-offset, 0mm) - var(--mag2-head-h, 0px)
+    var(--page-h) - var(--margin) - var(--topbar-offset, 10mm) - var(--mag2-head-h, 0px)
   );
   /* Containing block for the pinned quote + highlights (see .mag2-aside). */
   position: relative;

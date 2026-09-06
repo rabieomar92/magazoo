@@ -82,10 +82,10 @@ export function makeGallery1(): Doc {
     ...d.design,
     // Narrow collage columns → left, not the global justify default.
     bodyAlign: 'left',
-    fontDisplay: 'Source Sans 3',
+    fontDisplay: 'Helvetica',
     sizes: { ...d.design.sizes, subtitle: 10 },
     colors: { hero: '#0f172a', accent: '#111418', accentSoft: '#f1f5f9', ink: '#111418' },
-    topBarOffset: 0,
+    topBarOffset: 10,
     margin: 12,
   };
 
@@ -151,11 +151,11 @@ export function makeGallery2(): Doc {
   d.design = {
     ...d.design,
     bodyAlign: 'left',
-    fontDisplay: 'Source Sans 3',
+    fontDisplay: 'Helvetica',
     sizes: { ...d.design.sizes, subtitle: 10 },
     colors: { hero: '#0f172a', accent: '#f8fafc', accentSoft: '#1e293b', ink: '#f8fafc' },
     paperBg: '#0e1116',
-    topBarOffset: 0,
+    topBarOffset: 10,
     margin: 12,
   };
 
@@ -220,11 +220,11 @@ export function makeGallery3(): Doc {
   d.design = {
     ...d.design,
     bodyAlign: 'left',
-    fontDisplay: 'Source Sans 3',
+    fontDisplay: 'Helvetica',
     sizes: { ...d.design.sizes, subtitle: 10 },
     colors: { hero: '#0f172a', accent: '#111418', accentSoft: '#efe9df', ink: '#1c1917' },
     paperBg: '#f7f4ee',
-    topBarOffset: 0,
+    topBarOffset: 10,
     margin: 12,
   };
 
@@ -289,11 +289,11 @@ export function makeGallery4(): Doc {
   d.design = {
     ...d.design,
     bodyAlign: 'left',
-    fontDisplay: 'Source Sans 3',
+    fontDisplay: 'Helvetica',
     sizes: { ...d.design.sizes, subtitle: 10 },
     colors: { hero: '#0f172a', accent: '#1d4ed8', accentSoft: '#e2e8f0', ink: '#0f172a' },
     paperBg: '#eef2f7',
-    topBarOffset: 0,
+    topBarOffset: 10,
     margin: 12,
   };
 

@@ -324,14 +324,14 @@
      in normal flow (a continuation page's body, sheet 1's header). Contexts
      that place their own gap after the bar (paper-2's full-bleed band) zero
      this. */
-  margin: calc(var(--topbar-offset, 0mm) - var(--margin)) calc(-1 * var(--margin)) var(--gutter);
+  margin: calc(var(--topbar-offset, 10mm) - var(--margin)) calc(-1 * var(--margin)) var(--gutter);
 }
 
 /* Overlaid on a hero: the bar sits at the box's own top edge, behind the
    photo (see .hero img's z-index) rather than pushing it down. */
 .hero .tag-bar {
   position: absolute;
-  inset: var(--topbar-offset, 0mm) 0 auto 0;
+  inset: var(--topbar-offset, 10mm) 0 auto 0;
   margin: 0;
   z-index: 1;
 }
@@ -862,7 +862,7 @@
   /* The bar now runs at the top of every continuation sheet too — its own
      height plus the gap its margin-bottom adds (see .tag-bar). */
   height: calc(
-    var(--page-h) - var(--margin) - var(--topbar-offset, 0mm) - var(--footer-h) -
+    var(--page-h) - var(--margin) - var(--topbar-offset, 10mm) - var(--footer-h) -
       var(--bar-h) - var(--gutter)
   );
   overflow: hidden;
@@ -1319,6 +1319,24 @@
 .pages {
   width: var(--page-w);
   transform-origin: top left;
+}
+
+/* Preview objects are editor shortcuts. The page remains visually clean; a
+   small focus ring appears only on hover and never reaches print/PDF output. */
+.pages [data-editor-target],
+.pages [data-source-block-id] {
+  cursor: pointer;
+}
+
+.pages [data-editor-target]:not(.page):hover,
+.pages [data-source-block-id]:hover {
+  outline: 1px solid color-mix(in srgb, #4f46e5 62%, transparent);
+  outline-offset: 2px;
+}
+
+.pages .placed-image[data-editor-target],
+.pages .placed-highlights[data-editor-target] {
+  cursor: grab;
 }
 
 /* Spread view: sheets two-up, like an open magazine. View-only. */

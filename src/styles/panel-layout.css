@@ -1,0 +1,225 @@
+/* Editor control layout only. Never change the page/print typography here. */
+.panel {
+  container: editor / inline-size;
+}
+
+.panel :is(.section, .field, .field-input, .figure-edit, .list-item,
+  .cover-style-fields, .paragraph-editor-shell, .gallery-slot) {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.panel .field-label {
+  overflow-wrap: anywhere;
+}
+
+.panel .range-input {
+  display: block;
+  box-sizing: border-box;
+  margin-inline: 0;
+  max-width: 100%;
+}
+
+.panel .field--inline {
+  flex-wrap: wrap;
+  gap: 8px 12px;
+}
+
+.panel .field--inline > .field-label {
+  flex: 1 1 110px;
+}
+
+/* Font names need the whole row. Native options remain fully readable. */
+.panel .field--inline:has(> select) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px;
+}
+
+.panel .field--inline select.field-input.select-control {
+  width: 100%;
+  min-width: 0;
+  min-height: 38px;
+}
+
+.panel :is(.field-input--num, .field-input--hex) {
+  min-height: 36px;
+}
+
+.panel .field-input--num {
+  flex: 0 0 92px;
+}
+
+.panel .color-input {
+  flex: 0 1 auto;
+  min-width: 0;
+  gap: 8px;
+}
+
+.panel .color-input input[type='color'] {
+  flex: 0 0 36px;
+  width: 36px;
+  height: 36px;
+}
+
+.panel .color-input .field-input--hex {
+  width: 96px;
+  min-width: 0;
+}
+
+.panel .segment {
+  display: flex;
+  flex-wrap: wrap;
+  min-width: 0;
+  max-width: 100%;
+  overflow: visible;
+}
+
+.panel .segment-btn {
+  flex: 1 1 auto;
+  min-height: 36px;
+  padding: 8px 10px;
+  white-space: normal;
+}
+
+.panel :is(.add-row, .hero-actions) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.panel .add-row .add-btn {
+  flex: 1 1 120px;
+  width: auto;
+}
+
+.panel .hero-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: stretch;
+}
+
+.panel .hero-actions .icon-btn {
+  height: auto;
+  min-height: 40px;
+}
+
+.panel .add-btn {
+  min-height: 40px;
+  padding: 9px 12px;
+  line-height: 1.4;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.panel .icon-btn {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+}
+
+.panel .row-buttons {
+  flex-shrink: 0;
+  gap: 8px;
+}
+
+.panel :is(.list-item-head, .block-card-head, .gallery-slot-head) {
+  width: 100%;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.panel .list-item > textarea {
+  flex: 1 1 0;
+  width: 0;
+  min-width: 0;
+}
+
+.panel .list-item--stack > .field-input {
+  width: 100%;
+  flex: none;
+}
+
+.panel .block-card {
+  gap: 12px;
+  padding: 12px;
+}
+
+.panel .paragraph-style-grid {
+  width: 100%;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  align-items: start;
+  padding-top: 12px;
+}
+
+.panel .paragraph-style-grid > .field {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.panel .paragraph-style-grid .field-label {
+  flex: none;
+  font-size: 11px;
+}
+
+.panel .paragraph-style-grid .field-input--num {
+  flex: none;
+  width: 100%;
+  font-size: 13px;
+}
+
+.panel .paragraph-style-grid > .field:nth-child(3),
+.panel .paragraph-style-grid:has(.style-reset-btn) > .field:nth-child(3) {
+  grid-column: 1 / -1;
+}
+
+.panel .paragraph-style-grid > .style-reset-btn {
+  grid-column: 2;
+  grid-row: auto;
+  justify-self: end;
+  width: 36px;
+  height: 36px;
+}
+
+.panel .paragraph-insert-row {
+  height: auto;
+  min-height: 32px;
+  margin: 0 3px 10px;
+}
+
+.panel .paragraph-insert-btn {
+  height: auto;
+  min-height: 30px;
+}
+
+.panel .cover-style-fields {
+  gap: 12px;
+  padding: 12px;
+}
+
+.panel .cover-style-fields > .field {
+  margin-bottom: 0;
+}
+
+@container editor (max-width: 340px) {
+  .panel .section { padding-inline: 10px; }
+  .panel .field--inline:has(> .segment) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .panel .cover-style-reset { width: 100%; }
+}
+
+@media (pointer: coarse) {
+  .panel :is(.icon-btn, .segment-btn, .style-reset-btn) {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .panel :is(.field-input, select.field-input.select-control) {
+    font-size: 16px; /* Prevent mobile browsers zooming when a field is focused. */
+  }
+}

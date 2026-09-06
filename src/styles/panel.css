@@ -442,6 +442,15 @@
   border-top: 1px solid var(--line-soft);
 }
 
+@keyframes preview-focus-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0); }
+  35% { box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.18); }
+}
+
+.is-preview-focused {
+  animation: preview-focus-pulse 0.95s ease-out;
+}
+
 /* First section in a tab sits right under the tab bar — no double rule. */
 .panel-scroll > .section:first-child {
   border-top: 0;

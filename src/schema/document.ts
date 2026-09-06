@@ -1,4 +1,5 @@
 export const SCHEMA_VERSION = 1;
+export const DEFAULT_TOP_BAR_OFFSET = 10;
 
 /** Template family = which layout engine renders the document. */
 export type TemplateFamily = 'paper' | 'magazine' | 'gallery';
@@ -305,6 +306,8 @@ export interface Design {
   barSide?: 'left' | 'right';
   /** Physical distance from the page's top trim edge to the top bar, in mm. */
   topBarOffset?: number;
+  /** Physical side of the split hero in Paper 2. Does not reverse the image. */
+  heroSide?: 'left' | 'right';
   /**
    * Physical top coordinate for the first page's main content, in mm. The top
    * bar is independent and remains at `topBarOffset`. Zero keeps the selected
@@ -346,7 +349,7 @@ export interface Doc {
     /** Additional magazine fields. All optional for back-compat. */
     /** Caption under paper-2's top-right hero. */
     heroCaption?: string;
-    /** Volume/date line, e.g. "VOL. IX · NO.2 · MARET 2026". */
+    /** Volume/date line, e.g. "VOL. IX · NO.2 · MARCH 2026". */
     volume?: string;
     /** Location tag overlaid on the page-2 hero photo. */
     location?: string;
@@ -400,13 +403,13 @@ export const emptyDoc = (): Doc => ({
     columnFill: 'sequential',
     sidebar: true,
     highlightsPlacement: 'page1',
-    fontDisplay: 'Source Serif 4',
-    fontBody: 'Source Sans 3',
+    fontDisplay: 'Playfair Display',
+    fontBody: 'Helvetica',
     colors: { hero: '#0F2A5C', accent: '#C8102E', accentSoft: '#FDE7EA', ink: '#111418' },
     paperBg: '#ffffff',
     pageBackgroundOpacity: 1,
     showHero: true,
-    topBarOffset: 0,
+    topBarOffset: DEFAULT_TOP_BAR_OFFSET,
     firstPageTopMargin: 0,
     subtitleGap: defaultSubtitleGap('paper-1'),
     margin: 16,
@@ -453,6 +456,8 @@ export function migrate(raw: any): Doc {
     // Preserve each template's original composition when an older saved file
     // is opened after title-to-subtitle spacing became user-editable.
     raw.design.subtitleGap ??= defaultSubtitleGap(raw.templateId);
+    // An explicitly saved zero remains zero; only missing values use the default.
+    raw.design.topBarOffset ??= DEFAULT_TOP_BAR_OFFSET;
 
     // v1 article figures lived between paragraphs. Move them into the page
     // image collection on read, while leaving gallery slot figures alone.
