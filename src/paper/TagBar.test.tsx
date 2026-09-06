@@ -23,4 +23,12 @@ describe('TagBar', () => {
       'tag-bar--flip',
     );
   });
+
+  it('publishes separate preview targets for the bar surface and its text', () => {
+    const doc = emptyDoc();
+    doc.meta.masthead = 'Physics';
+    const html = renderToStaticMarkup(<TagBar doc={doc} pageIndex={0} />);
+    expect(html).toContain('data-editor-target="design-topbar"');
+    expect(html).toContain('data-editor-target="meta-masthead"');
+  });
 });

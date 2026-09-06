@@ -23,7 +23,7 @@ export function HighlightsBody({ doc, hideRefs = false }: { doc: Doc; hideRefs?:
   const highlights = doc.highlights.filter((h) => h.trim());
   return (
     <>
-      <h3>{doc.meta.highlightsLabel || 'Highlights'}</h3>
+      <h3 data-editor-tab="highlights" data-editor-target="highlights-label">{doc.meta.highlightsLabel || 'Highlights'}</h3>
       <ul className="highlights">
         {highlights.map((h, i) => (
           <li key={i}><span className="callout-list-copy">{renderRuns(h)}</span></li>
@@ -31,7 +31,7 @@ export function HighlightsBody({ doc, hideRefs = false }: { doc: Doc; hideRefs?:
       </ul>
       {!hideRefs && doc.references.length > 0 && (
         <>
-          <h3>{doc.meta.referencesLabel || 'References'}</h3>
+          <h3 data-editor-tab="highlights" data-editor-target="references-label">{doc.meta.referencesLabel || 'References'}</h3>
           <ol className="references">
             {doc.references.map((r) => (
               <li key={r.id}>
@@ -50,7 +50,12 @@ export function HighlightsBody({ doc, hideRefs = false }: { doc: Doc; hideRefs?:
 
 export function Sidebar({ doc }: { doc: Doc }) {
   return (
-    <aside className="sidebar" data-image-avoiding-callout>
+    <aside
+      className="sidebar"
+      data-image-avoiding-callout
+      data-editor-tab="highlights"
+      data-editor-target="highlights"
+    >
       <span className="sidebar-image-shape" aria-hidden="true" />
       <HighlightsBody doc={doc} />
     </aside>

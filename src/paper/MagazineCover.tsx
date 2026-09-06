@@ -26,6 +26,8 @@ export function MagazineCover({ doc, vars }: { doc: Doc; vars: CSSProperties }) 
         (doc.design.firstPageTopMargin ?? 0) > 0 ? ' page--first-offset' : ''
       }`}
       style={style}
+      data-editor-tab={photo ? 'images' : undefined}
+      data-editor-target={photo ? 'image-cover' : undefined}
     >
       <PageArtwork doc={doc} />
       {photo && <FramedImage className="mag-cover-photo" asset={photo} frame={cover} />}
@@ -35,12 +37,12 @@ export function MagazineCover({ doc, vars }: { doc: Doc; vars: CSSProperties }) 
 
         <div className="mag-cover-mid">
           {meta.categoryLabel && (
-            <p className="mag-kicker">
+            <p className="mag-kicker" data-editor-tab="content" data-editor-target="meta-category">
               <span className="mag-kicker-dash" />
               {meta.categoryLabel}
             </p>
           )}
-          <h1 className="mag-title">
+          <h1 className="mag-title" data-editor-tab="content" data-editor-target="meta-title">
             {words.map((w, i) => (
               <span
                 key={i}
@@ -50,15 +52,15 @@ export function MagazineCover({ doc, vars }: { doc: Doc; vars: CSSProperties }) 
               </span>
             ))}
           </h1>
-          {meta.subtitle && <p className="mag-lede">{meta.subtitle}</p>}
+          {meta.subtitle && <p className="mag-lede" data-editor-tab="content" data-editor-target="meta-subtitle">{meta.subtitle}</p>}
         </div>
 
         <div className="mag-cover-foot">
           <div className="mag-cover-credits">
             {/* magazine-1 shows the raw values; other magazines keep the labels. */}
-            {meta.author && <span className="mag-cover-author">{mag1 ? meta.author : `OLEH ${meta.author}`}</span>}
+            {meta.author && <span className="mag-cover-author" data-editor-tab="content" data-editor-target="meta-author">{mag1 ? meta.author : `BY ${meta.author}`}</span>}
             {meta.photoCredit && (
-              <span>{mag1 ? meta.photoCredit : `FOTO: ${meta.photoCredit}`}</span>
+              <span data-editor-tab="content" data-editor-target="meta-photo-credit">{mag1 ? meta.photoCredit : `PHOTO: ${meta.photoCredit}`}</span>
             )}
           </div>
         </div>

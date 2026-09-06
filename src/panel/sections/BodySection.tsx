@@ -419,6 +419,7 @@ export function BodySection() {
             <div className="figure-edit">
               <textarea
                 className="field-input field-textarea field-textarea--grow field-mono"
+                id={blockEditorId(block.id)}
                 dir="ltr"
                 value={block.tex}
                 rows={4}

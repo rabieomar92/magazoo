@@ -35,15 +35,15 @@ export function PaperTwoPage({
       <PageArtwork doc={doc} />
       <TagBar doc={doc} pageIndex={0} />
 
-      <div className="p2-cols">
+      <div className={`p2-cols${design.heroSide === 'left' ? ' p2-cols--hero-left' : ''}`}>
         <div className="p2-left">
           <header className="header p2-head">
-            <p className="eyebrow">{meta.categoryLabel}</p>
-            <h1 className="title">{meta.title}</h1>
-            {meta.subtitle && <p className="subtitle">{meta.subtitle}</p>}
+            <p className="eyebrow" data-editor-tab="content" data-editor-target="meta-category">{meta.categoryLabel}</p>
+            <h1 className="title" data-editor-tab="content" data-editor-target="meta-title">{meta.title}</h1>
+            {meta.subtitle && <p className="subtitle" data-editor-tab="content" data-editor-target="meta-subtitle">{meta.subtitle}</p>}
             <p className="byline">
-              {meta.author}
-              {meta.affiliation && <span className="affiliation"> · {meta.affiliation}</span>}
+              <span data-editor-tab="content" data-editor-target="meta-author">{meta.author}</span>
+              {meta.affiliation && <span className="affiliation" data-editor-tab="content" data-editor-target="meta-affiliation"> · {meta.affiliation}</span>}
             </p>
           </header>
           <div data-flow-host className="body-cols p2-flow-l">
@@ -59,12 +59,12 @@ export function PaperTwoPage({
         <div className="p2-right">
           {design.showHero !== false && (
             <div className="p2-heroblock">
-              <div className="p2-hero">
+              <div className="p2-hero" data-editor-tab="images" data-editor-target="image-hero">
                 {heroAsset && (
                   <FramedImage asset={heroAsset} frame={hero} />
                 )}
               </div>
-              {meta.heroCaption && <p className="p2-hero-cap">{meta.heroCaption}</p>}
+              {meta.heroCaption && <p className="p2-hero-cap" data-editor-tab="content" data-editor-target="meta-hero-caption">{meta.heroCaption}</p>}
             </div>
           )}
           <div className="p2-right-row">

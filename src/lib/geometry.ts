@@ -1,4 +1,4 @@
-import { type Design, type TemplateId } from '../schema/document';
+import { DEFAULT_TOP_BAR_OFFSET, type Design, type TemplateId } from '../schema/document';
 import { fontStack } from './fonts';
 import { headingTextVars } from './headingText';
 
@@ -65,7 +65,7 @@ function readableInk(hex: string): string {
 export function cssVars(d: Design, templateId?: TemplateId): Record<string, string> {
   const g = grid(d);
   const paperBg = d.paperBg ?? '#ffffff';
-  const topBarOffset = Math.max(0, d.topBarOffset ?? 0);
+  const topBarOffset = Math.max(0, d.topBarOffset ?? DEFAULT_TOP_BAR_OFFSET);
   const firstPageTop = Math.max(0, d.firstPageTopMargin ?? 0);
   const nativeHeroSlot = d.showHero === false
     ? `calc(6mm + ${topBarOffset}mm)`

@@ -18,16 +18,19 @@ export function PageArtwork({ doc }: { doc: Doc }) {
     objectPosition: 'center',
     opacity: doc.design.pageBackgroundOpacity ?? 1,
     zIndex: 0,
-    pointerEvents: 'none',
+    pointerEvents: 'auto',
     userSelect: 'none',
   };
 
   return (
     <img
       className="page-artwork"
+      data-editor-tab="design"
+      data-editor-target="design-background"
       src={asset.src}
       alt=""
       aria-hidden="true"
+      title="Edit page background"
       draggable={false}
       decoding="async"
       style={style}

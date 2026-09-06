@@ -23,7 +23,11 @@ export function Page1({ doc, vars, pieces }: Props) {
   return (
     <div className="page" style={vars}>
       <PageArtwork doc={doc} />
-      <div className={`hero${design.showHero === false ? ' hero--hidden' : ''}`}>
+      <div
+        className={`hero${design.showHero === false ? ' hero--hidden' : ''}`}
+        data-editor-tab="images"
+        data-editor-target="image-hero"
+      >
         {/* The bar always exists — it's the first paint in this box. A hero
             photo sits above it in z-order, so once a photo is set it simply
             covers the strip; with no photo the bar reads on the plain
@@ -34,12 +38,12 @@ export function Page1({ doc, vars, pieces }: Props) {
         )}
       </div>
       <header className="header">
-        <p className="eyebrow">{meta.categoryLabel}</p>
-        <h1 className="title">{meta.title}</h1>
-        {meta.subtitle && <p className="subtitle">{meta.subtitle}</p>}
+        <p className="eyebrow" data-editor-tab="content" data-editor-target="meta-category">{meta.categoryLabel}</p>
+        <h1 className="title" data-editor-tab="content" data-editor-target="meta-title">{meta.title}</h1>
+        {meta.subtitle && <p className="subtitle" data-editor-tab="content" data-editor-target="meta-subtitle">{meta.subtitle}</p>}
         <p className="byline">
-          {meta.author}
-          {meta.affiliation && <span className="affiliation"> · {meta.affiliation}</span>}
+          <span data-editor-tab="content" data-editor-target="meta-author">{meta.author}</span>
+          {meta.affiliation && <span className="affiliation" data-editor-tab="content" data-editor-target="meta-affiliation"> · {meta.affiliation}</span>}
         </p>
       </header>
       <div className="body-row">

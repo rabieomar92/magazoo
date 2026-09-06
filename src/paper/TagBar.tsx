@@ -21,6 +21,8 @@ export function TagBar({
   return (
     <div
       className={`tag-bar${flip ? ' tag-bar--flip' : ''}${detailText ? ' tag-bar--detailed' : ''}`}
+      data-editor-tab="design"
+      data-editor-target="design-topbar"
       style={
         fullBleed
           ? {
@@ -33,9 +35,17 @@ export function TagBar({
       <span className="tag-bar-mark" />
       {/* Hugs its text: a longer tag simply lengthens the block and eats into
           the rule beside it. */}
-      {topBarText && <span className="tag-bar-tag">{topBarText}</span>}
+      {topBarText && (
+        <span className="tag-bar-tag" data-editor-tab="content" data-editor-target="meta-masthead">
+          {topBarText}
+        </span>
+      )}
       <span className="tag-bar-fill">
-        {detailText && <span className="tag-bar-detail">{detailText}</span>}
+        {detailText && (
+          <span className="tag-bar-detail" data-editor-tab="content" data-editor-target="meta-volume">
+            {detailText}
+          </span>
+        )}
       </span>
     </div>
   );

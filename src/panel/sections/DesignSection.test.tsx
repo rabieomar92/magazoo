@@ -6,7 +6,8 @@ import { useDoc } from '../../store/useDoc';
 import { DesignSection } from './DesignSection';
 
 describe('DesignSection font choices', () => {
-  it('offers Avenir Next in every standard font selector', () => {
+  const allowedFonts = ['Helvetica', 'Playfair Display', 'Bebas Neue', 'Arial', 'Avenir Next LT Pro Light', 'Avenir Next LT Pro'];
+  it('offers exactly the six requested fonts in every standard font selector', () => {
     const host = document.createElement('div');
     const root = createRoot(host);
     act(() => {
@@ -21,7 +22,7 @@ describe('DesignSection font choices', () => {
     );
     expect(selects).toHaveLength(6);
     for (const select of selects) {
-      expect([...select.options].map((option) => option.value)).toContain('Avenir Next');
+      expect([...select.options].map((option) => option.value)).toEqual(allowedFonts);
     }
     expect(host.textContent).toContain('Title to subtitle gap');
     expect(host.textContent).toContain('Subtitle / lede');
@@ -47,7 +48,7 @@ describe('DesignSection font choices', () => {
     );
     expect(fontSelects).toHaveLength(11);
     for (const select of fontSelects) {
-      expect([...select.options].map((option) => option.value)).toContain('Avenir Next');
+      expect([...select.options].map((option) => option.value)).toEqual(allowedFonts);
     }
 
     act(() => root.unmount());

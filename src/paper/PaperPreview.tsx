@@ -1,7 +1,7 @@
-import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { useDoc } from '../store/useDoc';
-import { familyOf } from '../schema/document';
+import { DEFAULT_TOP_BAR_OFFSET, familyOf } from '../schema/document';
 import { cssVars, grid, PAGE_W, PAGE_H } from '../lib/geometry';
 import {
   paginate,
@@ -22,6 +22,7 @@ import { MAG2_STRIP } from '../lib/magSplit';
 import { paper2Grid, paper2Fit } from '../lib/paper2';
 import { defaultPlacedHighlights } from '../lib/placedHighlights';
 import { populatedPhysicalPages } from '../lib/physicalFlowPages';
+import { requestEditorTargetFocus, type EditorTab } from '../lib/editorNavigation';
 import type { Mark } from '../lib/richtext';
 import { Page1 } from './Page1';
 import { PaperTwoPage } from './PaperTwo';
@@ -922,7 +923,7 @@ const PaperPreviewLayout = memo(function PaperPreviewLayout({
     // reason.
     '--topbleed-clip': `${Math.max(
       doc.design.margin,
-      (doc.design.topBarOffset ?? 0) + 6 + doc.design.gutter,
+      (doc.design.topBarOffset ?? DEFAULT_TOP_BAR_OFFSET) + 6 + doc.design.gutter,
     )}mm`,
     '--p2-head-h': `${p2HeadPx}px`,
     '--p2-heroblock-h': `${p2HeroPx}px`,
@@ -1151,6 +1152,19 @@ const PaperPreviewLayout = memo(function PaperPreviewLayout({
   };
   const step = (d: number) => setZoom(clamp(Math.round((scale + d) * 100) / 100, 0.25, 2));
 
+  const focusPreviewObject = (event: ReactMouseEvent<HTMLDivElement>) => {
+    const origin = event.target;
+    if (!(origin instanceof Element)) return;
+    // Flow paragraphs and gallery/cover cards already navigate by stable block
+    // id. Do not let a clickable full-page cover photo steal that click.
+    if (origin.closest('[data-source-block-id]')) return;
+    const hit = origin.closest<HTMLElement>('[data-editor-tab][data-editor-target]');
+    if (!hit || !event.currentTarget.contains(hit)) return;
+    const tab = hit.dataset.editorTab as EditorTab | undefined;
+    const target = hit.dataset.editorTarget;
+    if (tab && target) requestEditorTargetFocus(tab, target);
+  };
+
   const previewControls = (
     <div className="preview-bar preview-bar--toolbar">
       {/* Word-style formatting bar. onMouseDown+preventDefault keeps the
@@ -1241,6 +1255,7 @@ const PaperPreviewLayout = memo(function PaperPreviewLayout({
           ref={pagesRef}
           className={`pages${spreadOn ? ' pages--spread' : ''}`}
           style={{ transform: `scale(${scale})` }}
+          onClickCapture={focusPreviewObject}
         >
           {isGallery ? (
             <GalleryPage doc={doc} vars={vars} />

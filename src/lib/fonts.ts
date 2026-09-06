@@ -1,31 +1,25 @@
 /** Font choices shared by every selector. The stack is also shared so a font
  * never resolves differently between the editor, the cover, and PDF export. */
-export const SERIF_FONTS = [
-  'Source Serif 4',
-  'Playfair Display',
-  'Avenir Next',
-  'Georgia',
-  'Times New Roman',
-  'Palatino',
-];
-
-export const SANS_FONTS = [
-  'Source Sans 3',
-  'Avenir Next',
-  'Playfair Display',
+export const ALL_FONTS = [
   'Helvetica',
+  'Playfair Display',
+  'Bebas Neue',
   'Arial',
-  'Verdana',
-  'system-ui',
+  'Avenir Next LT Pro Light',
+  'Avenir Next LT Pro',
 ];
 
-export const ALL_FONTS = [...new Set([...SERIF_FONTS, ...SANS_FONTS])];
+export const SERIF_FONTS = ALL_FONTS;
+export const SANS_FONTS = ALL_FONTS;
 export const fontOptions = (fonts: string[] = ALL_FONTS) =>
   fonts.map((font) => ({ value: font, label: font }));
 
 const STACKS: Record<string, string> = {
   'Source Serif 4': '"Source Serif 4", Georgia, "Times New Roman", serif',
   'Playfair Display': '"Playfair Display", Georgia, "Times New Roman", serif',
+  'Bebas Neue': '"Bebas Neue", "Arial Narrow", Arial, sans-serif',
+  'Avenir Next LT Pro Light': '"Avenir Next LT Pro Light", "Avenir Next LT Pro", "Avenir Next", Avenir, "Century Gothic", Arial, sans-serif',
+  'Avenir Next LT Pro': '"Avenir Next LT Pro", "Avenir Next", Avenir, "Century Gothic", Arial, sans-serif',
   // Avenir Next is commercial and may not be installed. Century Gothic is a
   // commonly available geometric Windows face and is a much closer fallback
   // than the old, incorrect Georgia serif fallback.

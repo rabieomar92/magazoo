@@ -28,9 +28,10 @@ export function ReferencesSection() {
     });
 
   return (
-    <Section title="References">
+    <Section title="References" editorTarget="references">
       <LabeledInput
         label="Section heading"
+        editorTarget="references-label"
         value={label ?? ''}
         onChange={setLabel}
         placeholder="References"

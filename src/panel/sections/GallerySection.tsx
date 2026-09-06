@@ -4,6 +4,7 @@ import { assetIsReferenced, uid } from '../../schema/document';
 import { galleryFrameGeometry } from '../../lib/galleryFrame';
 import { ImageLoadError, loadImage } from '../../lib/loadImage';
 import { LabeledColor, LabeledRange, Section } from '../Field';
+import { editorTargetId } from '../../lib/editorNavigation';
 
 const DEFAULT_FRAME = { scale: 1, offsetX: 0, offsetY: 0 };
 
@@ -175,7 +176,11 @@ export function GallerySection() {
         const canFrame = bi !== undefined;
         const isFold = n === FOLD_SLOT;
         return (
-          <div className="gallery-slot" key={s.label}>
+          <div
+            className="gallery-slot"
+            id={block?.id ? editorTargetId(`gallery-image-${block.id}`) : undefined}
+            key={s.label}
+          >
             <div className="gallery-slot-head">
               <span className="gallery-slot-label">{s.label}</span>
               <span className="gallery-slot-hint">{s.hint}</span>

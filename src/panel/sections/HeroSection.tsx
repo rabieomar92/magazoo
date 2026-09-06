@@ -4,7 +4,7 @@ import { assetIsReferenced, uid, type Doc } from '../../schema/document';
 import { loadImage, ImageLoadError } from '../../lib/loadImage';
 import type { ImageFrame } from '../../lib/imageFrame';
 import { FramedImage } from '../../components/FramedImage';
-import { LabeledNumber, LabeledRange, Section } from '../Field';
+import { LabeledNumber, LabeledRange, Section, SegmentField } from '../Field';
 
 type Frame = ImageFrame & { assetId: string | null };
 const EMPTY_FRAME: Frame = { assetId: null, offsetX: 0, offsetY: 0, scale: 1 };
@@ -61,7 +61,7 @@ function ImagePicker({ slot, title, blurb }: { slot: 'hero' | 'cover'; title: st
     });
 
   return (
-    <Section title={title}>
+    <Section title={title} editorTarget={`image-${slot}`}>
       {blurb && <p className="hint">{blurb}</p>}
       <input
         ref={fileRef}
@@ -118,6 +118,7 @@ function ImagePicker({ slot, title, blurb }: { slot: 'hero' | 'cover'; title: st
 export function HeroSection() {
   const templateId = useDoc((s) => s.doc.templateId ?? 'paper-1');
   const heroHeight = useDoc((s) => s.doc.design.heroHeight);
+  const heroSide = useDoc((s) => s.doc.design.heroSide ?? 'right');
   const update = useDoc((s) => s.update);
 
   // magazine-3 is a gatefold: one cover photo split across both cover sheets, and
@@ -141,7 +142,22 @@ export function HeroSection() {
       {!isGate && !isCoverOnly && (
         <>
           <ImagePicker slot="hero" title="Hero Image" blurb={hasCover ? 'Page 2 · photo above the article' : undefined} />
-          <Section title="Hero height">
+          <Section title="Hero layout" editorTarget="hero-layout">
+            {templateId === 'paper-2' && (
+              <SegmentField<'left' | 'right'>
+                label="Image side"
+                value={heroSide}
+                options={[
+                  { value: 'left', label: 'Left' },
+                  { value: 'right', label: 'Right' },
+                ]}
+                onChange={(heroSide) =>
+                  update((d) => {
+                    d.design.heroSide = heroSide;
+                  })
+                }
+              />
+            )}
             <LabeledNumber
               label="Height"
               unit="mm"

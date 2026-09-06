@@ -12,13 +12,18 @@ import { requestBlockEditorFocus } from '../lib/editorNavigation';
 /** A standalone display equation with an optional caption. KaTeX can't wrap math,
  *  so a too-wide formula is scaled down to the column rather than running off the
  *  edge — re-fit after every render (covers tex edits and column-width changes). */
-function DisplayEquation({ tex, caption, align }: { tex: string; caption: string; align?: 'left' | 'center' | 'right' }) {
+function DisplayEquation({ id, tex, caption, align }: { id: string; tex: string; caption: string; align?: 'left' | 'center' | 'right' }) {
   const texRef = useRef<HTMLSpanElement>(null);
   useLayoutEffect(() => {
     if (texRef.current) fitEquation(texRef.current);
   });
   return (
-    <figure className="flow-eq">
+    <figure
+      className="flow-eq"
+      data-source-block-id={id}
+      title="Click to edit this equation"
+      onClick={() => requestBlockEditorFocus(id)}
+    >
       <span ref={texRef} className="flow-eq-tex" dangerouslySetInnerHTML={{ __html: renderTex(tex, true) }} />
       {caption.trim() && (
         <figcaption style={{ textAlign: align ?? 'center' }}>{renderRuns(caption)}</figcaption>
@@ -604,14 +609,20 @@ export function Flow({
         if (pc.kind === 'equation') {
           const block = doc.blocks.find((b) => b.id === pc.id);
           if (!block || block.type !== 'equation') return null;
-          return <DisplayEquation key={i} tex={block.tex} caption={block.caption} align={block.align} />;
+          return <DisplayEquation key={i} id={block.id} tex={block.tex} caption={block.caption} align={block.align} />;
         }
         if (pc.kind === 'figure') {
           if (pc.id === MAG2_ASIDE_ID) return <MagSplitAside doc={doc} key={i} />;
           if (pc.id === HIGHLIGHTS_BLOCK_ID) {
             // magazine-1's band is highlights-only — no references.
             return (
-              <aside className={hlClass} data-image-avoiding-callout key={i}>
+              <aside
+                className={hlClass}
+                data-image-avoiding-callout
+                data-editor-tab="highlights"
+                data-editor-target="highlights"
+                key={i}
+              >
                 <span className="sidebar-image-shape" aria-hidden="true" />
                 <HighlightsBody doc={doc} hideRefs={doc.templateId === 'magazine-1'} />
               </aside>

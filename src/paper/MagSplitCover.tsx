@@ -45,9 +45,9 @@ export function MagSplitCover({ doc, vars, pieces }: Props) {
         </div>
       </div>
       {photo && (
-        <div className="mag2-strip">
+        <div className="mag2-strip" data-editor-tab="images" data-editor-target="image-hero">
           <SpreadPhotoImage asset={photo} geometry={p} />
-          {doc.meta.photoCredit && <span className="mag2-strip-credit">FOTO — {doc.meta.photoCredit}</span>}
+          {doc.meta.photoCredit && <span className="mag2-strip-credit" data-editor-tab="content" data-editor-target="meta-photo-credit">PHOTO — {doc.meta.photoCredit}</span>}
         </div>
       )}
       <PlacedImages doc={doc} pageIndex={0} />
@@ -71,10 +71,15 @@ export function MagPhotoPage({
   const photoGeometry = { ...p, x: p.x - MAG2_STRIP };
 
   return (
-    <div className={`page mag2-photo${photo ? ' page--dedicated-bg' : ' mag2-photo--empty'}`} style={vars}>
+    <div
+      className={`page mag2-photo${photo ? ' page--dedicated-bg' : ' mag2-photo--empty'}`}
+      style={vars}
+      data-editor-tab={photo ? 'images' : undefined}
+      data-editor-target={photo ? 'image-hero' : undefined}
+    >
       {photo && <SpreadPhotoImage asset={photo} geometry={photoGeometry} behind />}
       {!photo && <MagTopBar doc={doc} pageIndex={pageIndex} />}
-      {doc.meta.location && <span className="mag2-photo-tag">{doc.meta.location}</span>}
+      {doc.meta.location && <span className="mag2-photo-tag" data-editor-tab="content" data-editor-target="meta-location">{doc.meta.location}</span>}
       <PlacedImages doc={doc} pageIndex={pageIndex} />
     </div>
   );

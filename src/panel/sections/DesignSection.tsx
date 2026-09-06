@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { useDoc } from '../../store/useDoc';
 import {
+  DEFAULT_TOP_BAR_OFFSET,
   assetIsReferenced,
   defaultSubtitleGap,
   familyOf,
@@ -180,7 +181,7 @@ export function DesignSection() {
       <LabeledNumber label="Author" unit="pt" value={design.sizes.author} min={7} max={12} step={0.5} onChange={setSize('author')} />
       <LabeledNumber label="Affiliation" unit="pt" value={design.sizes.affiliation} min={7} max={12} step={0.5} onChange={setSize('affiliation')} />
 
-      <p className="group-label">Fonts</p>
+      <p className="group-label" id="editor-target-design-fonts">Fonts</p>
       <LabeledSelect label="Display" value={design.fontDisplay} options={fontOptions(SERIF_FONTS)} onChange={(v) => set('fontDisplay', v)} />
       <LabeledSelect label="Body" value={design.fontBody} options={fontOptions(SANS_FONTS)} onChange={(v) => set('fontBody', v)} />
       <LabeledSelect label="Category" value={design.fontCategory ?? design.fontBody} options={fontOptions(ALL_FONTS)} onChange={(v) => set('fontCategory', v)} />
@@ -226,6 +227,7 @@ export function DesignSection() {
         />
       )}
 
+      <div id="editor-target-design-background">
       <p className="group-label">First-page background graphic</p>
       <input
         ref={backgroundFileRef}
@@ -269,9 +271,10 @@ export function DesignSection() {
         </button>
       )}
       {backgroundError && <p className="hint hint--warn" role="alert">{backgroundError}</p>}
+      </div>
 
       {hasBarSide && (
-        <>
+        <div id="editor-target-design-topbar">
           <p className="group-label">Top bar</p>
           <SegmentField<'left' | 'right'>
             label="Masthead side"
@@ -285,7 +288,7 @@ export function DesignSection() {
           <LabeledNumber
             label="Distance from top edge"
             unit="mm"
-            value={design.topBarOffset ?? 0}
+            value={design.topBarOffset ?? DEFAULT_TOP_BAR_OFFSET}
             min={0}
             max={40}
             step={1}
@@ -298,7 +301,7 @@ export function DesignSection() {
               <LabeledColor label="Bar text ink" value={design.barTagInk ?? '#111418'} onChange={(v) => set('barTagInk', v)} />
             </>
           )}
-        </>
+        </div>
       )}
 
       <p className="group-label">Custom CSS</p>

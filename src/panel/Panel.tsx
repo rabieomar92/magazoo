@@ -10,9 +10,16 @@ import { HighlightsSection } from './sections/HighlightsSection';
 import { ReferencesSection } from './sections/ReferencesSection';
 import { DesignSection } from './sections/DesignSection';
 import { ArticleImagesSection } from './sections/ArticleImagesSection';
-import { blockEditorId, FOCUS_BLOCK_EDITOR_EVENT } from '../lib/editorNavigation';
+import {
+  blockEditorId,
+  editorTargetId,
+  FOCUS_BLOCK_EDITOR_EVENT,
+  FOCUS_EDITOR_TARGET_EVENT,
+  type EditorTab,
+  type EditorTargetDetail,
+} from '../lib/editorNavigation';
 
-type TabId = 'content' | 'images' | 'highlights' | 'design';
+type TabId = EditorTab;
 
 const TABS: { id: TabId; label: string }[] = [
   { id: 'content', label: 'Content' },
@@ -44,6 +51,33 @@ export function Panel() {
   const isCoverOnly = templateId === 'magazine-4';
 
   useEffect(() => {
+    const reveal = (id: string, attempts = 0) => {
+      const destination = document.getElementById(id);
+      if (!destination) {
+        if (attempts < 8) requestAnimationFrame(() => reveal(id, attempts + 1));
+        return;
+      }
+
+      // Cover object settings live inside collapsible groups. Open every
+      // enclosing group before scrolling, then focus the first safe control.
+      let parent: HTMLElement | null = destination;
+      while (parent) {
+        if (parent instanceof HTMLDetailsElement) parent.open = true;
+        parent = parent.parentElement;
+      }
+      destination.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const control = destination.matches('input, textarea, select, button, summary')
+        ? destination
+        : destination.querySelector<HTMLElement>(
+            'input:not([type="hidden"]), textarea, select, summary, button',
+          );
+      control?.focus({ preventScroll: true });
+      destination.classList.remove('is-preview-focused');
+      // Restart the short locator pulse even when the same object is clicked twice.
+      requestAnimationFrame(() => destination.classList.add('is-preview-focused'));
+      window.setTimeout(() => destination.classList.remove('is-preview-focused'), 1100);
+    };
+
     const onFocusBlock = (event: Event) => {
       const blockId = (event as CustomEvent<{ blockId?: string }>).detail?.blockId;
       if (!blockId) return;
@@ -52,21 +86,21 @@ export function Panel() {
       // Switching tabs mounts BodySection. Retry for a few animation frames so
       // the same interaction works from Images/Highlights/Design as well as
       // when the editor is already visible.
-      let attempts = 0;
-      const focus = () => {
-        const editor = document.getElementById(blockEditorId(blockId));
-        if (editor instanceof HTMLTextAreaElement) {
-          editor.focus({ preventScroll: true });
-          editor.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          return;
-        }
-        attempts += 1;
-        if (attempts < 5) requestAnimationFrame(focus);
-      };
-      requestAnimationFrame(focus);
+      requestAnimationFrame(() => reveal(blockEditorId(blockId)));
+    };
+
+    const onFocusTarget = (event: Event) => {
+      const detail = (event as CustomEvent<EditorTargetDetail>).detail;
+      if (!detail?.tab || !detail.target) return;
+      setTab(detail.tab);
+      requestAnimationFrame(() => reveal(editorTargetId(detail.target)));
     };
     window.addEventListener(FOCUS_BLOCK_EDITOR_EVENT, onFocusBlock);
-    return () => window.removeEventListener(FOCUS_BLOCK_EDITOR_EVENT, onFocusBlock);
+    window.addEventListener(FOCUS_EDITOR_TARGET_EVENT, onFocusTarget);
+    return () => {
+      window.removeEventListener(FOCUS_BLOCK_EDITOR_EVENT, onFocusBlock);
+      window.removeEventListener(FOCUS_EDITOR_TARGET_EVENT, onFocusTarget);
+    };
   }, []);
 
   return (

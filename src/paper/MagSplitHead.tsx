@@ -26,12 +26,12 @@ export function MagSplitHead({ doc }: { doc: Doc }) {
     <div className="mag2-head">
       <TagBar doc={doc} pageIndex={0} detail={meta.volume} fullBleed />
       <div className="mag2-head-content">
-        {meta.categoryLabel && <p className="mag2-kicker">{meta.categoryLabel}</p>}
-        <h1 className="mag2-title">{meta.title}</h1>
-        {meta.subtitle && <p className="mag2-lede">{meta.subtitle}</p>}
+        {meta.categoryLabel && <p className="mag2-kicker" data-editor-tab="content" data-editor-target="meta-category">{meta.categoryLabel}</p>}
+        <h1 className="mag2-title" data-editor-tab="content" data-editor-target="meta-title">{meta.title}</h1>
+        {meta.subtitle && <p className="mag2-lede" data-editor-tab="content" data-editor-target="meta-subtitle">{meta.subtitle}</p>}
         <div className="mag2-byline">
-          {meta.author && <span className="mag2-author">{meta.author}</span>}
-          {meta.affiliation && <span className="mag2-affil">{meta.affiliation}</span>}
+          {meta.author && <span className="mag2-author" data-editor-tab="content" data-editor-target="meta-author">{meta.author}</span>}
+          {meta.affiliation && <span className="mag2-affil" data-editor-tab="content" data-editor-target="meta-affiliation">{meta.affiliation}</span>}
         </div>
       </div>
     </div>
@@ -50,14 +50,14 @@ export function MagSplitAside({ doc }: { doc: Doc }) {
   return (
     <div className="mag2-aside">
       {meta.pullQuote && (
-        <blockquote className="mag2-quote">
+        <blockquote className="mag2-quote" data-editor-tab="content" data-editor-target="meta-pull-quote">
           <span className="mag2-quote-text">{meta.pullQuote}</span>
-          {meta.pullQuoteBy && <cite className="mag2-quote-by">{meta.pullQuoteBy}</cite>}
+          {meta.pullQuoteBy && <cite className="mag2-quote-by" data-editor-tab="content" data-editor-target="meta-pull-quote-by">{meta.pullQuoteBy}</cite>}
         </blockquote>
       )}
       {highlights.length > 0 && (
-        <aside className="mag2-hl">
-          <h3>{meta.highlightsLabel || 'Highlights'}</h3>
+        <aside className="mag2-hl" data-editor-tab="highlights" data-editor-target="highlights">
+          <h3 data-editor-tab="highlights" data-editor-target="highlights-label">{meta.highlightsLabel || 'Highlights'}</h3>
           <ul>
             {highlights.map((h, i) => (
               <li key={i}><span className="callout-list-copy">{renderRuns(h)}</span></li>

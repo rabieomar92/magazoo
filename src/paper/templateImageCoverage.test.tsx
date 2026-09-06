@@ -67,13 +67,46 @@ describe('placed-image template coverage', () => {
     expect(html).toContain('src="data:image/png;base64,artwork"');
   });
 
-  it('starts every photo-essay top bar at the page trim by default', () => {
+  it('starts every photo-essay top bar at the requested 10 mm default', () => {
     const galleryTemplates = TEMPLATES.filter((template) => template.family === 'gallery');
 
     expect(galleryTemplates).toHaveLength(4);
     for (const template of galleryTemplates) {
-      expect(template.make().design.topBarOffset).toBe(0);
+      expect(template.make().design.topBarOffset).toBe(10);
     }
+  });
+
+  it('starts every new template with a 10 mm top-bar offset', () => {
+    for (const template of TEMPLATES) {
+      expect(template.make().design.topBarOffset).toBe(10);
+    }
+  });
+
+  it('can put the Paper 2 hero on the physical left without changing its flow regions', () => {
+    const doc = TEMPLATES.find((template) => template.id === 'paper-2')!.make();
+    doc.design.heroSide = 'left';
+    const host = document.createElement('div');
+    host.innerHTML = renderToStaticMarkup(
+      <PaperTwoPage doc={doc} vars={{}} left={[]} right={[]} />,
+    );
+
+    const regions = host.querySelector('.p2-cols');
+    expect(regions?.classList.contains('p2-cols--hero-left')).toBe(true);
+    expect(regions?.querySelectorAll(':scope > .p2-left')).toHaveLength(1);
+    expect(regions?.querySelectorAll(':scope > .p2-right')).toHaveLength(1);
+  });
+
+  it('uses English bylines and photo-credit labels in editorial templates', () => {
+    const cover = TEMPLATES.find((template) => template.id === 'magazine-2')!.make();
+    const gate = TEMPLATES.find((template) => template.id === 'magazine-3')!.make();
+    const html = [
+      renderToStaticMarkup(<MagazineCover doc={cover} vars={{}} />),
+      renderToStaticMarkup(<MagSplitCover doc={cover} vars={{}} pieces={[]} />),
+      renderToStaticMarkup(<MagGateB doc={gate} vars={{}} />),
+    ].join(' ');
+
+    expect(html).not.toMatch(/\b(?:FOTO|OLEH)\b/i);
+    expect(html).toMatch(/\bPHOTO\b/);
   });
 
   it('uses the exact article TagBar structure on each gallery sheet', () => {

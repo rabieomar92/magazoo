@@ -1,9 +1,20 @@
 import { describe, expect, it } from 'vitest';
 import { emptyDoc } from '../schema/document';
 import { cssVars } from './geometry';
-import { fontStack } from './fonts';
+import { ALL_FONTS, fontStack } from './fonts';
 
 describe('font stacks', () => {
+  it('exposes only the approved publication font list, in product order', () => {
+    expect(ALL_FONTS).toEqual([
+      'Helvetica',
+      'Playfair Display',
+      'Bebas Neue',
+      'Arial',
+      'Avenir Next LT Pro Light',
+      'Avenir Next LT Pro',
+    ]);
+  });
+
   it('uses a geometric sans-serif fallback for Avenir Next, never a serif', () => {
     const stack = fontStack('Avenir Next');
     expect(stack).toContain('"Avenir Next"');

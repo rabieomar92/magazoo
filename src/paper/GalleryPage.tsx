@@ -4,6 +4,7 @@ import { parseRuns, renderTex } from '../lib/richtext';
 import { galleryFrameGeometry } from '../lib/galleryFrame';
 import { TagBar } from './TagBar';
 import { PageArtwork } from '../components/PageArtwork';
+import { requestBlockEditorFocus } from '../lib/editorNavigation';
 
 /** Inline **bold** / *italic* / __underline__ + `$…$` math → styled nodes. */
 function renderRuns(text: string): ReactNode {
@@ -60,7 +61,12 @@ function ImageCell({ doc, block, area }: { doc: Doc; block?: Block; area: string
     objectPosition: `${geometry.objectX}% ${geometry.objectY}%`,
   };
   return (
-    <figure className="g-img" style={{ gridArea: area }}>
+    <figure
+      className="g-img"
+      style={{ gridArea: area }}
+      data-editor-tab={block?.type === 'figure' ? 'images' : undefined}
+      data-editor-target={block?.type === 'figure' ? `gallery-image-${block.id}` : undefined}
+    >
       {asset ? <img src={asset.src} alt="" style={imgStyle} /> : <span className="g-img-empty" />}
       {caption.trim() && <figcaption><TileText text={caption} className="g-cap" /></figcaption>}
     </figure>
@@ -86,7 +92,12 @@ function FoldCell({ doc, block, area, half }: { doc: Doc; block?: Block; area: s
     objectPosition: `${geometry.objectX}% ${geometry.objectY}%`,
   };
   return (
-    <figure className={`g-img g-fold${asset ? '' : ' is-empty'}`} style={{ gridArea: area }}>
+    <figure
+      className={`g-img g-fold${asset ? '' : ' is-empty'}`}
+      style={{ gridArea: area }}
+      data-editor-tab={block?.type === 'figure' ? 'images' : undefined}
+      data-editor-target={block?.type === 'figure' ? `gallery-image-${block.id}` : undefined}
+    >
       {asset && <img src={asset.src} alt="" style={imgStyle} />}
       {/* Caption only on the left half (page 1) so it isn't printed twice. */}
       {half === 'left' && caption.trim() && (
@@ -119,7 +130,12 @@ function CardCell({ block, area }: { block?: Block; area: string }) {
           : ''
       : '';
   return (
-    <div className={`g-card${indentClass}`} style={{ gridArea: area }}>
+    <div
+      className={`g-card${indentClass}`}
+      style={{ gridArea: area }}
+      data-source-block-id={block?.type === 'paragraph' ? block.id : undefined}
+      onClick={block?.type === 'paragraph' ? () => requestBlockEditorFocus(block.id) : undefined}
+    >
       {text.trim() && (
         <TileText
           text={text}

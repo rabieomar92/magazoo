@@ -55,9 +55,10 @@ export function HighlightsSection() {
     });
 
   return (
-    <Section title="Highlights">
+    <Section title="Highlights" editorTarget="highlights">
       <LabeledInput
         label="Section heading"
+        editorTarget="highlights-label"
         value={label ?? ''}
         onChange={setLabel}
         placeholder="Highlights"

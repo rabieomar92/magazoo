@@ -41,6 +41,8 @@ export function MagGateA({ doc, vars }: { doc: Doc; vars: CSSProperties }) {
         (doc.design.firstPageTopMargin ?? 0) > 0 ? ' page--first-offset' : ''
       }`}
       style={vars}
+      data-editor-tab={photo ? 'images' : undefined}
+      data-editor-target={photo ? 'image-cover' : undefined}
     >
       <PageArtwork doc={doc} />
       {photo && geometry && <SpreadPhotoImage asset={photo.asset} geometry={geometry} behind />}
@@ -50,12 +52,12 @@ export function MagGateA({ doc, vars }: { doc: Doc; vars: CSSProperties }) {
 
         <div className="mag-gate-mid">
           {meta.categoryLabel && (
-            <p className="mag-kicker">
+            <p className="mag-kicker" data-editor-tab="content" data-editor-target="meta-category">
               <span className="mag-kicker-dash" />
               {meta.categoryLabel}
             </p>
           )}
-          <h1 className="mag-title mag-gate-title">
+          <h1 className="mag-title mag-gate-title" data-editor-tab="content" data-editor-target="meta-title">
             {words.map((w, i) => (
               <span key={i} className={`mag-title-word${i === words.length - 1 ? ' is-accent' : ''}`}>
                 {w}
@@ -77,25 +79,30 @@ export function MagGateB({ doc, vars }: { doc: Doc; vars: CSSProperties }) {
   const photo = gatePhoto(doc);
   const geometry = gateGeometry(doc, 1);
   return (
-    <div className={`page mag-gate mag-gate--b${photo ? ' page--dedicated-bg' : ''}`} style={vars}>
+    <div
+      className={`page mag-gate mag-gate--b${photo ? ' page--dedicated-bg' : ''}`}
+      style={vars}
+      data-editor-tab={photo ? 'images' : undefined}
+      data-editor-target={photo ? 'image-cover' : undefined}
+    >
       {photo && geometry && <SpreadPhotoImage asset={photo.asset} geometry={geometry} behind />}
       <div className="mag-gate-scrim mag-gate-scrim--b" />
       <div className="mag-gate-inner mag-gate-inner--b">
         {!photo && <MagTopBar doc={doc} pageIndex={1} />}
         <div className="mag-gate-mid mag-gate-mid--b">
-          {meta.subtitle && <p className="mag-gate-lede">{meta.subtitle}</p>}
+          {meta.subtitle && <p className="mag-gate-lede" data-editor-tab="content" data-editor-target="meta-subtitle">{meta.subtitle}</p>}
           {meta.pullQuote && (
-            <blockquote className="mag-gate-quote">
+            <blockquote className="mag-gate-quote" data-editor-tab="content" data-editor-target="meta-pull-quote">
               <span className="mag-gate-quote-text">{meta.pullQuote}</span>
-              {meta.pullQuoteBy && <cite className="mag-gate-quote-by">{meta.pullQuoteBy}</cite>}
+              {meta.pullQuoteBy && <cite className="mag-gate-quote-by" data-editor-tab="content" data-editor-target="meta-pull-quote-by">{meta.pullQuoteBy}</cite>}
             </blockquote>
           )}
         </div>
 
         <div className="mag-gate-foot mag-gate-foot--b">
           <div className="mag-gate-credits">
-            {meta.author && <span className="mag-gate-author">{meta.author}</span>}
-            {meta.photoCredit && <span>FOTO: {meta.photoCredit}</span>}
+            {meta.author && <span className="mag-gate-author" data-editor-tab="content" data-editor-target="meta-author">{meta.author}</span>}
+            {meta.photoCredit && <span data-editor-tab="content" data-editor-target="meta-photo-credit">PHOTO: {meta.photoCredit}</span>}
           </div>
         </div>
       </div>

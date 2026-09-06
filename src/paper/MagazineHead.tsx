@@ -13,23 +13,23 @@ export function MagTopBar({ doc, pageIndex = 0 }: { doc: Doc; pageIndex?: number
 export function MagazineHead({ doc }: { doc: Doc }) {
   const { meta, hero, assets, design } = doc;
   const photo = design.showHero !== false && hero.assetId ? assets[hero.assetId] : null;
-  // magazine-1 drops the "FOTO —" label and prints the credit as-is.
+  // magazine-1 drops the "PHOTO —" label and prints the credit as-is.
   const mag1 = doc.templateId === 'magazine-1';
   return (
     <div className="mag-head">
       {photo && (
-        <figure className="mag-hero">
+        <figure className="mag-hero" data-editor-tab="images" data-editor-target="image-hero">
           <FramedImage asset={photo} frame={hero} />
-          {meta.location && <figcaption className="mag-hero-tag">{meta.location}</figcaption>}
+          {meta.location && <figcaption className="mag-hero-tag" data-editor-tab="content" data-editor-target="meta-location">{meta.location}</figcaption>}
         </figure>
       )}
       {photo && meta.photoCredit && (
-        <p className="mag-hero-credit">{mag1 ? meta.photoCredit : `FOTO — ${meta.photoCredit}`}</p>
+        <p className="mag-hero-credit" data-editor-tab="content" data-editor-target="meta-photo-credit">{mag1 ? meta.photoCredit : `PHOTO — ${meta.photoCredit}`}</p>
       )}
       {meta.pullQuote && (
-        <blockquote className="mag-quote">
+        <blockquote className="mag-quote" data-editor-tab="content" data-editor-target="meta-pull-quote">
           <span className="mag-quote-text">{meta.pullQuote}</span>
-          {meta.pullQuoteBy && <cite className="mag-quote-by">{meta.pullQuoteBy}</cite>}
+          {meta.pullQuoteBy && <cite className="mag-quote-by" data-editor-tab="content" data-editor-target="meta-pull-quote-by">{meta.pullQuoteBy}</cite>}
         </blockquote>
       )}
     </div>

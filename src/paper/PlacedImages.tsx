@@ -179,6 +179,8 @@ function PlacedImageItem({
       }`}
       style={style}
       data-image-id={image.id}
+      data-editor-tab="images"
+      data-editor-target={`article-image-${image.id}`}
       aria-label={`Placed image, ${geometry.widthCols} columns wide`}
       title="Drag to position · horizontal movement snaps to columns"
       onPointerDown={onPointerDown}
@@ -304,6 +306,8 @@ function PlacedHighlightsItem({ doc }: { doc: Doc }) {
     <aside
       ref={elementRef}
       className="placed-highlights"
+      data-editor-tab="highlights"
+      data-editor-target="highlights"
       style={{ left: `${geometry.left}mm`, top: `${geometry.top}mm`, width: `${geometry.width}mm` }}
       dir={doc.design.textDirection ?? 'ltr'}
       aria-label={`Highlights box, ${geometry.widthCols} columns wide`}

@@ -1,4 +1,5 @@
 import {
+  DEFAULT_TOP_BAR_OFFSET,
   defaultSubtitleGap,
   type FrontCoverDesign,
   type FrontCoverTextRole,
@@ -42,7 +43,7 @@ function CoverTextEditor({ role, label }: { role: FrontCoverTextRole; label: str
     });
 
   return (
-    <details className="cover-style-group">
+    <details className="cover-style-group" id={`editor-target-front-cover-style-${role}`}>
       <summary>{label}</summary>
       <div className="cover-style-fields">
         <Toggle label="Show object" checked={style.visible} onChange={(value) => set('visible', value)} />
@@ -111,7 +112,7 @@ export function FrontCoverDesignSection() {
 
   return (
     <>
-      <Section title="Front cover layout">
+      <Section title="Front cover layout" editorTarget="front-cover-layout">
         <p className="hint">
           These settings affect only Magazine Cover. Edit the words in Content and the cover
           photograph in Images.
@@ -138,7 +139,7 @@ export function FrontCoverDesignSection() {
         <LabeledNumber
           label="Masthead top"
           unit="mm"
-          value={design.topBarOffset ?? 0}
+          value={design.topBarOffset ?? DEFAULT_TOP_BAR_OFFSET}
           min={0}
           max={40}
           step={1}
@@ -182,7 +183,7 @@ export function FrontCoverDesignSection() {
         />
       </Section>
 
-      <Section title="Cover surfaces">
+      <Section title="Cover surfaces" editorTarget="front-cover-surfaces">
         <Toggle
           label="Show cover image"
           checked={design.showHero !== false}
@@ -230,7 +231,7 @@ export function FrontCoverDesignSection() {
         />
       </Section>
 
-      <Section title="Cover object styles">
+      <Section title="Cover object styles" editorTarget="front-cover-styles">
         <p className="hint">
           Every text object has its own font, size, bold, italic, spacing, and color.
           Subtitle, author, and publication strapline follow Ink until customized.

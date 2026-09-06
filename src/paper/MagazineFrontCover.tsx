@@ -7,6 +7,7 @@ import {
 } from '../lib/frontCoverDesign';
 import { FramedImage } from '../components/FramedImage';
 import { PageArtwork } from '../components/PageArtwork';
+import { requestBlockEditorFocus } from '../lib/editorNavigation';
 
 type Paragraph = Extract<Block, { type: 'paragraph' }>;
 
@@ -74,6 +75,8 @@ export function MagazineFrontCover({ doc, vars }: { doc: Doc; vars: CSSPropertie
         flip ? ' front-cover--flip' : ''
       }${(doc.design.firstPageTopMargin ?? 0) > 0 ? ' page--first-offset' : ''}`}
       style={style}
+      data-editor-tab={photo ? 'images' : undefined}
+      data-editor-target={photo ? 'image-cover' : undefined}
     >
       <PageArtwork doc={doc} />
       {photo && <FramedImage className="front-cover-photo" asset={photo} frame={cover} />}
@@ -82,28 +85,28 @@ export function MagazineFrontCover({ doc, vars }: { doc: Doc; vars: CSSPropertie
         <header className="front-cover-brand">
           <div className="front-cover-brand-copy">
             {frontCoverTextVisible(doc.design, 'masthead') && meta.masthead && (
-              <div className="front-cover-masthead">{meta.masthead}</div>
+              <div className="front-cover-masthead" data-editor-tab="content" data-editor-target="meta-masthead">{meta.masthead}</div>
             )}
             {frontCoverTextVisible(doc.design, 'strapline') && meta.affiliation && (
-              <div className="front-cover-strap">{meta.affiliation}</div>
+              <div className="front-cover-strap" data-editor-tab="content" data-editor-target="meta-affiliation">{meta.affiliation}</div>
             )}
           </div>
         </header>
 
         <main className="front-cover-story">
           {frontCoverTextVisible(doc.design, 'kicker') && meta.categoryLabel && (
-            <div className="front-cover-kicker">{meta.categoryLabel}</div>
+            <div className="front-cover-kicker" data-editor-tab="content" data-editor-target="meta-category">{meta.categoryLabel}</div>
           )}
-          {frontCoverTextVisible(doc.design, 'title') && meta.title && <h1>{meta.title}</h1>}
+          {frontCoverTextVisible(doc.design, 'title') && meta.title && <h1 data-editor-tab="content" data-editor-target="meta-title">{meta.title}</h1>}
           {frontCoverTextVisible(doc.design, 'subtitle') && meta.subtitle && (
-            <p className="front-cover-lede">{meta.subtitle}</p>
+            <p className="front-cover-lede" data-editor-tab="content" data-editor-target="meta-subtitle">{meta.subtitle}</p>
           )}
           <div className="front-cover-byline">
             {frontCoverTextVisible(doc.design, 'author') && meta.author && (
-              <span className="front-cover-author">{meta.author}</span>
+              <span className="front-cover-author" data-editor-tab="content" data-editor-target="meta-author">{meta.author}</span>
             )}
             {frontCoverTextVisible(doc.design, 'storyTag') && meta.location && (
-              <span className="front-cover-story-tag">{meta.location}</span>
+              <span className="front-cover-story-tag" data-editor-tab="content" data-editor-target="meta-location">{meta.location}</span>
             )}
           </div>
         </main>
@@ -123,6 +126,8 @@ export function MagazineFrontCover({ doc, vars }: { doc: Doc; vars: CSSPropertie
                   <article
                     className="front-cover-teaser"
                     key={teaser.id}
+                    data-source-block-id={teaser.id}
+                    onClick={() => requestBlockEditorFocus(teaser.id)}
                     style={{
                       ...teaserOverrides,
                       textAlign: teaser.align ?? doc.design.bodyAlign ?? 'left',
@@ -143,10 +148,10 @@ export function MagazineFrontCover({ doc, vars }: { doc: Doc; vars: CSSPropertie
           )}
           <div className="front-cover-credit-row">
             {frontCoverTextVisible(doc.design, 'footerBrand') && meta.masthead && (
-              <span className="front-cover-footer-brand">{meta.masthead}</span>
+              <span className="front-cover-footer-brand" data-editor-tab="content" data-editor-target="meta-masthead">{meta.masthead}</span>
             )}
             {frontCoverTextVisible(doc.design, 'photoCredit') && meta.photoCredit && (
-              <span className="front-cover-photo-credit">PHOTO · {meta.photoCredit}</span>
+              <span className="front-cover-photo-credit" data-editor-tab="content" data-editor-target="meta-photo-credit">PHOTO · {meta.photoCredit}</span>
             )}
           </div>
         </footer>

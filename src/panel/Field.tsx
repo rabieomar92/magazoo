@@ -1,15 +1,21 @@
 import type { ReactNode } from 'react';
+import { editorTargetId } from '../lib/editorNavigation';
 
-interface LabeledProps {
+interface EditorTargetProps {
+  /** Stable destination used by clicks in the page preview. */
+  editorTarget?: string;
+}
+
+interface LabeledProps extends EditorTargetProps {
   label: string;
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
 }
 
-export function LabeledInput({ label, value, onChange, placeholder }: LabeledProps) {
+export function LabeledInput({ label, value, onChange, placeholder, editorTarget }: LabeledProps) {
   return (
-    <label className="field">
+    <label className="field" id={editorTarget ? editorTargetId(editorTarget) : undefined}>
       <span className="field-label">{label}</span>
       <input
         className="field-input"
@@ -22,23 +28,23 @@ export function LabeledInput({ label, value, onChange, placeholder }: LabeledPro
   );
 }
 
-export function LabeledTextarea({ label, value, onChange, placeholder }: LabeledProps) {
+export function LabeledTextarea({ label, value, onChange, placeholder, editorTarget, rows = 4 }: LabeledProps & { rows?: number }) {
   return (
-    <label className="field">
+    <label className="field" id={editorTarget ? editorTargetId(editorTarget) : undefined}>
       <span className="field-label">{label}</span>
       <textarea
         className="field-input field-textarea"
         dir="auto"
         value={value}
         placeholder={placeholder}
-        rows={4}
+        rows={rows}
         onChange={(e) => onChange(e.target.value)}
       />
     </label>
   );
 }
 
-interface NumberProps {
+interface NumberProps extends EditorTargetProps {
   label: string;
   value: number;
   onChange: (v: number) => void;
@@ -48,9 +54,9 @@ interface NumberProps {
   unit?: string;
 }
 
-export function LabeledNumber({ label, value, onChange, min, max, step, unit }: NumberProps) {
+export function LabeledNumber({ label, value, onChange, min, max, step, unit, editorTarget }: NumberProps) {
   return (
-    <label className="field field--inline">
+    <label className="field field--inline" id={editorTarget ? editorTargetId(editorTarget) : undefined}>
       <span className="field-label">
         {label}
         {unit && <span className="field-unit"> ({unit})</span>}
@@ -79,9 +85,10 @@ export function LabeledRange({
   max,
   step,
   format,
+  editorTarget,
 }: NumberProps & { format?: (v: number) => string }) {
   return (
-    <label className="field">
+    <label className="field" id={editorTarget ? editorTargetId(editorTarget) : undefined}>
       <span className="field-label range-label">
         {label}
         <span className="field-unit">{format ? format(value) : value}</span>
@@ -99,9 +106,9 @@ export function LabeledRange({
   );
 }
 
-export function LabeledColor({ label, value, onChange }: LabeledProps) {
+export function LabeledColor({ label, value, onChange, editorTarget }: LabeledProps) {
   return (
-    <label className="field field--inline">
+    <label className="field field--inline" id={editorTarget ? editorTargetId(editorTarget) : undefined}>
       <span className="field-label">{label}</span>
       <span className="color-input">
         <input type="color" value={value} onChange={(e) => onChange(e.target.value)} />
@@ -115,16 +122,16 @@ export function LabeledColor({ label, value, onChange }: LabeledProps) {
   );
 }
 
-interface SelectProps {
+interface SelectProps extends EditorTargetProps {
   label: string;
   value: string;
   options: { value: string; label: string }[];
   onChange: (v: string) => void;
 }
 
-export function LabeledSelect({ label, value, options, onChange }: SelectProps) {
+export function LabeledSelect({ label, value, options, onChange, editorTarget }: SelectProps) {
   return (
-    <label className="field field--inline">
+    <label className="field field--inline" id={editorTarget ? editorTargetId(editorTarget) : undefined}>
       <span className="field-label">{label}</span>
       <select className="field-input select-control" value={value} onChange={(e) => onChange(e.target.value)}>
         {options.map((o) => (
@@ -141,13 +148,14 @@ export function Toggle({
   label,
   checked,
   onChange,
+  editorTarget,
 }: {
   label: string;
   checked: boolean;
   onChange: (v: boolean) => void;
-}) {
+} & EditorTargetProps) {
   return (
-    <label className="field field--inline toggle">
+    <label className="field field--inline toggle" id={editorTarget ? editorTargetId(editorTarget) : undefined}>
       <span className="field-label">{label}</span>
       <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
     </label>
@@ -160,14 +168,15 @@ export function SegmentField<T extends string | number>({
   value,
   options,
   onChange,
+  editorTarget,
 }: {
   label: string;
   value: T;
   options: { value: T; label: string }[];
   onChange: (v: T) => void;
-}) {
+} & EditorTargetProps) {
   return (
-    <div className="field field--inline">
+    <div className="field field--inline" id={editorTarget ? editorTargetId(editorTarget) : undefined}>
       <span className="field-label">{label}</span>
       <div className="segment">
         {options.map((o) => (
@@ -186,9 +195,13 @@ export function SegmentField<T extends string | number>({
 }
 
 /** A titled group of controls. */
-export function Section({ title, children }: { title: string; children: ReactNode }) {
+export function Section({
+  title,
+  children,
+  editorTarget,
+}: { title: string; children: ReactNode } & EditorTargetProps) {
   return (
-    <section className="section">
+    <section className="section" id={editorTarget ? editorTargetId(editorTarget) : undefined}>
       <h2 className="section-title">{title}</h2>
       {children}
     </section>

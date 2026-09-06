@@ -4,6 +4,7 @@ import { loadImage, ImageLoadError } from '../../lib/loadImage';
 import { placedImageGeometry } from '../../lib/placedImage';
 import { assetIsReferenced, uid, type Doc, type PlacedImage } from '../../schema/document';
 import { useDoc } from '../../store/useDoc';
+import { editorTargetId } from '../../lib/editorNavigation';
 import { LabeledNumber, LabeledRange, RowButtons, Section, SegmentField } from '../Field';
 
 const DEFAULT_FRAME = { scale: 1, offsetX: 0, offsetY: 0 };
@@ -107,7 +108,11 @@ export function ArticleImagesSection() {
         const asset = assets[image.assetId];
         const selectedWidth = Math.min(image.widthCols, maxWidth) as PlacedImage['widthCols'];
         return (
-          <div className="list-item list-item--stack" key={image.id}>
+          <div
+            className="list-item list-item--stack"
+            id={editorTargetId(`article-image-${image.id}`)}
+            key={image.id}
+          >
             <div className="figure-edit">
               <div className="figure-thumb">
                 {asset ? <img src={asset.src} alt="" /> : <span className="figure-missing">Image missing</span>}
