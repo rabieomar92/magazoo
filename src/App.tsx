@@ -13,6 +13,7 @@ import './styles/magazine.css';
 import './styles/gallery.css';
 import './styles/overflow.css';
 import './styles/panel.css';
+import './styles/panel-layout.css';
 
 const DEFAULT_PANEL_W = 380;
 const MIN_PANEL_W = 320;
