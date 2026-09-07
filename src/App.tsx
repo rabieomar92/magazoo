@@ -6,6 +6,7 @@ import { Panel } from './panel/Panel';
 import { PaperPreview } from './paper/PaperPreview';
 import { ErrorBoundary } from './ErrorBoundary';
 import { sampleDoc } from './sample';
+import { FOCUS_BLOCK_EDITOR_EVENT, FOCUS_EDITOR_TARGET_EVENT } from './lib/editorNavigation';
 import './styles/fonts.css';
 import './styles/page.css';
 import './styles/paper2.css';
@@ -14,6 +15,8 @@ import './styles/gallery.css';
 import './styles/overflow.css';
 import './styles/panel.css';
 import './styles/panel-layout.css';
+import './styles/front-matter.css';
+import './styles/paper3-footer.css';
 
 const DEFAULT_PANEL_W = 380;
 const MIN_PANEL_W = 320;
@@ -33,6 +36,15 @@ export default function App() {
   const [isDragging, setIsDragging] = useState(false);
   const [toolbarPreviewHost, setToolbarPreviewHost] = useState<HTMLDivElement | null>(null);
   const draggingRef = useRef(false);
+  useEffect(() => {
+    const revealEditor = () => setIsCollapsed(false);
+    window.addEventListener(FOCUS_BLOCK_EDITOR_EVENT,revealEditor);
+    window.addEventListener(FOCUS_EDITOR_TARGET_EVENT,revealEditor);
+    return () => {
+      window.removeEventListener(FOCUS_BLOCK_EDITOR_EVENT,revealEditor);
+      window.removeEventListener(FOCUS_EDITOR_TARGET_EVENT,revealEditor);
+    };
+  },[]);
 
   // Restore the last session, then keep mirroring edits to IndexedDB. Seed a
   // real highlight only on a genuinely empty first run. The `ready` gate avoids
@@ -159,7 +171,7 @@ export default function App() {
               title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
               aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             >
-              {isCollapsed ? '▶' : '◀'}
+              <span className={`splitter-chevron${isCollapsed ? ' splitter-chevron--right' : ' splitter-chevron--left'}`} aria-hidden="true" />
             </button>
           </div>
           <PaperPreview toolbarHost={toolbarPreviewHost} />
