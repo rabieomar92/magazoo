@@ -9,6 +9,7 @@ export function MetaSection() {
   const isFrontCover = useDoc((s) => s.doc.templateId === 'magazine-4');
   const barColor = useDoc((s) => s.doc.design.barColor ?? s.doc.design.colors.accent);
   const isP2 = useDoc((s) => s.doc.templateId === 'paper-2');
+  const showAuthor = useDoc(s => s.doc.templateId !== 'frontmatter-contents' && s.doc.templateId !== 'frontmatter-board');
   const update = useDoc((s) => s.update);
 
   const set = (key: keyof typeof meta) => (v: string) =>
@@ -51,14 +52,14 @@ export function MetaSection() {
             onChange={set('subtitle')}
             placeholder="One explanatory sentence"
           />
-          <LabeledInput editorTarget="meta-author" label="Author" value={meta.author} onChange={set('author')} placeholder="A. Rahman, S. Tan" />
+          {showAuthor && <><LabeledInput editorTarget="meta-author" label="Author" value={meta.author} onChange={set('author')} placeholder="A. Rahman, S. Tan" />
           <LabeledInput
             label={isMag ? 'Affiliation / Section' : 'Affiliation'}
             editorTarget="meta-affiliation"
             value={meta.affiliation}
             onChange={set('affiliation')}
             placeholder="Organization or publication"
-          />
+          /></>}
         </>
       )}
 

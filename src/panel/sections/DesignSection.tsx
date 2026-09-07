@@ -89,6 +89,10 @@ export function DesignSection() {
 
   return (
     <Section title="Design">
+      {templateId === 'paper-3' && <>
+        <Toggle label="Match colours to hero image" checked={design.imageTheme !== false} onChange={v => set('imageTheme', v)} />
+        <p className="hint">The photo fades into a solid, image-matched page colour with contrasting text. Turn this off to use your manual palette. Individual text colour overrides remain editable.</p>
+      </>}
       <p className="group-label">Layout</p>
       <SegmentField<Design['bodyCols']>
         label="Text columns"
@@ -190,6 +194,7 @@ export function DesignSection() {
       <LabeledSelect label="Affiliation" value={design.fontAffiliation ?? design.fontBody} options={fontOptions(ALL_FONTS)} onChange={(v) => set('fontAffiliation', v)} />
 
       <p className="group-label">Colors</p>
+      {templateId === 'paper-3' && design.imageTheme !== false && <p className="hint">These are your saved manual colours. Turn off “Match colours to hero image” above to apply them.</p>}
       <LabeledColor label="Page color (all pages)" value={design.paperBg ?? '#ffffff'} onChange={(v) => set('paperBg', v)} />
       <LabeledColor label="Hero" value={design.colors.hero} onChange={setColor('hero')} />
       <LabeledColor label="Accent" value={design.colors.accent} onChange={setColor('accent')} />
@@ -227,7 +232,7 @@ export function DesignSection() {
         />
       )}
 
-      <div id="editor-target-design-background">
+      {templateId !== 'paper-3' && <div id="editor-target-design-background">
       <p className="group-label">First-page background graphic</p>
       <input
         ref={backgroundFileRef}
@@ -271,7 +276,7 @@ export function DesignSection() {
         </button>
       )}
       {backgroundError && <p className="hint hint--warn" role="alert">{backgroundError}</p>}
-      </div>
+      </div>}
 
       {hasBarSide && (
         <div id="editor-target-design-topbar">

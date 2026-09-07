@@ -62,7 +62,7 @@ function readableInk(hex: string): string {
   return L > 0.4 ? '#111418' : '#f8fafc';
 }
 
-export function cssVars(d: Design, templateId?: TemplateId): Record<string, string> {
+export function cssVars(d: Design, templateId?: TemplateId, bottomMargin = d.margin): Record<string, string> {
   const g = grid(d);
   const paperBg = d.paperBg ?? '#ffffff';
   const topBarOffset = Math.max(0, d.topBarOffset ?? DEFAULT_TOP_BAR_OFFSET);
@@ -79,6 +79,7 @@ export function cssVars(d: Design, templateId?: TemplateId): Record<string, stri
     '--page-w': `${PAGE_W}mm`,
     '--page-h': `${PAGE_H}mm`,
     '--margin': `${d.margin}mm`,
+    '--bottom-margin': `${bottomMargin}mm`,
     '--gutter': `${d.gutter}mm`,
     '--col': `${g.col}mm`,
     '--body-1': `${g.body1}mm`,

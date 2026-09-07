@@ -21,7 +21,7 @@ export function Page1({ doc, vars, pieces }: Props) {
   const { rail } = grid(design);
 
   return (
-    <div className="page" style={vars}>
+    <div className={`page${doc.templateId === 'paper-3' ? ' page--paper3' : ''}`} style={vars}>
       <PageArtwork doc={doc} />
       <div
         className={`hero${design.showHero === false ? ' hero--hidden' : ''}`}

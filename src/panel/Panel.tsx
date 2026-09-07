@@ -3,6 +3,7 @@ import { useDoc } from '../store/useDoc';
 import { familyOf, type TemplateFamily, type TemplateId } from '../schema/document';
 import { TEMPLATE_META } from '../store/presets';
 import { MetaSection } from './sections/MetaSection';
+import { FooterSection } from './sections/FooterSection';
 import { HeroSection } from './sections/HeroSection';
 import { GallerySection } from './sections/GallerySection';
 import { BodySection } from './sections/BodySection';
@@ -10,6 +11,7 @@ import { HighlightsSection } from './sections/HighlightsSection';
 import { ReferencesSection } from './sections/ReferencesSection';
 import { DesignSection } from './sections/DesignSection';
 import { ArticleImagesSection } from './sections/ArticleImagesSection';
+import { FrontMatterContent, FrontMatterImages, FrontMatterDesign } from './sections/FrontMatterSection';
 import {
   blockEditorId,
   editorTargetId,
@@ -29,6 +31,7 @@ const TABS: { id: TabId; label: string }[] = [
 ];
 
 const TEMPLATE_GROUPS: { family: TemplateFamily; label: string }[] = [
+  { family: 'frontmatter', label: 'Magazine front matter' },
   { family: 'paper', label: 'Article' },
   { family: 'magazine', label: 'Editorial' },
   { family: 'gallery', label: 'Photo essay' },
@@ -49,6 +52,10 @@ export function Panel() {
   const switchTemplate = useDoc((s) => s.switchTemplate);
   const isGallery = familyOf(templateId) === 'gallery';
   const isCoverOnly = templateId === 'magazine-4';
+  const isFrontMatter = familyOf(templateId) === 'frontmatter';
+  useEffect(() => {
+    if (isFrontMatter && tab === 'highlights') setTab('content');
+  },[isFrontMatter,tab]);
 
   useEffect(() => {
     const reveal = (id: string, attempts = 0) => {
@@ -106,7 +113,7 @@ export function Panel() {
   return (
     <aside className="panel">
       <nav className="panel-tabs" role="tablist" aria-label="Editor sections">
-        {TABS.map((t) => (
+        {TABS.filter(t => !isFrontMatter || t.id !== 'highlights').map((t) => (
           <button
             key={t.id}
             type="button"
@@ -147,11 +154,12 @@ export function Panel() {
         {tab === 'content' && (
           <>
             <MetaSection />
-            <BodySection />
+            <FooterSection />
+            {isFrontMatter ? <FrontMatterContent /> : <BodySection />}
           </>
         )}
         {tab === 'images' &&
-          (isGallery ? (
+          (isFrontMatter ? <FrontMatterImages /> : isGallery ? (
             <GallerySection />
           ) : (
             <>
@@ -165,7 +173,7 @@ export function Panel() {
             <ReferencesSection />
           </>
         )}
-        {tab === 'design' && <DesignSection />}
+        {tab === 'design' && (isFrontMatter ? <FrontMatterDesign /> : <DesignSection />)}
       </div>
     </aside>
   );

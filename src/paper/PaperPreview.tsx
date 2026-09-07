@@ -1,4 +1,4 @@
-import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { useDoc } from '../store/useDoc';
 import { DEFAULT_TOP_BAR_OFFSET, familyOf } from '../schema/document';
@@ -37,6 +37,10 @@ import { HIGHLIGHTS_BLOCK_ID, MAG2_ASIDE_ID } from './Flow';
 import { GalleryPage } from './GalleryPage';
 import { MagGateA, MagGateB } from './MagGate';
 import { MagazineFrontCover } from './MagazineFrontCover';
+import { FrontMatterPages, type FrontMatterStatus } from './FrontMatterPages';
+import { useImageTheme } from './useImageTheme';
+import { PageFooters } from './PageFooters';
+import { footerBottomMargin } from '../lib/pageFooter';
 
 type PreviewPagination = Pagination & { layoutRevision: number };
 const EMPTY: PreviewPagination = { pages: [], fill: 0, spill: 0, layoutRevision: 0 };
@@ -214,16 +218,17 @@ export function PaperPreview({ toolbarHost }: { toolbarHost: HTMLElement | null 
 }
 
 const PaperPreviewLayout = memo(function PaperPreviewLayout({
-  doc,
+  doc: storedDoc,
   toolbarHost,
 }: {
   doc: ReturnType<typeof useDoc.getState>['doc'];
   toolbarHost: HTMLElement | null;
 }) {
-
+  const doc = useImageTheme(storedDoc);
   const updateDoc = useDoc((state) => state.update);
 
-  const baseVars = useMemo(() => cssVars(doc.design, doc.templateId), [doc.design, doc.templateId]);
+  const bottomMargin = footerBottomMargin(doc);
+  const baseVars = useMemo(() => cssVars(doc.design, doc.templateId, bottomMargin), [doc.design, doc.templateId, bottomMargin]);
   const items = useMemo<FlowItem[]>(
     () =>
       doc.blocks.flatMap<FlowItem>((b) => {
@@ -253,6 +258,9 @@ const PaperPreviewLayout = memo(function PaperPreviewLayout({
   const isMag = familyOf(doc.templateId) === 'magazine';
   // Gallery: a fixed photo collage, no text flow — one A4 page, no pagination.
   const isGallery = familyOf(doc.templateId) === 'gallery';
+  const isFrontMatter = familyOf(doc.templateId) === 'frontmatter';
+  const [frontMatterStatus,setFrontMatterStatus] = useState<FrontMatterStatus>({pages:1,overflow:false});
+  const reportFrontMatter = useCallback((status:FrontMatterStatus) => setFrontMatterStatus(previous => previous.pages===status.pages && previous.overflow===status.overflow ? previous : status),[]);
   // magazine-2 runs a different sheet plan: sheet 1 is the article + photo strip,
   // sheet 2 is that same photo continued, spill goes to sheet 3+.
   const isSplit = doc.templateId === 'magazine-2';
@@ -388,7 +396,7 @@ const PaperPreviewLayout = memo(function PaperPreviewLayout({
 
     // Gallery and the dedicated cover are fixed compositions — nothing to
     // break, so skip the article measuring rig entirely.
-    if (isGallery || isFrontCover) {
+    if (isGallery || isFrontCover || isFrontMatter) {
       commitPagination(EMPTY);
       return;
     }
@@ -614,7 +622,7 @@ const PaperPreviewLayout = memo(function PaperPreviewLayout({
       ];
     }
     commitPagination(withColFill(paginate(h1, h2, flow), [h1, h2]));
-  }, [baseVars, items, doc, doc.meta, doc.design, doc.highlights, doc.references, hlBelow, hlFlow, imageExclusions, isMag, isSplit, isGate, isFrontCover, isP2, isGallery, fontEpoch, layoutEpoch, wrapSafetyBoost]);
+  }, [baseVars, items, doc, doc.meta, doc.design, doc.highlights, doc.references, hlBelow, hlFlow, imageExclusions, isMag, isSplit, isGate, isFrontCover, isP2, isGallery, isFrontMatter, fontEpoch, layoutEpoch, wrapSafetyBoost]);
 
   // Post-render column-overflow safety net — every template, not just the
   // gatefold this was first caught on.
@@ -946,7 +954,9 @@ const PaperPreviewLayout = memo(function PaperPreviewLayout({
 
   // paper-2 spends two of paginateHosts' regions on sheet 1, so the fit badge
   // has to count sheets, not regions.
-  const fit = isGallery
+  const fit = isFrontMatter
+    ? {level: frontMatterStatus.overflow ? 'warn' : 'ok',text: frontMatterStatus.overflow ? 'Text exceeds its frame. Shorten the heading or side note, or reduce its size.' : `${frontMatterStatus.pages} ${frontMatterStatus.pages===1?'page':'pages'} · front matter`}
+    : isGallery
     ? ({ level: 'ok', text: '2 pages · spread' } as const)
     : isFrontCover
       ? ({ level: 'ok', text: '1 page · cover' } as const)
@@ -981,7 +991,7 @@ const PaperPreviewLayout = memo(function PaperPreviewLayout({
   const pct = Math.round(scale * 100);
   // Magazine adds the cover sheet on top of the flowed content pages. magazine-2
   // instead puts the flow's first page ON sheet 1 and spends sheet 2 on the photo.
-  const flowPageCount = isFrontCover
+  const flowPageCount = isFrontMatter ? frontMatterStatus.pages : isFrontCover
     ? 1
     : isGallery
       ? 2
@@ -994,11 +1004,11 @@ const PaperPreviewLayout = memo(function PaperPreviewLayout({
           : isP2
           ? 1 + Math.max(0, pages.length - 2)
           : Math.max(1, pages.length);
-  const lastPlacedImagePage = isGallery || isFrontCover
+  const lastPlacedImagePage = isGallery || isFrontCover || isFrontMatter
     ? 0
     : (doc.images ?? []).reduce((last, image) => Math.max(last, image.anchor.page), 0);
   const highlightPage =
-    !isGallery && !isFrontCover && hlFree
+    !isGallery && !isFrontCover && !isFrontMatter && hlFree
       ? (doc.highlightBox ?? defaultPlacedHighlights(doc.design)).anchor.page
       : 0;
   const nPages = Math.max(flowPageCount, lastPlacedImagePage, highlightPage, calloutPageCount);
@@ -1257,7 +1267,9 @@ const PaperPreviewLayout = memo(function PaperPreviewLayout({
           style={{ transform: `scale(${scale})` }}
           onClickCapture={focusPreviewObject}
         >
-          {isGallery ? (
+          {isFrontMatter ? (
+            <FrontMatterPages doc={doc} vars={vars} onStatus={reportFrontMatter} />
+          ) : isGallery ? (
             <GalleryPage doc={doc} vars={vars} />
           ) : isFrontCover ? (
             <MagazineFrontCover doc={doc} vars={vars} />
@@ -1349,6 +1361,7 @@ const PaperPreviewLayout = memo(function PaperPreviewLayout({
         </div>
       </div>
 
+      <PageFooters doc={doc} root={pagesRef} />
       {/* Hidden measuring rig — same box as the real body columns. */}
       <div className="measure-root" style={vars} aria-hidden>
         {isSplit ? (

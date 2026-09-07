@@ -10,7 +10,7 @@ type Frame = ImageFrame & { assetId: string | null };
 const EMPTY_FRAME: Frame = { assetId: null, offsetX: 0, offsetY: 0, scale: 1 };
 
 /** One uploadable, framable image bound to either `doc.hero` or `doc.cover`. */
-function ImagePicker({ slot, title, blurb }: { slot: 'hero' | 'cover'; title: string; blurb?: string }) {
+export function ImagePicker({ slot, title, blurb }: { slot: 'hero' | 'cover'; title: string; blurb?: string }) {
   const frame = useDoc((s) => (s.doc[slot] ?? EMPTY_FRAME) as Frame);
   const asset = useDoc((s) => {
     const f = (s.doc[slot] ?? EMPTY_FRAME) as Frame;

@@ -25,7 +25,7 @@ type EditorResize = {
   textarea: HTMLTextAreaElement;
 };
 
-export function BodySection() {
+export function BodySection({ allowEquations = true }: { allowEquations?: boolean } = {}) {
   const blocks = useDoc((state) => state.doc.blocks);
   const update = useDoc((state) => state.update);
   const isGallery = useDoc((state) => familyOf(state.doc.templateId) === 'gallery');
@@ -474,7 +474,7 @@ export function BodySection() {
         >
           {isGallery ? '+ Text card' : isFrontCover ? '+ Cover teaser' : '+ Paragraph'}
         </button>
-        {!isGallery && !isFrontCover && (
+        {!isGallery && !isFrontCover && allowEquations && (
           <button
             type="button"
             className="add-btn"

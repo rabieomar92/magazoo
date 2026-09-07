@@ -105,6 +105,15 @@ export function Toolbar({ onPreviewToolsHost }: { onPreviewToolsHost: (host: HTM
     if (exporting) return;
     setExporting(true);
     try {
+      if (document.querySelector('.pages > .fm-page')) {
+        // Front-matter page count is measured after fonts settle. Let that
+        // render commit before the exporter collects the visible sheets.
+        await document.fonts.ready;
+        await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+      }
+      if (document.querySelector('.pages > .page[data-layout-overflow="true"]')) {
+        throw new Error('A front-matter heading or side note exceeds its frame. Shorten the text or reduce its size before exporting.');
+      }
       await exportPreviewPdf(title);
     } catch (error) {
       console.error('PDF export failed:', error);
