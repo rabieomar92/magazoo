@@ -2,13 +2,14 @@ export const SCHEMA_VERSION = 1;
 export const DEFAULT_TOP_BAR_OFFSET = 10;
 
 /** Template family = which layout engine renders the document. */
-export type TemplateFamily = 'paper' | 'magazine' | 'gallery';
+export type TemplateFamily = 'paper' | 'magazine' | 'gallery' | 'frontmatter';
 
 /** A specific template. The family (engine) is the id's prefix; the number picks
  *  a preset (content + design tokens) within that engine. */
 export type TemplateId =
   | 'paper-1'
   | 'paper-2'
+  | 'paper-3'
   | 'magazine-1'
   | 'magazine-2'
   | 'magazine-3'
@@ -16,11 +17,14 @@ export type TemplateId =
   | 'gallery-1'
   | 'gallery-2'
   | 'gallery-3'
-  | 'gallery-4';
+  | 'gallery-4'
+  | 'frontmatter-dean'
+  | 'frontmatter-contents'
+  | 'frontmatter-board';
 
 /** The layout engine a template runs on — derived from the id, never stored. */
 export const familyOf = (id: TemplateId | undefined): TemplateFamily =>
-  id?.startsWith('gallery') ? 'gallery' : id?.startsWith('magazine') ? 'magazine' : 'paper';
+  id?.startsWith('frontmatter') ? 'frontmatter' : id?.startsWith('gallery') ? 'gallery' : id?.startsWith('magazine') ? 'magazine' : 'paper';
 
 /** Native title-to-subtitle spacing for each layout, in millimetres. */
 export const defaultSubtitleGap = (id: TemplateId | undefined): number => {
@@ -230,6 +234,8 @@ export interface FrontCoverDesign {
 }
 
 export interface Design {
+  /** Paper 3: derive the solid page colour and readable ink from the hero. */
+  imageTheme?: boolean;
   /** Body columns on page 1. Page 2 turns the sidebar slot into a text column. */
   bodyCols: 2 | 3 | 4;
   /** Body paragraph alignment. Absent = 'justify' (v1 files kept their look). */
@@ -333,7 +339,38 @@ export interface Design {
   customCss: string;
 }
 
+export interface FrontMatterEntry {
+  id: string;
+  title: string;
+  text: string;
+  /** Printed article page number; manually set because each file is a layout. */
+  page?: string;
+}
+
+export interface FrontMatter {
+  entries: FrontMatterEntry[];
+  aboutTitle: string;
+  about: string;
+  noteTitle: string;
+  note: string;
+  contact: string;
+  signoff?: string;
+  pageStart: number;
+}
+
 export interface Doc {
+  /** Running folio. Missing settings use the masthead and start at page 1. */
+  footer?: {
+    enabled?: boolean;
+    text?: string;
+    startNumber?: number;
+    /** Millimetres from the footer text box to the bottom trim edge. */
+    bottomOffset?: number;
+    fontFamily?: string;
+    fontSize?: number;
+  };
+  /** Dedicated front-of-magazine content; optional in existing documents. */
+  frontMatter?: FrontMatter;
   schemaVersion: number;
   /** Active layout template. Absent = 'paper-1' (v1 files keep their layout). */
   templateId?: TemplateId;
@@ -449,9 +486,9 @@ export function cleanOrphanedAssets(doc: Doc): Doc {
 /** Bump this function, never the reader. Old files must keep opening. */
 export function migrate(raw: any): Doc {
   if (raw.schemaVersion === SCHEMA_VERSION) {
-    // Paper 3 was retired. Keep older saved files usable by opening their
-    // content in the standard paper engine rather than rejecting the file.
-    if ((raw as { templateId?: string }).templateId === 'paper-3') raw.templateId = 'paper-1';
+    // The retired Paper 3 predates imageTheme. Preserve its previous migration;
+    // the new image-led Paper 3 always saves an explicit true/false marker.
+    if (raw.templateId === 'paper-3' && raw.design.imageTheme === undefined) raw.templateId = 'paper-1';
 
     // Preserve each template's original composition when an older saved file
     // is opened after title-to-subtitle spacing became user-editable.

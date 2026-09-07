@@ -12,7 +12,7 @@
     calc(var(--topbar-offset, 10mm) + var(--bar-h) + var(--gutter)),
     var(--first-page-top, 0mm)
   );
-  --p2-body-h: calc(var(--page-h) - var(--margin) - var(--p2-start));
+  --p2-body-h: calc(var(--page-h) - var(--bottom-margin, var(--margin)) - var(--p2-start));
 }
 
 /* The bar itself lives in page.css (.tag-bar). Here it only bleeds sideways

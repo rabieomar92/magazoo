@@ -1,0 +1,53 @@
+/* The photograph ends before the header and body; only its colour continues. */
+.page--paper3 .hero::after {
+  content: '';
+  position: absolute;
+  inset: 55% 0 0;
+  z-index: 3;
+  pointer-events: none;
+  background: linear-gradient(to bottom, transparent, var(--paper-bg));
+}
+.page--paper3 .hero--hidden::after { display: none; }
+
+/* Reserve only bottom space, leaving all horizontal/top geometry unchanged. */
+.page { padding-bottom: var(--bottom-margin, var(--margin)); }
+
+/* Opaque trim band extends to the edge; the text's bottom clearance is editable. */
+.page > .page-folio {
+  position: absolute;
+  z-index: 12;
+  inset: auto 0 0;
+  height: 7mm;
+  box-sizing: border-box;
+  padding: 2mm max(8mm, var(--margin)) 0;
+  display: flex;
+  align-items: flex-end;
+  gap: 5mm;
+  background: var(--paper-bg, #fff);
+  color: var(--paper-ink, #111);
+  font-family: var(--sans);
+  font-size: 7pt;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: .025em;
+  direction: ltr;
+}
+.page-folio--right { flex-direction: row-reverse; }
+.page-folio-number { flex: none; font-variant-numeric: tabular-nums; }
+.page-folio-text { flex: 1; min-width: 0; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.page-folio--right .page-folio-text { text-align: left; }
+
+/* Paper 3 derives its page colour from the hero. The normal accent-soft panel
+ * is intentionally bright for academic paper templates, but becomes a harsh
+ * rectangle against a dark image-led page. Keep the callout close to the page
+ * tone, then use the derived readable ink for every piece of its typography. */
+.page--paper3 :is(.sidebar, .hl-below, .hl-col, .placed-highlights) {
+  background: color-mix(in srgb, var(--paper-bg, #fff) 84%, var(--paper-ink, #111) 16%);
+  color: var(--paper-ink, #111);
+  border-inline-start-color: color-mix(in srgb, var(--paper-ink, #111) 76%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--paper-ink, #111) 30%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--paper-ink, #111) 30%, transparent);
+}
+.page--paper3 :is(.sidebar, .hl-below, .hl-col, .placed-highlights) h3 {
+  color: var(--paper-ink, #111);
+}

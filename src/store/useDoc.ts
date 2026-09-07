@@ -17,6 +17,11 @@ export function cloneDocForUpdate(doc: Doc): Doc {
   return {
     ...doc,
     meta: { ...doc.meta },
+    footer: doc.footer ? { ...doc.footer } : undefined,
+    frontMatter: doc.frontMatter ? {
+      ...doc.frontMatter,
+      entries: doc.frontMatter.entries.map(entry => ({ ...entry })),
+    } : undefined,
     blocks: doc.blocks.map((block) =>
       block.type === 'figure' && block.frame
         ? { ...block, frame: { ...block.frame } }

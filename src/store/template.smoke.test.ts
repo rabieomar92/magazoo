@@ -7,7 +7,7 @@ describe('template registry', () => {
   it('has the supported paper designs and 3+ magazine templates', () => {
     const paper = TEMPLATE_META.filter((t) => t.family === 'paper');
     const magazine = TEMPLATE_META.filter((t) => t.family === 'magazine');
-    expect(paper.map((t) => t.id)).toEqual(['paper-1', 'paper-2']);
+    expect(paper.map((t) => t.id)).toEqual(['paper-1', 'paper-2', 'paper-3']);
     expect(magazine.length).toBeGreaterThanOrEqual(3);
   });
 

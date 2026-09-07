@@ -7,6 +7,7 @@ import {
   type TemplateId,
 } from '../schema/document';
 import { sampleDoc } from '../sample';
+import { makeFrontMatter } from './frontMatter';
 import { makeGallery1, makeGallery2, makeGallery3, makeGallery4 } from './gallery';
 
 /**
@@ -514,9 +515,49 @@ const makeMagazine4 = (): Doc => {
 
 // ---- Registry --------------------------------------------------------------
 
+const makePaper3 = (): Doc => {
+  const d = emptyDoc();
+  const id = uid();
+  d.templateId = 'paper-3';
+  d.assets[id] = { src: PHOTO_MICROSCAPE, naturalWidth: 1400, naturalHeight: 2000 };
+  d.hero = { assetId: id, offsetX: 0, offsetY: 0, scale: 1 };
+  d.meta = {
+    masthead: 'Research highlights', categoryLabel: 'THE MICROSCOPIC WORLD',
+    title: 'Small worlds, remarkable possibilities',
+    subtitle: 'A closer look at the communities that shape life beyond what our eyes can see.',
+    author: 'Science editorial team', affiliation: 'School of Physics',
+  };
+  d.design = {
+    ...d.design, imageTheme: true, sidebar: false, bodyCols: 3, bodyAlign: 'left',
+    margin: 14, gutter: 5, heroHeight: 120, subtitleGap: 3,
+    fontDisplay: 'Helvetica', fontSubtitle: 'Helvetica',
+    paperBg: '#075c53',
+    colors: { hero: '#075c53', ink: '#ffffff', accent: '#ffffff', accentSoft: '#d9efeb' },
+    sizes: { categoryLabel: 8, title: 27, subtitle: 11, author: 8, affiliation: 8, body: 9.4 },
+  };
+  d.footer = { text: 'THE PHYSICIST · RESEARCH', startNumber: 1 };
+  d.blocks = [
+    'A drop of water can contain a world of activity. At scales too small for our eyes to resolve, organisms move, exchange nutrients and respond to their surroundings. Scientific imaging brings that hidden world into view.',
+    'The colours in a scientific image do not always match what we would see with our eyes. Researchers may add colour to distinguish structures or reveal differences in a measurement. A clear caption explains what the image shows and how it was made.',
+    'Looking closely is only the beginning. Scientists compare observations, repeat measurements and ask whether a pattern holds under different conditions. Each experiment provides another piece of evidence.',
+    'Physics supplies many of the tools for this exploration. Light, electrons and other probes interact with matter in different ways, giving researchers complementary views of the same sample.',
+    'A microscope turns interactions between a sample and a probe into an image. Some instruments reveal the shape of a surface. Others help researchers locate particular molecules. Choosing the right tool depends on the question being asked.',
+    'Preparing a sample matters just as much as taking the picture. Researchers may need to control temperature, keep unwanted vibrations away or protect a delicate structure. These practical steps help make measurements meaningful.',
+    'Even a striking image is not a complete explanation. Scientists need a scale to judge the size of what they see, and a comparison to understand what has changed. They also look for effects introduced by the instrument itself.',
+    'Working together, researchers can connect observations at different scales. An image may suggest a new question, while another experiment tests it. Progress often comes from linking these pieces rather than relying on a single dramatic picture.',
+    'From living cells to new materials, these small worlds offer questions worth investigating. The next discovery may begin with something almost too small to notice.',
+  ].map(text => ({ id: uid(), type: 'paragraph', text }));
+  d.highlights = []; d.references = [];
+  return d;
+};
+
 export const TEMPLATES: (TemplateMeta & { make: () => Doc })[] = [
+  { id: 'frontmatter-dean', family: 'frontmatter', name: 'Dean’s Message', kind: 'Letter from the Dean', make: () => makeFrontMatter('frontmatter-dean') },
+  { id: 'frontmatter-contents', family: 'frontmatter', name: 'Contents', kind: 'Table of Contents', make: () => makeFrontMatter('frontmatter-contents') },
+  { id: 'frontmatter-board', family: 'frontmatter', name: 'Editorial Board', kind: 'People & Publication', make: () => makeFrontMatter('frontmatter-board') },
   { id: 'paper-1', family: 'paper', name: 'Paper 1', kind: 'Academic Journal', make: makePaper1 },
   { id: 'paper-2', family: 'paper', name: 'Paper 2', kind: 'Physics Letter', make: makePaper2 },
+  { id: 'paper-3', family: 'paper', name: 'Paper 3', kind: 'Image-led Feature', make: makePaper3 },
   { id: 'magazine-1', family: 'magazine', name: 'Magazine 1', kind: 'Modern Editorial', make: makeMagazine1 },
   { id: 'magazine-2', family: 'magazine', name: 'Magazine 2', kind: 'Particle Feature', make: makeMagazine2 },
   { id: 'magazine-3', family: 'magazine', name: 'Magazine 3', kind: 'Cosmos Gatefold', make: makeMagazine3 },
@@ -536,5 +577,5 @@ export const TEMPLATE_META: TemplateMeta[] = TEMPLATES.map(({ id, family, name, 
 
 /** Fresh preset Doc for a template id (fresh so ids/assets aren't shared). */
 export function presetFor(id: TemplateId): Doc {
-  return (TEMPLATES.find((t) => t.id === id) ?? TEMPLATES[0]).make();
+  return (TEMPLATES.find((t) => t.id === id) ?? TEMPLATES.find(t => t.id === 'paper-1')!).make();
 }

@@ -851,7 +851,7 @@
   --fcols: var(--cols-1);
   /* One --margin only: the hero now bleeds into the top margin, so the body
      reclaims it and still bottoms out exactly on the bottom-margin line. */
-  height: calc(var(--page-h) - var(--margin) - var(--hero-slot-h, var(--hero-h)) - var(--header-h) - 2 * var(--gutter));
+  height: calc(var(--page-h) - var(--bottom-margin, var(--margin)) - var(--hero-slot-h, var(--hero-h)) - var(--header-h) - 2 * var(--gutter));
   overflow: hidden;
 }
 
@@ -862,7 +862,7 @@
   /* The bar now runs at the top of every continuation sheet too — its own
      height plus the gap its margin-bottom adds (see .tag-bar). */
   height: calc(
-    var(--page-h) - var(--margin) - var(--topbar-offset, 10mm) - var(--footer-h) -
+    var(--page-h) - var(--bottom-margin, var(--margin)) - var(--topbar-offset, 10mm) - var(--footer-h) -
       var(--bar-h) - var(--gutter)
   );
   overflow: hidden;

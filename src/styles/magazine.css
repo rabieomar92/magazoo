@@ -197,7 +197,7 @@
   width: 100%;
   /* A concrete content-box height avoids Chromium's print fragmentation
      interpreting grid percentage height against the page border box. */
-  height: calc(var(--page-h) - 2 * var(--margin));
+  height: calc(var(--page-h) - var(--margin) - var(--bottom-margin, var(--margin)));
   min-width: 0;
   min-height: 0;
 }
@@ -541,7 +541,7 @@
    TagBar. */
 .mag-cols--p2 {
   height: calc(
-    var(--page-h) - var(--margin) - var(--topbar-offset, 10mm) - var(--footer-h) -
+    var(--page-h) - var(--bottom-margin, var(--margin)) - var(--topbar-offset, 10mm) - var(--footer-h) -
       var(--bar-h) - var(--gutter)
   );
 }
@@ -549,7 +549,7 @@
 /* Lead spread: shorter still by the measured hero-header height. */
 .mag-cols--p1 {
   height: calc(
-    var(--page-h) - var(--margin) - var(--topbar-offset, 10mm) - var(--footer-h) - var(--bar-h) - var(--gutter) - var(
+    var(--page-h) - var(--bottom-margin, var(--margin)) - var(--topbar-offset, 10mm) - var(--footer-h) - var(--bar-h) - var(--gutter) - var(
         --mag-head-h,
         0px
       )
@@ -632,7 +632,7 @@
 
 .mag2-strip-credit {
   position: absolute;
-  bottom: var(--margin);
+  bottom: var(--bottom-margin, var(--margin));
   left: 0;
   right: 0;
   text-align: center;
@@ -748,8 +748,10 @@
    this box now (last atom of the flow), so they take no height off it. */
 .mag2-cols--p1 {
   flex: none;
+  /* The inner column starts at page padding, not the top bar's independent
+     offset. Subtracting that offset allowed text into the footer reserve. */
   height: calc(
-    var(--page-h) - var(--margin) - var(--topbar-offset, 10mm) - var(--mag2-head-h, 0px)
+    var(--page-h) - var(--bottom-margin, var(--margin)) - var(--margin) - var(--mag2-head-h, 0px)
   );
   /* Containing block for the pinned quote + highlights (see .mag2-aside). */
   position: relative;
@@ -881,7 +883,7 @@
 .mag2-photo-tag {
   position: absolute;
   right: var(--margin);
-  bottom: var(--margin);
+  bottom: var(--bottom-margin, var(--margin));
   padding: 2mm 3mm;
   background: rgba(11, 18, 32, 0.82);
   color: #fff;
