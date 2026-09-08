@@ -373,6 +373,8 @@ export interface Design {
   gateTitleSize?: number;
   gateTypography?: Partial<Record<GateTextRole, GateTextStyle>>;
   gateAccentLastWord?: boolean;
+  /** Magazine 3 pull-quote divider thickness in screen/print pixels. Zero hides it. */
+  gateQuoteRule?: number;
   /** Physical distance from the title box to the subtitle/lede, in mm. */
   subtitleGap: number;
   /** millimetres */

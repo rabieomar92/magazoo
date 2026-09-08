@@ -85,4 +85,36 @@ describe('PlacedImages', () => {
     act(() => root.unmount());
     host.remove();
   });
+
+  it('materialises the default free highlights placement so autosave can retain it', () => {
+    const doc = emptyDoc();
+    doc.design.sidebar = true;
+    doc.design.highlightsPlacement = 'free';
+    doc.highlights = ['Keep this highlight'];
+    useDoc.getState().load(doc);
+
+    const host = document.createElement('div');
+    host.className = 'page';
+    document.body.append(host);
+    Object.defineProperty(host, 'offsetWidth', { configurable: true, value: 420 });
+    host.getBoundingClientRect = () => ({
+      x: 0, y: 0, left: 0, top: 0, right: 420, bottom: 594, width: 420, height: 594,
+      toJSON: () => ({}),
+    });
+    const root = createRoot(host);
+
+    act(() => {
+      root.render(<PlacedImages doc={useDoc.getState().doc} pageIndex={0} />);
+    });
+
+    expect(host.querySelector('.placed-highlights')).not.toBeNull();
+    expect(useDoc.getState().doc.highlightBox).toEqual(expect.objectContaining({
+      widthCols: 2,
+      anchor: expect.objectContaining({ page: 1 }),
+    }));
+    expect(useDoc.getState().doc.highlights).toEqual(['Keep this highlight']);
+
+    act(() => root.unmount());
+    host.remove();
+  });
 });

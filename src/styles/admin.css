@@ -29,8 +29,7 @@
 .admin-project ul { list-style:none;padding:0;margin:0; }.admin-project li { display:flex;justify-content:space-between;align-items:center;gap:16px;border-top:1px solid #e7eaf0;padding:18px 0; }
 .admin-item-name { display:grid;gap:5px;overflow-wrap:anywhere; }.admin-item-name small { color:#64748b; }
 .admin-alert,.admin-notice { padding:16px 20px;border-radius:8px;margin:20px 0; }.admin-alert { background:#fff1f2;color:#9f1239; }.admin-notice { background:#ecfdf5;color:#065f46; }
-.admin-login { max-width:700px; }.admin-login-steps { border-top:1px solid #e1e5ed;margin-top:24px;padding-top:24px; }
-.admin-login pre { white-space:pre-wrap;overflow-wrap:anywhere;background:#f1f4f9;padding:16px;border-radius:7px;font-size:13px; }
+.admin-login { max-width:700px; }
 .admin-empty { text-align:center;padding:48px; }.admin-footnote { margin-top:36px; }
 .admin-dialog { width:min(480px,calc(100vw - 72px));border:0;border-radius:14px;padding:28px;color:#202734;box-shadow:0 24px 80px #0005;font:15px/1.5 Arial,sans-serif; }
 .admin-dialog::backdrop { background:#0f172a80; }.admin-dialog h2 { margin-top:0; }.admin-dialog .danger { background:#be123c;color:white;border-color:#be123c; }

@@ -42,11 +42,28 @@ export function saveToTarget(doc = useDoc.getState().doc, explicit = false): Pro
   const task = pending.catch(() => {}).then(async () => {
     if (generation !== epoch) return;
     const state = useProjectFile.getState();
-    if ((!explicit && (state.status === 'error' || state.status === 'conflict')) || state.savedDoc === doc) return;
+    // Autosave calls this function without an explicit snapshot. Resolve the
+    // document only after earlier queued writes have finished so a highlight
+    // drag (or any other quick edit) cannot be replaced by an older snapshot.
+    let docToSave = explicit ? doc : useDoc.getState().doc;
+    if ((!explicit && (state.status === 'error' || state.status === 'conflict')) || state.savedDoc === docToSave) return;
     const target = state.target!;
     useProjectFile.setState({ status:'saving', message:'Saving…' });
     try {
-      const json = await serializeDocument(doc);
+      let json = await serializeDocument(docToSave);
+      // Serialisation can take a while when a project contains large images.
+      // If the editor changed during that window, serialise the newest
+      // immutable snapshot before writing it. This guard applies to manual
+      // saves as well as autosave, so a save cannot report success for bytes
+      // that predate a just-finished edit. The autosave subscription still
+      // marks any edit during this second pass as pending for a later flush.
+      const latest = useDoc.getState().doc;
+      if (latest !== docToSave) {
+        json = await serializeDocument(latest);
+        // Keep the snapshot represented by the bytes we are about to write.
+        // This also makes savedDoc a reliable dirty-check after the write.
+        docToSave = latest;
+      }
       if (generation !== epoch) return;
       if (target.kind === 'file') {
         const permission = await target.handle.queryPermission?.({mode:'readwrite'});
@@ -65,8 +82,8 @@ export function saveToTarget(doc = useDoc.getState().doc, explicit = false): Pro
         if (!response.ok) throw new Error(response.status === 404 ? 'This shared document was removed or its link is no longer valid. Save a local copy.' : 'Online save failed. Your edits are kept in this browser. Check the connection and click Save to retry.');
         target.version = (await response.json()).version;
       }
-      if (generation === epoch) useProjectFile.setState({ target:{...target}, savedDoc:doc,
-        status:useDoc.getState().doc === doc ? 'saved':'pending', message:useDoc.getState().doc === doc ? `Saved · ${target.kind === 'file' ? target.handle.name : target.name}`:'Changes waiting to save…' });
+      if (generation === epoch) useProjectFile.setState({ target:{...target}, savedDoc:docToSave,
+        status:useDoc.getState().doc === docToSave ? 'saved':'pending', message:useDoc.getState().doc === docToSave ? `Saved · ${target.kind === 'file' ? target.handle.name : target.name}`:'Changes waiting to save…' });
     } catch (error) {
       if (generation === epoch) useProjectFile.setState({status:error instanceof SaveConflict ? 'conflict':'error',message:error instanceof Error ? error.message:'Save failed. Please save a copy.'});
       throw error;

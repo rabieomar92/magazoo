@@ -8,7 +8,8 @@ import { SpreadPhotoImage } from '../components/SpreadPhotoImage';
 import { PageArtwork } from '../components/PageArtwork';
 import { TagBar } from './TagBar';
 import { useGatePlacement } from './useGatePlacement';
-import { gateSpacingBleed, gateTypographyCss } from '../lib/gateTypography';
+import { gateQuoteRule, gateSpacingBleed, gateTypography, gateTypographyCss } from '../lib/gateTypography';
+import { pageFooter } from '../lib/pageFooter';
 
 /** The gatefold photo — the page-1 cover image, split across the two facing cover
  *  sheets. Falls back to the hero for docs that never set a cover. */
@@ -40,13 +41,14 @@ export function MagGateA({ doc, vars }: { doc: Doc; vars: CSSProperties }) {
   const words = meta.title.trim().split(/\s+/).filter(Boolean);
   const placement = useGatePlacement(doc, 'title', vars);
   const bleed = gateSpacingBleed(doc.design, 'title');
+  const kickerColor = gateTypography(doc.design, 'kicker').color;
   const naturalTitle = (doc.design.gateTitleLayout ?? (doc.design.textDirection === 'rtl' ? 'natural' : 'stacked')) === 'natural';
   return (
     <div
       className={`page mag-gate mag-gate--a${placement.positioned ? ' mag-gate--positioned' : ''}${photo ? ' page--dedicated-bg' : ''}${
         (doc.design.firstPageTopMargin ?? 0) > 0 ? ' page--first-offset' : ''
       }`}
-      style={{ ...vars, ...placement.style, '--gate-title-size': `${doc.design.gateTitleSize ?? 46}pt` } as CSSProperties}
+      style={{ ...vars, ...placement.style, '--gate-title-size': `${doc.design.gateTitleSize ?? 46}pt`, '--mag-kicker-color': kickerColor } as CSSProperties}
       data-editor-tab={photo ? 'images' : undefined}
       data-editor-target={photo ? 'image-cover' : undefined}
     >
@@ -87,10 +89,13 @@ export function MagGateB({ doc, vars }: { doc: Doc; vars: CSSProperties }) {
   const geometry = gateGeometry(doc, 1);
   const placement = useGatePlacement(doc, 'text', vars);
   const bleed = gateSpacingBleed(doc.design, 'text');
+  const kickerColor = gateTypography(doc.design, 'kicker').color;
+  const quoteRule = gateQuoteRule(doc.design);
+  const footerEnabled = pageFooter(doc, 1).enabled;
   return (
     <div
       className={`page mag-gate mag-gate--b${placement.positioned ? ' mag-gate--positioned' : ''}${photo ? ' page--dedicated-bg' : ''}`}
-      style={{ ...vars, ...placement.style }}
+      style={{ ...vars, ...placement.style, '--mag-kicker-color': kickerColor, '--gate-quote-rule': `${quoteRule}px`, '--gate-quote-rule-gap': quoteRule > 0 ? '12px' : '0px' } as CSSProperties}
       data-editor-tab={photo ? 'images' : undefined}
       data-editor-target={photo ? 'image-cover' : undefined}
     >
@@ -108,7 +113,7 @@ export function MagGateB({ doc, vars }: { doc: Doc; vars: CSSProperties }) {
           )}
         </div>
 
-        <div className="mag-gate-foot mag-gate-foot--b">
+        <div className={`mag-gate-foot mag-gate-foot--b${footerEnabled ? '' : ' mag-gate-foot--footer-hidden'}`}>
           <div className="mag-gate-credits">
             {meta.author && <span className="mag-gate-author" style={gateTypographyCss(doc.design, 'author')} data-editor-tab="content" data-editor-target="meta-author">{meta.author}</span>}
             {meta.photoCredit && <span style={gateTypographyCss(doc.design, 'photoCredit')} data-editor-tab="content" data-editor-target="meta-photo-credit">{doc.design.textDirection === 'rtl' ? 'الصورة:' : 'Photo:'} {meta.photoCredit}</span>}

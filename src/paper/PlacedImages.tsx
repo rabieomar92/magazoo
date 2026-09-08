@@ -192,6 +192,7 @@ function PlacedImageItem({
       onPointerMove={onPointerMove}
       onPointerUp={finishDrag}
       onPointerCancel={finishDrag}
+      onLostPointerCapture={finishDrag}
     >
       <div className="placed-image-frame">
         <FramedImage asset={asset} frame={image.frame} />
@@ -228,7 +229,13 @@ function PlacedHighlightsItem({ doc }: { doc: Doc }) {
   useLayoutEffect(() => {
     const element = elementRef.current;
     const page = element?.closest<HTMLElement>('.page');
-    if (!element || !page || !page.offsetWidth) return;
+    if (!element || !page) return;
+    // Persist the design default even while the preview is hidden or has not
+    // received a measurable width yet. Without this early commit, a loaded
+    // free-placement document could be autosaved before its first layout and
+    // lose the box's position on the next open.
+    if (!doc.highlightBox) commitAnchor(placement.anchor.column, placement.anchor.y);
+    if (!page.offsetWidth) return;
     const pxPerMm = page.getBoundingClientRect().width / PAGE_W;
     const height = element.getBoundingClientRect().height / pxPerMm;
     const measured = placedHighlightsGeometry(placement, doc.design, height);
@@ -243,8 +250,11 @@ function PlacedHighlightsItem({ doc }: { doc: Doc }) {
     );
     const rounded = Math.round(safeTop * 10) / 10;
     element.style.top = `${rounded}mm`;
-    if (Math.abs(rounded - placement.anchor.y) > 0.05) commitAnchor(measured.column, rounded);
-  }, [commitAnchor, doc.assets, doc.design, doc.highlights, doc.images, doc.references, placement]);
+    // Materialise the default placement as soon as the free box is rendered.
+    // Without this, a box that had never been dragged existed only as a
+    // computed fallback and could disappear or move after an autosave/reload.
+    if (!doc.highlightBox || Math.abs(rounded - placement.anchor.y) > 0.05) commitAnchor(measured.column, rounded);
+  }, [commitAnchor, doc.assets, doc.design, doc.highlightBox, doc.highlights, doc.images, doc.references, placement]);
 
   const onPointerDown = (event: ReactPointerEvent<HTMLElement>) => {
     if (event.button !== 0) return;
@@ -255,15 +265,16 @@ function PlacedHighlightsItem({ doc }: { doc: Doc }) {
     event.preventDefault();
     event.stopPropagation();
     event.currentTarget.setPointerCapture(event.pointerId);
+    const startTop = parseFloat(event.currentTarget.style.top) || geometry.top;
     drag.current = {
       pointerId: event.pointerId,
       startClientX: event.clientX,
       startClientY: event.clientY,
       startLeft: geometry.left,
-      startTop: parseFloat(event.currentTarget.style.top) || geometry.top,
+      startTop,
       pxPerMm,
       column: geometry.column,
-      top: geometry.top,
+      top: startTop,
       height: event.currentTarget.getBoundingClientRect().height / pxPerMm,
     };
   };
@@ -321,6 +332,7 @@ function PlacedHighlightsItem({ doc }: { doc: Doc }) {
       onPointerMove={onPointerMove}
       onPointerUp={finishDrag}
       onPointerCancel={finishDrag}
+      onLostPointerCapture={finishDrag}
     >
       <HighlightsBody doc={doc} />
     </aside>

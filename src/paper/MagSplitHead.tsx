@@ -2,6 +2,7 @@ import { Fragment, type ReactNode } from 'react';
 import type { Doc } from '../schema/document';
 import { parseRuns, renderTex } from '../lib/richtext';
 import { TagBar } from './TagBar';
+import { splitAsideHighlights } from './magSplitHeadUtils';
 
 /** Inline **bold** / *italic* / __underline__ + `$…$` math → styled nodes.
  *  Same helper as Flow.tsx/GalleryPage.tsx/Sidebar.tsx's own copy. */
@@ -36,15 +37,6 @@ export function MagSplitHead({ doc }: { doc: Doc }) {
       </div>
     </div>
   );
-}
-
-/** What the split aside prints of the highlights: nothing when the document's
- *  "Show highlights" switch is off, and nothing when the box has been placed
- *  freely on the page instead. The measuring pass asks the same question, so a
- *  hidden box never reserves height either. */
-export function splitAsideHighlights(doc: Doc): string[] {
-  if (!doc.design.sidebar || doc.design.highlightsPlacement === 'free') return [];
-  return doc.highlights.filter((h) => h.trim());
 }
 
 /** The foot of magazine-2's sheet 1: pull-quote, then the highlights box. Also

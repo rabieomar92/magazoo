@@ -94,7 +94,7 @@
 .mag-kicker-dash {
   width: 28px;
   height: 2px;
-  background: var(--mag-red);
+  background: currentColor;
 }
 
 .mag-title {
@@ -114,7 +114,7 @@
 }
 
 .mag-title-word.is-accent {
-  color: var(--mag-red);
+  color: var(--mag-kicker-color, var(--mag-red));
 }
 
 .mag-lede {
@@ -946,7 +946,7 @@
 
 .mag-gate-title--natural { white-space: pre-line; color: #fff; overflow-wrap: break-word; }
 .mag-gate-title .mag-title-word { color: inherit; }
-.mag-gate-title .mag-title-word.is-accent { color: var(--mag-red); }
+.mag-gate-title .mag-title-word.is-accent { color: var(--mag-kicker-color, var(--mag-red)); }
 .mag-gate--positioned .mag-gate-inner { direction: var(--text-dir, ltr); }
 .mag-gate--positioned .mag-gate-mid {
   position: absolute;
@@ -995,8 +995,8 @@
 .mag-gate-quote {
   margin: 0 0 0 auto;
   max-width: 90%;
-  padding-top: 12px;
-  border-top: 3px solid var(--mag-red);
+  padding-top: var(--gate-quote-rule-gap, 12px);
+  border-top: var(--gate-quote-rule, 3px) solid var(--mag-kicker-color, var(--mag-red));
 }
 .mag-gate-quote-text {
   display: block;
@@ -1016,7 +1016,7 @@
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: none;
-  color: var(--mag-red);
+  color: var(--mag-kicker-color, var(--mag-red));
 }
 
 .mag-gate-foot {
@@ -1025,6 +1025,10 @@
   justify-content: space-between;
   padding-top: 10px;
   border-top: 1px solid rgba(255, 255, 255, 0.28);
+}
+.mag-gate-foot--footer-hidden {
+  border-top: 0;
+  padding-top: 0;
 }
 .mag-gate-credits {
   display: flex;
