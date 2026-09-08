@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { editorTargetId } from '../lib/editorNavigation';
 
 interface EditorTargetProps {
@@ -55,6 +55,10 @@ interface NumberProps extends EditorTargetProps {
 }
 
 export function LabeledNumber({ label, value, onChange, min, max, step, unit, editorTarget }: NumberProps) {
+  // Keep incomplete edits ("-", an empty field, a decimal point) local. Do not
+  // push zero/NaN or an out-of-range size into the live document while typing.
+  const [draft, setDraft] = useState<{ text: string; modelValue: number } | null>(null);
+  const inRange = (n: number) => Number.isFinite(n) && (min === undefined || n >= min) && (max === undefined || n <= max);
   return (
     <label className="field field--inline" id={editorTarget ? editorTargetId(editorTarget) : undefined}>
       <span className="field-label">
@@ -64,14 +68,27 @@ export function LabeledNumber({ label, value, onChange, min, max, step, unit, ed
       <input
         className="field-input field-input--num"
         type="number"
-        value={value}
+        value={draft?.modelValue === value ? draft.text : value}
         min={min}
         max={max}
         step={step ?? 1}
         onChange={(e) => {
-          const n = Number(e.target.value);
-          if (!Number.isNaN(n)) onChange(n);
+          const text = e.target.value;
+          const n = text.trim() === '' ? NaN : Number(text);
+          const valid = inRange(n);
+          setDraft({ text, modelValue: valid ? n : value });
+          if (valid && n !== value) onChange(n);
         }}
+        onBlur={(e) => {
+          const text = e.target.value;
+          const n = text.trim() === '' ? NaN : Number(text);
+          if (Number.isFinite(n)) {
+            const bounded = Math.max(min ?? -Infinity, Math.min(max ?? Infinity, n));
+            if (bounded !== value) onChange(bounded);
+          }
+          setDraft(null);
+        }}
+        onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }}
       />
     </label>
   );

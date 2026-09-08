@@ -55,6 +55,7 @@ export function Panel() {
   const switchTemplate = useDoc((s) => s.switchTemplate);
   const isGallery = familyOf(templateId) === 'gallery';
   const isCoverOnly = templateId === 'magazine-4';
+  const isGate = templateId === 'magazine-3';
   const isFrontMatter = familyOf(templateId) === 'frontmatter';
   const isNews = familyOf(templateId) === 'news';
   useEffect(() => {
@@ -103,7 +104,7 @@ export function Panel() {
     const onFocusTarget = (event: Event) => {
       const detail = (event as CustomEvent<EditorTargetDetail>).detail;
       if (!detail?.tab || !detail.target) return;
-      setTab(detail.tab);
+      setTab(isGate && /^(meta-|footer-)/.test(detail.target) ? 'design' : detail.tab);
       requestAnimationFrame(() => reveal(editorTargetId(detail.target)));
     };
     window.addEventListener(FOCUS_BLOCK_EDITOR_EVENT, onFocusBlock);
@@ -112,7 +113,7 @@ export function Panel() {
       window.removeEventListener(FOCUS_BLOCK_EDITOR_EVENT, onFocusBlock);
       window.removeEventListener(FOCUS_EDITOR_TARGET_EVENT, onFocusTarget);
     };
-  }, []);
+  }, [isGate]);
 
   return (
     <aside className="panel">
@@ -126,7 +127,7 @@ export function Panel() {
             className={`panel-tab${tab === t.id ? ' is-active' : ''}`}
             onClick={() => setTab(t.id)}
           >
-            {t.label}
+            {isGate && t.id === 'content' ? 'Article' : isGate && t.id === 'design' ? 'Cover & design' : t.label}
             {t.id === 'highlights' && sidebarCount > 0 && <span className="badge">{sidebarCount}</span>}
           </button>
         ))}
@@ -157,8 +158,7 @@ export function Panel() {
       <div className="panel-scroll">
         {tab === 'content' && (
           <>
-            <MetaSection />
-            <FooterSection />
+            {isGate ? <div className="section"><p className="hint">Cover text and its appearance now live together under Cover & design.</p><button type="button" className="add-btn" onClick={() => setTab('design')}>Edit cover text & design</button></div> : <><MetaSection /><FooterSection /></>}
             {isNews ? <NewsContent /> : isFrontMatter ? <FrontMatterContent /> : <BodySection />}
           </>
         )}

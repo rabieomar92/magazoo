@@ -13,6 +13,8 @@ import { ImageLoadError, loadImage } from '../../lib/loadImage';
 import { ALL_FONTS, SANS_FONTS, SERIF_FONTS, fontOptions } from '../../lib/fonts';
 import { FrontCoverDesignSection } from './FrontCoverDesignSection';
 import { HeadingTextEditor } from './HeadingTextEditor';
+import { GateDesignSection } from './GateDesignSection';
+import { SUBTITLE_GAP } from '../../lib/spacing';
 import {
   LabeledColor,
   LabeledNumber,
@@ -31,6 +33,7 @@ export function DesignSection() {
   });
   const family = useDoc((s) => familyOf(s.doc.templateId));
   const templateId = useDoc((s) => s.doc.templateId);
+  const isGate = templateId === 'magazine-3';
   const isFrontCover = useDoc((s) => s.doc.templateId === 'magazine-4');
   /** The families whose sheets can carry a highlights/references callout. */
   const printsHighlights = family === 'paper' || family === 'magazine';
@@ -89,7 +92,7 @@ export function DesignSection() {
 
   if (isFrontCover) return <FrontCoverDesignSection />;
 
-  return (
+  const generalSettings = (
     <Section title="Design">
       {templateId === 'paper-3' && <>
         <Toggle label="Match colours to hero image" checked={design.imageTheme !== false} onChange={v => set('imageTheme', v)} />
@@ -151,17 +154,18 @@ export function DesignSection() {
       <p className="group-label">Spacing (mm)</p>
       <LabeledNumber label="Margin" unit="mm" value={design.margin} min={8} max={30} step={1} onChange={(v) => set('margin', v)} />
       <LabeledNumber label="Gutter" unit="mm" value={design.gutter} min={2} max={12} step={0.5} onChange={(v) => set('gutter', v)} />
-      {family !== 'gallery' && (
+      {family !== 'gallery' && !isGate && (
         <>
           <LabeledNumber
             label="Title to subtitle gap"
             unit="mm"
             value={design.subtitleGap ?? defaultSubtitleGap(templateId)}
-            min={0}
-            max={40}
+            min={SUBTITLE_GAP.min}
+            max={SUBTITLE_GAP.max}
             step={0.5}
             onChange={(v) => set('subtitleGap', v)}
           />
+          <p className="hint">Negative subtitle gaps pull the subtitle up; small adjustments can tighten the layout. Large negative values can overlap the title.</p>
           <LabeledNumber
             label="First-page top margin"
             unit="mm"
@@ -176,20 +180,20 @@ export function DesignSection() {
       )}
 
       <p className="group-label">Font sizes (pt)</p>
-      <LabeledNumber label="Title" unit="pt" value={design.sizes.title} min={16} max={48} step={0.5} onChange={setSize('title')} />
-      <LabeledNumber label="Subtitle" unit="pt" value={design.sizes.subtitle} min={8} max={18} step={0.5} onChange={setSize('subtitle')} />
+      {!isGate && <><LabeledNumber label="Title" unit="pt" value={design.sizes.title} min={16} max={48} step={0.5} onChange={setSize('title')} />
+      <LabeledNumber label="Subtitle" unit="pt" value={design.sizes.subtitle} min={8} max={18} step={0.5} onChange={setSize('subtitle')} /></>}
       <LabeledNumber label="Body text" unit="pt" value={design.sizes.body} min={7} max={12} step={0.1} onChange={setSize('body')} />
-      <LabeledNumber label="Category" unit="pt" value={design.sizes.categoryLabel} min={6} max={12} step={0.5} onChange={setSize('categoryLabel')} />
+      {!isGate && <><LabeledNumber label="Category" unit="pt" value={design.sizes.categoryLabel} min={6} max={12} step={0.5} onChange={setSize('categoryLabel')} />
       <LabeledNumber label="Author" unit="pt" value={design.sizes.author} min={7} max={12} step={0.5} onChange={setSize('author')} />
-      <LabeledNumber label="Affiliation" unit="pt" value={design.sizes.affiliation} min={7} max={12} step={0.5} onChange={setSize('affiliation')} />
+      <LabeledNumber label="Affiliation" unit="pt" value={design.sizes.affiliation} min={7} max={12} step={0.5} onChange={setSize('affiliation')} /></>}
 
       <p className="group-label" id="editor-target-design-fonts">Fonts</p>
-      <LabeledSelect label="Display" value={design.fontDisplay} options={fontOptions(SERIF_FONTS)} onChange={(v) => set('fontDisplay', v)} />
+      {!isGate && <LabeledSelect label="Display" value={design.fontDisplay} options={fontOptions(SERIF_FONTS)} onChange={(v) => set('fontDisplay', v)} />}
       <LabeledSelect label="Body" value={design.fontBody} options={fontOptions(SANS_FONTS)} onChange={(v) => set('fontBody', v)} />
-      <LabeledSelect label="Category" value={design.fontCategory ?? design.fontBody} options={fontOptions(ALL_FONTS)} onChange={(v) => set('fontCategory', v)} />
+      {!isGate && <><LabeledSelect label="Category" value={design.fontCategory ?? design.fontBody} options={fontOptions(ALL_FONTS)} onChange={(v) => set('fontCategory', v)} />
       <LabeledSelect label="Subtitle" value={design.fontSubtitle ?? (family === 'gallery' ? design.fontBody : design.fontDisplay)} options={fontOptions(ALL_FONTS)} onChange={(v) => set('fontSubtitle', v)} />
       <LabeledSelect label="Author" value={design.fontAuthor ?? design.fontBody} options={fontOptions(ALL_FONTS)} onChange={(v) => set('fontAuthor', v)} />
-      <LabeledSelect label="Affiliation" value={design.fontAffiliation ?? design.fontBody} options={fontOptions(ALL_FONTS)} onChange={(v) => set('fontAffiliation', v)} />
+      <LabeledSelect label="Affiliation" value={design.fontAffiliation ?? design.fontBody} options={fontOptions(ALL_FONTS)} onChange={(v) => set('fontAffiliation', v)} /></>}
 
       <p className="group-label">Colors</p>
       {templateId === 'paper-3' && design.imageTheme !== false && <p className="hint">These are your saved manual colours. Turn off “Match colours to hero image” above to apply them.</p>}
@@ -198,7 +202,7 @@ export function DesignSection() {
       <LabeledColor label="Accent" value={design.colors.accent} onChange={setColor('accent')} />
       <LabeledColor label="Soft accent" value={design.colors.accentSoft} onChange={setColor('accentSoft')} />
       <LabeledColor label="Ink (text)" value={design.colors.ink} onChange={setColor('ink')} />
-      <p className="group-label">Text appearance</p>
+      {!isGate && <><p className="group-label">Text appearance</p>
       <div className="cover-style-list">
         <HeadingTextEditor role="subtitle" label={family === 'gallery' ? 'Descriptions' : 'Subtitle / lede'} />
         {family !== 'gallery' && <>
@@ -220,7 +224,7 @@ export function DesignSection() {
         </button>
       )}
       <p className="hint">Text colors follow Ink unless customized. Titles keep the capitalization you type.</p>
-      {family === 'gallery' && <p className="hint">Photo captions use light text by default. A custom description color also applies to photo captions.</p>}
+      {family === 'gallery' && <p className="hint">Photo captions use light text by default. A custom description color also applies to photo captions.</p>}</>}
 
       {family !== 'gallery' && (
         <Toggle
@@ -276,7 +280,7 @@ export function DesignSection() {
       {backgroundError && <p className="hint hint--warn" role="alert">{backgroundError}</p>}
       </div>}
 
-      {hasBarSide && (
+      {hasBarSide && !isGate && (
         <div id="editor-target-design-topbar">
           <p className="group-label">Top bar</p>
           <SegmentField<'left' | 'right'>
@@ -316,4 +320,12 @@ export function DesignSection() {
       />
     </Section>
   );
+
+  return isGate ? <>
+    <GateDesignSection />
+    <details className="gate-editor-group gate-general-settings">
+      <summary>5 · Page & article settings<span>Page colours, columns, body text & advanced options</span></summary>
+      <div className="gate-control-stack">{generalSettings}</div>
+    </details>
+  </> : generalSettings;
 }

@@ -4,6 +4,7 @@ import {
   type FrontCoverDesign,
   type FrontCoverTextRole,
   type FrontCoverTextStyle,
+  type Doc,
 } from '../../schema/document';
 import { ALL_FONTS, fontOptions } from '../../lib/fonts';
 import {
@@ -11,6 +12,12 @@ import {
   FRONT_COVER_TEXT_ROLES,
 } from '../../lib/frontCoverDesign';
 import { useDoc } from '../../store/useDoc';
+import { COVER_STORY_GAP, SUBTITLE_GAP } from '../../lib/spacing';
+import { LabeledInput } from '../Field';
+const coverCopyFields: Partial<Record<FrontCoverTextRole, keyof Doc['meta']>> = {
+  masthead:'masthead', strapline:'affiliation', kicker:'categoryLabel', title:'title',
+  subtitle:'subtitle', author:'author', storyTag:'location', photoCredit:'photoCredit',
+};
 import {
   LabeledColor,
   LabeledNumber,
@@ -24,6 +31,8 @@ import {
 
 function CoverTextEditor({ role, label }: { role: FrontCoverTextRole; label: string }) {
   const design = useDoc((state) => state.doc.design);
+  const meta = useDoc((state) => state.doc.meta);
+  const copyField = coverCopyFields[role];
   const update = useDoc((state) => state.update);
   const style = defaultFrontCoverTextStyle(design, role);
 
@@ -46,6 +55,13 @@ function CoverTextEditor({ role, label }: { role: FrontCoverTextRole; label: str
     <details className="cover-style-group" id={`editor-target-front-cover-style-${role}`}>
       <summary>{label}</summary>
       <div className="cover-style-fields">
+        {copyField && <LabeledInput label={`${label} text`} value={String(meta[copyField] ?? '')} onChange={value => update(doc => { Object.assign(doc.meta, { [copyField]:value }); })} />}
+        {['masthead','strapline','kicker','title','subtitle','author','storyTag'].includes(role) && <>
+          <LabeledNumber label={`${label} space above`} unit="mm" value={style.spaceBefore ?? (role === 'strapline' ? 2 : role === 'subtitle' ? design.subtitleGap ?? 4 : 0)} min={0} max={40} step={.5} onChange={v => set('spaceBefore',v)} />
+          <LabeledNumber label={`${label} start inset`} unit="mm" value={style.inset ?? 0} min={0} max={40} step={.5} onChange={v => set('inset',v)} />
+          <p className="hint">Drag this object vertically or set its spacing here. Following text makes room, preserving the hierarchy. Start inset mirrors for Arabic.</p>
+        </>}
+        <LabeledNumber label={`${label} line height`} unit="×" value={style.lineHeight ?? 1.3} min={design.textDirection === 'rtl' ? 1.2 : .8} max={2.5} step={.05} onChange={v => set('lineHeight',v)} />
         <Toggle label="Show object" checked={style.visible} onChange={(value) => set('visible', value)} />
         <LabeledSelect
           label="Font"
@@ -119,7 +135,7 @@ export function FrontCoverDesignSection() {
         </p>
         <SegmentField<'left' | 'center' | 'right'>
           label="Story alignment"
-          value={cover.alignment ?? 'left'}
+          value={cover.alignment ?? (design.textDirection === 'rtl' ? 'right' : 'left')}
           options={[
             { value: 'left', label: 'Left' },
             { value: 'center', label: 'Center' },
@@ -148,12 +164,14 @@ export function FrontCoverDesignSection() {
         <LabeledNumber
           label="Story top gap"
           unit="mm"
+          editorTarget="front-cover-story-position"
           value={cover.storyTop ?? 15}
-          min={0}
-          max={120}
+          min={COVER_STORY_GAP.min}
+          max={COVER_STORY_GAP.max}
           step={1}
           onChange={(value) => setCover('storyTop', value)}
         />
+        <p className="hint">Or drag the story block up and down on the cover itself — it writes this same distance. A negative gap moves the story up toward the masthead; check the preview for overlap.</p>
         <LabeledNumber
           label="Story width"
           unit="%"
@@ -167,11 +185,12 @@ export function FrontCoverDesignSection() {
           label="Title to subtitle gap"
           unit="mm"
           value={design.subtitleGap ?? defaultSubtitleGap('magazine-4')}
-          min={0}
-          max={40}
+          min={SUBTITLE_GAP.min}
+          max={SUBTITLE_GAP.max}
           step={0.5}
-          onChange={(value) => update((doc) => { doc.design.subtitleGap = value; })}
+          onChange={(value) => update((doc) => { doc.design.subtitleGap = value; if(doc.design.frontCover?.text?.subtitle)delete doc.design.frontCover.text.subtitle.spaceBefore; })}
         />
+        <p className="hint">Negative subtitle gaps tighten the space above the subtitle and may overlap the headline.</p>
         <LabeledNumber
           label="Teaser gap"
           unit="mm"

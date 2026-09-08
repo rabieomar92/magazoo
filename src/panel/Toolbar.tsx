@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useStore } from 'zustand';
 import { useDoc } from '../store/useDoc';
-import { cleanOrphanedAssets, migrate } from '../schema/document';
+import { openProject, saveProject, saveProjectAs, useProjectFile } from '../store/projectFiles';
 import { useSaveStatus, type SaveState } from '../store/saveStatus';
 import { exportPreviewPdf } from '../lib/pdfExport';
 
@@ -12,92 +12,14 @@ const SAVE_LABEL: Record<SaveState, string> = {
   error: 'Failed to save',
 };
 
-function pickFile(onPick: (file: File) => void) {
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = 'application/json,.json';
-  input.onchange = () => {
-    const f = input.files?.[0];
-    if (f) onPick(f);
-  };
-  input.click();
-}
-
 const undo = () => useDoc.temporal.getState().undo();
 const redo = () => useDoc.temporal.getState().redo();
-
-interface WritableProjectFile {
-  write(data: Blob): Promise<void>;
-  close(): Promise<void>;
-}
-
-interface ProjectFileHandle {
-  createWritable(): Promise<WritableProjectFile>;
-}
-
-type SavePickerWindow = Window & {
-  showSaveFilePicker?: (options: {
-    suggestedName: string;
-    types: { description: string; accept: Record<string, string[]> }[];
-  }) => Promise<ProjectFileHandle>;
-};
-
-async function saveAs() {
-  const doc = cleanOrphanedAssets(useDoc.getState().doc);
-  const name =
-    (doc.meta.title.trim() || 'magazoo-project')
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '') || 'magazoo-project';
-  const blob = new Blob([JSON.stringify(doc, null, 2)], { type: 'application/json' });
-
-  const picker = (window as SavePickerWindow).showSaveFilePicker;
-  if (picker) {
-    try {
-      const handle = await picker.call(window, {
-        suggestedName: `${name}.json`,
-        types: [
-          {
-            description: 'Magazoo! project',
-            accept: { 'application/json': ['.json'] },
-          },
-        ],
-      });
-      const writable = await handle.createWritable();
-      await writable.write(blob);
-      await writable.close();
-      return;
-    } catch (error) {
-      if (error instanceof DOMException && error.name === 'AbortError') return;
-      console.error('Save As failed:', error);
-      alert('Could not save the project. Please choose another location and try again.');
-      return;
-    }
-  }
-
-  alert(
-    'This browser does not support choosing a save location. Open Magazoo! in a current Chromium-based browser to use Save As.',
-  );
-}
-
-function open() {
-  pickFile((file) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      try {
-        useDoc.getState().load(migrate(JSON.parse(reader.result as string)));
-      } catch {
-        alert('Invalid file or unsupported version.');
-      }
-    };
-    reader.readAsText(file);
-  });
-}
 
 export function Toolbar({ onPreviewToolsHost }: { onPreviewToolsHost: (host: HTMLDivElement | null) => void }) {
   const canUndo = useStore(useDoc.temporal, (s) => s.pastStates.length > 0);
   const canRedo = useStore(useDoc.temporal, (s) => s.futureStates.length > 0);
   const saveState = useSaveStatus((s) => s.status);
+  const project=useProjectFile();
   const title = useDoc((s) => s.doc.meta.title);
   const [exporting, setExporting] = useState(false);
 
@@ -137,7 +59,7 @@ export function Toolbar({ onPreviewToolsHost }: { onPreviewToolsHost: (host: HTM
         redo();
       } else if (k === 's') {
         e.preventDefault();
-        void saveAs();
+        void (e.shiftKey ? saveProjectAs() : saveProject());
       }
     };
     window.addEventListener('keydown', onKey);
@@ -146,8 +68,9 @@ export function Toolbar({ onPreviewToolsHost }: { onPreviewToolsHost: (host: HTM
 
   return (
     <header className="toolbar">
-      <div className="toolbar-identity" title={`Autosave: ${SAVE_LABEL[saveState]}`}>
+      <div className="toolbar-identity" title={project.message}>
         <span className="toolbar-brand" aria-label="Magazoo! editor">Magazoo!</span>
+        <span className={`project-save-status${project.status==='error'||project.status==='conflict' ? ' is-error':''}`} role="status">{project.message}</span>
         {saveState === 'error' && <span className="toolbar-save-error">Autosave failed</span>}
       </div>
       <span className="visually-hidden" role="status" aria-live="polite">
@@ -185,17 +108,18 @@ export function Toolbar({ onPreviewToolsHost }: { onPreviewToolsHost: (host: HTM
         <div className="toolbar-group toolbar-group--files">
           <button
             className="tool-btn"
-            onClick={open}
+            onClick={() => void openProject()}
             title="Open a Magazoo! project"
             aria-label="Open a Magazoo! project"
           >
             <span className="tool-btn-icon" aria-hidden="true">↗</span>
             <span className="tool-btn-label">Open</span>
           </button>
+          <button className="tool-btn" onClick={() => void saveProject()} title="Save (Ctrl/⌘S)" aria-label="Save">Save</button>
           <button
             className="tool-btn"
-            onClick={() => void saveAs()}
-            title="Save As… (⌘S)"
+            onClick={() => void saveProjectAs()}
+            title="Save As… (Ctrl/⌘Shift+S)"
             aria-label="Save As"
           >
             <span className="tool-btn-icon" aria-hidden="true">↓</span>

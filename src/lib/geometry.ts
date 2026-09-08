@@ -1,6 +1,7 @@
 import { DEFAULT_TOP_BAR_OFFSET, type Design, type TemplateId } from '../schema/document';
 import { fontStack } from './fonts';
 import { headingTextVars } from './headingText';
+import { clampSpacing, SUBTITLE_GAP } from './spacing';
 
 export const PAGE_W = 210; // mm, A4
 export const PAGE_H = 297;
@@ -115,7 +116,7 @@ export function cssVars(d: Design, templateId?: TemplateId, bottomMargin = d.mar
     '--fs-body': `${d.sizes.body}pt`,
     '--fs-title': `${d.sizes.title}pt`,
     '--fs-subtitle': `${d.sizes.subtitle}pt`,
-    '--subtitle-gap': `${Math.max(0, d.subtitleGap ?? 1)}mm`,
+    '--subtitle-gap': `${clampSpacing(d.subtitleGap, SUBTITLE_GAP, 1)}mm`,
     '--fs-eyebrow': `${d.sizes.categoryLabel}pt`,
     '--fs-author': `${d.sizes.author}pt`,
     '--fs-affil': `${d.sizes.affiliation}pt`,

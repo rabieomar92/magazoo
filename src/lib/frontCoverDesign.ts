@@ -20,7 +20,7 @@ export const FRONT_COVER_TEXT_ROLES: { role: FrontCoverTextRole; label: string }
   { role: 'photoCredit', label: 'Photo credit' },
 ];
 
-export type ResolvedFrontCoverTextStyle = Required<FrontCoverTextStyle>;
+export type ResolvedFrontCoverTextStyle = Required<Omit<FrontCoverTextStyle, 'spaceBefore' | 'inset' | 'lineHeight'>> & Pick<FrontCoverTextStyle, 'spaceBefore' | 'inset' | 'lineHeight'>;
 
 export function defaultFrontCoverTextStyle(
   design: Design,
@@ -51,6 +51,7 @@ export function defaultFrontCoverTextStyle(
     : role === 'subtitle' || role === 'author' ? role : null;
   return {
     ...defaults[role],
+    lineHeight: design.textDirection === 'rtl' ? 1.3 : ({masthead:.88,strapline:1.2,kicker:1.1,title:.93,subtitle:1.42,author:1.25,storyTag:1.25,teaserTitle:1.05,teaserBody:1.28,footerBrand:1.2,photoCredit:1.2})[role],
     fontStyle: 'normal',
     ...(headingRole ? headingTextStyle(design, 'magazine-4', headingRole) : {}),
     ...(design.frontCover?.text?.[role] ?? {}),
@@ -71,6 +72,7 @@ export function frontCoverTextVars(design: Design): Record<string, string> {
     vars[`--front-${key}-weight`] = String(style.fontWeight);
     vars[`--front-${key}-style`] = style.fontStyle;
     vars[`--front-${key}-tracking`] = `${style.letterSpacing}em`;
+    vars[`--front-${key}-leading`] = String(style.lineHeight);
   }
   return vars;
 }

@@ -10,7 +10,9 @@ describe('editor chrome', () => {
 
     expect(host.querySelector('.toolbar-brand')?.textContent).toBe('Magazoo!');
     expect(host.querySelector('.save-status')).toBeNull();
-    expect(host.querySelector('[role="status"]')?.textContent).toContain('Autosave: Ready');
+    expect(host.querySelector('.project-save-status')?.textContent).toContain('Draft');
+    expect(host.querySelector('.visually-hidden[role="status"]')?.textContent).toContain('Autosave: Ready');
+    expect(host.querySelector('[aria-label="Save"]')).not.toBeNull();
 
     const exportButton = [...host.querySelectorAll('button')].find((button) =>
       button.textContent?.includes('Export PDF'),
