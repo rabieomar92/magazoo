@@ -12,6 +12,105 @@
     U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
     U+2212, U+2215, U+FEFF, U+FFFD;
 }
+
+/* Avenir LT Pro supplied with Magazoo. These faces are embedded in the build
+   so the editor, PDF capture and GitHub Pages render identically on computers
+   that do not have Avenir installed. The family names intentionally match the
+   choices in the Design panel. */
+@font-face {
+  font-family: 'Avenir Next LT Pro';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../assets/fonts/avenir/AvenirLTProBook.otf') format('opentype');
+}
+@font-face {
+  font-family: 'Avenir Next LT Pro';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('../assets/fonts/avenir/AvenirLTProMedium.otf') format('opentype');
+}
+@font-face {
+  font-family: 'Avenir Next LT Pro';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url('../assets/fonts/avenir/AvenirLTProHeavy.otf') format('opentype');
+}
+@font-face {
+  font-family: 'Avenir Next LT Pro';
+  font-style: normal;
+  font-weight: 900;
+  font-display: swap;
+  src: url('../assets/fonts/avenir/AvenirLTProBlack.otf') format('opentype');
+}
+@font-face {
+  font-family: 'Avenir Next LT Pro';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../assets/fonts/avenir/AvenirLTProOblique.otf') format('opentype');
+}
+@font-face {
+  font-family: 'Avenir Next LT Pro';
+  font-style: italic;
+  font-weight: 500;
+  font-display: swap;
+  src: url('../assets/fonts/avenir/AvenirLTProMediumOblique.otf') format('opentype');
+}
+@font-face {
+  font-family: 'Avenir Next LT Pro';
+  font-style: italic;
+  font-weight: 800;
+  font-display: swap;
+  src: url('../assets/fonts/avenir/AvenirLTProHeavyOblique.otf') format('opentype');
+}
+@font-face {
+  font-family: 'Avenir Next LT Pro';
+  font-style: italic;
+  font-weight: 900;
+  font-display: swap;
+  src: url('../assets/fonts/avenir/AvenirLTProBlackOblique.otf') format('opentype');
+}
+@font-face {
+  font-family: 'Avenir Next LT Pro Light';
+  font-style: normal;
+  font-weight: 300 400;
+  font-display: swap;
+  src: url('../assets/fonts/avenir/AvenirLTProLight.otf') format('opentype');
+}
+@font-face {
+  font-family: 'Avenir Next LT Pro Light';
+  font-style: italic;
+  font-weight: 300 400;
+  font-display: swap;
+  src: url('../assets/fonts/avenir/AvenirLTProLightOblique.otf') format('opentype');
+}
+/* Keep the supplied Book/Roman variants in the published asset graph as named
+   aliases too. They are useful when author CSS explicitly requests a book or
+   roman face, and avoid silently dropping user-provided font files at build. */
+@font-face {
+  font-family: 'Avenir Next LT Pro Book';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../assets/fonts/avenir/AvenirLTProBook.otf') format('opentype');
+}
+@font-face {
+  font-family: 'Avenir Next LT Pro Book';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../assets/fonts/avenir/AvenirLTProBookOblique.otf') format('opentype');
+}
+@font-face {
+  font-family: 'Avenir Next LT Pro Roman';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../assets/fonts/avenir/AvenirLTProRoman.otf') format('opentype');
+}
 @font-face {
   font-family: 'Playfair Display';
   font-style: normal;

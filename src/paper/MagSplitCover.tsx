@@ -2,6 +2,7 @@ import type { CSSProperties } from 'react';
 import type { Doc } from '../schema/document';
 import type { Piece } from '../lib/paginate';
 import { MAG2_STRIP, splitPhoto } from '../lib/magSplit';
+import { PAGE_W } from '../lib/geometry';
 import { Flow } from './Flow';
 import { MagSplitHead } from './MagSplitHead';
 import { MagTopBar } from './MagazineHead';
@@ -28,6 +29,7 @@ interface Props {
 export function MagSplitCover({ doc, vars, pieces }: Props) {
   const photo = photoOf(doc);
   const p = splitPhoto(arOf(doc), doc.hero);
+  const stripGeometry = doc.design.textDirection === 'rtl' ? { ...p, x: p.x - PAGE_W } : p;
 
   return (
     <div className="page mag2-page" style={vars}>
@@ -46,7 +48,7 @@ export function MagSplitCover({ doc, vars, pieces }: Props) {
       </div>
       {photo && (
         <div className="mag2-strip" data-editor-tab="images" data-editor-target="image-hero">
-          <SpreadPhotoImage asset={photo} geometry={p} />
+          <SpreadPhotoImage asset={photo} geometry={stripGeometry} />
           {doc.meta.photoCredit && <span className="mag2-strip-credit" data-editor-tab="content" data-editor-target="meta-photo-credit">PHOTO — {doc.meta.photoCredit}</span>}
         </div>
       )}
@@ -68,7 +70,7 @@ export function MagPhotoPage({
 }) {
   const photo = photoOf(doc);
   const p = splitPhoto(arOf(doc), doc.hero);
-  const photoGeometry = { ...p, x: p.x - MAG2_STRIP };
+  const photoGeometry = { ...p, x: p.x - (doc.design.textDirection === 'rtl' ? 0 : MAG2_STRIP) };
 
   return (
     <div

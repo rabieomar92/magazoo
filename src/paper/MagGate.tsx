@@ -24,7 +24,8 @@ function gateGeometry(doc: Doc, pageIndex: 0 | 1) {
     ? photo.asset.naturalWidth / photo.asset.naturalHeight
     : 16 / 9;
   const geometry = framedSpreadPhoto(ar, PAGE_W * 2, PAGE_H, photo.frame);
-  return { ...geometry, x: geometry.x - pageIndex * PAGE_W };
+  const physicalHalf = doc.design.textDirection === 'rtl' ? 1 - pageIndex : pageIndex;
+  return { ...geometry, x: geometry.x - physicalHalf * PAGE_W };
 }
 
 /** magazine-3 gatefold, sheet 1 (left half of the photo). Masthead + big stacked

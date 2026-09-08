@@ -35,7 +35,7 @@ export function PaperTwoPage({
       <PageArtwork doc={doc} />
       <TagBar doc={doc} pageIndex={0} />
 
-      <div className={`p2-cols${design.heroSide === 'left' ? ' p2-cols--hero-left' : ''}`}>
+      <div className={`p2-cols${(design.heroSide ?? (design.textDirection === 'rtl' ? 'left' : 'right')) === 'left' ? ' p2-cols--hero-left' : ''}`}>
         <div className="p2-left">
           <header className="header p2-head">
             <p className="eyebrow" data-editor-tab="content" data-editor-target="meta-category">{meta.categoryLabel}</p>

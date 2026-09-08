@@ -2,7 +2,8 @@ import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useStat
 import { createPortal } from 'react-dom';
 import { useDoc } from '../store/useDoc';
 import { DEFAULT_TOP_BAR_OFFSET, familyOf } from '../schema/document';
-import { cssVars, grid, PAGE_W, PAGE_H } from '../lib/geometry';
+import { cssVars, grid, PAGE_W, PAGE_H, readableInk } from '../lib/geometry';
+import { dropCapEnabled } from '../lib/textDirection';
 import {
   paginate,
   paginateHosts,
@@ -21,6 +22,7 @@ import { applyMark, insertMath } from '../lib/activeEditor';
 import { MAG2_STRIP } from '../lib/magSplit';
 import { paper2Grid, paper2Fit } from '../lib/paper2';
 import { defaultPlacedHighlights } from '../lib/placedHighlights';
+import { placedImageContour } from '../lib/placedImage';
 import { populatedPhysicalPages } from '../lib/physicalFlowPages';
 import { requestEditorTargetFocus, type EditorTab } from '../lib/editorNavigation';
 import type { Mark } from '../lib/richtext';
@@ -31,13 +33,14 @@ import { MagazineCover } from './MagazineCover';
 import { MagazinePage } from './MagazinePage';
 import { MagazineHead } from './MagazineHead';
 import { MagSplitCover, MagPhotoPage } from './MagSplitCover';
-import { MagSplitHead, MagSplitAside } from './MagSplitHead';
+import { MagSplitHead, MagSplitAside, splitAsideHighlights } from './MagSplitHead';
 import { HighlightsBody } from './Sidebar';
 import { HIGHLIGHTS_BLOCK_ID, MAG2_ASIDE_ID } from './Flow';
 import { GalleryPage } from './GalleryPage';
 import { MagGateA, MagGateB } from './MagGate';
 import { MagazineFrontCover } from './MagazineFrontCover';
 import { FrontMatterPages, type FrontMatterStatus } from './FrontMatterPages';
+import { NewsPages } from './NewsPages';
 import { useImageTheme } from './useImageTheme';
 import { PageFooters } from './PageFooters';
 import { footerBottomMargin } from '../lib/pageFooter';
@@ -258,7 +261,8 @@ const PaperPreviewLayout = memo(function PaperPreviewLayout({
   const isMag = familyOf(doc.templateId) === 'magazine';
   // Gallery: a fixed photo collage, no text flow — one A4 page, no pagination.
   const isGallery = familyOf(doc.templateId) === 'gallery';
-  const isFrontMatter = familyOf(doc.templateId) === 'frontmatter';
+  const isNews = familyOf(doc.templateId) === 'news';
+  const isStructured = familyOf(doc.templateId) === 'frontmatter' || isNews;
   const [frontMatterStatus,setFrontMatterStatus] = useState<FrontMatterStatus>({pages:1,overflow:false});
   const reportFrontMatter = useCallback((status:FrontMatterStatus) => setFrontMatterStatus(previous => previous.pages===status.pages && previous.overflow===status.overflow ? previous : status),[]);
   // magazine-2 runs a different sheet plan: sheet 1 is the article + photo strip,
@@ -396,7 +400,7 @@ const PaperPreviewLayout = memo(function PaperPreviewLayout({
 
     // Gallery and the dedicated cover are fixed compositions — nothing to
     // break, so skip the article measuring rig entirely.
-    if (isGallery || isFrontCover || isFrontMatter) {
+    if (isGallery || isFrontCover || isStructured) {
       commitPagination(EMPTY);
       return;
     }
@@ -461,7 +465,7 @@ const PaperPreviewLayout = memo(function PaperPreviewLayout({
       // Measured at its real render width, exactly like the paper hl-col box.
       const aside = splitAsideRef.current;
       let flow = items;
-      if (aside && (doc.meta.pullQuote || doc.highlights.some((h) => h.trim()))) {
+      if (aside && (doc.meta.pullQuote || splitAsideHighlights(doc).length > 0)) {
         const w = aside.offsetWidth || 1;
         flow = [
           ...items,
@@ -622,7 +626,7 @@ const PaperPreviewLayout = memo(function PaperPreviewLayout({
       ];
     }
     commitPagination(withColFill(paginate(h1, h2, flow), [h1, h2]));
-  }, [baseVars, items, doc, doc.meta, doc.design, doc.highlights, doc.references, hlBelow, hlFlow, imageExclusions, isMag, isSplit, isGate, isFrontCover, isP2, isGallery, isFrontMatter, fontEpoch, layoutEpoch, wrapSafetyBoost]);
+  }, [baseVars, items, doc, doc.meta, doc.design, doc.highlights, doc.references, hlBelow, hlFlow, imageExclusions, isMag, isSplit, isGate, isFrontCover, isP2, isGallery, isStructured, fontEpoch, layoutEpoch, wrapSafetyBoost]);
 
   // Post-render column-overflow safety net — every template, not just the
   // gatefold this was first caught on.
@@ -945,7 +949,7 @@ const PaperPreviewLayout = memo(function PaperPreviewLayout({
     '--bar-color': doc.design.barColor ?? (isGallery ? doc.design.colors.accent : '#111418'),
     '--bar-tag': doc.design.barTagColor ?? (isMag ? doc.design.colors.accent : '#bfbfbf'),
     '--bar-ink': doc.design.barTagInk ?? (isMag ? '#ffffff' : '#111418'),
-    '--bar-detail-ink': isMag ? '#cbd5e1' : '#ffffff',
+    '--bar-detail-ink': isStructured ? readableInk(doc.design.barColor ?? '#111418') : isMag ? '#cbd5e1' : '#ffffff',
     // Read by the running-text selectors only (see page.css's comment by
     // `.body-cols` and `.header`) — not by the top bar, hero or sidebar
     // placement, which stay put regardless of this setting.
@@ -954,8 +958,8 @@ const PaperPreviewLayout = memo(function PaperPreviewLayout({
 
   // paper-2 spends two of paginateHosts' regions on sheet 1, so the fit badge
   // has to count sheets, not regions.
-  const fit = isFrontMatter
-    ? {level: frontMatterStatus.overflow ? 'warn' : 'ok',text: frontMatterStatus.overflow ? 'Text exceeds its frame. Shorten the heading or side note, or reduce its size.' : `${frontMatterStatus.pages} ${frontMatterStatus.pages===1?'page':'pages'} · front matter`}
+  const fit = isStructured
+    ? {level: frontMatterStatus.overflow ? 'warn' : 'ok',text: frontMatterStatus.overflow ? 'Text exceeds its frame. Shorten the heading or caption, or reduce its size.' : `${frontMatterStatus.pages} ${frontMatterStatus.pages===1?'page':'pages'} · ${isNews ? 'news & briefs' : 'front matter'}`}
     : isGallery
     ? ({ level: 'ok', text: '2 pages · spread' } as const)
     : isFrontCover
@@ -991,7 +995,7 @@ const PaperPreviewLayout = memo(function PaperPreviewLayout({
   const pct = Math.round(scale * 100);
   // Magazine adds the cover sheet on top of the flowed content pages. magazine-2
   // instead puts the flow's first page ON sheet 1 and spends sheet 2 on the photo.
-  const flowPageCount = isFrontMatter ? frontMatterStatus.pages : isFrontCover
+  const flowPageCount = isStructured ? frontMatterStatus.pages : isFrontCover
     ? 1
     : isGallery
       ? 2
@@ -1004,11 +1008,11 @@ const PaperPreviewLayout = memo(function PaperPreviewLayout({
           : isP2
           ? 1 + Math.max(0, pages.length - 2)
           : Math.max(1, pages.length);
-  const lastPlacedImagePage = isGallery || isFrontCover || isFrontMatter
+  const lastPlacedImagePage = isGallery || isFrontCover || isStructured
     ? 0
     : (doc.images ?? []).reduce((last, image) => Math.max(last, image.anchor.page), 0);
   const highlightPage =
-    !isGallery && !isFrontCover && !isFrontMatter && hlFree
+    !isGallery && !isFrontCover && !isStructured && hlFree
       ? (doc.highlightBox ?? defaultPlacedHighlights(doc.design)).anchor.page
       : 0;
   const nPages = Math.max(flowPageCount, lastPlacedImagePage, highlightPage, calloutPageCount);
@@ -1067,8 +1071,68 @@ const PaperPreviewLayout = memo(function PaperPreviewLayout({
       const rtl = computed.direction === 'rtl';
       const columns = Array.from({ length: columnCount }, () => [] as { top: number; bottom: number }[]);
 
+      const addBand = (physicalColumn: number, top: number, bottom: number) => {
+        const clippedTop = Math.max(0, top);
+        const clippedBottom = Math.min(flowHeight, bottom);
+        if (clippedBottom <= 0 || clippedTop >= flowHeight || clippedBottom <= clippedTop) return;
+        const readingColumn = rtl ? columnCount - 1 - physicalColumn : physicalColumn;
+        columns[readingColumn].push({
+          top: Math.round(clippedTop * 10) / 10,
+          bottom: Math.round(clippedBottom * 10) / 10,
+        });
+      };
+
       for (const imageNode of imageNodes) {
         const imageRect = imageNode.getBoundingClientRect();
+        const imageId = imageNode.dataset.imageId;
+        const placedImage = imageId
+          ? (doc.images ?? []).find((candidate) => candidate.id === imageId)
+          : undefined;
+
+        if (placedImage?.wrapShape === 'contour') {
+          const frame = imageNode.querySelector<HTMLElement>('.placed-image-frame');
+          const frameRect = frame?.getBoundingClientRect() ?? imageRect;
+          const captionRect = imageNode.querySelector<HTMLElement>('figcaption')?.getBoundingClientRect();
+          const slices = placedImageContour(placedImage);
+          if (!frameRect.width || !frameRect.height || !slices.length) continue;
+
+          for (let physicalColumn = 0; physicalColumn < columnCount; physicalColumn += 1) {
+            const left = flowRect.left + physicalColumn * (columnWidth + columnGap) * renderedScale;
+            const right = left + columnWidth * renderedScale;
+            const frameOverlapLeft = Math.max(left, frameRect.left);
+            const frameOverlapRight = Math.min(right, frameRect.right);
+            if (frameOverlapRight - frameOverlapLeft > 1) {
+              const relativeCenter = clamp(
+                ((frameOverlapLeft + frameOverlapRight) / 2 - frameRect.left) / frameRect.width,
+                0,
+                0.999999,
+              );
+              const slice = slices[Math.min(slices.length - 1, Math.floor(relativeCenter * slices.length))];
+              const contourTop =
+                (frameRect.top - flowRect.top) / renderedScale +
+                (frameRect.height / renderedScale) * (slice.top / 100) -
+                imageWrapGap;
+              const contourBottom =
+                (frameRect.bottom - flowRect.top) / renderedScale -
+                (frameRect.height / renderedScale) * (slice.bottom / 100) +
+                imageWrapGap;
+              addBand(physicalColumn, contourTop, contourBottom);
+            }
+
+            if (captionRect) {
+              const captionOverlap = Math.min(right, captionRect.right) - Math.max(left, captionRect.left);
+              if (captionOverlap > 1) {
+                addBand(
+                  physicalColumn,
+                  (captionRect.top - flowRect.top) / renderedScale - imageWrapGap,
+                  (captionRect.bottom - flowRect.top) / renderedScale + imageWrapGap,
+                );
+              }
+            }
+          }
+          continue;
+        }
+
         // Reserve the same editorial breathing room above the artwork and,
         // importantly, below its caption (imageRect includes a normal caption;
         // bottom-bleed captions are overlaid inside the same rectangle).
@@ -1080,18 +1144,12 @@ const PaperPreviewLayout = memo(function PaperPreviewLayout({
           flowHeight,
           (imageRect.bottom - flowRect.top) / renderedScale + imageWrapGap,
         );
-        if (bottom <= 0 || top >= flowHeight || bottom <= top) continue;
-
         for (let physicalColumn = 0; physicalColumn < columnCount; physicalColumn += 1) {
           const left = flowRect.left + physicalColumn * (columnWidth + columnGap) * renderedScale;
           const right = left + columnWidth * renderedScale;
           const horizontalOverlap = Math.min(right, imageRect.right) - Math.max(left, imageRect.left);
           if (horizontalOverlap <= 1) continue;
-          const readingColumn = rtl ? columnCount - 1 - physicalColumn : physicalColumn;
-          columns[readingColumn].push({
-            top: Math.round(top * 10) / 10,
-            bottom: Math.round(bottom * 10) / 10,
-          });
+          addBand(physicalColumn, top, bottom);
         }
       }
       if (columns.some((column) => column.length)) next[flowIndex] = columns;
@@ -1263,11 +1321,14 @@ const PaperPreviewLayout = memo(function PaperPreviewLayout({
       <div className="pages-frame" style={frame}>
         <div
           ref={pagesRef}
-          className={`pages${spreadOn ? ' pages--spread' : ''}`}
+          className={`pages${spreadOn ? ' pages--spread' : ''}${doc.design.textDirection === 'rtl' ? ' pages--rtl' : ''}${dropCapEnabled(doc.design,doc.templateId) ? '' : ' drop-caps-off'}`}
+          lang={doc.design.textDirection === 'rtl' ? 'ar' : undefined}
           style={{ transform: `scale(${scale})` }}
           onClickCapture={focusPreviewObject}
         >
-          {isFrontMatter ? (
+          {isNews ? (
+            <NewsPages doc={doc} vars={vars} onStatus={reportFrontMatter} />
+          ) : isStructured ? (
             <FrontMatterPages doc={doc} vars={vars} onStatus={reportFrontMatter} />
           ) : isGallery ? (
             <GalleryPage doc={doc} vars={vars} />
@@ -1363,7 +1424,7 @@ const PaperPreviewLayout = memo(function PaperPreviewLayout({
 
       <PageFooters doc={doc} root={pagesRef} />
       {/* Hidden measuring rig — same box as the real body columns. */}
-      <div className="measure-root" style={vars} aria-hidden>
+      <div className={`measure-root${doc.design.textDirection === 'rtl' ? ' measure-root--rtl' : ''}${dropCapEnabled(doc.design,doc.templateId) ? '' : ' drop-caps-off'}`} lang={doc.design.textDirection === 'rtl' ? 'ar' : undefined} style={vars} aria-hidden>
         {isSplit ? (
           <>
             {/* Head + foot aside sized first (they set --mag2-head-h/--mag2-aside-h),

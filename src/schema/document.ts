@@ -2,11 +2,12 @@ export const SCHEMA_VERSION = 1;
 export const DEFAULT_TOP_BAR_OFFSET = 10;
 
 /** Template family = which layout engine renders the document. */
-export type TemplateFamily = 'paper' | 'magazine' | 'gallery' | 'frontmatter';
+export type TemplateFamily = 'paper' | 'magazine' | 'gallery' | 'frontmatter' | 'news';
 
 /** A specific template. The family (engine) is the id's prefix; the number picks
  *  a preset (content + design tokens) within that engine. */
 export type TemplateId =
+  | 'news-briefs'
   | 'paper-1'
   | 'paper-2'
   | 'paper-3'
@@ -24,7 +25,7 @@ export type TemplateId =
 
 /** The layout engine a template runs on — derived from the id, never stored. */
 export const familyOf = (id: TemplateId | undefined): TemplateFamily =>
-  id?.startsWith('frontmatter') ? 'frontmatter' : id?.startsWith('gallery') ? 'gallery' : id?.startsWith('magazine') ? 'magazine' : 'paper';
+  id?.startsWith('news') ? 'news' : id?.startsWith('frontmatter') ? 'frontmatter' : id?.startsWith('gallery') ? 'gallery' : id?.startsWith('magazine') ? 'magazine' : 'paper';
 
 /** Native title-to-subtitle spacing for each layout, in millimetres. */
 export const defaultSubtitleGap = (id: TemplateId | undefined): number => {
@@ -168,6 +169,17 @@ export interface PlacedImage {
   align?: 'left' | 'center' | 'right';
   /** Zoom/pan inside the placed rectangle. Absent = centred 1× fill. */
   frame?: { scale: number; offsetX: number; offsetY: number };
+  /**
+   * Text normally avoids the image's complete rectangular box. `contour`
+   * keeps the same page-image and pagination machinery, but lets each occupied
+   * physical column reclaim transparent space above and below the artwork.
+   * This is deliberately column-sliced rather than freeform DOM flow, so the
+   * established left-to-right/right-to-left filling order remains unchanged.
+   */
+  wrapShape?: 'box' | 'contour';
+  /** Percentage of the image height that is clear at the top/bottom of each
+   * occupied column, stored from the physical left edge to the right edge. */
+  wrapContour?: { top: number[]; bottom: number[] };
   /** Extend artwork from its column-sized layout footprint to selected trim
    * edges. The source keeps its aspect ratio via cover-cropping; captions stay
    * aligned to the original footprint. */
@@ -234,6 +246,8 @@ export interface FrontCoverDesign {
 }
 
 export interface Design {
+  /** Optional first-paragraph decorative initial; Arabic remains joined. */
+  dropCap?: boolean;
   /** Paper 3: derive the solid page colour and readable ink from the hero. */
   imageTheme?: boolean;
   /** Body columns on page 1. Page 2 turns the sidebar slot into a text column. */
@@ -295,6 +309,13 @@ export interface Design {
   pageBackgroundOpacity?: number;
   /** Hide the article hero while retaining the document's top bar. */
   showHero?: boolean;
+  /**
+   * Paper 3 only. Absent/false = the photograph opens the page from the top
+   * edge. True prints it rising from the foot of the page with the article
+   * above it. The picture leaves the flow either way, so page 1 holds exactly
+   * the same amount of text.
+   */
+  heroAtBottom?: boolean;
   /**
    * paper-2's top band. Absent = the defaults below, so v1 files and the other
    * templates (which never draw the band) are unaffected.
@@ -358,7 +379,27 @@ export interface FrontMatter {
   pageStart: number;
 }
 
+/** Independent briefs, kept in editorial reading order. Images travel with
+ * their story rather than entering the existing article wrapping engine. */
+export interface NewsStory {
+  id: string;
+  title: string;
+  text: string;
+  caption: string;
+  source: string;
+  /** 'aside' is a narrow column printed beside the story above it. */
+  layout: 'lead' | 'compact' | 'text' | 'single' | 'aside';
+  /** Top-to-text spacing in pixels, one entry per paragraph of `text`, the same
+   *  per-paragraph control the article templates carry on a paragraph block.
+   *  Missing entries mean no extra spacing. */
+  paragraphTops?: number[];
+  assetId?: string;
+  frame?: { scale: number; offsetX: number; offsetY: number };
+  breakBefore?: boolean;
+}
+
 export interface Doc {
+  news?: { stories: NewsStory[] };
   /** Running folio. Missing settings use the masthead and start at page 1. */
   footer?: {
     enabled?: boolean;
@@ -469,6 +510,7 @@ export function assetIsReferenced(doc: Doc, assetId: string): boolean {
   return doc.hero?.assetId === assetId ||
     doc.cover?.assetId === assetId ||
     doc.design?.pageBackgroundAssetId === assetId ||
+    (doc.news?.stories ?? []).some((story) => story.assetId === assetId) ||
     doc.blocks.some((block) => block.type === 'figure' && block.assetId === assetId) ||
     (doc.images ?? []).some((image) => image.assetId === assetId);
 }

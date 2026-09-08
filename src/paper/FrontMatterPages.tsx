@@ -3,6 +3,7 @@ import type { Doc } from '../schema/document';
 import { emptyFrontMatter } from '../store/frontMatter';
 import { packFrontMatter, type FrontMatterUnit } from '../lib/frontMatterLayout';
 import { runsToHtml } from '../lib/richtext';
+import { dropCapEnabled } from '../lib/textDirection';
 import { requestBlockEditorFocus } from '../lib/editorNavigation';
 import { FramedImage } from '../components/FramedImage';
 import { TagBar } from './TagBar';
@@ -10,7 +11,7 @@ import { TagBar } from './TagBar';
 export interface FrontMatterStatus { pages: number; overflow: boolean }
 const target = (name: string, tab = 'content') => ({'data-editor-tab':tab,'data-editor-target':name});
 
-function Unit({unit,dean}: {unit:FrontMatterUnit;dean:boolean}) {
+function Unit({unit,dean,initial=false}: {unit:FrontMatterUnit;dean:boolean;initial?:boolean}) {
   return <article data-measure-id={unit.id} className={`fm-unit${dean?' fm-paragraph':''}${unit.continued?' fm-continued':''}`}
     {...(!dean ? target(`fm-entry-${unit.id}`) : {})}
     onClick={dean ? () => requestBlockEditorFocus(unit.id) : undefined}
@@ -18,7 +19,7 @@ function Unit({unit,dean}: {unit:FrontMatterUnit;dean:boolean}) {
     {unit.page && <span className="fm-page-number">{unit.page}</span>}
     <div className="fm-entry-copy">
       {unit.title && <h2>{unit.title}{unit.continued && <small> · continued</small>}</h2>}
-      <div data-fm-text style={{textIndent:dean && unit.indent && !unit.continued ? '1.2em' : undefined}} dangerouslySetInnerHTML={{__html:runsToHtml(unit.text)}} />
+      <div data-fm-text style={{textIndent:dean && unit.indent && !unit.continued ? '1.2em' : undefined}} dangerouslySetInnerHTML={{__html:runsToHtml(unit.text,initial && !unit.continued)}} />
     </div>
   </article>;
 }
@@ -27,6 +28,7 @@ export function FrontMatterPages({doc,vars,onStatus}: {doc:Doc;vars:CSSPropertie
   const dean = doc.templateId === 'frontmatter-dean';
   const board = doc.templateId === 'frontmatter-board';
   const content = doc.frontMatter ?? emptyFrontMatter();
+  const initial = dean && dropCapEnabled(doc.design,doc.templateId);
   const measureRef = useRef<HTMLDivElement>(null);
   const units = useMemo<FrontMatterUnit[]>(() => dean
     ? doc.blocks.filter(b=>b.type==='paragraph').map(b=>({id:b.id,text:b.text,fontSize:b.fontSize,color:b.color,topPadding:b.topPadding,indent:b.indent}))
@@ -53,7 +55,7 @@ export function FrontMatterPages({doc,vars,onStatus}: {doc:Doc;vars:CSSPropertie
       const node = nodes.find(n=>n.dataset.measureId===unit.id);
       if (!node) return 0;
       const copy = node.cloneNode(true) as HTMLElement;
-      copy.querySelector('[data-fm-text]')!.innerHTML = runsToHtml(unit.text);
+      copy.querySelector('[data-fm-text]')!.innerHTML = runsToHtml(unit.text,initial && unit.id===units[0]?.id && !unit.continued);
       if (unit.continued) {
         copy.style.paddingTop = '0';
         (copy.querySelector('[data-fm-text]') as HTMLElement).style.textIndent = '0';
@@ -87,7 +89,7 @@ export function FrontMatterPages({doc,vars,onStatus}: {doc:Doc;vars:CSSPropertie
     packed.overflow ||= fixedOverflow || widthOverflow;
     setLayout(packed);
     onStatus({pages:Math.max(1,Math.ceil(packed.columns.length/2)),overflow:packed.overflow});
-  },[units,doc,dean,fontEpoch,onStatus]);
+  },[units,doc,dean,initial,fontEpoch,onStatus]);
 
   const photo = (slot:'hero'|'cover', className:string, placeholder?:string) => {
     const frame=doc[slot]; const asset=frame?.assetId ? doc.assets[frame.assetId] : null;
@@ -98,7 +100,7 @@ export function FrontMatterPages({doc,vars,onStatus}: {doc:Doc;vars:CSSPropertie
   };
   const sheet = (pageIndex:number, children:ReactNode, measuring=false) => <div
     className={`page fm-page fm-page--${dean?'dean':board?'board':'contents'}`}
-    style={vars} key={pageIndex} data-layout-overflow={!measuring && layout.overflow ? 'true' : undefined}>
+    style={vars} dir={doc.design.textDirection ?? 'ltr'} key={pageIndex} data-layout-overflow={!measuring && layout.overflow ? 'true' : undefined}>
     <TagBar doc={doc} pageIndex={pageIndex} detail={doc.meta.volume} />
     <div className="fm-shell">
       <header className="fm-header">
@@ -130,9 +132,9 @@ export function FrontMatterPages({doc,vars,onStatus}: {doc:Doc;vars:CSSPropertie
 
   return <>
     {Array.from({length:Math.max(1,Math.ceil(layout.columns.length/2))},(_,i)=>sheet(i,
-      [0,1].map(c=><div className="fm-column" key={c}>{(layout.columns[i*2+c]??[]).map((unit,j)=><Unit key={`${unit.id}-${j}`} unit={unit} dean={dean}/>)}</div>)))}
+      [0,1].map(c=><div className="fm-column" key={c}>{(layout.columns[i*2+c]??[]).map((unit,j)=><Unit key={`${unit.id}-${j}`} unit={unit} dean={dean} initial={initial && unit.id===units[0]?.id}/>)}</div>)))}
     <div className="fm-measure" ref={measureRef} aria-hidden="true">
-      {sheet(0,<><div className="fm-column">{units.map(unit=><div className="fm-measure-unit" key={unit.id}><Unit unit={unit} dean={dean}/></div>)}</div><div className="fm-column"/></>,true)}
+      {sheet(0,<><div className="fm-column">{units.map(unit=><div className="fm-measure-unit" key={unit.id}><Unit unit={unit} dean={dean} initial={initial && unit.id===units[0]?.id}/></div>)}</div><div className="fm-column"/></>,true)}
     </div>
   </>;
 }

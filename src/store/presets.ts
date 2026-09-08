@@ -8,6 +8,7 @@ import {
 } from '../schema/document';
 import { sampleDoc } from '../sample';
 import { makeFrontMatter } from './frontMatter';
+import { makeNews } from './news';
 import { makeGallery1, makeGallery2, makeGallery3, makeGallery4 } from './gallery';
 
 /**
@@ -552,6 +553,7 @@ const makePaper3 = (): Doc => {
 };
 
 export const TEMPLATES: (TemplateMeta & { make: () => Doc })[] = [
+  { id: 'news-briefs', family: 'news', name: 'News & Briefs', kind: 'Campus & Research News', make: makeNews },
   { id: 'frontmatter-dean', family: 'frontmatter', name: 'Dean’s Message', kind: 'Letter from the Dean', make: () => makeFrontMatter('frontmatter-dean') },
   { id: 'frontmatter-contents', family: 'frontmatter', name: 'Contents', kind: 'Table of Contents', make: () => makeFrontMatter('frontmatter-contents') },
   { id: 'frontmatter-board', family: 'frontmatter', name: 'Editorial Board', kind: 'People & Publication', make: () => makeFrontMatter('frontmatter-board') },

@@ -9,6 +9,40 @@
 }
 .page--paper3 .hero--hidden::after { display: none; }
 
+/* The image-led feature, flipped: the photograph rises from the foot of the
+   page and the article sits above it. The hero leaves the flow, so page 1
+   still holds exactly the text height `.body-cols--p1` reserves for it — that
+   formula, and the measuring host that shares it, are untouched. The height
+   below closes the picture onto the last line of text however the footer
+   clearance is set; at the default clearance it is the plain hero slot.
+   The picture is the topmost thing on the sheet: it runs to the bottom trim
+   edge and the running folio passes behind it, so nothing interrupts the
+   photograph. */
+.page--hero-bottom .hero {
+  position: absolute;
+  inset: auto 0 0;
+  height: calc(var(--hero-slot-h, var(--hero-h)) + var(--bottom-margin, var(--margin)) - var(--margin));
+  margin: 0;
+  /* Above the folio's z-index 12. */
+  z-index: 13;
+}
+/* Now the photograph fades upward into the page colour instead of downward. */
+.page--paper3.page--hero-bottom .hero::after {
+  inset: 0 0 55%;
+  background: linear-gradient(to top, transparent, var(--paper-bg));
+}
+/* The masthead belongs at the head of the page, so it stays there on its own
+   instead of travelling with the picture, and the header clears it. */
+.page--hero-bottom > .tag-bar {
+  position: absolute;
+  inset: var(--topbar-offset, 10mm) 0 auto;
+  margin: 0;
+  z-index: 4;
+}
+.page--hero-bottom .header {
+  padding-top: max(0px, calc(var(--topbar-offset, 10mm) + var(--bar-h, 5mm) + var(--gutter) - var(--margin)));
+}
+
 /* Reserve only bottom space, leaving all horizontal/top geometry unchanged. */
 .page { padding-bottom: var(--bottom-margin, var(--margin)); }
 

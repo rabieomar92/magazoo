@@ -1,0 +1,38 @@
+/* Read direction is deliberately scoped to copy and directional grids, not
+   the physical coordinates of placed illustrations or user-selected bars. */
+.page { direction: ltr; }
+.tag-bar { direction: ltr; }
+.fm-page, .news-page, .gallery { direction: var(--text-dir,ltr); text-align: start; }
+.fm-header, .fm-rail, .fm-unit,
+.mag-cover-mid, .mag-cover-foot, .mag-gate-mid, .mag-gate-foot,
+.mag2-head-content, .mag2-aside, .front-cover-brand-copy, .front-cover-story,
+.front-cover-teasers, .front-cover-foot, .g-card, .g-cap,
+.p2-hero-cap, .mag-photo-credit, .mag-location, .mag-hero-tag, .mag-hero-credit, .mag2-photo-tag, .mag2-strip-credit, .flow-fig figcaption, .placed-image figcaption {
+  direction: var(--text-dir,ltr);
+}
+.fm-header, .fm-rail, .fm-unit, .mag-cover-mid, .mag-cover-foot,
+.mag2-head-content, .mag2-quote { text-align: start; }
+.pages--spread.pages--rtl { direction: rtl; }
+
+/* These classes survive cloning into the PDF frame; the measuring rig gets
+   the same rules as the preview so its line breaks cannot drift. */
+:is(.pages--rtl,.measure-root--rtl) :is(.mag-cover-credits,.mag-gate-credits,.p2-hero-cap,.mag-photo-credit) { text-align: start; }
+:is(.pages--rtl,.measure-root--rtl) :is(.mag-gate-mid,.mag-gate-foot) { text-align: start; }
+:is(.pages--rtl,.measure-root--rtl) :is(.mag-lede,.mag-gate-lede,.mag-gate-quote) { margin-left: 0; margin-right: 0; margin-inline-end: auto; }
+:is(.pages--rtl,.measure-root--rtl) :is(.body-cols,.mag-cols,.mag2-cols,.news-copy) { hyphens: none; -webkit-hyphens: none; }
+/* Tracking between Arabic letters harms joining. Latin font choices retain
+   their normal fallback chain; Arabic glyphs are shaped as complete words. */
+:is(.pages--rtl,.measure-root--rtl) :is(h1,h2,h3,p,figcaption,.tag-bar-tag,.tag-bar-detail,.fm-kicker,.mag-title-word,.mag2-author,.mag2-affil,.page-folio,.mag-kicker,.front-cover-masthead) { letter-spacing: normal; }
+.pages--rtl .gallery--p1 .g-fold { margin-right: 0; margin-left: calc(-1 * var(--margin)); }
+.pages--rtl .gallery--p2 .g-fold { margin-left: 0; margin-right: calc(-1 * var(--margin)); }
+:is(.pages--rtl,.measure-root--rtl) .mag2-inner { margin-left: auto; }
+.pages--rtl .mag2-strip { right: auto; left: 0; }
+.pages--rtl .mag-gate-scrim--a { background: linear-gradient(270deg,rgba(6,10,25,.9),rgba(6,10,25,.35) 55%,transparent),linear-gradient(180deg,rgba(6,10,25,.5),transparent 32%,rgba(6,10,25,.85)); }
+.pages--rtl .mag-gate-scrim--b { background: linear-gradient(90deg,rgba(6,10,25,.72),rgba(6,10,25,.2) 55%,transparent),linear-gradient(180deg,rgba(6,10,25,.45),transparent 34%,rgba(6,10,25,.9)); }
+.pages--rtl .mag-cover-scrim { background: linear-gradient(270deg,rgba(6,10,25,.9),rgba(6,10,25,.4) 52%,rgba(6,10,25,.05)),linear-gradient(180deg,rgba(6,10,25,.55),transparent 30%,rgba(6,10,25,.82)); }
+/* Mathematical notation is always read LTR even inside an Arabic sentence. */
+.katex { direction: ltr; unicode-bidi: isolate; }
+
+/* Shared preview/measurement switch. The character remains in the text,
+   without its float, special font, spacing or colour when decoration is off. */
+.drop-caps-off .drop-cap { all: unset !important; display: contents !important; }

@@ -38,13 +38,19 @@ export function MagSplitHead({ doc }: { doc: Doc }) {
   );
 }
 
+/** What the split aside prints of the highlights: nothing when the document's
+ *  "Show highlights" switch is off, and nothing when the box has been placed
+ *  freely on the page instead. The measuring pass asks the same question, so a
+ *  hidden box never reserves height either. */
+export function splitAsideHighlights(doc: Doc): string[] {
+  if (!doc.design.sidebar || doc.design.highlightsPlacement === 'free') return [];
+  return doc.highlights.filter((h) => h.trim());
+}
+
 /** The foot of magazine-2's sheet 1: pull-quote, then the highlights box. Also
  *  measured (its height comes off the body box, same as the head). */
 export function MagSplitAside({ doc }: { doc: Doc }) {
-  const highlights =
-    doc.design.highlightsPlacement === 'free'
-      ? []
-      : doc.highlights.filter((h) => h.trim());
+  const highlights = splitAsideHighlights(doc);
   const { meta } = doc;
   if (!meta.pullQuote && !highlights.length) return null;
   return (

@@ -36,13 +36,13 @@ export function TagBar({
       {/* Hugs its text: a longer tag simply lengthens the block and eats into
           the rule beside it. */}
       {topBarText && (
-        <span className="tag-bar-tag" data-editor-tab="content" data-editor-target="meta-masthead">
+        <span className="tag-bar-tag" dir={doc.design.textDirection ?? 'ltr'} data-editor-tab="content" data-editor-target="meta-masthead">
           {topBarText}
         </span>
       )}
       <span className="tag-bar-fill">
         {detailText && (
-          <span className="tag-bar-detail" data-editor-tab="content" data-editor-target="meta-volume">
+          <span className="tag-bar-detail" dir="auto" data-editor-tab="content" data-editor-target="meta-volume">
             {detailText}
           </span>
         )}

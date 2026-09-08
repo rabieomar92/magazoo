@@ -17,6 +17,7 @@ export function cloneDocForUpdate(doc: Doc): Doc {
   return {
     ...doc,
     meta: { ...doc.meta },
+    news: doc.news ? { stories: doc.news.stories.map(story => ({ ...story, frame: story.frame ? { ...story.frame } : undefined })) } : undefined,
     footer: doc.footer ? { ...doc.footer } : undefined,
     frontMatter: doc.frontMatter ? {
       ...doc.frontMatter,
@@ -31,6 +32,9 @@ export function cloneDocForUpdate(doc: Doc): Doc {
       ...image,
       anchor: { ...image.anchor },
       bleed: image.bleed ? { ...image.bleed } : undefined,
+      wrapContour: image.wrapContour
+        ? { top: [...image.wrapContour.top], bottom: [...image.wrapContour.bottom] }
+        : undefined,
     })),
     highlightBox: doc.highlightBox
       ? { ...doc.highlightBox, anchor: { ...doc.highlightBox.anchor } }

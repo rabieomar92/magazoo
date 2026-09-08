@@ -17,6 +17,8 @@ describe('cloneDocForUpdate', () => {
       widthCols: 2,
       anchor: { page: 1, column: 0, y: 20 },
       bleed: { left: true },
+      wrapShape: 'contour',
+      wrapContour: { top: [0, 25], bottom: [10, 0] },
     });
     source.highlightBox = {
       widthCols: 2,
@@ -27,10 +29,12 @@ describe('cloneDocForUpdate', () => {
     draft.images[0].caption = 'After';
     draft.images[0].anchor.y = 40;
     draft.images[0].bleed!.right = true;
+    draft.images[0].wrapContour!.top[1] = 40;
     draft.highlightBox!.anchor.y = 120;
     draft.design.colors.ink = '#fff';
 
     expect(source.images[0]).toMatchObject({ caption: 'Before', anchor: { y: 20 }, bleed: { left: true } });
+    expect(source.images[0].wrapContour?.top).toEqual([0, 25]);
     expect(source.design.colors.ink).not.toBe('#fff');
     expect(source.highlightBox.anchor.y).toBe(80);
     expect(draft.assets.photo).not.toBe(source.assets.photo);

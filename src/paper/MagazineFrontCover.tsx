@@ -49,7 +49,7 @@ export function MagazineFrontCover({ doc, vars }: { doc: Doc; vars: CSSPropertie
     .slice(0, 3);
   const flip = doc.design.barSide === 'right';
   const coverDesign = doc.design.frontCover ?? {};
-  const alignment = coverDesign.alignment ?? (flip ? 'right' : 'left');
+  const alignment = coverDesign.alignment ?? (doc.design.textDirection === 'rtl' || flip ? 'right' : 'left');
   const coverVars: Record<string, string> = {
     ...frontCoverTextVars(doc.design),
     '--front-story-top': `${coverDesign.storyTop ?? 15}mm`,

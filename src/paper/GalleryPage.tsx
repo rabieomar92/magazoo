@@ -82,12 +82,15 @@ function FoldCell({ doc, block, area, half }: { doc: Doc; block?: Block; area: s
   const caption = block && block.type === 'figure' ? block.caption : '';
   const fr = block && block.type === 'figure' ? block.frame : undefined;
   const geometry = galleryFrameGeometry(fr, 2);
+  // In Arabic spreads the first sheet is on the right. Exchange the photo
+  // windows, never mirror the artwork or any lettering inside it.
+  const physicalHalf = doc.design.textDirection === 'rtl' ? (half === 'left' ? 'right' : 'left') : half;
   const imgStyle: CSSProperties = {
     position: 'absolute',
     top: `${geometry.top}%`,
     height: `${geometry.height}%`,
     width: `${geometry.width}%`,
-    left: `${geometry.left - (half === 'right' ? 100 : 0)}%`,
+    left: `${geometry.left - (physicalHalf === 'right' ? 100 : 0)}%`,
     objectFit: geometry.objectFit,
     objectPosition: `${geometry.objectX}% ${geometry.objectY}%`,
   };

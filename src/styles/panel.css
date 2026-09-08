@@ -248,7 +248,7 @@
   font-size: 10.5px;
   font-weight: 700;
   letter-spacing: 0.07em;
-  text-transform: uppercase;
+  text-transform: none;
   color: var(--faint);
 }
 
@@ -489,7 +489,7 @@
   font-size: 10.5px;
   font-weight: 700;
   letter-spacing: 0.07em;
-  text-transform: uppercase;
+  text-transform: none;
   color: var(--faint);
 }
 
@@ -880,7 +880,7 @@
 .field-input--hex {
   width: 92px;
   font-variant-numeric: tabular-nums;
-  text-transform: uppercase;
+  text-transform: none;
 }
 
 .segment {
@@ -1013,7 +1013,7 @@
   font-size: 10px;
   font-weight: 650;
   letter-spacing: 0.08em;
-  text-transform: uppercase;
+  text-transform: none;
 }
 
 .toolbar-group {
@@ -1138,7 +1138,7 @@
   font-size: 9.5px;
   font-weight: 800;
   letter-spacing: 0.12em;
-  text-transform: uppercase;
+  text-transform: none;
 }
 
 .panel-title {
@@ -1407,6 +1407,17 @@ select.select-control::-ms-expand {
   border-top: 1px solid var(--line-soft);
 }
 
+/* The same top-to-text control, listed once per paragraph of a news brief. The
+   count follows the text, so these columns fill instead of being fixed. */
+.news-paragraph-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(116px, 1fr));
+  align-items: center;
+  gap: 7px;
+  padding-top: 7px;
+  border-top: 1px solid var(--line-soft);
+}
+
 .paragraph-style-grid > .field:nth-child(3) {
   grid-column: 1 / -1;
 }
@@ -1421,7 +1432,8 @@ select.select-control::-ms-expand {
   align-self: center;
 }
 
-.paragraph-style-grid .field {
+.paragraph-style-grid .field,
+.news-paragraph-grid .field {
   min-width: 0;
   margin: 0;
   padding: 0;
@@ -1429,20 +1441,23 @@ select.select-control::-ms-expand {
   background: transparent;
 }
 
-.paragraph-style-grid .field--inline {
+.paragraph-style-grid .field--inline,
+.news-paragraph-grid .field--inline {
   align-items: center;
   flex-direction: row;
   justify-content: flex-start;
   gap: 4px;
 }
 
-.paragraph-style-grid .field-label {
+.paragraph-style-grid .field-label,
+.news-paragraph-grid .field-label {
   flex: 0 0 auto;
   margin: 0;
   font-size: 10px;
 }
 
-.paragraph-style-grid .field-input--num {
+.paragraph-style-grid .field-input--num,
+.news-paragraph-grid .field-input--num {
   width: 50px;
   height: 29px;
   padding: 4px 6px;

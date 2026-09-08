@@ -7,7 +7,7 @@ import {
 } from 'react';
 import type { Asset, Design, Doc, PlacedImage } from '../schema/document';
 import { PAGE_H, PAGE_W } from '../lib/geometry';
-import { placedImageGeometry, snapImageColumn } from '../lib/placedImage';
+import { placedImageContourClip, placedImageGeometry, snapImageColumn } from '../lib/placedImage';
 import { defaultPlacedHighlights, placedHighlightsGeometry } from '../lib/placedHighlights';
 import { useDoc } from '../store/useDoc';
 import { HighlightsBody } from './Sidebar';
@@ -167,6 +167,9 @@ function PlacedImageItem({
     '--placed-image-h': `${geometry.visualHeight}mm`,
     '--placed-caption-left': `${geometry.captionLeft}mm`,
     '--placed-caption-width': `${geometry.width}mm`,
+    ...(image.wrapShape === 'contour'
+      ? { '--placed-contour-clip': placedImageContourClip(image) }
+      : {}),
   } as CSSProperties;
   const hasBleed = Boolean(
     image.bleed?.left || image.bleed?.right || image.bleed?.top || image.bleed?.bottom,
@@ -175,6 +178,8 @@ function PlacedImageItem({
   return (
     <figure
       className={`placed-image${hasBleed ? ' placed-image--bleed' : ''}${
+        image.wrapShape === 'contour' ? ' placed-image--contour' : ''
+      }${
         image.bleed?.bottom ? ' placed-image--caption-overlay' : ''
       }`}
       style={style}

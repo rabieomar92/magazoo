@@ -1,0 +1,63 @@
+/* A separate editorial grid. It never changes the article wrapping engine. */
+.news-page { text-align: start; font-size: var(--fs-body);
+  /* One column of the three-column news grid. Stated once so a side column is
+     measured at exactly the width it is printed at. */
+  --news-aside-w: calc((100% - 2 * var(--gutter)) / 3); }
+.news-page > .tag-bar { position: absolute; inset: var(--topbar-offset) 0 auto; width: 100%; margin: 0; }
+.news-shell { height: 100%; display: flex; flex-direction: column; padding-top: max(13mm, calc(var(--topbar-offset) + 13mm - var(--margin))); }
+.news-header { flex: none; margin-bottom: 6mm; }
+.news-header h1 { font: 700 var(--fs-title)/1.2 var(--serif); margin: 0; white-space: pre-line; }
+.news-header p { margin: 2mm 0 0; font: var(--subtitle-weight,400) var(--fs-subtitle)/1.45 var(--font-subtitle); color: var(--subtitle-color,var(--ink)); }
+.news-header .news-kicker { color: var(--accent); font: 700 8pt/1.4 var(--sans); }
+.news-stories { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 6mm; }
+.news-story { flex: none; min-width: 0; padding-top: 5mm; border-top: .2mm solid color-mix(in srgb, var(--ink) 25%, transparent); }
+.news-stories > .news-story:first-child,
+.news-stories > .news-row:first-child > .news-story:not(.news-story--aside) { padding-top: 0; border-top: 0; }
+.news-story h2 { margin: 0 0 4mm; padding-inline-start: 3mm; border-inline-start: 1.5mm solid var(--accent); font: 700 calc(var(--fs-title) * .8)/1.16 var(--serif); white-space: pre-line; overflow-wrap: anywhere; }
+.news-story--lead h2 { font-size: var(--fs-title); }
+.news-story--single, .news-story--aside { width: var(--news-aside-w); margin-inline-start: auto; }
+.news-story--single .news-copy, .news-story--aside .news-copy { column-count: 1; }
+/* A side column and the story it runs beside share one band. Both widths are
+   fixed rather than fluid, so the measuring pass and the printed page agree. */
+.news-row { flex: none; min-width: 0; display: flex; gap: var(--gutter); align-items: flex-start; }
+.news-story--paired { width: calc(100% - var(--gutter) - var(--news-aside-w)); margin-inline-end: auto; }
+.news-story--aside { border-top: .5mm solid var(--accent); padding-top: 3mm; }
+.news-story--aside h2 { padding-inline-start: 0; border-inline-start: 0; font-size: calc(var(--fs-title) * .62); margin-bottom: 3mm; }
+/* Beside a side column a lead runs its photograph across the top, the way an
+   editorial page stacks a picture over its own headline and text. */
+.news-story--paired.news-story--lead.news-story--photo .news-story-grid { grid-template-columns: minmax(0,1fr); }
+.news-story--paired.news-story--lead.news-story--photo .news-copy { column-count: 2; }
+.news-story--paired.news-story--lead.news-story--photo figure { order: -1; }
+.news-continued { font: 400 8pt/1.3 var(--sans); }
+.news-story-grid { display: grid; grid-template-columns: minmax(0,1fr); gap: var(--gutter); align-items: start; }
+.news-story--photo.news-story--lead .news-story-grid { grid-template-columns: minmax(0,1fr) minmax(0,2fr); }
+.news-story--photo.news-story--compact .news-story-grid { grid-template-columns: minmax(0,2fr) minmax(0,1fr); }
+.news-copy { min-width: 0; column-count: 3; column-gap: var(--gutter); font: 400 var(--fs-body)/1.48 var(--sans); text-align: var(--body-align,left); overflow-wrap: anywhere; }
+.news-story--photo .news-copy { column-count: 2; }
+.news-story--lead.news-story--photo .news-copy { column-count: 1; }
+.news-copy [data-news-text] { white-space: pre-line; }
+/* Paragraphs are real blocks, so each one can carry the same top-to-text
+   spacing the article templates give a paragraph. Half a line of space between
+   them, alongside the first-line indent below, marks the paragraph break
+   without opening a full blank line in the column. */
+.news-para { margin: 0; }
+.news-para + .news-para { margin-top: 0.5lh; }
+/* A first-line indent marks each new paragraph, the same 1.5em the article
+   templates use. The brief's opening paragraph stays flush, and so does the
+   tail of a paragraph a page break ran through — that is the same paragraph
+   continuing, not a new one. `text-indent` follows `direction`, so RTL indents
+   from the right with no separate rule. */
+.news-para + .news-para,
+.news-para--indent { text-indent: 1.5em; }
+.news-copy .drop-cap, .fm-paragraph .drop-cap { float: inline-start; font: 600 calc(var(--fs-body) * 3.5)/.95 var(--serif); margin-inline-end: .12em; color: var(--accent); }
+.news-source { margin: 2mm 0 0; font-size: .82em; font-weight: 600; overflow-wrap: anywhere; unicode-bidi: plaintext; }
+.news-story figure { min-width: 0; margin: 0; }
+.news-photo { height: var(--hero-h); position: relative; overflow: hidden; }
+.news-story--compact .news-photo { height: calc(var(--hero-h) * .8); }
+.news-story figcaption { margin-top: 2mm; font: 400 7pt/1.4 var(--sans); white-space: pre-line; overflow-wrap: anywhere; }
+.news-story [data-editor-target], .news-story, .news-header [data-editor-target] { cursor: pointer; }
+.news-measure { position: absolute; left: -20000px; top: 0; visibility: hidden; pointer-events: none; }
+/* Measurements include the separator for every possible row, a conservative
+   allowance of 5mm when that row becomes the first story on a new page. */
+.news-measure .news-story { padding-top: 5mm; border-top-width: .2mm; border-top-style: solid; }
+@media print { .news-measure { display: none !important; } }

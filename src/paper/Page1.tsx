@@ -19,9 +19,14 @@ export function Page1({ doc, vars, pieces }: Props) {
   const { meta, hero, design } = doc;
   const heroAsset = hero.assetId ? doc.assets[hero.assetId] : null;
   const { rail } = grid(design);
+  // Paper 3 can print its photograph rising from the foot of the page. The
+  // picture is lifted out of the flow there, so the page keeps the very text
+  // height the measuring pass computed for it — only the picture moves, and
+  // the masthead stays at the head of the page on its own.
+  const heroAtBottom = doc.templateId === 'paper-3' && design.heroAtBottom === true && design.showHero !== false;
 
   return (
-    <div className={`page${doc.templateId === 'paper-3' ? ' page--paper3' : ''}`} style={vars}>
+    <div className={`page${doc.templateId === 'paper-3' ? ' page--paper3' : ''}${heroAtBottom ? ' page--hero-bottom' : ''}`} style={vars}>
       <PageArtwork doc={doc} />
       <div
         className={`hero${design.showHero === false ? ' hero--hidden' : ''}`}
@@ -32,11 +37,12 @@ export function Page1({ doc, vars, pieces }: Props) {
             photo sits above it in z-order, so once a photo is set it simply
             covers the strip; with no photo the bar reads on the plain
             hero-colour backdrop. */}
-        <TagBar doc={doc} pageIndex={0} />
+        {!heroAtBottom && <TagBar doc={doc} pageIndex={0} />}
         {design.showHero !== false && heroAsset && (
           <FramedImage asset={heroAsset} frame={hero} />
         )}
       </div>
+      {heroAtBottom && <TagBar doc={doc} pageIndex={0} />}
       <header className="header">
         <p className="eyebrow" data-editor-tab="content" data-editor-target="meta-category">{meta.categoryLabel}</p>
         <h1 className="title" data-editor-tab="content" data-editor-target="meta-title">{meta.title}</h1>
@@ -54,7 +60,9 @@ export function Page1({ doc, vars, pieces }: Props) {
           <Flow
             pieces={pieces}
             doc={doc}
-            allowBottomBleed
+            /* With the photograph at the foot of the page there is no free
+               bottom edge left for a figure to bleed into. */
+            allowBottomBleed={!heroAtBottom}
           />
         </div>
         {rail && <Sidebar doc={doc} />}
