@@ -13,6 +13,7 @@
     "preview": "vite preview",
     "start": "node server/index.mjs",
     "server": "node server/index.mjs",
+    "hash-password": "node server/hash-password.mjs",
     "test:server": "node --test server/*.test.mjs",
     "test": "vitest run"
   },
