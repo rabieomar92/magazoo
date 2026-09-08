@@ -3,16 +3,21 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "engines": {
+    "node": ">=22.5.0"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
+    "start": "node server/index.mjs",
+    "server": "node server/index.mjs",
+    "test:server": "node --test server/*.test.mjs",
     "test": "vitest run"
   },
   "dependencies": {
     "dexie": "^4.4.4",
-    "html-to-image": "^1.11.13",
     "katex": "^0.16.47",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
