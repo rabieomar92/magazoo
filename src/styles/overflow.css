@@ -80,6 +80,14 @@
   overflow: hidden;
 }
 
+/* A negative margin is intentional optical adjustment. Keep the same block
+   formatting and lower clip boundary, but do not cut off the raised text. */
+.mag-gate-mid.mag-gate-mid--signed {
+  display: flow-root;
+  overflow: visible;
+  clip-path: inset(var(--gate-spacing-bleed, 0px) 0 0 0);
+}
+
 /* Gallery cards live in fixed grid tracks and captions are absolutely placed.
    Reset intrinsic minimums so long text cannot enlarge a track or overlap an
    adjacent tile; the page remains a stable two-sheet collage. */

@@ -1223,6 +1223,7 @@ const PaperPreviewLayout = memo(function PaperPreviewLayout({
   const focusPreviewObject = (event: ReactMouseEvent<HTMLDivElement>) => {
     const origin = event.target;
     if (!(origin instanceof Element)) return;
+    if (origin.closest('[data-drag-moved]')) return;
     // Flow paragraphs and gallery/cover cards already navigate by stable block
     // id. Do not let a clickable full-page cover photo steal that click.
     if (origin.closest('[data-source-block-id]')) return;

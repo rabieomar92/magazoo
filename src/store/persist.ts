@@ -1,7 +1,8 @@
 import { useDoc } from './useDoc';
 import { migrate, type Doc } from '../schema/document';
-import { loadDoc, saveDoc } from './db';
+import { loadDoc, loadSession, saveDoc } from './db';
 import { useSaveStatus } from './saveStatus';
+import { bindTarget, markProjectDirty, saveToTarget, useProjectFile } from './projectFiles';
 
 /**
  * Persistence lives outside the store: it subscribes to useDoc rather than
@@ -31,7 +32,12 @@ export async function hydrate(reader: () => Promise<Doc | null> = loadDoc): Prom
   }
   if (!raw) return 'empty';
   try {
-    useDoc.getState().load(migrate(raw));
+    const doc=migrate(raw);
+    if(reader===loadDoc) {
+      const session=await loadSession();
+      bindTarget(session?.target ?? null, session?.pending ? null : doc);
+    }
+    useDoc.getState().load(doc);
     return 'restored';
   } catch {
     // Unknown/unsupported schema version — nothing to restore, but the store is
@@ -44,23 +50,48 @@ export async function hydrate(reader: () => Promise<Doc | null> = loadDoc): Prom
  * Mirror every store change to IndexedDB, debounced so a burst of keystrokes
  * writes once. Returns an unsubscribe for effect cleanup.
  */
-export function startAutosave(delay = 600): () => void {
+export function startAutosave(delay = 1200): () => void {
   let t: ReturnType<typeof setTimeout>;
   const { setStatus } = useSaveStatus.getState();
-  const unsubscribe = useDoc.subscribe(() => {
+  let backup:Promise<unknown>=Promise.resolve();
+  const backUp=() => {
+    const {target,savedDoc}=useProjectFile.getState();
+    const doc=useDoc.getState().doc;
+    backup=backup.catch(()=>{}).then(()=>saveDoc(doc,target,savedDoc!==doc));
+    return backup;
+  };
+  const flush=async () => {
     clearTimeout(t);
+    try {
+      await backUp();
+      setStatus('saved');
+      await saveToTarget();
+      await backUp();
+    } catch { setStatus('error'); }
+  };
+  const unsubscribe = useDoc.subscribe((state,previous) => {
+    if(state.doc===previous.doc) return;
+    clearTimeout(t);
+    markProjectDirty();
     setStatus('saving');
-    t = setTimeout(() => {
-      saveDoc(useDoc.getState().doc).then(
-        () => setStatus('saved'),
-        // Quota exceeded or a blocked/broken IndexedDB — surface it instead of
-        // letting the rejection go unhandled and the loss go unnoticed.
-        () => setStatus('error'),
-      );
-    }, delay);
+    t = setTimeout(()=>void flush(), delay);
   });
+  const unbind=useProjectFile.subscribe((next,previous)=>{
+    if(next.savedDoc!==previous.savedDoc || next.target!==previous.target) void backUp().catch(()=>setStatus('error'));
+  });
+  const hidden=()=>{if(document.visibilityState==='hidden') void flush();};
+  const beforeUnload=(event:BeforeUnloadEvent)=>{
+    const state=useProjectFile.getState();
+    if(state.target && state.savedDoc!==useDoc.getState().doc){event.preventDefault();event.returnValue='';}
+  };
+  document.addEventListener('visibilitychange',hidden);
+  window.addEventListener('beforeunload',beforeUnload);
+  if(useProjectFile.getState().target && !useProjectFile.getState().savedDoc) t=setTimeout(()=>void flush(),delay);
   return () => {
     clearTimeout(t);
     unsubscribe();
+    unbind();
+    document.removeEventListener('visibilitychange',hidden);
+    window.removeEventListener('beforeunload',beforeUnload);
   };
 }

@@ -194,6 +194,27 @@ export interface PlacedHighlights {
   anchor: { page: number; column: number; y: number };
 }
 
+/** Bounded text placement on Magazine 3's two cover sheets; distances in mm. */
+export interface GateTextPlacement {
+  top?: number;
+  inset?: number;
+  width?: number;
+  align?: 'start' | 'center' | 'end';
+}
+
+export type GateTextRole = 'title' | 'kicker' | 'subtitle' | 'quote' | 'attribution' | 'author' | 'photoCredit';
+/** Cover-only typography. Body flow and its measuring rules remain independent. */
+export interface GateTextStyle {
+  fontFamily?: string;
+  fontSize?: number;
+  color?: string;
+  fontWeight?: number;
+  italic?: boolean;
+  lineHeight?: number;
+  letterSpacing?: number;
+  spaceAfter?: number;
+}
+
 /** Structured, not free text. The sample PDF's broken DOI is what free text costs. */
 export interface Reference {
   id: string;
@@ -227,6 +248,10 @@ export interface FrontCoverTextStyle {
   /** em units. */
   letterSpacing?: number;
   visible?: boolean;
+  /** Constrained movement inside the existing reading-order stack, in mm. */
+  spaceBefore?: number;
+  inset?: number;
+  lineHeight?: number;
 }
 
 /** Dedicated controls for the fixed one-sheet front-cover composition. */
@@ -341,6 +366,13 @@ export interface Design {
    * template's native first-page composition.
    */
   firstPageTopMargin?: number;
+  gateTitle?: GateTextPlacement;
+  gateText?: GateTextPlacement;
+  gateTitleLayout?: 'stacked' | 'natural';
+  /** Magazine 3 cover title size; legacy gatefolds used a fixed 46 pt. */
+  gateTitleSize?: number;
+  gateTypography?: Partial<Record<GateTextRole, GateTextStyle>>;
+  gateAccentLastWord?: boolean;
   /** Physical distance from the title box to the subtitle/lede, in mm. */
   subtitleGap: number;
   /** millimetres */

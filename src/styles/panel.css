@@ -2163,6 +2163,71 @@ select.select-control::-ms-expand {
   }
 }
 
+/* Magazine 3: object-based groups, deliberately sized for a narrow sidebar. */
+.gate-editor-group {
+  margin-block: 0 12px;
+  border: 1px solid #dfe3ee;
+  border-radius: 10px;
+  background: #fff;
+  min-width: 0;
+  overflow: hidden;
+}
+.gate-editor-group > summary,
+.gate-text-editor > summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px 12px;
+  padding: 16px;
+  cursor: pointer;
+  list-style: none;
+  font-size: 14px;
+  font-weight: 650;
+  color: #273449;
+}
+.gate-editor-group > summary::-webkit-details-marker,
+.gate-text-editor > summary::-webkit-details-marker { display: none; }
+.gate-editor-group > summary::after,
+.gate-text-editor > summary::after {
+  content: '';
+  grid-column: 2;
+  grid-row: 1;
+  align-self: center;
+  width: 7px;
+  height: 7px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(-45deg);
+}
+.gate-editor-group[open] > summary::after,
+.gate-text-editor[open] > summary::after { transform: rotate(45deg); }
+.gate-editor-group > summary > span,
+.gate-text-editor > summary > span {
+  grid-column: 1 / -1;
+  color: #66748b;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.45;
+}
+.gate-editor-group[open] > summary { background: #f5f6fc; border-bottom: 1px solid #e5e8f0; }
+.gate-control-stack { padding: 14px; min-width: 0; }
+.gate-control-stack > .section { margin-bottom: 0; padding: 12px; box-shadow: none; }
+.gate-control-stack > .section + .section { margin-top: 14px; }
+.gate-text-editor { min-width: 0; border-bottom: 1px solid #e5e8f0; margin-bottom: 12px; }
+.gate-text-editor > summary { padding: 10px 0; }
+.gate-text-editor > .gate-control-stack { padding: 8px 0 16px; }
+.gate-control-stack .field--inline { display: flex; flex-wrap: wrap; gap: 8px; }
+.gate-control-stack .field-label { flex: 1 1 130px; line-height: 1.45; }
+.gate-control-stack .field-input { min-width: 0; max-width: 100%; }
+.gate-control-stack .field--inline select.field-input { width: 100%; flex-basis: 100%; }
+.gate-control-stack .segment { display: flex; flex-wrap: wrap; max-width: 100%; height: auto; }
+.gate-control-stack .segment-btn { min-height: 38px; white-space: normal; }
+.gate-control-stack .color-input { min-width: 0; max-width: 100%; }
+.gate-control-stack .add-btn { width: 100%; min-height: 38px; white-space: normal; }
+.gate-spacing-fields { border-top: 1px solid #e5e8f0; padding-top: 12px; margin-top: 12px; }
+.gate-editor-intro { padding: 4px 8px; }
+.gate-editor-group > summary:focus-visible,
+.gate-text-editor > summary:focus-visible { outline: 2px solid #5046e5; outline-offset: -3px; }
+
 /* ---- Print: panel disappears, only the paper prints ----------------------- */
 
 @media print {

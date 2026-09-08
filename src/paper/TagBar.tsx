@@ -18,6 +18,7 @@ export function TagBar({
   const flip = barStartsRight(doc.design.barSide, pageIndex);
   const topBarText = doc.meta.masthead?.trim();
   const detailText = detail?.trim();
+  if (doc.templateId === 'magazine-4') return null;
   return (
     <div
       className={`tag-bar${flip ? ' tag-bar--flip' : ''}${detailText ? ' tag-bar--detailed' : ''}`}
@@ -36,13 +37,13 @@ export function TagBar({
       {/* Hugs its text: a longer tag simply lengthens the block and eats into
           the rule beside it. */}
       {topBarText && (
-        <span className="tag-bar-tag" dir={doc.design.textDirection ?? 'ltr'} data-editor-tab="content" data-editor-target="meta-masthead">
+        <span className={`tag-bar-tag${/\p{Script=Arabic}/u.test(topBarText) ? ' arabic-copy' : ''}`} dir="auto" data-editor-tab="content" data-editor-target="meta-masthead">
           {topBarText}
         </span>
       )}
       <span className="tag-bar-fill">
         {detailText && (
-          <span className="tag-bar-detail" dir="auto" data-editor-tab="content" data-editor-target="meta-volume">
+          <span className={`tag-bar-detail${/\p{Script=Arabic}/u.test(detailText) ? ' arabic-copy' : ''}`} dir="auto" data-editor-tab="content" data-editor-target="meta-volume">
             {detailText}
           </span>
         )}

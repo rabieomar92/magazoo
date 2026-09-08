@@ -1357,7 +1357,7 @@
   /* Fixed A4 width — the per-sheet --page-w var isn't defined on this container. */
   grid-template-columns: repeat(2, 210mm);
   gap: 20px;
-  width: auto;
+  width: calc(420mm + 20px);
   /* Page 2 sits flush at the top beside page 1 (never sinks if it's shorter). */
   align-items: start;
 }

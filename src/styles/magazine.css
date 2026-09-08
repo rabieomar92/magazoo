@@ -208,7 +208,8 @@
   justify-content: var(--front-items, flex-start);
   gap: 6mm;
   min-width: 0;
-  height: 23mm;
+  min-height: 23mm;
+  height: auto;
   box-sizing: border-box;
   margin: calc(var(--topbar-offset, 10mm) - var(--margin)) calc(-1 * var(--margin)) 0;
   padding: 3.5mm var(--margin);
@@ -252,7 +253,8 @@
 .front-cover-story {
   display: flex;
   flex-direction: column;
-  align-items: var(--front-items, flex-start);
+  align-items: var(--front-copy-items, flex-start);
+  justify-self: var(--front-align, left);
   align-self: start;
   width: min(var(--front-story-width, 88%), 158mm);
   min-width: 0;
@@ -315,7 +317,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 2mm 5mm;
-  justify-content: var(--front-items, flex-start);
+  justify-content: var(--front-copy-items, flex-start);
   width: 100%;
   margin-top: 4mm;
   line-height: 1.25;
@@ -381,7 +383,7 @@
   font-weight: var(--front-teaser-title-weight, 900);
   font-style: var(--front-teaser-title-style, normal);
   letter-spacing: var(--front-teaser-title-tracking, 0.055em);
-  line-height: 1.05;
+  line-height: var(--front-teaser-title-leading, 1.05);
   text-transform: none;
 }
 
@@ -393,7 +395,7 @@
   font-weight: var(--front-teaser-body-weight, 400);
   font-style: var(--front-teaser-body-style, normal);
   letter-spacing: var(--front-teaser-body-tracking, 0);
-  line-height: 1.28;
+  line-height: var(--front-teaser-body-leading, 1.28);
   opacity: 0.86;
 }
 
@@ -939,8 +941,46 @@
   margin: auto 0;
 }
 .mag-gate-title {
-  font-size: 46pt;
+  font-size: var(--gate-title-size, 46pt);
 }
+
+.mag-gate-title--natural { white-space: pre-line; color: #fff; overflow-wrap: break-word; }
+.mag-gate-title .mag-title-word { color: inherit; }
+.mag-gate-title .mag-title-word.is-accent { color: var(--mag-red); }
+.mag-gate--positioned .mag-gate-inner { direction: var(--text-dir, ltr); }
+.mag-gate--positioned .mag-gate-mid {
+  position: absolute;
+  top: 0;
+  inset-inline-start: var(--gate-inset);
+  width: var(--gate-width);
+  margin: 0;
+  text-align: var(--gate-align, start) !important;
+}
+.mag-gate--positioned :is(.mag-gate-lede, .mag-gate-quote) { max-width: 100%; }
+.mag-gate--positioned .mag-kicker { display: block; }
+.mag-gate--positioned .mag-kicker-dash { display: inline-block; vertical-align: middle; margin-inline-end: 9px; }
+.mag-gate--positioned .mag-gate-foot { margin-top: auto; }
+/* Cover blocks are placed by hand: press one and drag it up or down. Sideways
+   movement stays with the numeric inset/width controls, so a block keeps its
+   column. The editor's own hover highlight already marks the block as
+   interactive, so only the cursor is added here — and only on screen. */
+@media screen {
+  .mag-gate-mid--draggable,
+  .front-cover-story--draggable {
+    cursor: grab;
+  }
+  .mag-gate-mid--draggable.is-dragging,
+  .front-cover-story--draggable.is-dragging {
+    cursor: grabbing;
+    user-select: none;
+  }
+}
+
+.gate-layout-warning {
+  position: absolute; z-index: 20; bottom: var(--bottom-margin, 14mm); left: 14mm; right: 14mm;
+  padding: 8px; background: #fff3cd; color: #664d03; font: 12px/1.4 Arial, sans-serif;
+}
+@media print { .gate-layout-warning { display: none !important; } }
 
 .mag-gate-lede {
   margin: var(--subtitle-gap, 0mm) 0 18px auto;

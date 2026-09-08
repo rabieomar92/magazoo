@@ -1,0 +1,40 @@
+.admin-page { min-height:100vh; background:#f4f5f8; color:#202734; font:15px/1.55 Arial,sans-serif; }
+.admin-header { display:flex; justify-content:space-between; gap:24px; align-items:center; padding:22px max(24px,calc((100vw - 1160px)/2)); background:#fff; border-bottom:1px solid #e1e5ed; }
+.admin-header>div,.admin-header nav { display:flex; align-items:center; gap:24px; }
+.admin-brand { color:#4f46e5; text-decoration:none; font-weight:800; font-size:26px; }
+.admin-header span { border-left:1px solid #d8dde7; padding-left:24px; color:#6b7280; }
+.admin-content { max-width:1160px; padding:44px 24px 60px; margin:auto; }
+.admin-intro { margin-bottom:32px;max-width:740px; }
+.admin-eyebrow { color:#4f46e5; font-size:12px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; }
+.admin-page h1 { font-size:clamp(28px,4vw,40px); line-height:1.2; letter-spacing:-.03em; margin:10px 0 16px; }
+.admin-page h2 { font-size:19px; margin:0 0 20px; }
+.admin-page h3 { font-size:17px; margin:0 0 5px; }
+.admin-page p { margin:12px 0 20px; }
+.admin-card { background:#fff;border:1px solid #e1e5ed; border-radius:14px; padding:28px;box-shadow:0 2px 4px #15223804; }
+.admin-create-grid { display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start; }
+.admin-page label,.admin-dialog label { display:grid;gap:8px;margin:0 0 18px; font-weight:600; }
+.admin-page input,.admin-page select,.admin-page textarea,.admin-dialog input { width:100%;box-sizing:border-box;min-width:0;padding:12px;border:1px solid #ccd3df;border-radius:7px;background:#fff;color:#202734;font:inherit; }
+.admin-page input[type=file] { font-size:13px; }
+.admin-page button,.admin-page nav a,.admin-actions a,.admin-dialog button { border:1px solid #d9dee9;border-radius:7px; padding:10px 14px;background:#fff;color:#334155;font:600 13px/1.4 Arial,sans-serif;cursor:pointer;text-decoration:none; }
+.admin-page button.primary { background:#4f46e5;color:#fff;border-color:#4f46e5; }
+.admin-page button:hover,.admin-dialog button:hover { filter:brightness(.96); }
+.admin-page button:disabled,.admin-dialog button:disabled { opacity:.45;cursor:not-allowed; }
+.admin-page :focus-visible,.admin-dialog :focus-visible { outline:3px solid #a5b4fc;outline-offset:3px; }
+.admin-page .danger-quiet { color:#be123c; }
+.admin-actions { display:flex;gap:10px;flex-wrap:wrap;align-items:center; }
+.admin-library-title { display:flex;align-items:center;justify-content:space-between;margin:36px 0 12px; }
+.admin-library-title h2 { margin:0; }.admin-library-title span { font-size:13px;color:#64748b;margin-left:8px; }
+.admin-project { margin:18px 0;padding-bottom:12px; }.admin-project>header { display:flex;justify-content:space-between;gap:20px;align-items:center;margin-bottom:18px; }
+.admin-project header span,.admin-sharing-note,.admin-footnote { font-size:13px;color:#64748b; }
+.admin-project ul { list-style:none;padding:0;margin:0; }.admin-project li { display:flex;justify-content:space-between;align-items:center;gap:16px;border-top:1px solid #e7eaf0;padding:18px 0; }
+.admin-item-name { display:grid;gap:5px;overflow-wrap:anywhere; }.admin-item-name small { color:#64748b; }
+.admin-alert,.admin-notice { padding:16px 20px;border-radius:8px;margin:20px 0; }.admin-alert { background:#fff1f2;color:#9f1239; }.admin-notice { background:#ecfdf5;color:#065f46; }
+.admin-login { max-width:700px; }.admin-login-steps { border-top:1px solid #e1e5ed;margin-top:24px;padding-top:24px; }
+.admin-login pre { white-space:pre-wrap;overflow-wrap:anywhere;background:#f1f4f9;padding:16px;border-radius:7px;font-size:13px; }
+.admin-empty { text-align:center;padding:48px; }.admin-footnote { margin-top:36px; }
+.admin-dialog { width:min(480px,calc(100vw - 72px));border:0;border-radius:14px;padding:28px;color:#202734;box-shadow:0 24px 80px #0005;font:15px/1.5 Arial,sans-serif; }
+.admin-dialog::backdrop { background:#0f172a80; }.admin-dialog h2 { margin-top:0; }.admin-dialog .danger { background:#be123c;color:white;border-color:#be123c; }
+.project-save-status { display:block;font:11px/1.35 Arial,sans-serif;color:#64748b;max-width:235px;overflow-wrap:anywhere; }
+.project-save-status.is-error { color:#b91c1c; }
+.cover-text-object { touch-action:pan-x; }.pages .cover-text-object { cursor:ns-resize; }
+@media(max-width:800px) { .admin-create-grid { grid-template-columns:1fr; }.admin-project li { align-items:start;flex-direction:column; }.admin-header span { display:none; }.admin-card { padding:20px; }.project-save-status { max-width:140px;font-size:10px; } }
