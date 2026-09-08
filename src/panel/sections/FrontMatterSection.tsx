@@ -2,7 +2,7 @@ import { useDoc } from '../../store/useDoc';
 import { uid, type FrontMatter } from '../../schema/document';
 import { emptyFrontMatter } from '../../store/frontMatter';
 import { ALL_FONTS, fontOptions } from '../../lib/fonts';
-import { LabeledInput, LabeledTextarea, LabeledNumber, LabeledColor, LabeledSelect, Section, RowButtons } from '../Field';
+import { LabeledInput, LabeledTextarea, LabeledNumber, LabeledColor, LabeledSelect, SegmentField, Section, RowButtons } from '../Field';
 import { ImagePicker } from './HeroSection';
 import { BodySection } from './BodySection';
 
@@ -59,6 +59,13 @@ export function FrontMatterDesign() {
       <LabeledNumber label="Top bar margin" unit="mm" min={0} max={25} value={doc.design.topBarOffset ?? 10} onChange={v => update(d => {d.design.topBarOffset = Math.max(0,Math.min(25,v));})} />
       <LabeledNumber label="Page margin" unit="mm" min={10} max={22} value={doc.design.margin} onChange={v => update(d => {d.design.margin = Math.max(10,Math.min(22,v));})} />
       <LabeledNumber label="Image height" unit="mm" min={25} max={90} value={doc.design.heroHeight} onChange={v => update(d => {d.design.heroHeight = Math.max(25,Math.min(90,v));})} />
+      <SegmentField<'left' | 'right'>
+        label="Masthead & footer side"
+        value={doc.design.barSide ?? 'left'}
+        options={[{ value: 'left', label: 'Left' }, { value: 'right', label: 'Right' }]}
+        onChange={v => update(d => { d.design.barSide = v; })}
+      />
+      <p className="hint">The masthead and page number start on this side; the footer text sits opposite. Both alternate sides on later pages.</p>
       <LabeledSelect label="Display font" value={doc.design.fontDisplay} options={fontOptions(ALL_FONTS)} onChange={v => update(d => {d.design.fontDisplay=v;})} />
       <LabeledSelect label="Body font" value={doc.design.fontBody} options={fontOptions(ALL_FONTS)} onChange={v => update(d => {d.design.fontBody=v; d.design.fontSubtitle=v;})} />
       {(['title','subtitle','body'] as const).map(key => <LabeledNumber key={key} label={`${key[0].toUpperCase()+key.slice(1)} size`} unit="pt" min={key==='title'?20:8} max={key==='title'?48:16} value={doc.design.sizes[key]} onChange={v => update(d=>{d.design.sizes[key]=Math.max(key==='title'?20:8,Math.min(key==='title'?48:16,v));})} />)}
@@ -68,6 +75,8 @@ export function FrontMatterDesign() {
       <LabeledColor label="Text" value={doc.design.colors.ink} onChange={v => update(d=>{d.design.colors.ink=v;})} />
       <LabeledColor label="Accent" value={doc.design.colors.accent} onChange={v => update(d=>{d.design.colors.accent=v;})} />
       <LabeledColor label="Top bar" value={doc.design.barColor ?? doc.design.colors.accent} onChange={v => update(d=>{d.design.barColor=v;})} />
+      <LabeledColor label="Masthead background" value={doc.design.barTagColor ?? '#bfbfbf'} onChange={v => update(d=>{d.design.barTagColor=v;})} />
+      <LabeledColor label="Masthead text" value={doc.design.barTagInk ?? '#111418'} onChange={v => update(d=>{d.design.barTagInk=v;})} />
     </Section>
   </>;
 }

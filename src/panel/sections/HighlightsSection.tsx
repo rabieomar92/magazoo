@@ -56,6 +56,8 @@ export function HighlightsSection() {
 
   return (
     <Section title="Highlights" editorTarget="highlights">
+      <Toggle label="Show highlights box" checked={design.sidebar} onChange={visible => update(d => { d.design.sidebar = visible; })} />
+      <p className="hint">Hide or show the highlights and references box. Your saved text and position are kept.</p>
       <LabeledInput
         label="Section heading"
         editorTarget="highlights-label"

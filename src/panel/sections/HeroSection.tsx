@@ -118,7 +118,7 @@ export function ImagePicker({ slot, title, blurb }: { slot: 'hero' | 'cover'; ti
 export function HeroSection() {
   const templateId = useDoc((s) => s.doc.templateId ?? 'paper-1');
   const heroHeight = useDoc((s) => s.doc.design.heroHeight);
-  const heroSide = useDoc((s) => s.doc.design.heroSide ?? 'right');
+  const heroSide = useDoc((s) => s.doc.design.heroSide ?? (s.doc.design.textDirection === 'rtl' ? 'left' : 'right'));
   const update = useDoc((s) => s.update);
 
   // magazine-3 is a gatefold: one cover photo split across both cover sheets, and

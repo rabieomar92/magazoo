@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { emptyDoc, type PlacedImage } from '../schema/document';
 import { grid, PAGE_H, PAGE_W } from './geometry';
-import { placedImageGeometry, snapImageColumn } from './placedImage';
+import {
+  placedImageContour,
+  placedImageContourClip,
+  placedImageGeometry,
+  snapImageColumn,
+} from './placedImage';
 import { defaultPlacedHighlights, placedHighlightsGeometry } from './placedHighlights';
 
 const image: PlacedImage = {
@@ -57,6 +62,25 @@ describe('placed image geometry', () => {
     expect(out.width).toBeCloseTo(grid(design).span(2));
     expect(out.height).toBeCloseTo(out.width / 2);
     expect(out.captionLeft).toBeCloseTo(out.left);
+  });
+
+  it('normalises a custom contour without changing the image geometry', () => {
+    const contoured: PlacedImage = {
+      ...image,
+      wrapShape: 'contour',
+      wrapContour: { top: [0, 30], bottom: [10, 90] },
+    };
+
+    expect(placedImageContour(contoured)).toEqual([
+      { top: 0, bottom: 10 },
+      { top: 30, bottom: 62 },
+    ]);
+    expect(placedImageContourClip({
+      ...contoured,
+      wrapContour: { top: [0, 30], bottom: [10, 0] },
+    })).toBe(
+      'polygon(0% 0%, 50% 0%, 50% 30%, 100% 30%, 100% 100%, 50% 100%, 50% 90%, 0% 90%)',
+    );
   });
 });
 

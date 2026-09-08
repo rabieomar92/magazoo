@@ -1,37 +1,41 @@
-import { getFontEmbedCSS, toBlob } from 'html-to-image';
-
 const PRINT_FRAME_CLASS = 'pdf-print-frame';
 const RESOURCE_TIMEOUT_MS = 20_000;
 
-/** 3 CSS pixels per exported pixel gives an A4 page roughly 288 dpi. More
- * importantly, the page is rasterised while it is still in screen media, so
- * Chromium cannot substitute a print font and move words between columns. */
-export const PDF_CAPTURE_PIXEL_RATIO = 3;
-
-/** The print document contains only immutable page snapshots. The editor has
- * already performed typography, pagination, image wrapping, and topbar layout;
- * print is responsible only for placing each snapshot on one portrait A4 page. */
+/**
+ * The PDF is produced by the browser's print engine from the actual page DOM.
+ * Keeping text, vectors, CSS backgrounds, and images as DOM content means the
+ * resulting PDF remains searchable and sharp at any zoom level.
+ */
 export const PDF_EXPORT_CSS = `
   @page { size: A4 portrait; margin: 0; }
   html, body {
     margin: 0 !important;
     padding: 0 !important;
-    width: 210mm;
-    min-width: 210mm;
-    background: #fff;
+    width: 210mm !important;
+    min-width: 210mm !important;
+    background: #fff !important;
   }
   body {
     overflow: visible !important;
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
   }
-  .pdf-page-snapshot {
-    display: block;
-    box-sizing: border-box;
+  .pdf-export-pages {
+    display: block !important;
+    width: 210mm !important;
+    min-width: 210mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    transform: none !important;
+    transform-origin: top left !important;
+  }
+  .pdf-export-pages > .pdf-export-page {
+    display: block !important;
+    box-sizing: border-box !important;
     width: 210mm !important;
     height: 297mm !important;
     margin: 0 !important;
-    object-fit: fill;
+    box-shadow: none !important;
     break-inside: avoid !important;
     page-break-inside: avoid !important;
     break-after: page !important;
@@ -39,9 +43,15 @@ export const PDF_EXPORT_CSS = `
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
   }
-  .pdf-page-snapshot:last-child {
+  .pdf-export-pages > .pdf-export-page:last-child {
     break-after: auto !important;
     page-break-after: auto !important;
+  }
+  @media print {
+    .pdf-export-pages,
+    .pdf-export-pages > .pdf-export-page {
+      display: block !important;
+    }
   }
 `;
 
@@ -91,9 +101,7 @@ function waitForImage(image: HTMLImageElement) {
   );
 }
 
-/** Extract URL resources from author/template CSS backgrounds. Publication
- * assets use real <img> elements, but custom CSS may still introduce images
- * that must finish loading before the page is captured. */
+/** Extract URL resources from author/template CSS backgrounds. */
 export function cssImageUrls(value: string): string[] {
   const urls: string[] = [];
   const matcher = /url\(\s*(?:"([^"]*)"|'([^']*)'|([^)]*?))\s*\)/g;
@@ -137,38 +145,147 @@ function nextPaint(targetWindow: Window = window) {
   return new Promise<void>((resolve) => targetWindow.requestAnimationFrame(() => resolve()));
 }
 
-async function capturePage(page: HTMLElement, fontEmbedCSS: string) {
-  if (!page.offsetWidth || !page.offsetHeight) {
-    throw new Error('A preview page has no printable size.');
+const REF_INDEX_ATTR = 'data-pdf-ref-index';
+
+/** Resolve CSS counters before cloning the live pages into the print frame. */
+function resolveReferenceCounters(page: HTMLElement): () => void {
+  const lists = page.querySelectorAll<HTMLOListElement>('ol.references');
+  if (!lists.length) return () => {};
+
+  const touched: HTMLLIElement[] = [];
+  lists.forEach((list) => {
+    Array.from(list.children).forEach((child, index) => {
+      if (!(child instanceof HTMLLIElement)) return;
+      child.setAttribute(REF_INDEX_ATTR, String(index + 1));
+      touched.push(child);
+    });
+  });
+
+  const style = page.ownerDocument.createElement('style');
+  style.textContent = `[${REF_INDEX_ATTR}]::before { content: attr(${REF_INDEX_ATTR}) '.' !important; }`;
+  page.appendChild(style);
+
+  return () => {
+    style.remove();
+    touched.forEach((li) => li.removeAttribute(REF_INDEX_ATTR));
+  };
+}
+
+function copyAuthorStyles(sourceDocument: Document, targetDocument: Document) {
+  const base = targetDocument.createElement('base');
+  base.href = sourceDocument.baseURI;
+  targetDocument.head.appendChild(base);
+
+  // Hyphenation and several font/text shaping decisions depend on the
+  // document language and direction. The print frame starts as a blank
+  // document, so carry these root attributes across before it lays out any
+  // cloned text.
+  for (const attribute of ['lang', 'dir']) {
+    const value = sourceDocument.documentElement.getAttribute(attribute);
+    if (value) targetDocument.documentElement.setAttribute(attribute, value);
+  }
+  for (const attribute of ['class', 'dir']) {
+    const value = sourceDocument.body?.getAttribute(attribute);
+    if (value) targetDocument.body.setAttribute(attribute, value);
   }
 
-  const blob = await withTimeout(
-    toBlob(page, {
-      pixelRatio: PDF_CAPTURE_PIXEL_RATIO,
-      preferredFontFormat: 'woff2',
-      fontEmbedCSS,
-      cacheBust: false,
-      backgroundColor: window.getComputedStyle(page).backgroundColor || '#fff',
-      style: {
-        margin: '0',
-        boxShadow: 'none',
-        transform: 'none',
-      },
-    }),
-    'A page took too long to capture for PDF export.',
+  sourceDocument.head
+    .querySelectorAll<HTMLStyleElement | HTMLLinkElement>('style, link[rel="stylesheet"]')
+    .forEach((node) => targetDocument.head.appendChild(node.cloneNode(true)));
+
+  // The editor keeps the user's custom CSS in the preview tree rather than in
+  // <head>. It is part of the rendered page and must be present in the print
+  // document too. Do not copy styles nested inside .pages: those belong to
+  // preview-only counter fixes and are handled before cloning.
+  const sourcePages = sourceDocument.querySelector('.pages');
+  sourceDocument
+    .querySelectorAll<HTMLStyleElement>('body style')
+    .forEach((node) => {
+      if (sourcePages?.contains(node)) return;
+      targetDocument.head.appendChild(node.cloneNode(true));
+    });
+}
+
+function waitForStyles(documentToWait: Document) {
+  const links = Array.from(documentToWait.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]'));
+  return withTimeout(
+    Promise.all(
+      links.map(
+        (link) =>
+          new Promise<void>((resolve) => {
+            if (link.sheet) {
+              resolve();
+              return;
+            }
+            link.addEventListener('load', () => resolve(), { once: true });
+            link.addEventListener('error', () => resolve(), { once: true });
+          }),
+      ),
+    ).then(() => undefined),
+    'Styles took too long to prepare for PDF export.',
   );
-  if (!blob) throw new Error('The browser could not capture a preview page.');
-  return blob;
+}
+
+function freezeColumnLayout(source: HTMLElement, clone: HTMLElement) {
+  const sourceNodes = Array.from(source.querySelectorAll<HTMLElement>('*'));
+  const cloneNodes = Array.from(clone.querySelectorAll<HTMLElement>('*'));
+  sourceNodes.forEach((sourceNode, index) => {
+    const cloneNode = cloneNodes[index];
+    if (!cloneNode) return;
+    const computed = window.getComputedStyle(sourceNode);
+    const columnCount = Number.parseInt(computed.columnCount, 10);
+    if (!Number.isFinite(columnCount) || columnCount <= 1 || sourceNode.offsetHeight <= 0) return;
+    const sourceRect = sourceNode.getBoundingClientRect();
+    const scale = sourceNode.offsetWidth ? sourceRect.width / sourceNode.offsetWidth : 1;
+    const sourceHeight = scale ? sourceRect.height / scale : sourceNode.offsetHeight;
+
+    // Pin the measured multicolumn geometry from the committed preview. This
+    // removes the print engine's opportunity to recalculate the column box
+    // from a different page context while preserving the live text layout.
+    cloneNode.style.setProperty('height', `${sourceHeight}px`, 'important');
+    cloneNode.style.setProperty('width', `${sourceNode.offsetWidth}px`, 'important');
+    cloneNode.style.setProperty('column-count', String(columnCount), 'important');
+    cloneNode.style.setProperty('column-gap', computed.columnGap, 'important');
+    cloneNode.style.setProperty('column-fill', computed.columnFill, 'important');
+  });
+}
+
+export function clonePages(source: HTMLElement, targetDocument: Document) {
+  const pages = source.cloneNode(true) as HTMLElement;
+  pages.classList.remove('pages--spread');
+  pages.classList.add('pdf-export-pages');
+  pages.style.setProperty('display', 'block', 'important');
+  pages.style.setProperty('width', '210mm', 'important');
+  pages.style.setProperty('min-width', '210mm', 'important');
+  pages.style.setProperty('transform', 'none', 'important');
+
+  Array.from(pages.children).forEach((child) => {
+    if (!(child instanceof HTMLElement)) return;
+    if (!child.classList.contains('page')) return;
+    child.classList.add('pdf-export-page');
+    child.style.setProperty('width', '210mm', 'important');
+    child.style.setProperty('height', '297mm', 'important');
+    child.style.setProperty('margin', '0', 'important');
+    child.style.setProperty('box-shadow', 'none', 'important');
+  });
+
+  freezeColumnLayout(source, pages);
+
+  // Structured templates carry hidden measuring sheets beside their visible
+  // pages. Keep source/clone node indices matched until geometry is frozen,
+  // then exclude those helpers from the printed document completely.
+  Array.from(pages.children).forEach(child => {
+    if (!child.classList.contains('page')) child.remove();
+  });
+
+  targetDocument.body.appendChild(pages);
 }
 
 /**
- * Export the committed editor pages without asking Chromium to lay them out a
- * second time. Print mode may substitute a protected/local font (notably
- * Avenir Next), and a tiny glyph-width change is enough to move the last line
- * into the following column. Capturing the live screen-rendered `.page` nodes
- * first freezes every approved line break, column boundary, image wrap, and
- * topbar position. The isolated print frame then contains only one immutable
- * high-resolution image per A4 sheet.
+ * Print the committed preview DOM directly. The browser still owns PDF
+ * generation, but it receives real HTML/CSS rather than a bitmap snapshot.
+ * That keeps the preview's measured pagination while retaining selectable,
+ * searchable, resolution-independent text in the exported PDF.
  */
 export async function exportPreviewPdf(title: string) {
   const source = document.querySelector<HTMLElement>('.pages');
@@ -188,21 +305,9 @@ export async function exportPreviewPdf(title: string) {
   await nextPaint();
   await nextPaint();
 
-  // Embed the app's webfonts once and reuse the result for every page. Local
-  // system faces are rasterised now, before the print engine can replace them.
-  const fontEmbedCSS = await withTimeout(
-    getFontEmbedCSS(source),
-    'Fonts took too long to prepare for PDF export.',
-  );
-
-  const objectUrls: string[] = [];
+  const restoreCounters = pages.map(resolveReferenceCounters);
   let frame: HTMLIFrameElement | null = null;
   try {
-    for (const page of pages) {
-      const blob = await capturePage(page, fontEmbedCSS);
-      objectUrls.push(URL.createObjectURL(blob));
-    }
-
     document.querySelector(`.${PRINT_FRAME_CLASS}`)?.remove();
     frame = document.createElement('iframe');
     frame.className = PRINT_FRAME_CLASS;
@@ -220,18 +325,15 @@ export async function exportPreviewPdf(title: string) {
     printDocument.write('<!doctype html><html><head></head><body></body></html>');
     printDocument.close();
     printDocument.title = `${safeFileStem(title)} - Magazoo`;
+    copyAuthorStyles(document, printDocument);
 
     const exportCss = printDocument.createElement('style');
     exportCss.textContent = PDF_EXPORT_CSS;
     printDocument.head.appendChild(exportCss);
+    clonePages(source, printDocument);
 
-    for (const objectUrl of objectUrls) {
-      const image = printDocument.createElement('img');
-      image.className = 'pdf-page-snapshot';
-      image.alt = '';
-      image.src = objectUrl;
-      printDocument.body.appendChild(image);
-    }
+    await waitForStyles(printDocument);
+    await (printDocument.fonts?.ready ?? Promise.resolve());
     await Promise.all(Array.from(printDocument.images).map(waitForImage));
     await nextPaint(printWindow);
     await nextPaint(printWindow);
@@ -241,7 +343,6 @@ export async function exportPreviewPdf(title: string) {
       if (removed) return;
       removed = true;
       frame?.remove();
-      objectUrls.forEach((url) => URL.revokeObjectURL(url));
     };
     printWindow.addEventListener('afterprint', cleanup, { once: true });
     window.setTimeout(cleanup, 120_000);
@@ -249,7 +350,8 @@ export async function exportPreviewPdf(title: string) {
     printWindow.print();
   } catch (error) {
     frame?.remove();
-    objectUrls.forEach((url) => URL.revokeObjectURL(url));
     throw error;
+  } finally {
+    restoreCounters.forEach((restore) => restore());
   }
 }

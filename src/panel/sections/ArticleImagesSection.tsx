@@ -1,13 +1,47 @@
 import { useRef, useState } from 'react';
 import { grid } from '../../lib/geometry';
 import { loadImage, ImageLoadError } from '../../lib/loadImage';
-import { placedImageGeometry } from '../../lib/placedImage';
+import {
+  MAX_COMBINED_CONTOUR_INSET,
+  MAX_CONTOUR_INSET,
+  placedImageContour,
+  placedImageGeometry,
+} from '../../lib/placedImage';
 import { assetIsReferenced, uid, type Doc, type PlacedImage } from '../../schema/document';
 import { useDoc } from '../../store/useDoc';
 import { editorTargetId } from '../../lib/editorNavigation';
 import { LabeledNumber, LabeledRange, RowButtons, Section, SegmentField } from '../Field';
 
 const DEFAULT_FRAME = { scale: 1, offsetX: 0, offsetY: 0 };
+
+const contourSliceLabel = (index: number, count: number) => {
+  if (count === 1) return 'Image column';
+  if (index === 0) return 'Left image column';
+  if (index === count - 1) return 'Right image column';
+  return `Image column ${index + 1}`;
+};
+
+function setContourInset(
+  image: PlacedImage,
+  edge: 'top' | 'bottom',
+  index: number,
+  value: number,
+) {
+  const slices = placedImageContour(image);
+  const other = edge === 'top' ? slices[index].bottom : slices[index].top;
+  const next = Math.max(
+    0,
+    Math.min(MAX_CONTOUR_INSET, MAX_COMBINED_CONTOUR_INSET - other, value),
+  );
+  image.wrapContour = {
+    top: slices.map((slice, sliceIndex) =>
+      edge === 'top' && sliceIndex === index ? next : slice.top,
+    ),
+    bottom: slices.map((slice, sliceIndex) =>
+      edge === 'bottom' && sliceIndex === index ? next : slice.bottom,
+    ),
+  };
+}
 
 export function ArticleImagesSection() {
   const images = useDoc((state) => state.doc.images ?? []);
@@ -107,6 +141,7 @@ export function ArticleImagesSection() {
       {images.map((image) => {
         const asset = assets[image.assetId];
         const selectedWidth = Math.min(image.widthCols, maxWidth) as PlacedImage['widthCols'];
+        const contour = placedImageContour({ ...image, widthCols: selectedWidth });
         return (
           <div
             className="list-item list-item--stack"
@@ -160,6 +195,57 @@ export function ArticleImagesSection() {
                 ]}
                 onChange={(align) => change(image.id, (current) => { current.align = align; })}
               />
+              <SegmentField<'box' | 'contour'>
+                label="Text wrap shape"
+                value={image.wrapShape ?? 'box'}
+                options={[
+                  { value: 'box', label: 'Box' },
+                  { value: 'contour', label: 'Custom contour' },
+                ]}
+                onChange={(wrapShape) => change(image.id, (current) => { current.wrapShape = wrapShape; })}
+              />
+              {image.wrapShape === 'contour' && (
+                <div className="contour-wrap-editor">
+                  <p className="hint">
+                    Open transparent space above or below each part of the image. The picture is clipped to the same contour, while paragraph order and column filling stay unchanged.
+                  </p>
+                  {contour.map((slice, index) => (
+                    <div className="contour-wrap-slice" key={index}>
+                      <p className="group-label">{contourSliceLabel(index, contour.length)}</p>
+                      <LabeledRange
+                        label="Top opening"
+                        value={slice.top}
+                        min={0}
+                        max={Math.min(MAX_CONTOUR_INSET, MAX_COMBINED_CONTOUR_INSET - slice.bottom)}
+                        step={1}
+                        format={(value) => `${Math.round(value)}%`}
+                        onChange={(value) => change(image.id, (current) => setContourInset(current, 'top', index, value))}
+                      />
+                      <LabeledRange
+                        label="Bottom opening"
+                        value={slice.bottom}
+                        min={0}
+                        max={Math.min(MAX_CONTOUR_INSET, MAX_COMBINED_CONTOUR_INSET - slice.top)}
+                        step={1}
+                        format={(value) => `${Math.round(value)}%`}
+                        onChange={(value) => change(image.id, (current) => setContourInset(current, 'bottom', index, value))}
+                      />
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    className="add-btn"
+                    onClick={() => change(image.id, (current) => {
+                      current.wrapContour = {
+                        top: Array.from({ length: current.widthCols }, () => 0),
+                        bottom: Array.from({ length: current.widthCols }, () => 0),
+                      };
+                    })}
+                  >
+                    Reset contour
+                  </button>
+                </div>
+              )}
               <LabeledRange
                 label="Image zoom"
                 value={image.frame?.scale ?? 1}

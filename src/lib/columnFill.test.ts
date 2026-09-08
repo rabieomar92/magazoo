@@ -321,12 +321,14 @@ describe('image-shaped columns', () => {
     expect(imageWordsInReadingOrder(columns)).toEqual(words(source.text));
   });
 
-  it('measures an RTL opener with the same drop-cap markup used by the visible flow', () => {
+  it('measures Arabic openers as joined words, matching the visible flow', () => {
     const probe = document.createElement('div');
     const source = text('فيزيک ممبنتو کيت ممهمي عالم دان تيکنولوݢي مودن');
     let sawMeasuredOpener = false;
     const isOverflowing = (element: HTMLElement) => {
-      sawMeasuredOpener ||= Boolean(element.querySelector('p.flow-opener > .drop-cap'));
+      const opener = element.querySelector('p.flow-opener');
+      sawMeasuredOpener ||= Boolean(opener?.textContent?.startsWith('فيزيک'));
+      expect(element.querySelector('.drop-cap')).toBeNull();
       return false;
     };
 

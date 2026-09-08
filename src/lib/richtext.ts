@@ -142,8 +142,12 @@ function takeDropCap(text: string): { leading: string; cap: string; rest: string
  * (which is wider) is measured at its real width, matching the on-screen render.
  */
 export function runsToHtml(src: string, dropCap = false): string {
-  let capPending = dropCap;
-  return parseRuns(src)
+  // A detached Arabic initial breaks joining with the next letter. Keep the
+  // whole word in one shaping run instead of applying a Latin drop capital.
+  const runs = parseRuns(src);
+  const firstText = dropCap ? runs.find(run => !run.math && run.text.trim())?.text.trimStart() ?? '' : '';
+  let capPending = dropCap && !/^[\p{P}\p{S}\s]*\p{Script=Arabic}/u.test(firstText);
+  return runs
     .map((r) => {
       // Math is measured at its real KaTeX width so the break point matches.
       if (r.math) return renderTex(r.text);

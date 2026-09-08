@@ -49,7 +49,7 @@ export function grid(d: Design) {
 /** Feed straight into style={{...}} on the page wrapper. */
 /** Black or white ink, whichever reads on `hex`. WCAG relative luminance;
  *  threshold ~0.4 puts the flip near mid-grey. Bad input → dark ink. */
-function readableInk(hex: string): string {
+export function readableInk(hex: string): string {
   const h = hex.trim().replace('#', '');
   const full = h.length === 3 ? h.split('').map((c) => c + c).join('') : h;
   const n = parseInt(full, 16);
@@ -97,6 +97,7 @@ export function cssVars(d: Design, templateId?: TemplateId, bottomMargin = d.mar
     // sidebar grid, so the paper cols-1/cols-2 don't apply).
     '--body-cols': String(d.bodyCols),
     '--body-align': d.bodyAlign ?? 'justify',
+    '--text-dir': d.textDirection === 'rtl' ? 'rtl' : 'ltr',
     '--hero': d.colors.hero,
     '--accent': d.colors.accent,
     '--accent-soft': d.colors.accentSoft,

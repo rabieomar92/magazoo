@@ -14,7 +14,7 @@ export function FooterSection() {
     <LabeledNumber editorTarget="footer-distance" label="Distance from bottom edge" unit="mm" value={footerBottomOffset(doc)} min={0} max={MAX_FOOTER_BOTTOM_OFFSET} step={0.5} onChange={v => update(d => { d.footer = { ...d.footer, bottomOffset: Math.max(0, Math.min(MAX_FOOTER_BOTTOM_OFFSET, v)) }; })} />
     <LabeledSelect editorTarget="footer-font" label="Footer font" value={footer.fontFamily} options={fontOptions(ALL_FONTS)} onChange={v => update(d => { d.footer = { ...d.footer, fontFamily: v }; })} />
     <LabeledNumber editorTarget="footer-font-size" label="Footer size" unit="pt" value={footer.fontSize} min={5} max={18} step={0.5} onChange={v => update(d => { d.footer = { ...d.footer, fontSize: Math.max(5, Math.min(18, v)) }; })} />
-    <LabeledSelect label="First masthead & page number side" value={doc.design.barSide ?? 'left'} options={[{ value: 'left', label: 'Left' }, { value: 'right', label: 'Right' }]} onChange={v => update(d => { d.design.barSide = v as 'left' | 'right'; })} />
+    <LabeledSelect label="First masthead & footer side" value={doc.design.barSide ?? 'left'} options={[{ value: 'left', label: 'Left' }, { value: 'right', label: 'Right' }]} onChange={v => update(d => { d.design.barSide = v as 'left' | 'right'; })} />
     <p className="hint">Numbers alternate with the masthead; magazine text sits opposite. Distance is measured below the footer text box. Increasing it moves both items up and reserves room below the content, without changing line spacing or column widths.</p>
   </Section>;
 }

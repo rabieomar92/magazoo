@@ -32,6 +32,8 @@ export function DesignSection() {
   const family = useDoc((s) => familyOf(s.doc.templateId));
   const templateId = useDoc((s) => s.doc.templateId);
   const isFrontCover = useDoc((s) => s.doc.templateId === 'magazine-4');
+  /** The families whose sheets can carry a highlights/references callout. */
+  const printsHighlights = family === 'paper' || family === 'magazine';
   // Every template except the dedicated front cover uses the shared TagBar.
   const hasBar = !isFrontCover;
   const hasBarSide = true;
@@ -92,6 +94,8 @@ export function DesignSection() {
       {templateId === 'paper-3' && <>
         <Toggle label="Match colours to hero image" checked={design.imageTheme !== false} onChange={v => set('imageTheme', v)} />
         <p className="hint">The photo fades into a solid, image-matched page colour with contrasting text. Turn this off to use your manual palette. Individual text colour overrides remain editable.</p>
+        <Toggle label="Photograph rises from the foot of the page" checked={design.heroAtBottom === true} onChange={v => set('heroAtBottom', v)} />
+        <p className="hint">The photo fills the bottom edge above the footer, fading upward into the article’s background colour. The masthead stays at the top. Use “Image height” to set how far the photo reaches.</p>
       </>}
       <p className="group-label">Layout</p>
       <SegmentField<Design['bodyCols']>
@@ -115,38 +119,32 @@ export function DesignSection() {
         ]}
         onChange={(v) => set('bodyAlign', v)}
       />
-      <SegmentField<NonNullable<Design['textDirection']>>
-        label="Text direction"
-        value={design.textDirection ?? 'ltr'}
-        options={[
-          { value: 'ltr', label: 'Left to right' },
-          { value: 'rtl', label: 'Right to left' },
-        ]}
-        onChange={(v) => set('textDirection', v)}
-      />
       <p className="hint">Columns fill in reading order; only the final column may finish short.</p>
-      {family !== 'gallery' && (
-        <>
-          <Toggle
-            label="Show highlights"
-            checked={design.sidebar}
-            onChange={(v) => set('sidebar', v)}
+      {/* Every template carries the switch. Only the families that actually
+          print a highlights box also offer where to put it; the others say so
+          rather than leaving a control that quietly does nothing. */}
+      <Toggle
+        label="Show highlights"
+        checked={design.sidebar}
+        onChange={(v) => set('sidebar', v)}
+      />
+      {printsHighlights ? (
+        design.sidebar && (
+          <LabeledSelect
+            label="Highlights position"
+            value={design.highlightsPlacement ?? 'page1'}
+            options={[
+              { value: 'page1', label: 'Right sidebar (page 1)' },
+              { value: 'page1-flow', label: 'Right sidebar + text fills gap (page 1)' },
+              { value: 'all', label: 'Right sidebar (every page)' },
+              { value: 'below', label: 'Below text (end)' },
+              { value: 'free', label: 'Free on page (drag)' },
+            ]}
+            onChange={(v) => set('highlightsPlacement', v as Design['highlightsPlacement'])}
           />
-          {design.sidebar && (
-            <LabeledSelect
-              label="Highlights position"
-              value={design.highlightsPlacement ?? 'page1'}
-              options={[
-                { value: 'page1', label: 'Right sidebar (page 1)' },
-                { value: 'page1-flow', label: 'Right sidebar + text fills gap (page 1)' },
-                { value: 'all', label: 'Right sidebar (every page)' },
-                { value: 'below', label: 'Below text (end)' },
-                { value: 'free', label: 'Free on page (drag)' },
-              ]}
-              onChange={(v) => set('highlightsPlacement', v as Design['highlightsPlacement'])}
-            />
-          )}
-        </>
+        )
+      ) : (
+        <p className="hint">This layout prints no highlights box, so the switch has nothing to hide here. It applies to the Paper and Magazine templates.</p>
       )}
       {cpl && <p className="hint hint--warn">{cpl}</p>}
 

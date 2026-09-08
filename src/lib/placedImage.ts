@@ -19,6 +19,52 @@ export interface PlacedImageGeometry {
 const clamp = (value: number, low: number, high: number) =>
   Math.min(high, Math.max(low, value));
 
+export const MAX_CONTOUR_INSET = 85;
+export const MAX_COMBINED_CONTOUR_INSET = 92;
+
+export interface PlacedImageContourSlice {
+  top: number;
+  bottom: number;
+}
+
+/** Normalise an image's author-drawn contour into one safe slice per occupied
+ * physical column. Old documents have no contour and therefore remain boxes. */
+export function placedImageContour(image: PlacedImage): PlacedImageContourSlice[] {
+  const count = clamp(Math.round(image.widthCols), 1, 4);
+  return Array.from({ length: count }, (_, index) => {
+    const rawTop = image.wrapContour?.top[index] ?? 0;
+    const rawBottom = image.wrapContour?.bottom[index] ?? 0;
+    const top = clamp(Number.isFinite(rawTop) ? rawTop : 0, 0, MAX_CONTOUR_INSET);
+    const bottom = clamp(
+      Number.isFinite(rawBottom) ? rawBottom : 0,
+      0,
+      Math.min(MAX_CONTOUR_INSET, MAX_COMBINED_CONTOUR_INSET - top),
+    );
+    return { top, bottom };
+  });
+}
+
+/** A stepped polygon exactly matching the column-sliced exclusion used by the
+ * text engine. Clipping the visible frame exposes the reclaimed text area even
+ * when the uploaded source itself has an opaque background. */
+export function placedImageContourClip(image: PlacedImage): string {
+  const slices = placedImageContour(image);
+  const top: string[] = [];
+  const bottom: string[] = [];
+  for (const [index, slice] of slices.entries()) {
+    const left = (index / slices.length) * 100;
+    const right = ((index + 1) / slices.length) * 100;
+    top.push(`${left}% ${slice.top}%`, `${right}% ${slice.top}%`);
+  }
+  for (let index = slices.length - 1; index >= 0; index -= 1) {
+    const slice = slices[index];
+    const left = (index / slices.length) * 100;
+    const right = ((index + 1) / slices.length) * 100;
+    bottom.push(`${right}% ${100 - slice.bottom}%`, `${left}% ${100 - slice.bottom}%`);
+  }
+  return `polygon(${[...top, ...bottom].join(', ')})`;
+}
+
 /** Resolve a stored placement against today's grid and source aspect ratio. */
 export function placedImageGeometry(
   image: PlacedImage,

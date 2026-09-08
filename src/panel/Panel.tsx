@@ -12,6 +12,8 @@ import { ReferencesSection } from './sections/ReferencesSection';
 import { DesignSection } from './sections/DesignSection';
 import { ArticleImagesSection } from './sections/ArticleImagesSection';
 import { FrontMatterContent, FrontMatterImages, FrontMatterDesign } from './sections/FrontMatterSection';
+import { NewsContent, NewsImages } from './sections/NewsSection';
+import { DirectionSection } from './sections/DirectionSection';
 import {
   blockEditorId,
   editorTargetId,
@@ -31,6 +33,7 @@ const TABS: { id: TabId; label: string }[] = [
 ];
 
 const TEMPLATE_GROUPS: { family: TemplateFamily; label: string }[] = [
+  { family: 'news', label: 'News & briefs' },
   { family: 'frontmatter', label: 'Magazine front matter' },
   { family: 'paper', label: 'Article' },
   { family: 'magazine', label: 'Editorial' },
@@ -53,9 +56,10 @@ export function Panel() {
   const isGallery = familyOf(templateId) === 'gallery';
   const isCoverOnly = templateId === 'magazine-4';
   const isFrontMatter = familyOf(templateId) === 'frontmatter';
+  const isNews = familyOf(templateId) === 'news';
   useEffect(() => {
-    if (isFrontMatter && tab === 'highlights') setTab('content');
-  },[isFrontMatter,tab]);
+    if ((isFrontMatter || isNews) && tab === 'highlights') setTab('content');
+  },[isFrontMatter,isNews,tab]);
 
   useEffect(() => {
     const reveal = (id: string, attempts = 0) => {
@@ -113,7 +117,7 @@ export function Panel() {
   return (
     <aside className="panel">
       <nav className="panel-tabs" role="tablist" aria-label="Editor sections">
-        {TABS.filter(t => !isFrontMatter || t.id !== 'highlights').map((t) => (
+        {TABS.filter(t => !(isFrontMatter || isNews) || t.id !== 'highlights').map((t) => (
           <button
             key={t.id}
             type="button"
@@ -155,11 +159,11 @@ export function Panel() {
           <>
             <MetaSection />
             <FooterSection />
-            {isFrontMatter ? <FrontMatterContent /> : <BodySection />}
+            {isNews ? <NewsContent /> : isFrontMatter ? <FrontMatterContent /> : <BodySection />}
           </>
         )}
         {tab === 'images' &&
-          (isFrontMatter ? <FrontMatterImages /> : isGallery ? (
+          (isNews ? <NewsImages /> : isFrontMatter ? <FrontMatterImages /> : isGallery ? (
             <GallerySection />
           ) : (
             <>
@@ -173,7 +177,7 @@ export function Panel() {
             <ReferencesSection />
           </>
         )}
-        {tab === 'design' && (isFrontMatter ? <FrontMatterDesign /> : <DesignSection />)}
+        {tab === 'design' && <><DirectionSection />{isFrontMatter || isNews ? <FrontMatterDesign /> : <DesignSection />}</>}
       </div>
     </aside>
   );

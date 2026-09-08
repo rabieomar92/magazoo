@@ -71,10 +71,12 @@ describe('runsToHtml', () => {
     expect(runsToHtml('a < b & c')).toBe('a &lt; b &amp; c');
   });
 
-  it('renders one explicit Arabic drop cap without losing the rest of the word', () => {
+  it('keeps Arabic initials joined to the full word instead of detaching a drop cap', () => {
     expect(runsToHtml('العلم نور', true)).toBe(
-      '<span class="drop-cap">ا</span>لعلم نور',
+      'العلم نور',
     );
+    expect(runsToHtml('**العِلْم نور**', true)).toBe('<strong>العِلْم نور</strong>');
+    expect(runsToHtml('«العلم نور»', true)).toBe('«العلم نور»');
   });
 
   it('keeps a drop cap inside the opening rich-text style', () => {

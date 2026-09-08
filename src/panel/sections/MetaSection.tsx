@@ -9,7 +9,8 @@ export function MetaSection() {
   const isFrontCover = useDoc((s) => s.doc.templateId === 'magazine-4');
   const barColor = useDoc((s) => s.doc.design.barColor ?? s.doc.design.colors.accent);
   const isP2 = useDoc((s) => s.doc.templateId === 'paper-2');
-  const showAuthor = useDoc(s => s.doc.templateId !== 'frontmatter-contents' && s.doc.templateId !== 'frontmatter-board');
+  const isNews = useDoc(s => s.doc.templateId === 'news-briefs');
+  const showAuthor = useDoc(s => s.doc.templateId !== 'frontmatter-contents' && s.doc.templateId !== 'frontmatter-board' && s.doc.templateId !== 'news-briefs');
   const update = useDoc((s) => s.update);
 
   const set = (key: keyof typeof meta) => (v: string) =>
@@ -23,7 +24,7 @@ export function MetaSection() {
     });
 
   return (
-    <Section title={isGallery ? 'Header' : 'Title & Author'}>
+    <Section title={isGallery ? 'Header' : isNews ? 'Page header (optional)' : 'Title & Author'}>
       <LabeledInput
         label="Top bar text"
         editorTarget="meta-masthead"
