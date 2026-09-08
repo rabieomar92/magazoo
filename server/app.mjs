@@ -1,7 +1,7 @@
 import { createServer } from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
 import { resolve, extname, sep } from 'node:path';
-import { createAuth } from './sshAuth.mjs';
+import { createAuth } from './passwordAuth.mjs';
 
 const fail=(status,message)=>{throw Object.assign(new Error(message),{status});};
 const MAX_BODY=64*1024*1024;
@@ -22,13 +22,13 @@ export function validateDoc(doc){
   return JSON.stringify(doc);
 }
 const cookies=req=>Object.fromEntries((req.headers.cookie??'').split(';').map(v=>{const i=v.indexOf('=');return[v.slice(0,i).trim(),v.slice(i+1).trim()];}));
-export function createApp({storage,origin,publicKeyFile,staticDir,authOptions={}}){
+export function createApp({storage,origin,passwordHash,staticDir,authOptions={}}){
   const url=new URL(origin);
   const local=['localhost','127.0.0.1','[::1]'].includes(url.hostname);
   if(url.protocol!=='https:' && !local)throw new Error('Online projects require an HTTPS origin.');
   const rootPath=url.pathname.replace(/\/$/,'');
   const secure=url.protocol==='https:';
-  const auth=createAuth({origin,publicKeyFile,...authOptions});
+  const auth=createAuth({passwordHash,...authOptions});
   const cookie=(name,value,age)=>`${name}=${value}; HttpOnly; SameSite=Strict; Path=${rootPath||'/'}; Max-Age=${age}${secure?'; Secure':''}`;
   const server=createServer(async(req,res)=>{
     res.setHeader('X-Content-Type-Options','nosniff');res.setHeader('Referrer-Policy','no-referrer');
@@ -54,17 +54,12 @@ export function createApp({storage,origin,publicKeyFile,staticDir,authOptions={}
       if(!['GET','HEAD'].includes(req.method) && req.headers.origin!==url.origin)fail(403,'Origin not allowed.');
       if(req.headers.origin && req.headers.origin!==url.origin)fail(403,'Origin not allowed.');
       const jar=cookies(req);
-      if(path==='/api/auth/challenge' && req.method==='POST'){
-        const challenge=auth.challenge(req.socket.remoteAddress??'unknown');
-        res.setHeader('Set-Cookie',cookie('magazoo_challenge',challenge.binding,120));
-        const{id,message,expires}=challenge;return send(200,{id,message,expires});
-      }
       if(path==='/api/auth/login' && req.method==='POST'){
-        const data=await body(req,16384);
-        if(typeof data.id!=='string'||typeof data.signature!=='string'||!data.signature.startsWith('-----BEGIN SSH SIGNATURE-----'))fail(400,'Upload an OpenSSH .sig signature, never a private key.');
-        const session=await auth.login(data.id,data.signature,jar.magazoo_challenge);
-        if(!session)fail(401,'Signature invalid or challenge expired. Start again.');
-        res.setHeader('Set-Cookie',[cookie('magazoo_admin',session.secret,8*3600),cookie('magazoo_challenge','',0)]);return send(200,{csrf:session.csrf});
+        const data=await body(req,4096);
+        if(typeof data.password!=='string'||data.password.length<1||data.password.length>512)fail(400,'Enter your admin password.');
+        const session=await auth.login(data.password,req.socket.remoteAddress??'unknown');
+        if(!session)fail(401,'Incorrect admin password.');
+        res.setHeader('Set-Cookie',cookie('magazoo_admin',session.secret,8*3600));return send(200,{csrf:session.csrf});
       }
       // Sharing tokens grant access to this one document, never admin routes.
       if(path==='/api/documents/shared'){
