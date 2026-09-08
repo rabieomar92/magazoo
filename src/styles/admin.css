@@ -1,4 +1,5 @@
-.admin-page { min-height:100vh; background:#f4f5f8; color:#202734; font:15px/1.55 Arial,sans-serif; }
+.admin-page { height:100dvh; min-height:0; overflow-y:auto; overflow-x:hidden; overscroll-behavior-y:contain; scrollbar-gutter:stable; background:#f4f5f8; color:#202734; font:14px/1.5 Arial,sans-serif; }
+.admin-page *, .admin-dialog { box-sizing:border-box; }
 .admin-header { display:flex; justify-content:space-between; gap:24px; align-items:center; padding:22px max(24px,calc((100vw - 1160px)/2)); background:#fff; border-bottom:1px solid #e1e5ed; }
 .admin-header>div,.admin-header nav { display:flex; align-items:center; gap:24px; }
 .admin-brand { color:#4f46e5; text-decoration:none; font-weight:800; font-size:26px; }
@@ -36,4 +37,39 @@
 .project-save-status { display:block;font:11px/1.35 Arial,sans-serif;color:#64748b;max-width:235px;overflow-wrap:anywhere; }
 .project-save-status.is-error { color:#b91c1c; }
 .cover-text-object { touch-action:pan-x; }.pages .cover-text-object { cursor:ns-resize; }
+.admin-header { padding:12px max(16px,calc((100% - 1120px)/2)); gap:12px; flex-wrap:wrap; }
+.admin-header>div,.admin-header nav { gap:12px; flex-wrap:wrap; }
+.admin-content { padding:24px 20px 32px; width:100%; }
+.admin-intro { margin-bottom:20px; }
+.admin-page h1 { font-size:clamp(24px,3vw,32px); margin:6px 0 10px; }
+.admin-page h2 { margin-bottom:14px; }
+.admin-page p { margin:8px 0 14px; }
+.admin-card { padding:18px; min-width:0; border-radius:10px; }
+.admin-create-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }
+.admin-page label,.admin-dialog label { gap:6px; margin-bottom:12px; }
+.admin-page input,.admin-page select,.admin-page textarea,.admin-dialog input { padding:9px 10px; min-height:42px; }
+.admin-page button,.admin-page nav a,.admin-actions a,.admin-dialog button { min-height:42px; display:inline-flex; align-items:center; justify-content:center; padding:8px 12px; white-space:normal; overflow-wrap:anywhere; }
+.admin-library-title { margin-top:24px; gap:12px; flex-wrap:wrap; }
+.admin-library-controls { display:grid; grid-template-columns:minmax(0,2fr) minmax(0,1fr) 100px; gap:12px; padding:16px; border:1px solid #e1e5ed; background:white; border-radius:10px; }
+.admin-library-controls label { margin:0; }
+.admin-result-count { color:#64748b; font-size:12px; }
+.admin-project { margin:12px 0; padding-bottom:6px; }
+.admin-project>header { gap:12px; margin-bottom:10px; }
+.admin-project>header>div { min-width:0; overflow-wrap:anywhere; }
+.admin-project>header>button { flex-shrink:0; }
+.admin-project li { padding:12px 0; }
+.admin-item-name { min-width:0; flex:1; }
+.admin-actions { gap:8px; }
+.admin-pagination { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin:16px 0; }
+.admin-dialog { width:min(480px,calc(100vw - 32px)); max-height:calc(100dvh - 32px); overflow-y:auto; padding:20px; overflow-wrap:anywhere; }
+@media(max-width:540px) {
+  .admin-content { padding:16px 12px 24px; }
+  .admin-library-controls { grid-template-columns:minmax(0,1fr) 90px; padding:12px; }
+  .admin-library-controls label:first-child { grid-column:1/-1; }
+  .admin-page input,.admin-page select,.admin-page textarea,.admin-dialog input { font-size:16px; }
+  .admin-page button,.admin-actions a { min-height:44px; }
+  .admin-project>header { align-items:flex-start; flex-wrap:wrap; }
+  .admin-project li>.admin-actions { width:100%; }
+  .admin-empty { padding:20px; }
+}
 @media(max-width:800px) { .admin-create-grid { grid-template-columns:1fr; }.admin-project li { align-items:start;flex-direction:column; }.admin-header span { display:none; }.admin-card { padding:20px; }.project-save-status { max-width:140px;font-size:10px; } }
