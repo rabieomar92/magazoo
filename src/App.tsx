@@ -17,6 +17,8 @@ import './styles/panel.css';
 import './styles/panel-layout.css';
 import './styles/front-matter.css';
 import './styles/paper3-footer.css';
+import './styles/news.css';
+import './styles/rtl.css';
 
 const DEFAULT_PANEL_W = 380;
 const MIN_PANEL_W = 320;
@@ -75,7 +77,7 @@ export default function App() {
         // An empty canvas is never what you want to look at.
         const { doc, load } = useDoc.getState();
         const blank =
-          !doc.meta.title && doc.blocks.every((b) => b.type !== 'paragraph' || !b.text.trim());
+          !doc.meta.title && !doc.news?.stories.length && !doc.frontMatter?.entries.length && doc.blocks.every((b) => b.type !== 'paragraph' || !b.text.trim());
         if (blank) load(sampleDoc());
         stop = startAutosave();
       } catch (err) {
