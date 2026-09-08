@@ -7,6 +7,14 @@ import { clampSpacing, SUBTITLE_GAP, TEXT_SPACE_AFTER } from './spacing';
 const bounded = (value: number, fallback: number, min: number, max: number) =>
   Number.isFinite(value) ? Math.max(min, Math.min(max, value)) : fallback;
 
+export const DEFAULT_GATE_QUOTE_RULE = 3;
+
+/** Thickness of the divider above a Magazine 3 pull quote. A zero value is a
+ * deliberate choice and removes both the line and its extra breathing room. */
+export function gateQuoteRule(design: Design) {
+  return bounded(design.gateQuoteRule ?? DEFAULT_GATE_QUOTE_RULE, DEFAULT_GATE_QUOTE_RULE, 0, 12);
+}
+
 /** Shared by the controls and rendered cover, including the print DOM. */
 export function gateTypography(design: Design, role: GateTextRole): Required<GateTextStyle> {
   const rtl = design.textDirection === 'rtl';

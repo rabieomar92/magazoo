@@ -4,7 +4,7 @@ import { presetFor } from '../store/presets';
 import { cloneDocForUpdate, useDoc } from '../store/useDoc';
 import { migrate } from '../schema/document';
 import { MagGateA, MagGateB } from '../paper/MagGate';
-import { gateTypography } from './gateTypography';
+import { gateQuoteRule, gateTypography } from './gateTypography';
 import { GateDesignSection } from '../panel/sections/GateDesignSection';
 
 describe('Gatefold typography', () => {
@@ -52,6 +52,21 @@ describe('Gatefold typography', () => {
     expect(css('.mag-gate-author').fontSize).toBe('12pt');
     expect(css('[data-editor-target="meta-photo-credit"]').fontSize).toBe('9pt');
   });
+  it('uses the kicker colour for gate accents and supports hiding the quote divider', () => {
+    const doc = presetFor('magazine-3');
+    doc.design.gateTypography = { kicker: { color: '#42d9c8' } };
+    doc.design.gateQuoteRule = 0;
+    doc.footer = { enabled: false };
+
+    expect(gateQuoteRule(doc.design)).toBe(0);
+    const host = document.createElement('div');
+    host.innerHTML = renderToStaticMarkup(<><MagGateA doc={doc} vars={{}} /><MagGateB doc={doc} vars={{}} /></>);
+
+    expect((host.querySelector('.mag-gate--a') as HTMLElement).style.getPropertyValue('--mag-kicker-color')).toBe('#42d9c8');
+    expect((host.querySelector('.mag-gate--b') as HTMLElement).style.getPropertyValue('--gate-quote-rule')).toBe('0px');
+    expect((host.querySelector('.mag-gate--b') as HTMLElement).style.getPropertyValue('--gate-quote-rule-gap')).toBe('0px');
+    expect(host.querySelector('.mag-gate-foot')!.classList.contains('mag-gate-foot--footer-hidden')).toBe(true);
+  });
   it('preserves Arabic shaping without discarding stored Latin tracking', () => {
     const doc = presetFor('magazine-3');
     doc.design.gateTypography = { title: { letterSpacing: 3, lineHeight: 1.5 } };
@@ -76,5 +91,6 @@ describe('Gatefold typography', () => {
     }
     expect(host.querySelector('#editor-target-meta-title')?.textContent).toContain('Title line height');
     expect(host.querySelector('#editor-target-meta-subtitle')?.textContent).toContain('Subtitle letter spacing');
+    expect(host.querySelector('#editor-target-meta-pull-quote')?.textContent).toContain('Quote divider thickness');
   });
 });

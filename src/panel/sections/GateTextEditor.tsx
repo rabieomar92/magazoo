@@ -45,6 +45,18 @@ export function GateTextEditor({ role, children }: { role: GateTextRole; childre
         </>}
       </div>
       {children}
+      {role === 'quote' && <>
+        <LabeledNumber
+          label="Quote divider thickness"
+          unit="px"
+          value={doc.design.gateQuoteRule ?? 3}
+          min={0}
+          max={12}
+          step={.5}
+          onChange={v => update(d => { d.design.gateQuoteRule = clamp(v, 0, 12); })}
+        />
+        <p className="hint">Set to 0 to remove the line above the quote.</p>
+      </>}
       <button type="button" className="add-btn" onClick={() => update(d => { if (d.design.gateTypography) delete d.design.gateTypography[role]; })}>Reset {label.toLowerCase()} style</button>
     </div>
   </details>;
