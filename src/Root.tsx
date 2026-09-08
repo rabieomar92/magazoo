@@ -1,8 +1,9 @@
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import App from './App';
+import AdminPage from './admin/AdminPage';
+import { ErrorBoundary } from './ErrorBoundary';
 import { useProjectFile } from './store/projectFiles';
 import { useDoc } from './store/useDoc';
-const AdminPage=lazy(()=>import('./admin/AdminPage'));
 export function Root(){
   const [hash,setHash]=useState(location.hash);
   useEffect(()=>{
@@ -13,5 +14,5 @@ export function Root(){
     };
     window.addEventListener('hashchange',change);return()=>window.removeEventListener('hashchange',change);
   },[hash]);
-  return <Suspense fallback={<p>Loading Magazoo…</p>}>{hash==='#admin'?<AdminPage/>:<App key={hash}/>}</Suspense>;
+  return <ErrorBoundary>{hash==='#admin'?<AdminPage/>:<App key={hash}/>}</ErrorBoundary>;
 }
