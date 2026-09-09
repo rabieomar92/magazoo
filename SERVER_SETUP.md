@@ -44,6 +44,26 @@ In a Hostinger Node.js Web App, upload the complete source project, including
 `index.html` and the TypeScript/Vite configuration files. Use the project root
 (the folder containing `package.json`) as the application directory.
 
+For admin login and online projects, select the **Other** Node.js framework
+and set the entry file to `server/index.mjs`. The React/Vite static-site mode
+publishes the editor but does not run this server, so its `/api/` routes will
+be missing. GitHub Pages likewise serves the standalone editor only.
+
+Deployment settings for the complete app:
+
+| Setting | Value |
+| --- | --- |
+| Framework | Other (Node.js app with an entry file) |
+| Node.js version | 24.x |
+| Root directory | Repository root, containing `package.json` |
+| Build command | `npm run build` |
+| Frontend output directory | `dist` |
+| Entry file | `server/index.mjs` |
+| Start command, if shown | `npm start` |
+
+Keep `server/` alongside `dist/` in the deployed application. The server entry
+file is relative to the repository root, not inside `dist/`.
+
 Use these commands:
 
 - Install: `npm ci --include=dev`
@@ -86,3 +106,18 @@ Vite and the type definitions are needed too.
 
 References: [npm include setting](https://docs.npmjs.com/cli/v11/using-npm/config/#include)
 and [Hostinger Node.js setup](https://www.hostinger.com/support/how-to-deploy-a-nodejs-website-in-hostinger/).
+
+### Admin says online projects are unavailable
+
+Open `https://your-domain/api/auth/session` in a signed-out browser. A running
+Magazoo server responds with HTTP 401 and JSON containing
+`{"error":"Admin login required."}`. This is the expected signed-out response.
+A hosting 404 page or the editor's HTML at that address means `/api/` is not
+reaching the Node server. A 502 or 503 hosting page means the server may have
+failed to start; inspect the runtime log.
+
+In Hostinger's Settings & Redeploy, check the framework and entry file above,
+keep the existing environment variables, and redeploy. The runtime log should
+contain `Magazoo server ready`. A successful frontend build on its own does
+not start the admin service. The public URL in `MAGAZOO_ORIGIN` must match the
+site address, for example `https://magazoo.usmphysics.org` without `/#admin`.

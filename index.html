@@ -8,7 +8,14 @@
     <title>Magazoo! — Editorial Studio</title>
   </head>
   <body>
-    <div id="root"></div>
+    <style>
+      .app-loading{font:16px/1.5 system-ui,sans-serif;padding:32px;margin:12vh auto;max-width:420px;color:#334155}
+      .loading-track{height:3px;background:#e0e7ff;overflow:hidden;margin-top:12px;border-radius:4px}
+      .loading-track span{display:block;width:35%;height:100%;background:#4f46e5;animation:loading-slide 1.2s ease-in-out infinite}
+      @keyframes loading-slide{from{transform:translateX(-100%)}to{transform:translateX(390%)}}
+      @media(prefers-reduced-motion:reduce){.loading-track span{animation:none;width:100%;opacity:.65}}
+    </style>
+    <div id="root"><div class="app-loading" role="status">Loading Magazoo…<div class="loading-track"><span></span></div></div></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
