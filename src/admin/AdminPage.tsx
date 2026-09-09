@@ -7,8 +7,8 @@ interface Item { id:string; name:string; token:string; version:number; updated:n
 interface Project { id:string; name:string; items:Item[]; }
 
 const api=async(path:string,csrf:string,method='GET',data?:unknown)=>{
-  const response=await fetch(`${import.meta.env.BASE_URL}api/${path}`,{method,headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:data===undefined?undefined:JSON.stringify(data)});
-  const result=await response.json().catch(()=>({error:'Online projects are not available on this host. Start the Magazoo server or use your hosted admin address.'}));
+  const response=await fetch(`${import.meta.env.BASE_URL}api/${path}`,{method,signal:AbortSignal.timeout(60000),headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:data===undefined?undefined:JSON.stringify(data)});
+  const result=await response.json().catch(()=>{throw new Error('The server returned an unexpected response. Please refresh and try again.');});
   if(!response.ok)throw new Error(result.error??'Request failed.');return result;
 };
 const sharedLink=(token:string)=>`${location.origin}${import.meta.env.BASE_URL}#edit=${token}`;
@@ -35,6 +35,7 @@ export default function AdminPage(){
   useEffect(()=>{let live=true;void api('auth/session','').then(async data=>{if(live){setCsrf(data.csrf);await refresh(data.csrf);}}).catch(()=>{}).finally(()=>{if(live)setChecked(true);});return()=>{live=false;};},[]);
   const run=async(fn:()=>Promise<void>)=>{setError('');setNotice('');setBusy(true);try{await fn();}catch(e){setError(e instanceof Error?e.message:'Request failed.');}finally{setBusy(false);}};
   return <main className="admin-page">
+    {(!checked||busy)&&<div className="admin-loading" role="status"><span>{!checked?'Loading your workspace…':'Working… Please wait.'}</span><div className="loading-track"><span /></div></div>}
     <header className="admin-header"><div><a className="admin-brand" href={import.meta.env.BASE_URL}>Magazoo!</a><span>Project library</span></div><nav><a href={import.meta.env.BASE_URL}>Open editor</a>{csrf&&<button disabled={busy} onClick={()=>void run(async()=>{await api('auth/logout',csrf,'POST');setCsrf('');setProjects([]);})}>Log out</button>}</nav></header>
     <div className="admin-content">
       <div className="admin-intro"><p className="admin-eyebrow">Publication workspace</p><h1>{csrf?'Your projects, in one place.':'A private workspace for your publications.'}</h1><p>Organise editable Magazoo documents by project and share individual editing links.</p></div>
