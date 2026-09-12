@@ -30,7 +30,6 @@ export const PDF_EXPORT_CSS = `
     transform-origin: top left !important;
   }
   .pdf-export-pages > .pdf-export-page {
-    display: block !important;
     box-sizing: border-box !important;
     width: 210mm !important;
     height: 297mm !important;
@@ -48,8 +47,7 @@ export const PDF_EXPORT_CSS = `
     page-break-after: auto !important;
   }
   @media print {
-    .pdf-export-pages,
-    .pdf-export-pages > .pdf-export-page {
+    .pdf-export-pages {
       display: block !important;
     }
   }
@@ -142,7 +140,11 @@ function waitForBackgroundImage(url: string) {
 }
 
 function nextPaint(targetWindow: Window = window) {
-  return new Promise<void>((resolve) => targetWindow.requestAnimationFrame(() => resolve()));
+  // Offscreen frames can have animation callbacks suspended on mobile.
+  return new Promise<void>((resolve) => {
+    const timer = window.setTimeout(resolve, 100);
+    targetWindow.requestAnimationFrame(() => { window.clearTimeout(timer); resolve(); });
+  });
 }
 
 const REF_INDEX_ATTR = 'data-pdf-ref-index';
@@ -212,13 +214,13 @@ function waitForStyles(documentToWait: Document) {
     Promise.all(
       links.map(
         (link) =>
-          new Promise<void>((resolve) => {
+          new Promise<void>((resolve, reject) => {
             if (link.sheet) {
               resolve();
               return;
             }
             link.addEventListener('load', () => resolve(), { once: true });
-            link.addEventListener('error', () => resolve(), { once: true });
+            link.addEventListener('error', () => reject(new Error('A stylesheet could not load. Please retry PDF export.')), { once: true });
           }),
       ),
     ).then(() => undefined),
@@ -259,10 +261,13 @@ export function clonePages(source: HTMLElement, targetDocument: Document) {
   pages.style.setProperty('min-width', '210mm', 'important');
   pages.style.setProperty('transform', 'none', 'important');
 
-  Array.from(pages.children).forEach((child) => {
+  Array.from(pages.children).forEach((child, index) => {
     if (!(child instanceof HTMLElement)) return;
     if (!child.classList.contains('page')) return;
     child.classList.add('pdf-export-page');
+    // Galleries need grid and front matter needs flex, not forced block layout.
+    const original = source.children[index];
+    if (original instanceof HTMLElement) child.style.setProperty('display', window.getComputedStyle(original).display, 'important');
     child.style.setProperty('width', '210mm', 'important');
     child.style.setProperty('height', '297mm', 'important');
     child.style.setProperty('margin', '0', 'important');
@@ -297,7 +302,7 @@ export async function exportPreviewPdf(title: string) {
     : [];
   if (!source || !pages.length) throw new Error('The page preview is not ready yet.');
 
-  await (document.fonts?.ready ?? Promise.resolve());
+  await withTimeout(document.fonts?.ready ?? Promise.resolve(), 'Fonts took too long to load. Please retry PDF export.');
   await Promise.all([
     ...Array.from(source.querySelectorAll<HTMLImageElement>('img')).map(waitForImage),
     ...backgroundImageUrls(source).map(waitForBackgroundImage),
@@ -333,7 +338,7 @@ export async function exportPreviewPdf(title: string) {
     clonePages(source, printDocument);
 
     await waitForStyles(printDocument);
-    await (printDocument.fonts?.ready ?? Promise.resolve());
+    await withTimeout(printDocument.fonts?.ready ?? Promise.resolve(), 'Print fonts took too long to load. Please retry PDF export.');
     await Promise.all(Array.from(printDocument.images).map(waitForImage));
     await nextPaint(printWindow);
     await nextPaint(printWindow);
@@ -345,7 +350,8 @@ export async function exportPreviewPdf(title: string) {
       frame?.remove();
     };
     printWindow.addEventListener('afterprint', cleanup, { once: true });
-    window.setTimeout(cleanup, 120_000);
+    // Keep the document alive until the print UI closes. Mobile print/share
+    // dialogs may stay open for minutes; a timer must not erase their source.
     printWindow.focus();
     printWindow.print();
   } catch (error) {
