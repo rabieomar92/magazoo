@@ -5,6 +5,7 @@ import { galleryFrameGeometry } from '../../lib/galleryFrame';
 import { ImageLoadError, loadImage } from '../../lib/loadImage';
 import { LabeledColor, LabeledRange, Section } from '../Field';
 import { editorTargetId } from '../../lib/editorNavigation';
+import { splitCaption, joinCaption } from '../../lib/galleryCaption';
 
 const DEFAULT_FRAME = { scale: 1, offsetX: 0, offsetY: 0 };
 
@@ -60,18 +61,6 @@ const LAYOUTS: Record<string, Layout> = {
   },
 };
 
-/** Caption is stored as "**Title**\nDescription"; expose it as two fields. */
-function splitCaption(caption: string): { title: string; desc: string } {
-  const nl = caption.indexOf('\n');
-  const head = nl === -1 ? caption : caption.slice(0, nl);
-  const desc = nl === -1 ? '' : caption.slice(nl + 1);
-  const title = head.replace(/^\*\*/, '').replace(/\*\*$/, '').trim();
-  return { title, desc };
-}
-function joinCaption(title: string, desc: string): string {
-  if (!title && !desc) return '';
-  return `${title ? `**${title}**` : ''}\n${desc}`;
-}
 
 export function GallerySection() {
   const blocks = useDoc((s) => s.doc.blocks);
