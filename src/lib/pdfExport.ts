@@ -1,5 +1,33 @@
 const PRINT_FRAME_CLASS = 'pdf-print-frame';
 const RESOURCE_TIMEOUT_MS = 20_000;
+// Preview's last scheduled overflow correction runs at 1,200 ms. Do not
+// capture a transient pagination state between that correction and typing.
+const PREVIEW_QUIET_MS = 1_300;
+
+export function waitForStablePreview(source: HTMLElement): Promise<void> {
+  return new Promise((resolve, reject) => {
+    let lastChange = performance.now();
+    const started = lastChange;
+    const observer = new MutationObserver(() => { lastChange = performance.now(); });
+    const container = source.closest('.paper-scroll') ?? source;
+    observer.observe(container, { subtree: true, childList: true, attributes: true, characterData: true });
+    const timer = window.setInterval(() => {
+      const now = performance.now();
+      const finish = (error?: Error) => {
+        window.clearInterval(timer);
+        observer.disconnect();
+        if (error) reject(error); else resolve();
+      };
+      if (!source.isConnected) return finish(new Error('The preview changed. Please retry PDF export.'));
+      if (now - started > RESOURCE_TIMEOUT_MS) return finish(new Error('The preview is still updating. Wait for it to settle, then export again.'));
+      if (container.getAttribute('data-preview-pending') === 'true' || document.fonts?.status === 'loading') {
+        lastChange = now;
+        return;
+      }
+      if (now - lastChange >= PREVIEW_QUIET_MS) finish();
+    }, 100);
+  });
+}
 
 /**
  * The PDF is produced by the browser's print engine from the actual page DOM.
@@ -80,6 +108,17 @@ function withTimeout<T>(promise: Promise<T>, message: string): Promise<T> {
       },
     );
   });
+}
+
+async function waitForFonts(target: Document) {
+  const fonts = target.fonts;
+  if (!fonts) return;
+  await withTimeout(fonts.ready, 'Fonts took too long to load. Please retry PDF export.');
+  // ready also resolves when a requested font failed, leaving fallback text
+  // with different line lengths. Do not silently print that altered layout.
+  if (Array.from(fonts).some(font => font.status === 'error')) {
+    throw new Error('A publication font could not load. Reload the page and retry PDF export.');
+  }
 }
 
 function waitForImage(image: HTMLImageElement) {
@@ -229,27 +268,48 @@ function waitForStyles(documentToWait: Document) {
 }
 
 function freezeColumnLayout(source: HTMLElement, clone: HTMLElement) {
-  const sourceNodes = Array.from(source.querySelectorAll<HTMLElement>('*'));
-  const cloneNodes = Array.from(clone.querySelectorAll<HTMLElement>('*'));
-  sourceNodes.forEach((sourceNode, index) => {
-    const cloneNode = cloneNodes[index];
-    if (!cloneNode) return;
-    const computed = window.getComputedStyle(sourceNode);
-    const columnCount = Number.parseInt(computed.columnCount, 10);
-    if (!Number.isFinite(columnCount) || columnCount <= 1 || sourceNode.offsetHeight <= 0) return;
-    const sourceRect = sourceNode.getBoundingClientRect();
-    const scale = sourceNode.offsetWidth ? sourceRect.width / sourceNode.offsetWidth : 1;
-    const sourceHeight = scale ? sourceRect.height / scale : sourceNode.offsetHeight;
+  // Remove only the preview zoom synchronously for precise layout reads. A
+  // computed-style number can itself be rounded (344.90625 -> "344.906px"),
+  // enough to drop a line at an exact column boundary. Restore before paint.
+  const transform = source.style.getPropertyValue('transform');
+  const priority = source.style.getPropertyPriority('transform');
+  source.style.setProperty('transform', 'none', 'important');
+  try {
+    const sourceNodes = Array.from(source.querySelectorAll<HTMLElement>('*'));
+    const cloneNodes = Array.from(clone.querySelectorAll<HTMLElement>('*'));
+    sourceNodes.forEach((sourceNode, index) => {
+      const cloneNode = cloneNodes[index];
+      if (!cloneNode) return;
+      const computed = window.getComputedStyle(sourceNode);
+      const columnCount = Number.parseInt(computed.columnCount, 10);
+      if (!Number.isFinite(columnCount) || columnCount <= 1 || sourceNode.offsetHeight <= 0) return;
+      // Auto-height balanced bands must keep their original CSS. Replacing
+      // their auto height with its measured result changes print's balancing
+      // algorithm and can create a clipped third column, even when the screen
+      // and print-media DOM rectangles appear identical before pagination.
+      if (computed.columnFill === 'balance' || computed.columnFill === 'balance-all') return;
 
-    // Pin the measured multicolumn geometry from the committed preview. This
-    // removes the print engine's opportunity to recalculate the column box
-    // from a different page context while preserving the live text layout.
-    cloneNode.style.setProperty('height', `${sourceHeight}px`, 'important');
-    cloneNode.style.setProperty('width', `${sourceNode.offsetWidth}px`, 'important');
-    cloneNode.style.setProperty('column-count', String(columnCount), 'important');
-    cloneNode.style.setProperty('column-gap', computed.columnGap, 'important');
-    cloneNode.style.setProperty('column-fill', computed.columnFill, 'important');
-  });
+      // Author transforms remain in the clone. Avoid baking a scaled or
+      // rotated ancestor's bounding box into the column dimensions as well.
+      for (let ancestor: HTMLElement | null = sourceNode; ancestor && ancestor !== source; ancestor = ancestor.parentElement) {
+        const transform = window.getComputedStyle(ancestor).transform;
+        if (transform && transform !== 'none') return;
+      }
+      const rect = sourceNode.getBoundingClientRect();
+      // Border-box DOMRect values retain the browser's full layout precision.
+      // Computed strings are only a fallback for non-layout test environments.
+      const precise = rect.width > 0 && rect.height > 0;
+      cloneNode.style.setProperty('box-sizing', precise ? 'border-box' : computed.boxSizing, 'important');
+      cloneNode.style.setProperty('height', precise ? `${rect.height}px` : computed.height, 'important');
+      cloneNode.style.setProperty('width', precise ? `${rect.width}px` : computed.width, 'important');
+      cloneNode.style.setProperty('column-count', String(columnCount), 'important');
+      cloneNode.style.setProperty('column-gap', computed.columnGap, 'important');
+      cloneNode.style.setProperty('column-fill', computed.columnFill, 'important');
+    });
+  } finally {
+    if (transform) source.style.setProperty('transform', transform, priority);
+    else source.style.removeProperty('transform');
+  }
 }
 
 export function clonePages(source: HTMLElement, targetDocument: Document) {
@@ -294,21 +354,22 @@ export function clonePages(source: HTMLElement, targetDocument: Document) {
  */
 export async function exportPreviewPdf(title: string) {
   const source = document.querySelector<HTMLElement>('.pages');
-  const pages = source
-    ? Array.from(source.children).filter(
-        (child): child is HTMLElement =>
-          child instanceof HTMLElement && child.classList.contains('page'),
-      )
-    : [];
-  if (!source || !pages.length) throw new Error('The page preview is not ready yet.');
+  if (!source) throw new Error('The page preview is not ready yet.');
 
-  await withTimeout(document.fonts?.ready ?? Promise.resolve(), 'Fonts took too long to load. Please retry PDF export.');
+  await waitForFonts(document);
   await Promise.all([
     ...Array.from(source.querySelectorAll<HTMLImageElement>('img')).map(waitForImage),
     ...backgroundImageUrls(source).map(waitForBackgroundImage),
   ]);
   await nextPaint();
   await nextPaint();
+  await waitForStablePreview(source);
+  // Pagination can replace sheets while images/fonts are loading. Resolve
+  // counters and clone only the sheets from the settled render.
+  const pages = Array.from(source.children).filter(
+    (child): child is HTMLElement => child instanceof HTMLElement && child.classList.contains('page'),
+  );
+  if (!pages.length) throw new Error('The page preview is not ready yet.');
 
   const restoreCounters = pages.map(resolveReferenceCounters);
   let frame: HTMLIFrameElement | null = null;
@@ -338,7 +399,7 @@ export async function exportPreviewPdf(title: string) {
     clonePages(source, printDocument);
 
     await waitForStyles(printDocument);
-    await withTimeout(printDocument.fonts?.ready ?? Promise.resolve(), 'Print fonts took too long to load. Please retry PDF export.');
+    await waitForFonts(printDocument);
     await Promise.all(Array.from(printDocument.images).map(waitForImage));
     await nextPaint(printWindow);
     await nextPaint(printWindow);
