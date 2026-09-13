@@ -218,15 +218,17 @@ export function PaperPreview({ toolbarHost }: { toolbarHost: HTMLElement | null 
     return () => window.clearTimeout(timer);
   }, [liveDoc]);
 
-  return <PaperPreviewLayout doc={previewDoc} toolbarHost={toolbarHost} />;
+  return <PaperPreviewLayout doc={previewDoc} toolbarHost={toolbarHost} pending={previewDoc !== liveDoc} />;
 }
 
 const PaperPreviewLayout = memo(function PaperPreviewLayout({
   doc: storedDoc,
   toolbarHost,
+  pending,
 }: {
   doc: ReturnType<typeof useDoc.getState>['doc'];
   toolbarHost: HTMLElement | null;
+  pending: boolean;
 }) {
   const doc = useImageTheme(storedDoc);
   const updateDoc = useDoc((state) => state.update);
@@ -1312,7 +1314,8 @@ const PaperPreviewLayout = memo(function PaperPreviewLayout({
 
   return (
     <div
-      className={`paper-scroll${doc.design.textDirection === 'rtl' ? ' paper-scroll--rtl' : ''}`}
+        className={`paper-scroll${doc.design.textDirection === 'rtl' ? ' paper-scroll--rtl' : ''}`}
+        data-preview-pending={pending ? 'true' : undefined}
       ref={scrollRef}
     >
       {/* Escape hatch — raw CSS from the design panel, scoped by author intent. */}
