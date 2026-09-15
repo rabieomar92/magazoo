@@ -192,3 +192,4 @@ export default function App() {
     </ErrorBoundary>
   );
 }
+import 'katex/dist/katex.min.css';
