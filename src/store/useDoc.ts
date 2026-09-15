@@ -17,7 +17,11 @@ export function cloneDocForUpdate(doc: Doc): Doc {
   return {
     ...doc,
     meta: { ...doc.meta },
-    news: doc.news ? { stories: doc.news.stories.map(story => ({ ...story, frame: story.frame ? { ...story.frame } : undefined })) } : undefined,
+    news: doc.news ? { stories: doc.news.stories.map(story => ({
+      ...story,
+      frame: story.frame ? { ...story.frame } : undefined,
+      paragraphTops: story.paragraphTops ? [...story.paragraphTops] : undefined,
+    })) } : undefined,
     footer: doc.footer ? { ...doc.footer } : undefined,
     frontMatter: doc.frontMatter ? {
       ...doc.frontMatter,
@@ -70,18 +74,21 @@ export const useDoc = create<State>()(
           fn(next);
           return { doc: next };
         }),
-      load: (doc) => set({ doc }),
+      load: (doc) => {
+        set({ doc });
+        // Loading a file is a new editing session. Keeping the previous
+        // document in the undo stack is surprising and can resurrect unrelated
+        // stories or embedded images after an import.
+        useDoc.temporal.getState().clear();
+      },
       switchTemplate: (id) => set({ doc: presetFor(id) }),
     }),
     {
-      // Don't push a history entry on every keystroke.
-      handleSet: (handleSet) => {
-        let t: ReturnType<typeof setTimeout>;
-        return (...args: Parameters<typeof handleSet>) => {
-          clearTimeout(t);
-          t = setTimeout(() => handleSet(...args), 400);
-        };
-      },
+      // Record the state before each edit immediately. Debouncing this callback
+      // discarded earlier edits in a burst and could append stale history after
+      // Undo had already run. Autosave can be delayed; recovery must not be.
+      partialize: state => ({ doc: state.doc }),
+      equality: (previous, current) => previous.doc === current.doc,
       limit: 100,
     },
   ),

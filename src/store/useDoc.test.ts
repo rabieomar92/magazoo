@@ -1,6 +1,12 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { emptyDoc } from '../schema/document';
-import { cloneDocForUpdate } from './useDoc';
+import { cloneDocForUpdate, useDoc } from './useDoc';
+
+afterEach(() => {
+  useDoc.getState().load(emptyDoc());
+  useDoc.temporal.getState().clear();
+  vi.useRealTimers();
+});
 
 describe('cloneDocForUpdate', () => {
   it('keeps embedded source data immutable while cloning every mutable branch', () => {
@@ -39,5 +45,66 @@ describe('cloneDocForUpdate', () => {
     expect(source.highlightBox.anchor.y).toBe(80);
     expect(draft.assets.photo).not.toBe(source.assets.photo);
     expect(draft.assets.photo.src).toBe(source.assets.photo.src);
+  });
+
+  it('keeps news paragraph spacing and image framing independent of past snapshots', () => {
+    const source = emptyDoc();
+    source.news = { stories: [{ id: 'story', title: 'Before', text: 'Copy', caption: '', source: '',
+      layout: 'compact', paragraphTops: [0, 12], frame: { scale: 1, offsetX: 0, offsetY: 0 } }] };
+
+    const draft = cloneDocForUpdate(source);
+    draft.news!.stories[0].paragraphTops![1] = 30;
+    draft.news!.stories[0].frame!.offsetX = 20;
+
+    expect(source.news.stories[0].paragraphTops).toEqual([0, 12]);
+    expect(source.news.stories[0].frame?.offsetX).toBe(0);
+  });
+});
+
+describe('document history', () => {
+  it('starts a clean undo session when loading a different document', () => {
+    useDoc.getState().load(emptyDoc());
+    useDoc.getState().update(doc => { doc.meta.title = 'Old issue'; });
+    expect(useDoc.temporal.getState().pastStates.length).toBeGreaterThan(0);
+
+    useDoc.getState().load(emptyDoc());
+    expect(useDoc.getState().doc.meta.title).toBe('');
+    expect(useDoc.temporal.getState().pastStates).toHaveLength(0);
+    expect(useDoc.temporal.getState().futureStates).toHaveLength(0);
+  });
+
+  it('recovers every rapid edit immediately and preserves redo after timers settle', () => {
+    vi.useFakeTimers();
+    useDoc.getState().load(emptyDoc());
+    useDoc.temporal.getState().clear();
+    for (const title of ['A', 'AB', 'ABC']) useDoc.getState().update(doc => { doc.meta.title = title; });
+
+    for (const title of ['AB', 'A', '']) {
+      useDoc.temporal.getState().undo();
+      expect(useDoc.getState().doc.meta.title).toBe(title);
+    }
+    vi.runAllTimers();
+    expect(useDoc.temporal.getState().pastStates).toHaveLength(0);
+    for (const title of ['A', 'AB', 'ABC']) {
+      useDoc.temporal.getState().redo();
+      expect(useDoc.getState().doc.meta.title).toBe(title);
+    }
+  });
+
+  it('restores a deleted news story and its image without sharing mutable paragraph spacing', () => {
+    const doc = emptyDoc();
+    doc.news = { stories: [{ id: 'story', title: 'News', text: 'Copy', caption: '', source: '',
+      layout: 'compact', assetId: 'photo', paragraphTops: [0, 12] }] };
+    doc.assets.photo = { src: 'data:image/png;base64,example', naturalWidth: 100, naturalHeight: 100 };
+    useDoc.getState().load(doc);
+    useDoc.temporal.getState().clear();
+
+    useDoc.getState().update(draft => { draft.news!.stories[0].paragraphTops![1] = 30; });
+    useDoc.getState().update(draft => { draft.news!.stories = []; delete draft.assets.photo; });
+    useDoc.temporal.getState().undo();
+    expect(useDoc.getState().doc.news!.stories[0].paragraphTops).toEqual([0, 30]);
+    expect(useDoc.getState().doc.assets.photo).toEqual(doc.assets.photo);
+    useDoc.temporal.getState().undo();
+    expect(useDoc.getState().doc.news!.stories[0].paragraphTops).toEqual([0, 12]);
   });
 });

@@ -962,7 +962,10 @@ const PaperPreviewLayout = memo(function PaperPreviewLayout({
   // paper-2 spends two of paginateHosts' regions on sheet 1, so the fit badge
   // has to count sheets, not regions.
   const fit = isStructured
-    ? {level: frontMatterStatus.overflow ? 'warn' : 'ok',text: frontMatterStatus.overflow ? 'Text exceeds its frame. Shorten the heading or caption, or reduce its size.' : `${frontMatterStatus.pages} ${frontMatterStatus.pages===1?'page':'pages'} · ${isNews ? 'news & briefs' : 'front matter'}`}
+    ? {level: frontMatterStatus.overflow ? 'warn' : 'ok',text: frontMatterStatus.overflow
+      ? (isNews ? 'A news block exceeds the printable frame. Check the red-outlined page and adjust its story or image.'
+        : 'Text exceeds its frame. Shorten the heading or caption, or reduce its size.')
+      : `${frontMatterStatus.pages} ${frontMatterStatus.pages===1?'page':'pages'} · ${isNews ? 'news & briefs' : 'front matter'}`}
     : isGallery
     ? ({ level: 'ok', text: '2 pages · spread' } as const)
     : isFrontCover
