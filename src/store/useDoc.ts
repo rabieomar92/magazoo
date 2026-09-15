@@ -1,14 +1,13 @@
 import { create } from 'zustand';
 import { temporal } from 'zundo';
 import { emptyDoc, type Doc, type TemplateId } from '../schema/document';
-import { presetFor } from './presets';
 
 interface State {
   doc: Doc;
   /** Mutate a draft. Keep every edit going through here. */
   update: (fn: (d: Doc) => void) => void;
   load: (doc: Doc) => void;
-  /** Switch layout template and load that template's preset content. Undoable. */
+  /** Switch layout template without replacing any document content. Undoable. */
   switchTemplate: (id: TemplateId) => void;
 }
 
@@ -81,7 +80,21 @@ export const useDoc = create<State>()(
         // stories or embedded images after an import.
         useDoc.temporal.getState().clear();
       },
-      switchTemplate: (id) => set({ doc: presetFor(id) }),
+      switchTemplate: (id) => set((s) => {
+        // A layout change is a presentation change, not a new-document action.
+        // The old implementation loaded a fresh preset here, which silently
+        // discarded the current title, copy, images, highlights, references,
+        // assets and every editor setting (and autosave then persisted that
+        // empty/preset document over the user's file). Clone the same document
+        // used by normal edits and change only the active renderer.
+        // Keep the no-op path only for an explicit match. Older v1 documents
+        // may omit templateId; choosing Paper 1 should still normalize that
+        // field without replacing the rest of the document.
+        if (s.doc.templateId === id) return { doc: s.doc };
+        const next = cloneDocForUpdate(s.doc);
+        next.templateId = id;
+        return { doc: next };
+      }),
     }),
     {
       // Record the state before each edit immediately. Debouncing this callback

@@ -1,7 +1,11 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { useDoc } from './useDoc';
 import { presetFor, TEMPLATES, TEMPLATE_META } from './presets';
-import { familyOf } from '../schema/document';
+import { emptyDoc, familyOf } from '../schema/document';
+
+afterEach(() => {
+  useDoc.getState().load(emptyDoc());
+});
 
 describe('template registry', () => {
   it('has the supported paper designs and 3+ magazine templates', () => {
@@ -35,13 +39,59 @@ describe('template registry', () => {
     expect(a.hero.assetId).not.toBe(b.hero.assetId);
   });
 
-  it('switchTemplate loads any template into the store', () => {
-    useDoc.getState().switchTemplate('magazine-2');
-    expect(useDoc.getState().doc.templateId).toBe('magazine-2');
-    expect(useDoc.getState().doc.meta.title).toBe('COLLISIONS AT THE HEART OF MATTER');
+  it('switchTemplate changes only the renderer and preserves the edited document', () => {
+    const doc = presetFor('paper-1');
+    doc.meta.title = 'Edited title';
+    doc.meta.subtitle = 'Edited subtitle';
+    doc.meta.masthead = 'Edited masthead';
+    doc.blocks[0] = { ...doc.blocks[0], type: 'paragraph', text: 'Edited paragraph' };
+    doc.highlights = ['Edited highlight'];
+    doc.references = [{ id: 'reference', authors: 'Author', title: 'Title', journal: 'Journal', year: '2026', doi: '10.0000/example' }];
+    doc.footer = { enabled: true, text: 'Edited footer', startNumber: 7 };
+    doc.design.colors.accent = '#123456';
+    const before = {
+      meta: structuredClone(doc.meta),
+      blocks: structuredClone(doc.blocks),
+      highlights: [...doc.highlights],
+      references: structuredClone(doc.references),
+      footer: structuredClone(doc.footer),
+      colors: { ...doc.design.colors },
+      assets: structuredClone(doc.assets),
+    };
 
+    useDoc.getState().load(doc);
+    useDoc.getState().switchTemplate('magazine-2');
+
+    const switched = useDoc.getState().doc;
+    expect(switched.templateId).toBe('magazine-2');
+    expect(switched.meta).toEqual(before.meta);
+    expect(switched.blocks).toEqual(before.blocks);
+    expect(switched.highlights).toEqual(before.highlights);
+    expect(switched.references).toEqual(before.references);
+    expect(switched.footer).toEqual(before.footer);
+    expect(switched.design.colors).toEqual(before.colors);
+    expect(switched.assets).toEqual(before.assets);
+    expect(switched).not.toBe(doc);
+
+    // Switching again must keep the same edits rather than loading the second
+    // template's sample story.
     useDoc.getState().switchTemplate('paper-2');
     expect(useDoc.getState().doc.templateId).toBe('paper-2');
-    expect(useDoc.getState().doc.design.bodyCols).toBe(3);
+    expect(useDoc.getState().doc.meta.title).toBe('Edited title');
+    expect(useDoc.getState().doc.highlights).toEqual(['Edited highlight']);
+  });
+
+  it('normalizes a legacy document without a template id non-destructively', () => {
+    const doc = emptyDoc();
+    delete doc.templateId;
+    doc.meta.title = 'Legacy title';
+    doc.highlights = ['Legacy highlight'];
+    useDoc.getState().load(doc);
+
+    useDoc.getState().switchTemplate('paper-1');
+
+    expect(useDoc.getState().doc.templateId).toBe('paper-1');
+    expect(useDoc.getState().doc.meta.title).toBe('Legacy title');
+    expect(useDoc.getState().doc.highlights).toEqual(['Legacy highlight']);
   });
 });

@@ -14,7 +14,8 @@ import { makeGallery1, makeGallery2, makeGallery3, makeGallery4 } from './galler
 /**
  * Template registry. Two families (paper / magazine), each with several presets.
  * A preset is a self-contained Doc (content + design tokens + any placeholder
- * asset). `switchTemplate` loads one so the canvas fills instantly.
+ * asset). Presets are used for the sample/new-document experience; switching
+ * an existing document's layout is handled non-destructively by useDoc.
  */
 
 export interface TemplateMeta {
