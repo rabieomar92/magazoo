@@ -415,14 +415,31 @@ export interface FrontMatter {
 
 /** Independent briefs, kept in editorial reading order. Images travel with
  * their story rather than entering the existing article wrapping engine. */
+export type NewsColumnCount = 1 | 2 | 3 | 4;
+export type NewsPhotoPosition = 'none' | 'top' | 'left' | 'right';
+export type NewsRowAlign = 'start' | 'center' | 'end';
+
 export interface NewsStory {
   id: string;
   title: string;
   text: string;
   caption: string;
   source: string;
-  /** 'aside' is a narrow column printed beside the story above it. */
+  /**
+   * Legacy visual preset. Newer files also store the independent grid controls
+   * below, but keeping this value means older saved issues retain their look.
+   */
   layout: 'lead' | 'compact' | 'text' | 'single' | 'aside';
+  /** Width on the news page's two-, three- or four-column editorial grid. */
+  widthCols?: NewsColumnCount;
+  /** Number of columns used by this story's body copy. */
+  textCols?: NewsColumnCount;
+  /** Photograph position. Missing values are inferred from the legacy preset. */
+  photoPosition?: NewsPhotoPosition;
+  /** Prevent this story from filling unused space in the preceding row. */
+  rowBreakBefore?: boolean;
+  /** Alignment of a row that does not use every available page column. */
+  rowAlign?: NewsRowAlign;
   /** Top-to-text spacing in pixels, one entry per paragraph of `text`, the same
    *  per-paragraph control the article templates carry on a paragraph block.
    *  Missing entries mean no extra spacing. */
