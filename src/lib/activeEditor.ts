@@ -23,14 +23,23 @@ export function clearActiveEditor(el: HTMLTextAreaElement): void {
   if (active?.el === el) active = null;
 }
 
-/** Apply a mark to the active editor's selection. No-op if nothing is focused. */
+function currentEditor(): ActiveEditor | null {
+  // A section or story can unmount while the formatting bar remains visible.
+  // Never write its detached textarea's old value back into the live document.
+  if (active && !active.el.isConnected) active = null;
+  return active;
+}
+
+/** Apply a mark to the last mounted editor's selection. */
 export function applyMark(mark: Mark): void {
-  if (!active) return;
-  wrapSelection(active.el, TOKEN[mark], active.setValue);
+  const editor = currentEditor();
+  if (!editor) return;
+  wrapSelection(editor.el, TOKEN[mark], editor.setValue);
 }
 
 /** Wrap the active editor's selection in `$…$` for inline LaTeX math. */
 export function insertMath(): void {
-  if (!active) return;
-  wrapSelection(active.el, '$', active.setValue);
+  const editor = currentEditor();
+  if (!editor) return;
+  wrapSelection(editor.el, '$', editor.setValue);
 }

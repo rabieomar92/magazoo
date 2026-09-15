@@ -1,5 +1,12 @@
-import type { NewsStory } from '../schema/document';
-import { runsToHtml, splitRichTextAt } from './richtext';
+import type {
+  NewsColumnCount,
+  NewsPhotoPosition,
+  NewsRowAlign,
+  NewsStory,
+} from '../schema/document';
+import { DELIMS, parseRuns, runsToHtml } from './richtext';
+
+export type { NewsColumnCount, NewsPhotoPosition, NewsRowAlign } from '../schema/document';
 
 /** `pair` marks the two halves of one band: a side column printed beside the
  * story above it, and that story at its narrowed width. `paragraphCut` says a
@@ -12,13 +19,10 @@ export type NewsPiece = NewsStory & {
   pair?: 'main' | 'aside';
   /** Computed only while laying out a page; never persisted. */
   gridSpan?: 1 | 2 | 3 | 4;
+  /** One-based logical grid column, retained on continuation pages. */
+  gridStart?: number;
   row?: number;
 };
-
-export type NewsPhotoPosition = NonNullable<NewsStory['photoPosition']>;
-export type NewsRowAlign = NonNullable<NewsStory['rowAlign']>;
-
-export type NewsColumnCount = 1 | 2 | 3 | 4;
 
 const clampColumns = (value: number, maximum = 4): NewsColumnCount =>
   Math.min(maximum, Math.max(1, Math.round(value))) as NewsColumnCount;
@@ -51,7 +55,9 @@ export function newsCopySpan(
   photo = newsPhotoPosition(story, width),
 ): NewsColumnCount {
   if (photo !== 'left' && photo !== 'right') return 1;
-  const span = story.layout === 'lead' ? Math.floor(width / 2) : width - 1;
+  const span = story.photoCols === undefined
+    ? story.layout === 'lead' ? Math.floor(width / 2) : width - 1
+    : width - clampColumns(story.photoCols, Math.max(1, width - 1));
   return clampColumns(span, width);
 }
 
@@ -87,7 +93,7 @@ export function newsRowAlign(story: NewsStory): NewsRowAlign {
 export function usesNewsGrid(story: NewsStory): boolean {
   return story.widthCols !== undefined || story.textCols !== undefined
     || story.photoPosition !== undefined || story.rowBreakBefore !== undefined
-    || story.rowAlign !== undefined;
+    || story.rowAlign !== undefined || story.photoCols !== undefined;
 }
 
 /** Blank lines make paragraphs; hard-wrapped single lines reflow normally. */
@@ -101,6 +107,70 @@ export function newsParagraphs(text: string): string[] {
     .map(paragraph => paragraph.replace(/[\t ]*\n[\t ]*/gu, ' '));
 }
 
+/** Match the rich-text parser's real open marks, including its unmatched-mark
+ * fallback. Counting every star in a prefix would turn literal copy into style
+ * whenever a page happened to break after an unmatched asterisk. */
+function newsMarkersAt(text: string, offset: number): string[] {
+  const open: string[] = [];
+  let index = 0;
+  while (index < offset) {
+    if (text[index] === '$') {
+      const close = text.indexOf('$', index + 1);
+      if (close !== -1) {
+        index = close + 1;
+        continue;
+      }
+    }
+    let handled = false;
+    for (const { tok } of DELIMS) {
+      if (!text.startsWith(tok, index)) continue;
+      const active = open.lastIndexOf(tok);
+      if (active !== -1) open.splice(active, 1);
+      else if (text.indexOf(tok, index + tok.length) !== -1) open.push(tok);
+      else continue;
+      index += tok.length;
+      handled = true;
+      break;
+    }
+    if (!handled) index += 1;
+  }
+  return open;
+}
+
+/** Close/reopen actual formatting without putting a synthetic closing marker
+ * in an empty paragraph after the consumed paragraph separator. */
+function splitNewsTextAt(text: string, offset: number) {
+  const rawHead = text.slice(0, offset);
+  const open = newsMarkersAt(text, offset);
+  const end = newsMarkersAt(text, text.length);
+  const trailing = rawHead.match(/\s*$/u)?.[0] ?? '';
+  return {
+    rawHead,
+    head: rawHead.slice(0, rawHead.length - trailing.length) + [...open].reverse().join('') + trailing,
+    // The forgiving parser can leave a style active when a single * found a
+    // potential closer inside a later ** token. Balance that existing style
+    // at the end too, so a continuation does not reinterpret its opener.
+    tail: open.join('') + text.slice(offset) + [...end].reverse().join(''),
+  };
+}
+
+/** Math expressions stay atomic, and a break never divides ** or __. */
+function newsWordBreaks(text: string): number[] {
+  const expressions: [number, number][] = [];
+  let mathStart = text.indexOf('$');
+  while (mathStart !== -1) {
+    const mathEnd = text.indexOf('$', mathStart + 1);
+    if (mathEnd === -1) break;
+    expressions.push([mathStart, mathEnd]);
+    mathStart = text.indexOf('$', mathEnd + 1);
+  }
+  return [...text.matchAll(/\S+(?:\s+|$)/gu)]
+    .map(match => match.index! + match[0].length)
+    .filter(offset => offset < text.length
+      && !expressions.some(([start, end]) => offset > start && offset <= end)
+      && !['**', '__'].includes(text.slice(offset - 1, offset + 1)));
+}
+
 /** The markup for one story's copy. The printed page and the measuring pass
  * both call this, so a paragraph can never be measured as something other than
  * what is printed. Per-paragraph top-to-text spacing is the same control the
@@ -111,12 +181,25 @@ export function newsCopyHtml(piece: NewsPiece, dropCap = false): string {
   // state: a paragraph that starts a continuation page is a new paragraph and
   // indents, while the tail of one the break ran through stays flush.
   const opensParagraph = piece.continued && !piece.paragraphCut;
-  return newsParagraphs(piece.text)
+  const text = piece.text.replace(/\r\n?/gu, '\n');
+  const paragraphs = text.split(PARAGRAPH_BREAK);
+  const separators = [...text.matchAll(/\n[\t ]*\n+/gu)];
+  // A separator carried at a page break belongs to the preceding paragraph;
+  // it must not produce an extra empty paragraph at the foot of that page.
+  if (piece.continues && paragraphs.at(-1) === '') paragraphs.pop();
+  let offset = 0;
+  return paragraphs
     .map((paragraph, index) => {
+      const before = newsMarkersAt(text, offset);
+      const end = offset + paragraph.length;
+      const after = newsMarkersAt(text, end);
+      const balanced = (before.join('') + paragraph + [...after].reverse().join(''))
+        .replace(/[\t ]*\n[\t ]*/gu, ' ');
+      offset = end + (separators[index]?.[0].length ?? 0);
       const top = piece.paragraphTops?.[index];
       const style = top ? ` style="padding-top:${top}px"` : '';
       const indent = index === 0 && opensParagraph ? ' news-para--indent' : '';
-      return `<p class="news-para${indent}"${style}>${runsToHtml(paragraph, dropCap && index === 0)}</p>`;
+      return `<p class="news-para${indent}"${style}>${runsToHtml(balanced, dropCap && index === 0)}</p>`;
     })
     .join('');
 }
@@ -145,18 +228,18 @@ export function pairsWithPrevious(story: NewsStory | undefined, companion: NewsS
     && !usesNewsGrid(story) && !usesNewsGrid(companion);
 }
 
-type NewsRow = {
+export type NewsRow = {
   pieces: NewsPiece[];
   pageBreakBefore: boolean;
   legacyPair?: boolean;
 };
 
 /**
- * Arrange stories on a three-column page grid. Explicit-width stories fill the
+ * Arrange stories on the selected page grid. Explicit-width stories fill the
  * current row from reading-start to reading-end; a full row or a requested row
  * break starts the next band. Preset-only documents use the original layout.
  */
-function arrangeNewsRows(stories: NewsStory[], pageColumns: NewsColumnCount): NewsRow[] {
+export function arrangeNewsRows(stories: NewsStory[], pageColumns: NewsColumnCount): NewsRow[] {
   const rows: NewsRow[] = [];
   let pieces: NewsPiece[] = [];
   let columns = 0;
@@ -206,23 +289,38 @@ function arrangeNewsRows(stories: NewsStory[], pageColumns: NewsColumnCount): Ne
     if (columns === pageColumns) flush();
   }
   flush();
+  for (const band of rows) {
+    const occupied = band.pieces.reduce((sum, piece) => sum + piece.gridSpan!, 0);
+    const free = Math.max(0, pageColumns - occupied);
+    const align = newsRowAlign(band.pieces[0]);
+    let start = 1 + (align === 'end' ? free : align === 'center' ? Math.floor(free / 2) : 0);
+    for (const piece of band.pieces) {
+      piece.gridStart = start;
+      start += piece.gridSpan!;
+    }
+  }
   return rows;
 }
 
 function splitNewsPiece(piece: NewsPiece, capacity: number, measure: (piece: NewsPiece, firstRow?: boolean) => number) {
-  const ends = [...piece.text.matchAll(/\S+(?:\s+|$)/gu)].map(match => match.index! + match[0].length);
+  // A fixed photograph/caption/headline or an oversized final source cannot be
+  // repaired by chipping off one word per page. Keep the story intact and let
+  // the editor report overflow for that frame.
+  if (measure({ ...piece, text: '', paragraphTops: undefined, continues: true }, true) > capacity
+    || measure({ ...piece, text: '', paragraphTops: undefined, continued: true, continues: false }, true) > capacity) return null;
+  const ends = newsWordBreaks(piece.text);
   let low = 0;
-  let high = Math.max(0, ends.length - 1);
+  let high = ends.length;
   while (low < high) {
     const mid = Math.ceil((low + high) / 2);
-    const { head } = splitRichTextAt(piece.text, ends[mid - 1]);
-    if (measure({ ...piece, text: head }, true) <= capacity) low = mid;
+    const { head } = splitNewsTextAt(piece.text, ends[mid - 1]);
+    if (measure({ ...piece, text: head, continues: true }, true) <= capacity) low = mid;
     else high = mid - 1;
   }
   if (!low) return null;
-  const { head, tail } = splitRichTextAt(piece.text, ends[low - 1]);
-  if (!tail || tail === piece.text) return null;
-  const cut = !ENDS_PARAGRAPH.test(head);
+  const { head, tail, rawHead } = splitNewsTextAt(piece.text, ends[low - 1]);
+  if (!tail || tail === piece.text || !parseRuns(tail).some(run => run.text.trim())) return null;
+  const cut = !ENDS_PARAGRAPH.test(rawHead.replace(/\r\n?/gu, '\n'));
   return {
     head: { ...piece, text: head, continues: true },
     tail: {
@@ -231,7 +329,7 @@ function splitNewsPiece(piece: NewsPiece, capacity: number, measure: (piece: New
       continued: true,
       continues: false,
       paragraphCut: cut,
-      paragraphTops: carryParagraphTops(piece, head, cut),
+      paragraphTops: carryParagraphTops(piece, rawHead, cut),
     },
   };
 }
@@ -270,7 +368,12 @@ export function packNews(stories: NewsStory[], capacity: number, gap: number,
       // pair cannot share a page. That preserves its long-standing behaviour.
       if (source.legacyPair) {
         for (const piece of pieces) {
-          placeRow({ pieces: [{ ...piece, pair: undefined, gridSpan: newsStoryWidth(piece, pageColumns) }], pageBreakBefore: false });
+          const span = newsStoryWidth(piece, pageColumns);
+          const align = newsRowAlign(piece);
+          const free = pageColumns - span;
+          placeRow({ pieces: [{ ...piece, pair: undefined, gridSpan: span,
+            gridStart: 1 + (align === 'end' ? free : align === 'center' ? Math.floor(free / 2) : 0),
+          }], pageBreakBefore: false });
         }
         return;
       }

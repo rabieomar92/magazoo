@@ -436,6 +436,23 @@ export interface NewsStory {
   textCols?: NewsColumnCount;
   /** Photograph position. Missing values are inferred from the legacy preset. */
   photoPosition?: NewsPhotoPosition;
+  /** Side photographs occupy this many columns within the story width. */
+  photoCols?: NewsColumnCount;
+  /** Frame height in mm; 0 preserves the source aspect ratio; absent uses theme. */
+  photoHeight?: number;
+  /** Contain preserves the whole image; cover crops it to fill the frame. */
+  photoFit?: 'cover' | 'contain';
+  photoCredit?: string;
+  photoAlt?: string;
+  /** Optional editorial furniture, printed above the running copy. */
+  kicker?: string;
+  deck?: string;
+  byline?: string;
+  /** Optional per-story type settings. Missing values inherit the template. */
+  headlineSize?: number;
+  bodySize?: number;
+  lineHeight?: number;
+  paragraphStyle?: 'indent' | 'spaced';
   /** Prevent this story from filling unused space in the preceding row. */
   rowBreakBefore?: boolean;
   /** Alignment of a row that does not use every available page column. */

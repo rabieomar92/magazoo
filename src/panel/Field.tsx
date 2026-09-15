@@ -195,11 +195,12 @@ export function SegmentField<T extends string | number>({
   return (
     <div className="field field--inline" id={editorTarget ? editorTargetId(editorTarget) : undefined}>
       <span className="field-label">{label}</span>
-      <div className="segment">
+      <div className="segment" role="group" aria-label={label}>
         {options.map((o) => (
           <button
             key={String(o.value)}
             type="button"
+            aria-pressed={o.value === value}
             className={`segment-btn${o.value === value ? ' is-active' : ''}`}
             onClick={() => onChange(o.value)}
           >
