@@ -19,6 +19,7 @@ import './styles/panel.css';
 import './styles/panel-layout.css';
 import './styles/front-matter.css';
 import './styles/paper3-footer.css';
+import './styles/back-cover.css';
 import './styles/news.css';
 import './styles/rtl.css';
 
