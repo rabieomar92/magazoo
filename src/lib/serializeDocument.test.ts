@@ -17,4 +17,17 @@ describe('serializeDocument', () => {
     expect(saved.assets.orphan).toBeUndefined();
     expect(doc.assets.orphan).toBeDefined();
   });
+
+  it('round-trips structured back-cover social links', async () => {
+    const doc = emptyDoc();
+    doc.backCover = {
+      qr: { assetId: null, offsetX: 0, offsetY: 0, scale: 1 },
+      logo: { assetId: null, offsetX: 0, offsetY: 0, scale: 1 },
+      qrLabel: '', brand: 'Brand', tagline: '', website: '', socialLeft: '', socialRight: '',
+      socialLinks: [{ id: 'instagram', platform: 'instagram', url: 'instagram.com/example', label: 'Instagram', side: 'right' }],
+      footerText: '', imprint: '',
+    };
+    const saved = JSON.parse(await serializeDocument(doc));
+    expect(saved.backCover.socialLinks).toEqual(doc.backCover.socialLinks);
+  });
 });

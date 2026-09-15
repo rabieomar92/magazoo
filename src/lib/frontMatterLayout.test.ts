@@ -30,13 +30,26 @@ describe('front matter layout',()=>{
   it('preserves new content through save/reopen and isolates undo drafts',()=>{
     for(const id of ['frontmatter-dean','frontmatter-contents','frontmatter-board'] as const){
       const doc=makeFrontMatter(id);
+      if (id === 'frontmatter-board') {
+        doc.assets['school-logo'] = { src: 'data:image/png;base64,logo', naturalWidth: 600, naturalHeight: 180 };
+        doc.frontMatter!.logo = { assetId: 'school-logo', offsetX: 4, offsetY: -2, scale: 1.1 };
+        doc.design.showTopBar = false;
+      }
       expect(familyOf(id)).toBe('frontmatter');
       const reopened=migrate(JSON.parse(JSON.stringify(doc)));
       expect(reopened.frontMatter).toEqual(doc.frontMatter);
       expect(reopened.cover?.assetId).toBe(doc.cover?.assetId);
+      if (id === 'frontmatter-board') {
+        expect(reopened.assets['school-logo']).toBeDefined();
+        expect(reopened.design.showTopBar).toBe(false);
+      }
       const draft=cloneDocForUpdate(doc);
       draft.frontMatter!.contact='Changed';
       expect(doc.frontMatter!.contact).not.toBe('Changed');
+      if (id === 'frontmatter-board') {
+        draft.frontMatter!.logo!.offsetX = 30;
+        expect(doc.frontMatter!.logo!.offsetX).toBe(4);
+      }
       if(draft.frontMatter!.entries.length){draft.frontMatter!.entries[0].title='Changed';expect(doc.frontMatter!.entries[0].title).not.toBe('Changed');}
     }
   });

@@ -4,11 +4,13 @@ import {
   framedImageGeometry,
   normalizeImageFrame,
   type ImageFrame,
+  type ImageFit,
 } from '../lib/imageFrame';
 
 interface Props {
   asset: Asset;
   frame?: Partial<ImageFrame>;
+  fit?: ImageFit;
   className?: string;
   style?: CSSProperties;
 }
@@ -18,7 +20,7 @@ interface Props {
  * source and container aspect ratios, so pan is bounded to crop/free space and
  * preview zoom cannot reveal a template colour by moving the image box away.
  */
-export function FramedImage({ asset, frame, className, style }: Props) {
+export function FramedImage({ asset, frame, fit = 'cover', className, style }: Props) {
   const imageRef = useRef<HTMLImageElement>(null);
   const resolved = normalizeImageFrame(frame);
 
@@ -37,6 +39,7 @@ export function FramedImage({ asset, frame, className, style }: Props) {
         measuredWidth > 0 ? measuredWidth : container.clientWidth,
         measuredHeight > 0 ? measuredHeight : container.clientHeight,
         resolved,
+        fit,
       );
       if (!geometry.width || !geometry.height) return;
       image.style.inset = 'auto';
@@ -59,7 +62,7 @@ export function FramedImage({ asset, frame, className, style }: Props) {
       image.removeEventListener('load', apply);
       observer?.disconnect();
     };
-  }, [asset.naturalHeight, asset.naturalWidth, resolved]);
+  }, [asset.naturalHeight, asset.naturalWidth, fit, resolved]);
 
   return (
     <img
@@ -71,12 +74,13 @@ export function FramedImage({ asset, frame, className, style }: Props) {
       data-frame-scale={resolved.scale}
       data-frame-x={resolved.offsetX}
       data-frame-y={resolved.offsetY}
+      data-image-fit={fit}
       style={{
         position: 'absolute',
         inset: 0,
         width: '100%',
         height: '100%',
-        objectFit: resolved.scale < 1 ? 'contain' : 'cover',
+        objectFit: fit === 'contain' || resolved.scale < 1 ? 'contain' : 'cover',
         objectPosition: 'center',
         transform: resolved.scale > 1 ? `scale(${resolved.scale})` : undefined,
         ...style,

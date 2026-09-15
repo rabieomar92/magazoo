@@ -11,6 +11,8 @@ export interface FramedImageGeometry {
   top: number;
 }
 
+export type ImageFit = 'cover' | 'contain';
+
 const clamp = (value: number, low: number, high: number) =>
   Math.min(high, Math.max(low, value));
 
@@ -34,13 +36,14 @@ export function framedAxis(container: number, content: number, offset: number): 
   return centred + (safeOffset / 50) * (room / 2);
 }
 
-/** Resolve cover-fit pixels from the real source and frame dimensions. */
+/** Resolve cover/contain-fit pixels from the real source and frame dimensions. */
 export function framedImageGeometry(
   sourceWidth: number,
   sourceHeight: number,
   containerWidth: number,
   containerHeight: number,
   frame?: Partial<ImageFrame>,
+  fit: ImageFit = 'cover',
 ): FramedImageGeometry {
   if (containerWidth <= 0 || containerHeight <= 0) {
     return { width: 0, height: 0, left: 0, top: 0 };
@@ -48,12 +51,11 @@ export function framedImageGeometry(
   const safeSourceWidth = sourceWidth > 0 ? sourceWidth : containerWidth;
   const safeSourceHeight = sourceHeight > 0 ? sourceHeight : containerHeight;
   const resolved = normalizeImageFrame(frame);
-  const coverScale = Math.max(
-    containerWidth / safeSourceWidth,
-    containerHeight / safeSourceHeight,
-  );
-  const width = safeSourceWidth * coverScale * resolved.scale;
-  const height = safeSourceHeight * coverScale * resolved.scale;
+  const baseScale = fit === 'contain'
+    ? Math.min(containerWidth / safeSourceWidth, containerHeight / safeSourceHeight)
+    : Math.max(containerWidth / safeSourceWidth, containerHeight / safeSourceHeight);
+  const width = safeSourceWidth * baseScale * resolved.scale;
+  const height = safeSourceHeight * baseScale * resolved.scale;
   return {
     width,
     height,

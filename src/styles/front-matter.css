@@ -69,12 +69,139 @@
 .fm-page--contents .fm-unit { font-size: var(--fs-body); }
 .fm-page--contents .fm-header { margin-bottom: 12mm; }
 .fm-banner { position: relative; height: var(--hero-h); overflow: hidden; margin-top: 7mm; }
-.fm-page--board .fm-middle { grid-template-columns: 45mm minmax(0,1fr); gap: 8mm; }
-.fm-page--board .fm-rail { grid-column: 1; grid-row: 1; border: 0; padding: 0; }
-.fm-page--board .fm-columns { grid-column: 2; border-inline-start: .25mm solid color-mix(in srgb,var(--ink) 25%,transparent); padding-inline-start: 7mm; }
-.fm-page--board .fm-unit h2 { font: 700 9pt/1.35 var(--sans); }
-.fm-page--board .fm-unit { font-size: var(--fs-body); }
-.fm-page--board .fm-header { margin-bottom: 7mm; }
+.fm-page--board { padding-top: 0; }
+.fm-page--board .fm-shell { padding-top: 0; }
+.fm-page--board > .tag-bar { z-index: 3; }
+.fm-board-hero {
+  flex: none;
+  min-width: 0;
+  margin: 0;
+}
+.fm-page--board .fm-banner--bleed {
+  width: calc(100% + 2 * var(--margin));
+  height: var(--hero-h);
+  margin: 0 calc(-1 * var(--margin));
+  background: color-mix(in srgb,var(--ink) 10%,var(--paper-bg,#fff));
+}
+.fm-board-caption {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0,1fr) auto;
+  align-items: start;
+  gap: 2mm 5mm;
+  padding: 4.5mm 0 5mm;
+  font: 400 6.6pt/1.32 var(--sans);
+}
+.fm-board-caption-line {
+  min-width: 0;
+  margin: 0;
+}
+.fm-board-caption-line strong {
+  display: inline;
+  margin-inline-end: .7em;
+  font-weight: 750;
+}
+.fm-board-caption-line strong::before {
+  content: '▲';
+  margin-inline-end: .55em;
+  color: var(--accent);
+  font-size: .72em;
+  vertical-align: .12em;
+}
+.fm-board-caption small {
+  max-width: 45mm;
+  color: color-mix(in srgb,var(--ink) 68%,transparent);
+  font: inherit;
+  text-align: end;
+  overflow-wrap: anywhere;
+}
+.fm-page--board .fm-middle {
+  grid-template-columns: minmax(0,1.18fr) minmax(0,.82fr);
+  gap: 6mm;
+  align-items: stretch;
+  border-top: .25mm solid color-mix(in srgb,var(--ink) 48%,transparent);
+  padding-top: 5.5mm;
+}
+.fm-page--board .fm-rail {
+  grid-column: 1;
+  grid-row: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border: 0;
+  padding: 0;
+  font-size: var(--fs-body);
+}
+.fm-page--board .fm-rail h2 {
+  margin-bottom: 3.5mm;
+  color: var(--ink);
+  font: 780 12.5pt/1.08 var(--sans);
+  letter-spacing: -.015em;
+}
+.fm-page--board .fm-note-text {
+  column-count: 3;
+  column-gap: 4mm;
+  line-height: 1.4;
+}
+.fm-page--board .fm-columns {
+  grid-column: 2;
+  height: 100%;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  grid-template-rows: auto minmax(0,1fr);
+  column-gap: 4mm;
+  row-gap: 3.5mm;
+  border-inline-start: .25mm solid color-mix(in srgb,var(--ink) 34%,transparent);
+  padding-inline-start: 6mm;
+}
+.fm-board-list-header {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+.fm-board-list-header h1 {
+  margin: 0;
+  color: var(--ink);
+  font: 780 var(--fs-title)/1.08 var(--sans);
+  letter-spacing: -.015em;
+  white-space: pre-line;
+  text-transform: none;
+}
+.fm-board-list-header p {
+  margin: 1.2mm 0 0;
+  color: color-mix(in srgb,var(--ink) 72%,transparent);
+  font: 400 var(--fs-subtitle)/1.32 var(--font-subtitle);
+}
+.fm-page--board .fm-column { gap: 2.8mm; }
+.fm-page--board .fm-unit h2 {
+  margin-bottom: 1mm;
+  color: var(--ink);
+  font: 720 7.2pt/1.25 var(--sans);
+  text-transform: none;
+}
+.fm-page--board .fm-unit { font-size: var(--fs-body); line-height: 1.35; }
+.fm-board-contact {
+  width: calc((100% - 8mm) / 3);
+  margin-block: auto 3mm;
+  margin-inline-start: auto;
+  padding-top: 3mm;
+  font: 600 6.4pt/1.35 var(--sans);
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+.fm-board-logo {
+  position: relative;
+  align-self: flex-end;
+  width: min(34mm,100%);
+  height: 14mm;
+  overflow: hidden;
+}
+.fm-page--board[dir="rtl"] :is(.fm-board-caption-line strong,.fm-board-list-header h1,.fm-unit h2) {
+  letter-spacing: normal;
+}
+.fm-page--board .fm-footer {
+  margin-top: 4mm;
+  padding-top: 0;
+  border-top: 0;
+}
 .fm-measure { position: absolute; left: -20000px; top: 0; visibility: hidden; pointer-events: none; }
 .fm-measure-unit { flex: none; }
 .fm-page [data-editor-target], .fm-paragraph { cursor: pointer; }

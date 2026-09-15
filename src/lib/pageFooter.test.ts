@@ -41,7 +41,7 @@ describe('shared running footer', () => {
       for (const side of ['left','right'] as const) {
         doc.design.barSide=side;
         doc.footer={text:'Science magazine',startNumber:11};
-        for(let i=0;i<4;i++) expect(pageFooter(doc,i)).toMatchObject({enabled:doc.templateId!=='magazine-4',text:'Science magazine',number:11+i,right:(side==='right') !== (i%2===1),fontFamily:'Helvetica',fontSize:7});
+        for(let i=0;i<4;i++) expect(pageFooter(doc,i)).toMatchObject({enabled:!['magazine-4','backcover-1'].includes(doc.templateId ?? ''),text:'Science magazine',number:11+i,right:(side==='right') !== (i%2===1),fontFamily:'Helvetica',fontSize:7});
       }
     }
   });

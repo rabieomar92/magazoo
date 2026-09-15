@@ -30,6 +30,15 @@ describe('bounded image framing', () => {
     expect(out.top).toBe(-50);
   });
 
+  it('fits a complete logo inside its frame without cropping at 1x', () => {
+    const out = framedImageGeometry(1200, 300, 240, 120, {
+      scale: 1,
+      offsetX: 0,
+      offsetY: 0,
+    }, 'contain');
+    expect(out).toEqual({ width: 240, height: 60, left: 0, top: 30 });
+  });
+
   it('clamps damaged saved values to the supported range', () => {
     expect(normalizeImageFrame({ scale: 99, offsetX: -999, offsetY: Number.NaN })).toEqual({
       scale: 3,
