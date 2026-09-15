@@ -78,7 +78,11 @@ describe('placed-image template coverage', () => {
 
   it('starts every new template with a 10 mm top-bar offset', () => {
     for (const template of TEMPLATES) {
-      expect(template.make().design.topBarOffset).toBe(10);
+      const doc = template.make();
+      // The reverse cover deliberately has no top bar; its zero offset keeps
+      // the full-bleed composition flush with the trim edge.
+      if (doc.templateId === 'backcover-1') expect(doc.design.topBarOffset).toBe(0);
+      else expect(doc.design.topBarOffset).toBe(10);
     }
   });
 

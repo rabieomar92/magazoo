@@ -13,6 +13,7 @@ import { DesignSection } from './sections/DesignSection';
 import { ArticleImagesSection } from './sections/ArticleImagesSection';
 import { FrontMatterContent, FrontMatterImages, FrontMatterDesign } from './sections/FrontMatterSection';
 import { NewsContent, NewsImages } from './sections/NewsSection';
+import { BackCoverContent, BackCoverImages, BackCoverDesign } from './sections/BackCoverSection';
 import { DirectionSection } from './sections/DirectionSection';
 import {
   blockEditorId,
@@ -34,6 +35,7 @@ const TABS: { id: TabId; label: string }[] = [
 
 const TEMPLATE_GROUPS: { family: TemplateFamily; label: string }[] = [
   { family: 'news', label: 'News & briefs' },
+  { family: 'backcover', label: 'Back cover' },
   { family: 'frontmatter', label: 'Magazine front matter' },
   { family: 'paper', label: 'Article' },
   { family: 'magazine', label: 'Editorial' },
@@ -58,9 +60,10 @@ export function Panel() {
   const isGate = templateId === 'magazine-3';
   const isFrontMatter = familyOf(templateId) === 'frontmatter';
   const isNews = familyOf(templateId) === 'news';
+  const isBackCover = familyOf(templateId) === 'backcover';
   useEffect(() => {
-    if ((isFrontMatter || isNews) && tab === 'highlights') setTab('content');
-  },[isFrontMatter,isNews,tab]);
+    if ((isFrontMatter || isNews || isBackCover) && tab === 'highlights') setTab('content');
+  },[isFrontMatter,isNews,isBackCover,tab]);
 
   useEffect(() => {
     const reveal = (id: string, attempts = 0) => {
@@ -118,7 +121,7 @@ export function Panel() {
   return (
     <aside className="panel">
       <nav className="panel-tabs" role="tablist" aria-label="Editor sections">
-        {TABS.filter(t => !(isFrontMatter || isNews) || t.id !== 'highlights').map((t) => (
+        {TABS.filter(t => !(isFrontMatter || isNews || isBackCover) || t.id !== 'highlights').map((t) => (
           <button
             key={t.id}
             type="button"
@@ -158,12 +161,12 @@ export function Panel() {
       <div className="panel-scroll">
         {tab === 'content' && (
           <>
-            {isGate ? <div className="section"><p className="hint">Cover text and its appearance now live together under Cover & design.</p><button type="button" className="add-btn" onClick={() => setTab('design')}>Edit cover text & design</button></div> : <><MetaSection /><FooterSection /></>}
-            {isNews ? <NewsContent /> : isFrontMatter ? <FrontMatterContent /> : <BodySection />}
+            {isBackCover ? <BackCoverContent /> : isGate ? <div className="section"><p className="hint">Cover text and its appearance now live together under Cover & design.</p><button type="button" className="add-btn" onClick={() => setTab('design')}>Edit cover text & design</button></div> : <><MetaSection /><FooterSection /></>}
+            {isBackCover ? null : isNews ? <NewsContent /> : isFrontMatter ? <FrontMatterContent /> : <BodySection />}
           </>
         )}
         {tab === 'images' &&
-          (isNews ? <NewsImages /> : isFrontMatter ? <FrontMatterImages /> : isGallery ? (
+          (isBackCover ? <BackCoverImages /> : isNews ? <NewsImages /> : isFrontMatter ? <FrontMatterImages /> : isGallery ? (
             <GallerySection />
           ) : (
             <>
@@ -177,7 +180,7 @@ export function Panel() {
             <ReferencesSection />
           </>
         )}
-        {tab === 'design' && <><DirectionSection />{isFrontMatter || isNews ? <FrontMatterDesign /> : <DesignSection />}</>}
+        {tab === 'design' && <><DirectionSection />{isBackCover ? <BackCoverDesign /> : isFrontMatter || isNews ? <FrontMatterDesign /> : <DesignSection />}</>}
       </div>
     </aside>
   );

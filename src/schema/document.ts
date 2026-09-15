@@ -2,7 +2,7 @@ export const SCHEMA_VERSION = 1;
 export const DEFAULT_TOP_BAR_OFFSET = 10;
 
 /** Template family = which layout engine renders the document. */
-export type TemplateFamily = 'paper' | 'magazine' | 'gallery' | 'frontmatter' | 'news';
+export type TemplateFamily = 'paper' | 'magazine' | 'gallery' | 'frontmatter' | 'news' | 'backcover';
 
 /** A specific template. The family (engine) is the id's prefix; the number picks
  *  a preset (content + design tokens) within that engine. */
@@ -21,11 +21,12 @@ export type TemplateId =
   | 'gallery-4'
   | 'frontmatter-dean'
   | 'frontmatter-contents'
-  | 'frontmatter-board';
+  | 'frontmatter-board'
+  | 'backcover-1';
 
 /** The layout engine a template runs on — derived from the id, never stored. */
 export const familyOf = (id: TemplateId | undefined): TemplateFamily =>
-  id?.startsWith('news') ? 'news' : id?.startsWith('frontmatter') ? 'frontmatter' : id?.startsWith('gallery') ? 'gallery' : id?.startsWith('magazine') ? 'magazine' : 'paper';
+  id?.startsWith('backcover') ? 'backcover' : id?.startsWith('news') ? 'news' : id?.startsWith('frontmatter') ? 'frontmatter' : id?.startsWith('gallery') ? 'gallery' : id?.startsWith('magazine') ? 'magazine' : 'paper';
 
 /** Native title-to-subtitle spacing for each layout, in millimetres. */
 export const defaultSubtitleGap = (id: TemplateId | undefined): number => {
@@ -270,6 +271,67 @@ export interface FrontCoverDesign {
   text?: Partial<Record<FrontCoverTextRole, FrontCoverTextStyle>>;
 }
 
+export type BackCoverTextRole =
+  | 'brand'
+  | 'tagline'
+  | 'website'
+  | 'qrLabel'
+  | 'socialLabel'
+  | 'socialUrl'
+  | 'footerText'
+  | 'imprint';
+
+/** Typography and reading-order spacing for one back-cover text object. */
+export interface BackCoverTextStyle {
+  fontFamily?: string;
+  fontSize?: number;
+  fontWeight?: number;
+  italic?: boolean;
+  /** em units; negative values are intentionally supported for display copy. */
+  letterSpacing?: number;
+  lineHeight?: number;
+  color?: string;
+  visible?: boolean;
+  /** Constrained movement within the existing vertical hierarchy, in mm. */
+  spaceBefore?: number;
+}
+
+/**
+ * Dedicated, bounded controls for the fixed one-sheet back cover. The nested
+ * object keeps a fairly large set of editor choices organized without making
+ * unrelated article templates carry those controls. Legacy flat backCover*
+ * fields remain readable by the resolver so older saved projects are stable.
+ */
+export interface BackCoverDesign {
+  brandTop?: number;
+  brandWidth?: number;
+  brandAlign?: 'start' | 'center' | 'end';
+  sideInset?: number;
+  bottomInset?: number;
+  footerGap?: number;
+  qrSize?: number;
+  qrGap?: number;
+  logoWidth?: number;
+  logoHeight?: number;
+  socialIconSize?: number;
+  socialItemGap?: number;
+  socialTextGap?: number;
+  /** Optional overrides; absent values continue to follow the global palette. */
+  mutedColor?: string;
+  socialIconColor?: string;
+  ruleColor?: string;
+  ruleVisible?: boolean;
+  ruleWidth?: number;
+  ruleThickness?: number;
+  ruleTopGap?: number;
+  ruleBottomGap?: number;
+  showQr?: boolean;
+  showCentreLogo?: boolean;
+  showSocial?: boolean;
+  showImprint?: boolean;
+  text?: Partial<Record<BackCoverTextRole, BackCoverTextStyle>>;
+}
+
 export interface Design {
   /** Optional first-paragraph decorative initial; Arabic remains joined. */
   dropCap?: boolean;
@@ -350,6 +412,9 @@ export interface Design {
   barColor?: string;
   barTagColor?: string;
   barTagInk?: string;
+  /** Editorial Board only: hide its masthead/top-bar layer. Missing means
+   * visible so projects saved before this control keep their original page. */
+  showTopBar?: boolean;
   /**
    * Which side the top bar's masthead/tag label begins on. Absent = 'left'
    * (v1 files, and every template's original look, are unaffected). Following
@@ -375,6 +440,21 @@ export interface Design {
   gateAccentLastWord?: boolean;
   /** Magazine 3 pull-quote divider thickness in screen/print pixels. Zero hides it. */
   gateQuoteRule?: number;
+  /** Back cover: bounded placement controls for the centered brand lock-up. */
+  backCoverBrandTop?: number;
+  /** Back cover: inset from the physical page edge for the social footer. */
+  backCoverSideInset?: number;
+  /** Back cover: distance from the bottom trim to its social footer. */
+  backCoverSocialBottom?: number;
+  /** Back cover: physical QR-code edge length. */
+  backCoverQrSize?: number;
+  /** Back cover: physical dimensions of the optional centre logo frame. */
+  backCoverLogoWidth?: number;
+  backCoverLogoHeight?: number;
+  /** Back cover: physical edge length of each social-platform mark. */
+  backCoverSocialIconSize?: number;
+  /** Back-cover-only composition, visibility and per-object typography. */
+  backCover?: BackCoverDesign;
   /** Physical distance from the title box to the subtitle/lede, in mm. */
   subtitleGap: number;
   /** millimetres */
@@ -409,8 +489,69 @@ export interface FrontMatter {
   noteTitle: string;
   note: string;
   contact: string;
+  /** Publication mark used by the editorial-board page. Kept separate from
+   * the article hero/cover so changing templates can never replace either. */
+  logo?: { assetId: string | null; offsetX: number; offsetY: number; scale: number };
   signoff?: string;
   pageStart: number;
+}
+
+/** Content owned by the dedicated back-cover composition. Images are optional
+ * so a new issue can be written before the final QR/logo artwork is available.
+ * The two image frames are deliberately independent from hero/cover slots. */
+export interface BackCoverImage {
+  assetId: string | null;
+  offsetX: number;
+  offsetY: number;
+  scale: number;
+}
+
+/** Social platforms supported by the reverse-cover footer. The value is kept
+ * as a small closed set so the editor can provide a consistent mark and the
+ * PDF never depends on a third-party icon service. */
+export type BackCoverSocialPlatform =
+  | 'facebook'
+  | 'instagram'
+  | 'x'
+  | 'linkedin'
+  | 'youtube'
+  | 'tiktok'
+  | 'threads'
+  | 'bluesky'
+  | 'whatsapp'
+  | 'github'
+  | 'telegram'
+  | 'discord'
+  | 'pinterest'
+  | 'reddit'
+  | 'mastodon'
+  | 'twitch'
+  | 'website'
+  | 'email'
+  | 'rss';
+
+export interface BackCoverSocialLink {
+  id: string;
+  platform: BackCoverSocialPlatform;
+  url: string;
+  /** Optional display name; blank uses the platform's accessible label. */
+  label?: string;
+  side: 'left' | 'right';
+}
+
+export interface BackCover {
+  qr: BackCoverImage;
+  logo: BackCoverImage;
+  qrLabel: string;
+  brand: string;
+  tagline: string;
+  website: string;
+  socialLeft: string;
+  socialRight: string;
+  /** Structured links supersede the legacy plain-text columns when present. */
+  socialLinks?: BackCoverSocialLink[];
+  footerText: string;
+  imprint: string;
 }
 
 /** Independent briefs, kept in editorial reading order. Images travel with
@@ -480,6 +621,8 @@ export interface Doc {
   };
   /** Dedicated front-of-magazine content; optional in existing documents. */
   frontMatter?: FrontMatter;
+  /** Dedicated back-cover copy and image slots; optional in older documents. */
+  backCover?: BackCover;
   schemaVersion: number;
   /** Active layout template. Absent = 'paper-1' (v1 files keep their layout). */
   templateId?: TemplateId;
@@ -577,6 +720,9 @@ export const emptyDoc = (): Doc => ({
 export function assetIsReferenced(doc: Doc, assetId: string): boolean {
   return doc.hero?.assetId === assetId ||
     doc.cover?.assetId === assetId ||
+    doc.frontMatter?.logo?.assetId === assetId ||
+    doc.backCover?.qr?.assetId === assetId ||
+    doc.backCover?.logo?.assetId === assetId ||
     doc.design?.pageBackgroundAssetId === assetId ||
     (doc.news?.stories ?? []).some((story) => story.assetId === assetId) ||
     doc.blocks.some((block) => block.type === 'figure' && block.assetId === assetId) ||

@@ -10,6 +10,7 @@ export function MetaSection() {
   const barColor = useDoc((s) => s.doc.design.barColor ?? s.doc.design.colors.accent);
   const isP2 = useDoc((s) => s.doc.templateId === 'paper-2');
   const isNews = useDoc(s => s.doc.templateId === 'news-briefs');
+  const isBoard = useDoc(s => s.doc.templateId === 'frontmatter-board');
   const showAuthor = useDoc(s => s.doc.templateId !== 'frontmatter-contents' && s.doc.templateId !== 'frontmatter-board' && s.doc.templateId !== 'news-briefs');
   const update = useDoc((s) => s.update);
 
@@ -24,7 +25,7 @@ export function MetaSection() {
     });
 
   return (
-    <Section title={isGallery ? 'Header' : isNews ? 'Page header (optional)' : 'Title & Author'}>
+    <Section title={isGallery ? 'Header' : isNews ? 'Page header (optional)' : isBoard ? 'Editorial page text' : 'Title & Author'}>
       <LabeledInput
         label="Top bar text"
         editorTarget="meta-masthead"
@@ -38,7 +39,7 @@ export function MetaSection() {
       ) : (
         <>
           <LabeledInput
-            label={isMag ? 'Kicker' : 'Category'}
+            label={isBoard ? 'Hero caption title' : isMag ? 'Kicker' : 'Category'}
             editorTarget="meta-category"
             value={meta.categoryLabel}
             onChange={set('categoryLabel')}
@@ -53,6 +54,23 @@ export function MetaSection() {
             onChange={set('subtitle')}
             placeholder="One explanatory sentence"
           />
+          {isBoard && <>
+            <LabeledTextarea
+              rows={3}
+              label="Hero image caption"
+              editorTarget="meta-hero-caption"
+              value={meta.heroCaption ?? ''}
+              onChange={set('heroCaption')}
+              placeholder="Explain what the reader is seeing"
+            />
+            <LabeledInput
+              label="Hero image credit"
+              editorTarget="meta-photo-credit"
+              value={meta.photoCredit ?? ''}
+              onChange={set('photoCredit')}
+              placeholder="Photo: name or organisation"
+            />
+          </>}
           {showAuthor && <><LabeledInput editorTarget="meta-author" label="Author" value={meta.author} onChange={set('author')} placeholder="A. Rahman, S. Tan" />
           <LabeledInput
             label={isMag ? 'Affiliation / Section' : 'Affiliation'}

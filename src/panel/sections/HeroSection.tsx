@@ -3,17 +3,36 @@ import { useDoc } from '../../store/useDoc';
 import { assetIsReferenced, uid, type Doc } from '../../schema/document';
 import { loadImage, ImageLoadError } from '../../lib/loadImage';
 import type { ImageFrame } from '../../lib/imageFrame';
+import type { ImageFit } from '../../lib/imageFrame';
 import { FramedImage } from '../../components/FramedImage';
 import { LabeledNumber, LabeledRange, Section, SegmentField } from '../Field';
+import { emptyFrontMatter } from '../../store/frontMatter';
+import { emptyBackCover } from '../../store/backCover';
 
 type Frame = ImageFrame & { assetId: string | null };
+export type ImageSlot = 'hero' | 'cover' | 'frontmatter-logo' | 'backcover-qr' | 'backcover-logo';
 const EMPTY_FRAME: Frame = { assetId: null, offsetX: 0, offsetY: 0, scale: 1 };
 
-/** One uploadable, framable image bound to either `doc.hero` or `doc.cover`. */
-export function ImagePicker({ slot, title, blurb }: { slot: 'hero' | 'cover'; title: string; blurb?: string }) {
-  const frame = useDoc((s) => (s.doc[slot] ?? EMPTY_FRAME) as Frame);
+const frameFor = (doc: Doc, slot: ImageSlot): Frame => {
+  if (slot === 'frontmatter-logo') return (doc.frontMatter?.logo ?? EMPTY_FRAME) as Frame;
+  if (slot === 'backcover-qr') return (doc.backCover?.qr ?? EMPTY_FRAME) as Frame;
+  if (slot === 'backcover-logo') return (doc.backCover?.logo ?? EMPTY_FRAME) as Frame;
+  return (doc[slot] ?? EMPTY_FRAME) as Frame;
+};
+
+interface ImagePickerProps {
+  slot: ImageSlot;
+  title: string;
+  blurb?: string;
+  fit?: ImageFit;
+  thumbAspectRatio?: string;
+}
+
+/** One uploadable, framable image bound to a deliberately independent slot. */
+export function ImagePicker({ slot, title, blurb, fit = 'cover', thumbAspectRatio }: ImagePickerProps) {
+  const frame = useDoc((s) => frameFor(s.doc, slot));
   const asset = useDoc((s) => {
-    const f = (s.doc[slot] ?? EMPTY_FRAME) as Frame;
+    const f = frameFor(s.doc, slot);
     return f.assetId ? s.doc.assets[f.assetId] : null;
   });
   const update = useDoc((s) => s.update);
@@ -23,7 +42,14 @@ export function ImagePicker({ slot, title, blurb }: { slot: 'hero' | 'cover'; ti
 
   const setFrame = (d: Doc, f: Frame) => {
     if (slot === 'hero') d.hero = f;
-    else d.cover = f;
+    else if (slot === 'cover') d.cover = f;
+    else if (slot === 'frontmatter-logo') {
+      d.frontMatter ??= emptyFrontMatter();
+      d.frontMatter.logo = f;
+    } else {
+      d.backCover ??= emptyBackCover();
+      d.backCover[slot === 'backcover-qr' ? 'qr' : 'logo'] = f;
+    }
   };
 
   const onFile = async (file: File | undefined) => {
@@ -33,7 +59,7 @@ export function ImagePicker({ slot, title, blurb }: { slot: 'hero' | 'cover'; ti
     try {
       const { src, naturalWidth, naturalHeight } = await loadImage(file);
       update((d) => {
-        const prev = (d[slot] as Frame | undefined)?.assetId ?? null;
+        const prev = frameFor(d, slot).assetId;
         const id = uid();
         d.assets[id] = { src, naturalWidth, naturalHeight };
         setFrame(d, { assetId: id, offsetX: 0, offsetY: 0, scale: 1 });
@@ -48,20 +74,20 @@ export function ImagePicker({ slot, title, blurb }: { slot: 'hero' | 'cover'; ti
 
   const removeImage = () =>
     update((d) => {
-      const prev = (d[slot] as Frame | undefined)?.assetId ?? null;
+      const prev = frameFor(d, slot).assetId;
       setFrame(d, { assetId: null, offsetX: 0, offsetY: 0, scale: 1 });
       if (prev && !assetIsReferenced(d, prev)) delete d.assets[prev];
     });
 
   const setKey = (key: 'offsetX' | 'offsetY' | 'scale') => (v: number) =>
     update((d) => {
-      const f: Frame = { ...EMPTY_FRAME, ...(d[slot] as Frame | undefined) };
+      const f: Frame = { ...EMPTY_FRAME, ...frameFor(d, slot) };
       f[key] = v;
       setFrame(d, f);
     });
 
   return (
-    <Section title={title} editorTarget={`image-${slot}`}>
+    <Section title={title} editorTarget={slot === 'frontmatter-logo' ? 'image-logo' : `image-${slot}`}>
       {blurb && <p className="hint">{blurb}</p>}
       <input
         ref={fileRef}
@@ -76,8 +102,8 @@ export function ImagePicker({ slot, title, blurb }: { slot: 'hero' | 'cover'; ti
 
       {asset ? (
         <>
-          <div className="hero-thumb" style={{ aspectRatio: slot === 'cover' ? '210 / 297' : '16 / 7' }}>
-            <FramedImage asset={asset} frame={frame} />
+          <div className="hero-thumb" style={{ aspectRatio: thumbAspectRatio ?? (slot === 'cover' ? '210 / 297' : slot === 'backcover-qr' ? '1 / 1' : '16 / 7') }}>
+            <FramedImage asset={asset} frame={frame} fit={fit} />
           </div>
           <div className="hero-actions">
             <button type="button" className="add-btn" disabled={loading} onClick={() => fileRef.current?.click()}>
@@ -91,7 +117,7 @@ export function ImagePicker({ slot, title, blurb }: { slot: 'hero' | 'cover'; ti
           <LabeledRange label="Shift horizontally" value={frame.offsetX} min={-50} max={50} step={1} format={(v) => `${v}%`} onChange={setKey('offsetX')} />
           <LabeledRange label="Shift vertically" value={frame.offsetY} min={-50} max={50} step={1} format={(v) => `${v}%`} onChange={setKey('offsetY')} />
           <LabeledRange label="Zoom" value={frame.scale} min={0.5} max={3} step={0.05} format={(v) => `${v.toFixed(2)}×`} onChange={setKey('scale')} />
-          <p className="hint">Below 1× reveals more of the image; 1× fills the frame.</p>
+          <p className="hint">{fit === 'contain' ? '1× shows the complete image; zoom above 1× only when you want a tighter logo crop.' : 'Below 1× reveals more of the image; 1× fills the frame.'}</p>
           <button
             type="button"
             className="add-btn"

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { temporal } from 'zundo';
 import { emptyDoc, type Doc, type TemplateId } from '../schema/document';
+import { makeBackCover } from './backCover';
 
 interface State {
   doc: Doc;
@@ -25,6 +26,13 @@ export function cloneDocForUpdate(doc: Doc): Doc {
     frontMatter: doc.frontMatter ? {
       ...doc.frontMatter,
       entries: doc.frontMatter.entries.map(entry => ({ ...entry })),
+      logo: doc.frontMatter.logo ? { ...doc.frontMatter.logo } : undefined,
+    } : undefined,
+    backCover: doc.backCover ? {
+      ...doc.backCover,
+      qr: { ...doc.backCover.qr },
+      logo: { ...doc.backCover.logo },
+      socialLinks: doc.backCover.socialLinks?.map(link => ({ ...link })),
     } : undefined,
     blocks: doc.blocks.map((block) =>
       block.type === 'figure' && block.frame
@@ -57,6 +65,12 @@ export function cloneDocForUpdate(doc: Doc): Doc {
       gateTypography: doc.design.gateTypography ? Object.fromEntries(
         Object.entries(doc.design.gateTypography).map(([role, style]) => [role, { ...style }]),
       ) : undefined,
+      backCover: doc.design.backCover ? {
+        ...doc.design.backCover,
+        text: doc.design.backCover.text ? Object.fromEntries(
+          Object.entries(doc.design.backCover.text).map(([role, style]) => [role, { ...style }]),
+        ) : undefined,
+      } : undefined,
       colors: { ...doc.design.colors },
       sizes: { ...doc.design.sizes },
     },
@@ -93,6 +107,24 @@ export const useDoc = create<State>()(
         if (s.doc.templateId === id) return { doc: s.doc };
         const next = cloneDocForUpdate(s.doc);
         next.templateId = id;
+        // A first visit to the dedicated back cover needs its own presentation
+        // defaults, but this is deliberately limited to the new template's
+        // presentation fields. Article copy, images, highlights, references
+        // and the user's reading direction remain untouched.
+        if (id === 'backcover-1' && !next.backCover) {
+          const preset = makeBackCover();
+          const direction = next.design.textDirection;
+          const barSide = next.design.barSide;
+          const customCss = next.design.customCss;
+          next.backCover = preset.backCover;
+          next.footer = preset.footer;
+          next.design = {
+            ...preset.design,
+            textDirection: direction,
+            barSide,
+            customCss,
+          };
+        }
         return { doc: next };
       }),
     }),

@@ -10,6 +10,8 @@ describe('cleanOrphanedAssets', () => {
     const backgroundId = uid();
     const orphanId = uid();
     const placedId = uid();
+    const backQrId = uid();
+    const backLogoId = uid();
 
     doc.hero.assetId = heroId;
     doc.cover = { assetId: coverId, offsetX: 0, offsetY: 0, scale: 1 };
@@ -18,6 +20,11 @@ describe('cleanOrphanedAssets', () => {
       { id: uid(), type: 'paragraph', text: 'Hello' },
     ];
     doc.design.pageBackgroundAssetId = backgroundId;
+    doc.backCover = {
+      qr: { assetId: backQrId, offsetX: 0, offsetY: 0, scale: 1 },
+      logo: { assetId: backLogoId, offsetX: 0, offsetY: 0, scale: 1 },
+      qrLabel: '', brand: '', tagline: '', website: '', socialLeft: '', socialRight: '', footerText: '', imprint: '',
+    };
     doc.images.push({
       id: uid(),
       assetId: placedId,
@@ -32,6 +39,8 @@ describe('cleanOrphanedAssets', () => {
       [figId]: { src: 'data:image/svg+xml;fig', naturalWidth: 100, naturalHeight: 100 },
       [backgroundId]: { src: 'data:image/svg+xml;background', naturalWidth: 100, naturalHeight: 100 },
       [placedId]: { src: 'data:image/svg+xml;placed', naturalWidth: 100, naturalHeight: 100 },
+      [backQrId]: { src: 'data:image/svg+xml:back-qr', naturalWidth: 100, naturalHeight: 100 },
+      [backLogoId]: { src: 'data:image/svg+xml:back-logo', naturalWidth: 100, naturalHeight: 100 },
       [orphanId]: { src: 'data:image/svg+xml;orphan', naturalWidth: 100, naturalHeight: 100 },
     };
 
@@ -42,6 +51,8 @@ describe('cleanOrphanedAssets', () => {
     expect(doc.assets[figId]).toBeDefined();
     expect(doc.assets[backgroundId]).toBeDefined();
     expect(doc.assets[placedId]).toBeDefined();
+    expect(doc.assets[backQrId]).toBeDefined();
+    expect(doc.assets[backLogoId]).toBeDefined();
     expect(doc.assets[orphanId]).toBeUndefined();
   });
 });

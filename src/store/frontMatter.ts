@@ -2,7 +2,9 @@ import { emptyDoc, uid, type Doc, type TemplateId, type FrontMatter } from '../s
 
 export const emptyFrontMatter = (): FrontMatter => ({
   entries: [], aboutTitle: 'About the magazine', about: '',
-  noteTitle: 'In this issue', note: '', contact: '', signoff: 'With best wishes,', pageStart: 1,
+  noteTitle: 'In this issue', note: '', contact: '',
+  logo: { assetId: null, offsetX: 0, offsetY: 0, scale: 1 },
+  signoff: 'With best wishes,', pageStart: 1,
 });
 
 /** Original, embedded placeholder artwork: no remote image dependency. */
@@ -74,14 +76,20 @@ export function makeFrontMatter(id: TemplateId): Doc {
       ['30', 'Perspectives', 'What comes next for physics?'],
     ].map(([page,title,text]) => ({id:uid(),page,title,text}));
   } else {
-    d.meta.categoryLabel = 'The people behind the pages';
+    d.meta.categoryLabel = 'Inside the School of Physics';
     d.meta.title = 'Editorial board';
-    d.meta.subtitle = 'A shared commitment to clear, thoughtful science communication.';
-    d.design.colors.accent = '#dfb574';
-    d.design.colors.ink = '#f0efea';
-    d.design.paperBg = '#172c30';
-    d.design.barColor = '#dfb574';
-    d.frontMatter.about = 'The Physicist brings research, education and the people of our physics community into focus. We make complex ideas approachable without losing the wonder of discovery.\n\nPublished by the School of Physics, Universiti Sains Malaysia.\n\nThis is a sample masthead. Replace the roles, names and publication details with your own.';
+    d.meta.subtitle = 'The people who shape every issue.';
+    d.meta.heroCaption = 'Research, teaching and the people behind them come together in this issue from the School of Physics.';
+    d.meta.photoCredit = 'Replace with photo credit';
+    d.design.heroHeight = 152;
+    d.design.margin = 13;
+    d.design.sizes = { title: 18, subtitle: 8, author: 8, affiliation: 7, categoryLabel: 7, body: 7.1 };
+    d.design.colors = { hero: '#231f20', ink: '#f5f4f1', accent: '#dc3a3f', accentSoft: '#3a3335' };
+    d.design.paperBg = '#231f20';
+    d.design.barColor = '#231f20';
+    d.frontMatter.aboutTitle = 'School of Physics';
+    d.frontMatter.about = 'The School of Physics advances teaching and research across fundamental and applied physics. Our community connects discovery with education, industry and society.\n\nThe Physicist shares that work in an accessible form while preserving scientific care and context. It is produced with contributions from staff, students, alumni and collaborators.\n\nReplace this sample copy with the publication profile, address and contact details for your issue.';
+    d.frontMatter.contact = 'School of Physics · Universiti Sains Malaysia\nwww.physics.usm.my';
     d.frontMatter.entries = [
       ['Patron', 'Professor [Name]\nDean, School of Physics'],
       ['Editor-in-chief', 'Dr. [Name]'],

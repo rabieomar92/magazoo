@@ -59,6 +59,54 @@ describe('cloneDocForUpdate', () => {
     expect(source.news.stories[0].paragraphTops).toEqual([0, 12]);
     expect(source.news.stories[0].frame?.offsetX).toBe(0);
   });
+
+  it('clones structured back-cover social links without sharing row objects', () => {
+    const source = emptyDoc();
+    source.backCover = {
+      qr: { assetId: null, offsetX: 0, offsetY: 0, scale: 1 },
+      logo: { assetId: null, offsetX: 0, offsetY: 0, scale: 1 },
+      qrLabel: '', brand: 'Brand', tagline: '', website: '', socialLeft: '', socialRight: '',
+      socialLinks: [{ id: 'link', platform: 'facebook', url: 'facebook.com/example', label: 'Page', side: 'left' }],
+      footerText: '', imprint: '',
+    };
+
+    const draft = cloneDocForUpdate(source);
+    draft.backCover!.socialLinks![0].url = 'facebook.com/changed';
+    draft.backCover!.socialLinks!.push({ id: 'link-2', platform: 'instagram', url: 'instagram.com/example', side: 'right' });
+
+    expect(source.backCover.socialLinks).toHaveLength(1);
+    expect(source.backCover.socialLinks![0].url).toBe('facebook.com/example');
+    expect(draft.backCover!.socialLinks).toHaveLength(2);
+  });
+
+  it('deep-clones nested back-cover layout and per-object typography', () => {
+    const source = emptyDoc();
+    source.design.backCover = {
+      brandTop: 94,
+      ruleVisible: true,
+      text: {
+        brand: { fontFamily: 'Playfair Display', fontSize: 31, color: '#123456' },
+        socialUrl: { fontSize: 6.5, visible: true, spaceBefore: -1.5 },
+      },
+    };
+
+    const draft = cloneDocForUpdate(source);
+    draft.design.backCover!.brandTop = 118;
+    draft.design.backCover!.text!.brand!.fontSize = 42;
+    draft.design.backCover!.text!.brand!.color = '#abcdef';
+    draft.design.backCover!.text!.socialUrl!.visible = false;
+
+    expect(draft.design.backCover).not.toBe(source.design.backCover);
+    expect(draft.design.backCover!.text).not.toBe(source.design.backCover.text);
+    expect(draft.design.backCover!.text!.brand).not.toBe(source.design.backCover.text!.brand);
+    expect(source.design.backCover).toMatchObject({
+      brandTop: 94,
+      text: {
+        brand: { fontSize: 31, color: '#123456' },
+        socialUrl: { visible: true },
+      },
+    });
+  });
 });
 
 describe('document history', () => {

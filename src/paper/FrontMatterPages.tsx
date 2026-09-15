@@ -84,26 +84,46 @@ export function FrontMatterPages({doc,vars,onStatus}: {doc:Doc;vars:CSSPropertie
       packed.columns.splice(start,packed.columns.length-start,...balanced.columns);
     }
     // Fixed header/rail/footer text is also checked, not silently clipped.
-    const fixedOverflow = height < 40 || [...root.querySelectorAll<HTMLElement>('.fm-rail,.fm-header,.fm-footer')]
+    const fixedOverflow = height < 40 || [...root.querySelectorAll<HTMLElement>('.fm-rail,.fm-header,.fm-footer,.fm-board-caption,.fm-board-list-header,.fm-board-contact')]
       .some(node=>node.scrollHeight>node.clientHeight+1 || node.scrollWidth>node.clientWidth+1);
     packed.overflow ||= fixedOverflow || widthOverflow;
     setLayout(packed);
     onStatus({pages:Math.max(1,Math.ceil(packed.columns.length/2)),overflow:packed.overflow});
   },[units,doc,dean,initial,fontEpoch,onStatus]);
 
-  const photo = (slot:'hero'|'cover', className:string, placeholder?:string) => {
-    const frame=doc[slot]; const asset=frame?.assetId ? doc.assets[frame.assetId] : null;
+  type Frame = {assetId:string|null;offsetX:number;offsetY:number;scale:number};
+  const framedPhoto = (frame:Frame|undefined, className:string, editorTarget:string, placeholder?:string, fit:'cover'|'contain'='cover') => {
+    const asset=frame?.assetId ? doc.assets[frame.assetId] : null;
     if (!asset && !placeholder) return null;
-    return <div className={className} {...target(`image-${slot}`,'images')}>
-      {asset ? <FramedImage asset={asset} frame={frame} /> : <span className="fm-photo-placeholder">{placeholder}</span>}
+    return <div className={className} {...target(editorTarget,'images')}>
+      {asset ? <FramedImage asset={asset} frame={frame} fit={fit} /> : <span className="fm-photo-placeholder">{placeholder}</span>}
     </div>;
+  };
+  const photo = (slot:'hero'|'cover', className:string, placeholder?:string, fit:'cover'|'contain'='cover') =>
+    framedPhoto(doc[slot],className,`image-${slot}`,placeholder,fit);
+  const boardHero = () => {
+    const frame=doc.cover;
+    const asset=frame?.assetId ? doc.assets[frame.assetId] : null;
+    if (!asset) return null;
+    const hasCaption=Boolean(doc.meta.categoryLabel || doc.meta.heroCaption || doc.meta.photoCredit);
+    return <figure className="fm-board-hero">
+      {framedPhoto(frame,'fm-banner fm-banner--bleed','image-cover')}
+      {hasCaption && <figcaption className="fm-board-caption">
+        <p className="fm-board-caption-line">
+          {doc.meta.categoryLabel && <strong {...target('meta-category')}>{doc.meta.categoryLabel}</strong>}
+          {' '}
+          {doc.meta.heroCaption && <span {...target('meta-hero-caption')}>{doc.meta.heroCaption}</span>}
+        </p>
+        {doc.meta.photoCredit && <small {...target('meta-photo-credit')}>{doc.meta.photoCredit}</small>}
+      </figcaption>}
+    </figure>;
   };
   const sheet = (pageIndex:number, children:ReactNode, measuring=false) => <div
     className={`page fm-page fm-page--${dean?'dean':board?'board':'contents'}`}
     style={vars} dir={doc.design.textDirection ?? 'ltr'} key={pageIndex} data-layout-overflow={!measuring && layout.overflow ? 'true' : undefined}>
-    <TagBar doc={doc} pageIndex={pageIndex} detail={doc.meta.volume} />
+    {(!board || doc.design.showTopBar !== false) && <TagBar doc={doc} pageIndex={pageIndex} detail={doc.meta.volume} />}
     <div className="fm-shell">
-      <header className="fm-header">
+      {board ? boardHero() : <header className="fm-header">
         <p className="fm-kicker" {...target('meta-category')}>{doc.meta.categoryLabel}{pageIndex>0 ? ' · continued' : ''}</p>
         <h1 {...target('meta-title')}>{doc.meta.title}</h1>
         {doc.meta.subtitle && <p className="fm-subtitle" {...target('meta-subtitle')}>{doc.meta.subtitle}</p>}
@@ -111,17 +131,23 @@ export function FrontMatterPages({doc,vars,onStatus}: {doc:Doc;vars:CSSPropertie
           {photo('hero','fm-portrait','Your portrait')}
           <div><strong {...target('meta-author')}>{doc.meta.author}</strong><p {...target('meta-affiliation')}>{doc.meta.affiliation}</p></div>
         </div>}
-        {board && photo('cover','fm-banner')}
-        {board && doc.meta.photoCredit && <p className="fm-credit" {...target('meta-photo-credit')}>{doc.meta.photoCredit}</p>}
-      </header>
+      </header>}
       <div className="fm-middle">
-        <div className="fm-columns" dir={doc.design.textDirection === 'rtl' ? 'rtl' : 'ltr'}>{children}</div>
+        <div className="fm-columns" dir={doc.design.textDirection === 'rtl' ? 'rtl' : 'ltr'}>
+          {board && <div className="fm-board-list-header">
+            <h1 {...target('meta-title')}>{doc.meta.title}</h1>
+            {doc.meta.subtitle && <p {...target('meta-subtitle')}>{doc.meta.subtitle}</p>}
+          </div>}
+          {children}
+        </div>
         <aside className="fm-rail">
           {!board && photo('cover', 'fm-feature')}
           {!board && doc.meta.photoCredit && <p className="fm-credit" {...target('meta-photo-credit')}>{doc.meta.photoCredit}</p>}
           <div {...target('fm-note')}><h2>{board ? content.aboutTitle : content.noteTitle}</h2>
             <div className="fm-note-text" dangerouslySetInnerHTML={{__html:runsToHtml(board ? content.about : content.note)}} />
           </div>
+          {board && content.contact && <p className="fm-board-contact" {...target('fm-contact')}>{content.contact}</p>}
+          {board && framedPhoto(content.logo,'fm-board-logo','image-logo',undefined,'contain')}
           {dean && <div className="fm-signoff" {...target('meta-author')}><span>{content.signoff}</span><strong>{doc.meta.author}</strong></div>}
           {!dean && !board && photo('hero','fm-feature fm-feature-secondary')}
         </aside>

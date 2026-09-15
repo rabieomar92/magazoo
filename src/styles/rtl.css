@@ -1,6 +1,10 @@
 /* Read direction is deliberately scoped to copy and directional grids, not
    the physical coordinates of placed illustrations or user-selected bars. */
 .page { direction: ltr; }
+/* The reverse cover is a directional composition too. Keep its grid and
+   start/end alignment in sync with the editor's Arabic switch while leaving
+   the physical page coordinate system untouched. */
+.back-cover-page { direction: var(--text-dir, ltr); }
 .tag-bar { direction: ltr; }
 .fm-page, .news-page, .gallery { direction: var(--text-dir,ltr); text-align: start; }
 .fm-header, .fm-rail, .fm-unit,
