@@ -34,7 +34,7 @@ export function Toolbar({ onPreviewToolsHost }: { onPreviewToolsHost: (host: HTM
         await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
       }
       if (document.querySelector('.pages > .page[data-layout-overflow="true"]')) {
-        throw new Error('A front-matter heading or side note exceeds its frame. Shorten the text or reduce its size before exporting.');
+        throw new Error('One or more blocks exceed the printable frame. Check the red-outlined page and resolve its news or front-matter warning before exporting.');
       }
       await exportPreviewPdf(title);
     } catch (error) {
