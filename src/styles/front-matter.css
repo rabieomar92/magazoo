@@ -4,6 +4,21 @@
   font-size: var(--fs-body);
   line-height: 1.48;
 }
+/* The pagination probe needs the exact A4 geometry but must never identify as
+   a real `.page`. Preview counters and PDF export can therefore only see the
+   committed sheets, even if a future selector becomes less specific. */
+.fm-measure-page {
+  position: relative;
+  box-sizing: border-box;
+  width: var(--page-w);
+  height: var(--page-h);
+  text-align: left;
+  background-color: var(--paper-bg,#fff);
+  color: var(--ink);
+  font-family: var(--sans);
+  overflow: hidden;
+  overflow-wrap: break-word;
+}
 .fm-page > .tag-bar {
   position: absolute;
   inset: var(--topbar-offset) 0 auto;
@@ -139,7 +154,7 @@
   letter-spacing: -.015em;
 }
 .fm-page--board .fm-note-text {
-  column-count: 3;
+  column-count: var(--fm-about-columns,3);
   column-gap: 4mm;
   line-height: 1.4;
 }

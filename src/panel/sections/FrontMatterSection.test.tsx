@@ -31,4 +31,22 @@ describe('FrontMatterDesign', () => {
 
     act(() => root.unmount());
   });
+
+  it('offers one, two or three columns for the Editorial Board about copy', () => {
+    const host = document.createElement('div');
+    const root = createRoot(host);
+    act(() => {
+      useDoc.setState({ doc: makeFrontMatter('frontmatter-board') });
+      root.render(<FrontMatterDesign />);
+    });
+
+    const label = [...host.querySelectorAll('.field-label')].find(node => node.textContent === 'About text columns');
+    const field = label?.closest('.field');
+    const choices = [...(field?.querySelectorAll('button') ?? [])];
+    expect(choices.map(button => button.textContent)).toEqual(['1 column','2 columns','3 columns']);
+    act(() => choices[1]?.click());
+    expect(useDoc.getState().doc.design.frontMatterAboutColumns).toBe(2);
+
+    act(() => root.unmount());
+  });
 });

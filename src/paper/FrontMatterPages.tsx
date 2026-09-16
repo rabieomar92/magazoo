@@ -28,6 +28,11 @@ export function FrontMatterPages({doc,vars,onStatus}: {doc:Doc;vars:CSSPropertie
   const dean = doc.templateId === 'frontmatter-dean';
   const board = doc.templateId === 'frontmatter-board';
   const content = doc.frontMatter ?? emptyFrontMatter();
+  const aboutColumns = Math.max(1,Math.min(3,doc.design.frontMatterAboutColumns ?? 3));
+  const pageVars = {
+    ...vars,
+    '--fm-about-columns': String(aboutColumns),
+  } as CSSProperties;
   const initial = dean && dropCapEnabled(doc.design,doc.templateId);
   const measureRef = useRef<HTMLDivElement>(null);
   const units = useMemo<FrontMatterUnit[]>(() => dean
@@ -119,8 +124,10 @@ export function FrontMatterPages({doc,vars,onStatus}: {doc:Doc;vars:CSSPropertie
     </figure>;
   };
   const sheet = (pageIndex:number, children:ReactNode, measuring=false) => <div
-    className={`page fm-page fm-page--${dean?'dean':board?'board':'contents'}`}
-    style={vars} dir={doc.design.textDirection ?? 'ltr'} key={pageIndex} data-layout-overflow={!measuring && layout.overflow ? 'true' : undefined}>
+    className={`${measuring?'fm-measure-page':'page'} fm-page fm-page--${dean?'dean':board?'board':'contents'}`}
+    style={pageVars} dir={doc.design.textDirection ?? 'ltr'} key={pageIndex}
+    data-layout-helper={measuring ? 'true' : undefined}
+    data-layout-overflow={!measuring && layout.overflow ? 'true' : undefined}>
     {(!board || doc.design.showTopBar !== false) && <TagBar doc={doc} pageIndex={pageIndex} detail={doc.meta.volume} />}
     <div className="fm-shell">
       {board ? boardHero() : <header className="fm-header">

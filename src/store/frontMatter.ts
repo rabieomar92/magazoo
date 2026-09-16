@@ -82,6 +82,7 @@ export function makeFrontMatter(id: TemplateId): Doc {
     d.meta.heroCaption = 'Research, teaching and the people behind them come together in this issue from the School of Physics.';
     d.meta.photoCredit = 'Replace with photo credit';
     d.design.heroHeight = 152;
+    d.design.frontMatterAboutColumns = 3;
     d.design.margin = 13;
     d.design.sizes = { title: 18, subtitle: 8, author: 8, affiliation: 7, categoryLabel: 7, body: 7.1 };
     d.design.colors = { hero: '#231f20', ink: '#f5f4f1', accent: '#dc3a3f', accentSoft: '#3a3335' };

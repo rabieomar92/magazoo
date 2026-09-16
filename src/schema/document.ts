@@ -415,6 +415,9 @@ export interface Design {
   /** Editorial Board only: hide its masthead/top-bar layer. Missing means
    * visible so projects saved before this control keep their original page. */
   showTopBar?: boolean;
+  /** Editorial Board only: number of newspaper-style columns used by the
+   * publication/about copy. Missing keeps the original three-column design. */
+  frontMatterAboutColumns?: 1 | 2 | 3;
   /**
    * Which side the top bar's masthead/tag label begins on. Absent = 'left'
    * (v1 files, and every template's original look, are unaffected). Following
