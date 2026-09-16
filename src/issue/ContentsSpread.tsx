@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef, type CSSProperties } from 'react';
-import type { ContentsEntry } from './model';
+import { CONTENTS_DECK_MAX, contentsDeck, type ContentsEntry } from './model';
+import { Wordmark } from '../components/Wordmark';
 import './contents.css';
 
 export interface ContentsSpreadProps {
@@ -38,16 +39,23 @@ export function ContentsSpread({ entries, title = 'Contents', subtitle = '', dir
   return <>{groups.map((group, index) => {
     const [feature, ...rest] = group;
     const dense = group.length > 7;
+    // The feature deck spans the full column at 9.5pt; a list deck gets half a
+    // column at 8pt, and a dense list gets 7.5pt with the images already
+    // dropped. Each slot therefore keeps a deck only while its own cell can
+    // hold one, which is what stops a legal-length subtitle from pushing the
+    // entries under it off a sheet that cannot grow.
+    const featureDeck = feature ? contentsDeck(feature.subtitle, dense ? 84 : CONTENTS_DECK_MAX) : '';
+    const entryDeck = (entry: ContentsEntry) => (dense ? '' : contentsDeck(entry.subtitle, 72));
     return <section key={index} ref={index === 0 ? left : right} className={`page issue-contents-page${index === 1 ? ' issue-contents-second' : ''}${dense ? ' issue-contents-dense' : ''}${group.length <= 3 ? ' issue-contents-airy' : ''}`} dir={direction} lang={direction === 'rtl' ? 'ar' : 'en'} style={{ '--contents-accent': accent, '--text-dir': direction } as CSSProperties} aria-label={`${title || 'Contents'} · ${index + 1} of 2`}>
       <header className="issue-contents-header"><div className="issue-contents-masthead"><span dir="auto">{magazineName}</span><span>{index === 0 ? '01 / 02' : '02 / 02'}</span></div><h1>{title || 'Contents'}{index === 1 && <span aria-hidden="true"> / 2</span>}</h1>{subtitle && <p>{subtitle}</p>}</header>
       <div className="issue-contents-body">
         {feature ? <article className="issue-contents-feature" data-contents-id={feature.id}>
-          {feature.hero ? <img src={feature.hero} alt="" /> : <div className="issue-contents-art" aria-hidden="true"><i /><i /><span>Magazoo!</span></div>}
-          <div className="issue-contents-feature-copy"><span className="issue-contents-number">{String(feature.page).padStart(2, '0')}</span><div><h2 dir="auto">{feature.title}</h2>{feature.subtitle && <p dir="auto">{feature.subtitle}</p>}</div></div>
-        </article> : <div className="issue-contents-empty"><span>Magazoo!</span><p dir="auto">{magazineName}</p></div>}
+          {feature.hero ? <img src={feature.hero} alt="" /> : <div className="issue-contents-art" aria-hidden="true"><i /><i /><Wordmark name={magazineName} /></div>}
+          <div className="issue-contents-feature-copy"><span className="issue-contents-number">{String(feature.page).padStart(2, '0')}</span><div><h2 dir="auto">{feature.title}</h2>{featureDeck && <p dir="auto">{featureDeck}</p>}</div></div>
+        </article> : <div className="issue-contents-empty"><Wordmark name={magazineName} /></div>}
         {!!rest.length && <div className="issue-contents-list">{rest.map(entry => <article key={entry.id} className="issue-contents-entry" data-contents-id={entry.id}>
           {!dense && entry.hero && <img src={entry.hero} alt="" />}
-          <div className="issue-contents-entry-copy"><span className="issue-contents-number">{String(entry.page).padStart(2, '0')}</span><div><h2 dir="auto">{entry.title}</h2>{entry.subtitle && <p dir="auto">{entry.subtitle}</p>}</div></div>
+          <div className="issue-contents-entry-copy"><span className="issue-contents-number">{String(entry.page).padStart(2, '0')}</span><div><h2 dir="auto">{entry.title}</h2>{entryDeck(entry) && <p dir="auto">{entryDeck(entry)}</p>}</div></div>
         </article>)}</div>}
       </div>
       <footer className="issue-contents-footer"><span>{startNumber + index}</span><span dir="auto">{magazineName}</span></footer>

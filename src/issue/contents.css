@@ -13,7 +13,7 @@
 .issue-contents-art { position:relative; overflow:hidden; background:#dce4de; display:grid; place-items:center; }
 .issue-contents-art i { position:absolute; width:160mm; height:160mm; border:1px solid #99aca480; border-radius:50%; transform:translate(45mm,25mm); }
 .issue-contents-art i:nth-child(2) { transform:translate(-40mm,-40mm); }
-.issue-contents-art span { font:italic 32pt Georgia,serif; color:#44685d; }
+.issue-contents-art .brand-mark { font-size:32pt; color:#44685d; --brand-accent:var(--contents-accent); }
 .issue-contents-feature-copy { display:grid; grid-template-columns:19mm minmax(0,1fr); gap:5mm; border-top:.7mm solid var(--contents-accent); padding-top:4mm; margin-top:4mm; }
 .issue-contents-number { font:400 29pt/1.03 'Playfair Display',Georgia,serif; color:var(--contents-accent); font-variant-numeric:tabular-nums; }
 .issue-contents-feature h2 { font:600 20pt/1.16 'Playfair Display',Georgia,serif; letter-spacing:-.015em; margin:0 0 2mm; }
@@ -36,7 +36,7 @@
 .issue-contents-dense .issue-contents-entry h2 { font-size:10pt; }
 .issue-contents-dense .issue-contents-entry p { font-size:7.5pt; }
 .issue-contents-empty { display:flex; flex:1; flex-direction:column; align-items:center; justify-content:center; color:#9aa89e; border:1px solid #d7dfd7; }
-.issue-contents-empty > span { font:italic 38pt Georgia,serif; }
+.issue-contents-empty .brand-mark { font-size:34pt; --brand-accent:var(--contents-accent); }
 .issue-contents-page[dir=rtl] h1,.issue-contents-page[dir=rtl] h2 { letter-spacing:normal; line-height:1.35; }
 /* These selectors formerly required the article wrapper. Snapshots retain
    the same flags on their physical pages inside a mixed-template issue. */

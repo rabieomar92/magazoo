@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { emptyDoc, migrate, type Doc } from '../schema/document';
 import '../styles/admin.css';
 import AdminLibrary from './AdminLibrary';
+import { Wordmark } from '../components/Wordmark';
 const IssueWorkspace = lazy(() => import('../issue/IssueWorkspace'));
 
 interface Item { id:string; name:string; token:string; version:number; updated:number; }
@@ -39,7 +40,7 @@ export default function AdminPage(){
   if(csrf && compilingProject)return <Suspense fallback={<div className="app-loading" role="status">Opening issue studio…</div>}><IssueWorkspace projectId={compilingProject} csrf={csrf} onClose={()=>{setCompilingProject(null);void run(()=>refresh());}} /></Suspense>;
   return <main className="admin-page">
     {(!checked||busy)&&<div className="admin-loading" role="status"><span>{!checked?'Loading your workspace…':'Working… Please wait.'}</span><div className="loading-track"><span /></div></div>}
-    <header className="admin-header"><div><a className="admin-brand" href={`${import.meta.env.BASE_URL}#admin`}>Magazoo!</a><span>Project library</span></div><nav><a href={`${import.meta.env.BASE_URL}#editor`}>Open editor</a>{csrf&&<button disabled={busy} onClick={()=>void run(async()=>{await api('auth/logout',csrf,'POST');setCsrf('');setProjects([]);})}>Log out</button>}</nav></header>
+    <header className="admin-header"><div><a className="admin-brand" href={`${import.meta.env.BASE_URL}#admin`}><Wordmark /></a><span>Project library</span></div><nav><a href={`${import.meta.env.BASE_URL}#editor`}>Open editor</a>{csrf&&<button disabled={busy} onClick={()=>void run(async()=>{await api('auth/logout',csrf,'POST');setCsrf('');setProjects([]);})}>Log out</button>}</nav></header>
     <div className="admin-content">
       <div className="admin-intro"><p className="admin-eyebrow">Publication workspace</p><h1>{csrf?'Your projects, in one place.':'A private workspace for your publications.'}</h1><p>Organise editable Magazoo documents by project and share individual editing links.</p></div>
       {error&&<div className="admin-alert" role="alert">{error}</div>}{notice&&<div className="admin-notice" role="status">{notice}</div>}

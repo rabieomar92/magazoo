@@ -17,6 +17,24 @@ export interface IssueResponse {
 export const isIssueCover = (doc: Doc) => doc.templateId === 'magazine-4' || doc.templateId === 'backcover-1';
 export const issuePlainText = (text = '') => parseRuns(text).map(run => run.text).join('').replace(/\s+/gu, ' ').trim();
 
+/**
+ * A contents deck is a cue, not the article's standfirst. An editor's subtitle
+ * is often a full abstract sentence; dropped into a contents cell it wraps to
+ * four or five lines, shoves the entries below it off the sheet, and turns the
+ * spread into grey mass — and because the spread is fixed at two pages, that
+ * surfaces to the editor as "the contents do not fit" with no hint of which
+ * article caused it.
+ *
+ * So a subtitle is used only when it already reads as a deck. Over the limit
+ * it is dropped whole rather than truncated: a deck cut mid-clause with an
+ * ellipsis reads worse on a printed contents page than a title standing alone.
+ */
+export const CONTENTS_DECK_MAX = 120;
+export const contentsDeck = (text: string | undefined, limit = CONTENTS_DECK_MAX) => {
+  const deck = issuePlainText(text);
+  return deck.length <= limit ? deck : '';
+};
+
 export function defaultIssuePlan(items: readonly IssueItem[]): IssuePlan {
   return {
     order: [
@@ -84,7 +102,7 @@ export function contentsEntries(plan: IssuePlan, items: readonly IssueItem[], as
     const item = sources.get(id);
     const page = pages.get(id);
     if (!item || page === undefined) throw new Error('Prepare every article before generating contents.');
-    return { id, title: issuePlainText(item.doc.meta.title) || item.name.replace(/\.json$/iu, ''), subtitle: issuePlainText(item.doc.meta.subtitle), page, hero: issueHero(item.doc) };
+    return { id, title: issuePlainText(item.doc.meta.title) || item.name.replace(/\.json$/iu, ''), subtitle: contentsDeck(item.doc.meta.subtitle), page, hero: issueHero(item.doc) };
   });
 }
 

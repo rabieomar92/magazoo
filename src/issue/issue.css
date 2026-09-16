@@ -1,7 +1,8 @@
 .issue-workspace { height:100dvh; overflow:auto; background:#f3f4f8; color:#18243b; font:14px/1.5 system-ui,Arial,sans-serif; padding-bottom:108px; scrollbar-gutter:stable; }
 .issue-header { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px; padding:16px 28px; background:#fff; border-bottom:1px solid #e1e5ed; }
 .issue-header > div { display:flex; align-items:center; gap:18px; flex-wrap:wrap; }
-.issue-brand { font-size:28px; font-weight:850; font-style:italic; letter-spacing:-1px; color:#4f46e5; }
+/* Size and colour only — the mark itself is .brand-mark (styles/wordmark.css). */
+.issue-brand { font-size:27px; color:#4f46e5; --brand-accent:#8b83e8; }
 .issue-header-label { border-inline-start:1px solid #dce0e8; padding-inline-start:18px; color:#65708a; }
 .issue-workspace button { border:1px solid #d8deea; border-radius:8px; padding:9px 13px; min-height:40px; background:#fff; color:#34415b; font:600 13px/1.4 system-ui,sans-serif; cursor:pointer; }
 .issue-workspace button:hover:not(:disabled) { border-color:#8d87e5; background:#f9f8ff; }
@@ -56,13 +57,17 @@
 .issue-view-toggle { display:flex; gap:3px; padding:3px; border:1px solid #e1e5ee; border-radius:8px; background:#f2f3f8; }
 .issue-view-toggle button { border:0; background:transparent; min-height:33px; padding:6px 11px; font-size:11px; }
 .issue-view-toggle button[aria-pressed=true] { background:#fff; box-shadow:0 1px 5px #2b314015; color:#5146b3; }
-.issue-preview-view { padding:20px 0; overflow:auto; max-height:calc(100dvh - 255px); min-height:350px; }
+/* The proof pane mirrors the editor's .paper-scroll: a grey bed so the white
+   A4 sheets read as paper rather than dissolving into the panel, and its own
+   scroll on both axes so a zoomed-in sheet stays reachable. */
+.issue-preview { display:flex; flex-direction:column; min-height:0; }
+.issue-preview-bar { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; padding:0 0 10px; }
+.issue-preview-view { padding:20px; overflow:auto; max-height:calc(100dvh - 300px); min-height:350px; background:#e5e5e5; border-radius:8px; }
 .issue-preview-frame { position:relative; margin:auto; }
 .issue-preview-pages.pages { display:grid !important; gap:20px; width:max-content; transform-origin:top left; margin:0; padding:0; }
 .issue-preview-pages.pages > .page { margin:0 !important; width:210mm !important; height:297mm !important; box-shadow:0 2px 10px #16253b20 !important; }
 .issue-preparing { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:60px 30px; min-height:420px; text-align:center; }
-.issue-preparing-symbol { font:bold italic 54px Georgia,serif; color:#5146df; letter-spacing:-8px; padding-right:8px; }
-.issue-preparing-symbol span { color:#9a90ee; }
+.issue-preparing-symbol { display:block; font-size:40px; color:#5146df; --brand-accent:#9a90ee; }
 .issue-preparing h3 { margin:16px 0 4px; font-size:19px; }
 .issue-preparing p { max-width:430px; color:#6d788d; font-size:13px; }
 .issue-preparing progress { width:min(280px,100%); accent-color:#6558e5; height:7px; }
