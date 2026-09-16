@@ -31,6 +31,45 @@ The password itself is never written to the project. Login sessions are
 HTTP-only, expire after eight hours, and are protected with CSRF tokens. Failed
 logins are throttled per client address.
 
+## Compile a complete magazine issue
+
+In the admin project library, choose **Compile issue** on a project. The issue
+studio loads all of that project's saved JSON documents and measures their
+actual pages with the same layout engine as the editor.
+
+1. Drag the grip beside each article to set the reading order. An article's
+   pages stay together. Arrow buttons also work on small screens; keyboard
+   users can press Space, use the arrow keys, then Space to confirm or Escape
+   to cancel.
+2. Position the generated two-page contents spread in that order. Its titles,
+   subtitles, images and page numbers come from the saved articles. Use
+   **List in contents** to omit covers or supporting pages from its entries.
+3. Review **All pages**, select the first page number and choose whether covers
+   count. Cover page numbers remain hidden. Each article retains its own
+   reading direction and design; the contents has a separate RTL option.
+4. Choose **Finalise issue & page numbers**. This updates only numbering in
+   the project's articles, in one transaction. A concurrent edit or failure
+   rejects the operation without partially updating the other articles.
+5. Use **Export issue PDF** to print the assembled pages, including the contents.
+
+Arrangements autosave separately from article content. The generated contents
+is stored as part of the issue plan, not as an extra editable JSON document.
+Reopen **Compile issue** to resume it. After someone edits an article, use
+**Refresh articles**, review its new page count and finalise again. The studio
+does not silently replace author text, images or highlight settings.
+
+Compilation stops on layout overflow, missing image resources or custom CSS
+that cannot be safely isolated between articles. If contents exceeds two
+pages, shorten its heading/introduction or omit selected contents entries;
+omitting an entry does not remove that article from the issue.
+
+For deployment, include the updated `src/` and complete `server/` directories,
+rebuild the frontend and restart the Node server. The server adds its
+`project_issues` table to the existing database automatically. **Keep your
+existing SQLite data directory, environment settings and backups**; do not
+replace them with local test data. Take a normal database backup before
+deploying an update.
+
 ## Sharing and deletion
 
 Each JSON document gets a random, non-guessable editing token. Anyone holding that link can edit that document, so treat links like passwords. Saves use versions and reject stale writes. Deleting a project or document requires typing its exact name and immediately revokes its links.
