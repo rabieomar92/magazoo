@@ -66,6 +66,17 @@ export function FrontMatterDesign() {
         checked={doc.design.showTopBar !== false}
         onChange={visible => update(d => { d.design.showTopBar = visible; })}
       />}
+      {board && <SegmentField<1 | 2 | 3>
+        label="About text columns"
+        value={doc.design.frontMatterAboutColumns ?? 3}
+        options={[
+          { value: 1, label: '1 column' },
+          { value: 2, label: '2 columns' },
+          { value: 3, label: '3 columns' },
+        ]}
+        onChange={columns => update(d => { d.design.frontMatterAboutColumns = columns; })}
+      />}
+      {board && <p className="hint">Choose fewer columns for longer lines and easier reading. The editorial roles keep their separate compact grid.</p>}
       <LabeledNumber label="Top bar margin" unit="mm" min={0} max={25} value={doc.design.topBarOffset ?? 10} onChange={v => update(d => {d.design.topBarOffset = Math.max(0,Math.min(25,v));})} />
       <LabeledNumber label="Page margin" unit="mm" min={10} max={22} value={doc.design.margin} onChange={v => update(d => {d.design.margin = Math.max(10,Math.min(22,v));})} />
       <LabeledNumber label={board ? 'Bleed image height' : 'Image height'} unit="mm" min={25} max={board ? 180 : 90} value={doc.design.heroHeight} onChange={v => update(d => {d.design.heroHeight = Math.max(25,Math.min(board ? 180 : 90,v));})} />
