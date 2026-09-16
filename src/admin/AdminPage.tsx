@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { emptyDoc, migrate, type Doc } from '../schema/document';
 import '../styles/admin.css';
 import AdminLibrary from './AdminLibrary';
+const IssueWorkspace = lazy(() => import('../issue/IssueWorkspace'));
 
 interface Item { id:string; name:string; token:string; version:number; updated:number; }
 interface Project { id:string; name:string; items:Item[]; }
@@ -25,6 +26,7 @@ function DeleteDialog({target,close,remove}:{target:{name:string;path:string;pro
 }
 
 export default function AdminPage(){
+  const [compilingProject,setCompilingProject]=useState<string|null>(null);
   const[csrf,setCsrf]=useState('');const[checked,setChecked]=useState(false);const[projects,setProjects]=useState<Project[]>([]);
   const[error,setError]=useState('');const[notice,setNotice]=useState('');const[busy,setBusy]=useState(false);
   const[password,setPassword]=useState('');const[name,setName]=useState('');
@@ -34,6 +36,7 @@ export default function AdminPage(){
   const refresh=async(key=csrf)=>{const list=await api('projects',key);setProjects(list);setProjectId(current=>list.some((p:Project)=>p.id===current)?current:list[0]?.id??'');};
   useEffect(()=>{let live=true;void api('auth/session','').then(async data=>{if(live){setCsrf(data.csrf);await refresh(data.csrf);}}).catch(()=>{}).finally(()=>{if(live)setChecked(true);});return()=>{live=false;};},[]);
   const run=async(fn:()=>Promise<void>)=>{setError('');setNotice('');setBusy(true);try{await fn();}catch(e){setError(e instanceof Error?e.message:'Request failed.');}finally{setBusy(false);}};
+  if(csrf && compilingProject)return <Suspense fallback={<div className="app-loading" role="status">Opening issue studio…</div>}><IssueWorkspace projectId={compilingProject} csrf={csrf} onClose={()=>{setCompilingProject(null);void run(()=>refresh());}} /></Suspense>;
   return <main className="admin-page">
     {(!checked||busy)&&<div className="admin-loading" role="status"><span>{!checked?'Loading your workspace…':'Working… Please wait.'}</span><div className="loading-track"><span /></div></div>}
     <header className="admin-header"><div><a className="admin-brand" href={`${import.meta.env.BASE_URL}#admin`}>Magazoo!</a><span>Project library</span></div><nav><a href={`${import.meta.env.BASE_URL}#editor`}>Open editor</a>{csrf&&<button disabled={busy} onClick={()=>void run(async()=>{await api('auth/logout',csrf,'POST');setCsrf('');setProjects([]);})}>Log out</button>}</nav></header>
@@ -51,7 +54,7 @@ export default function AdminPage(){
           <form className="admin-card" onSubmit={e=>{e.preventDefault();void run(async()=>{const doc=upload??emptyDoc();if(!upload)doc.meta.title=itemName.replace(/\.json$/i,'');await api(`projects/${projectId}/documents`,csrf,'POST',{name:itemName,doc});setItemName('');setUpload(null);if(importInput.current)importInput.current.value='';await refresh();setNotice('Document created. Its private editing link is ready below.');});}}><h2>Add a JSON document</h2><label>Project<select required value={projectId} onChange={e=>setProjectId(e.target.value)}><option value="">Choose a project</option>{projects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></label><label>File name<input required value={itemName} maxLength={115} onChange={e=>setItemName(e.target.value)} placeholder="research-highlights.json" /></label><label>Import an existing JSON (optional)<input ref={importInput} type="file" accept=".json,application/json" onChange={e=>{const f=e.target.files?.[0];setUpload(null);if(!f)return;void run(async()=>{if(f.size>64*1024*1024)throw new Error('File exceeds 64 MB.');setUpload(migrate(JSON.parse(await f.text())));if(!itemName)setItemName(f.name);});}} /></label><button className="primary" disabled={busy||!projectId||!itemName.trim()}>Create document & link</button></form></div>
         <div className="admin-library-title"><h2>Project library <span>{projects.length}</span></h2><button disabled={busy} onClick={()=>void run(()=>refresh())}>Refresh</button></div>
         <p className="admin-sharing-note">Anyone with a private link can read and edit that one document. Treat links like passwords. Edits save automatically; conflicting versions are never silently overwritten.</p>
-        <AdminLibrary projects={projects} busy={busy} onDelete={setDeleting} link={sharedLink} onCopy={item=>void run(async()=>{await navigator.clipboard.writeText(sharedLink(item.token));setNotice(`Private editing link copied for ${item.name}.`);})} />
+        <AdminLibrary projects={projects} busy={busy} onDelete={setDeleting} onCompile={setCompilingProject} link={sharedLink} onCopy={item=>void run(async()=>{await navigator.clipboard.writeText(sharedLink(item.token));setNotice(`Private editing link copied for ${item.name}.`);})} />
       </>}
       <footer className="admin-footnote">Keep regular server backups. Deleting a project also revokes every document link inside it.</footer>
     </div>

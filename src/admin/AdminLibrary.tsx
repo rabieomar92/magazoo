@@ -4,9 +4,10 @@ interface Item { id: string; name: string; token: string; version: number; updat
 interface Project { id: string; name: string; items: Item[] }
 export interface DeleteTarget { name: string; path: string; project: boolean }
 
-export default function AdminLibrary({ projects, busy, onDelete, onCopy, link }: {
+export default function AdminLibrary({ projects, busy, onDelete, onCopy, link, onCompile }: {
   projects: Project[]; busy: boolean; onDelete: (target: DeleteTarget) => void;
   onCopy: (item: Item) => void; link: (token: string) => string;
+  onCompile?: (projectId: string) => void;
 }) {
   const [query, setQuery] = useState('');
   const [projectId, setProjectId] = useState('');
@@ -38,7 +39,7 @@ export default function AdminLibrary({ projects, busy, onDelete, onCopy, link }:
     <p className="admin-result-count" role="status">{rows.length ? `${(current - 1) * size + 1}–${Math.min(current * size, rows.length)} of ${rows.length} results` : 'No results'} · Empty projects count as one result.</p>
     {!rows.length && <section className="admin-card admin-empty"><h3>{projects.length ? 'No matching documents.' : 'Your library is ready.'}</h3><p>{projects.length ? 'Try another file name or project.' : 'Create a project, then add its JSON documents.'}</p>{projects.length > 0 && <button onClick={() => { setQuery(''); setProjectId(''); setPage(1); }}>Clear filters</button>}</section>}
     {[...groups.values()].map(({ project: p, items }) => <section className="admin-card admin-project" key={p.id}>
-      <header><div><h3>{p.name}</h3><span>{p.items.length} documents in project</span></div><button disabled={busy} className="danger-quiet" onClick={() => onDelete({ name: p.name, path: `projects/${p.id}`, project: true })}>Delete project</button></header>
+      <header><div><h3>{p.name}</h3><span>{p.items.length} documents in project</span></div><div className="admin-actions">{onCompile && <button className="primary" disabled={busy || !p.items.length} onClick={() => onCompile(p.id)}>Compile issue</button>}<button disabled={busy} className="danger-quiet" onClick={() => onDelete({ name: p.name, path: `projects/${p.id}`, project: true })}>Delete project</button></div></header>
       <ul>{items.map(item => <li key={item.id}><div className="admin-item-name"><strong>{item.name}</strong><small>Version {item.version} · {new Date(item.updated).toLocaleString()}</small></div><div className="admin-actions"><a href={link(item.token)} target="_blank" rel="noreferrer">Edit ↗</a><button disabled={busy} onClick={() => onCopy(item)}>Copy private link</button><button disabled={busy} className="danger-quiet" aria-label={`Delete ${item.name}`} onClick={() => onDelete({ name: item.name, path: `documents/${item.id}`, project: false })}>Delete</button></div></li>)}</ul>
       {!p.items.length && <p>No documents yet. Add one using the form above.</p>}
     </section>)}
