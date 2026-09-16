@@ -4,6 +4,7 @@ import { useDoc } from '../store/useDoc';
 import { openProject, saveProject, saveProjectAs, useProjectFile } from '../store/projectFiles';
 import { useSaveStatus, type SaveState } from '../store/saveStatus';
 import { exportPreviewPdf } from '../lib/pdfExport';
+import { Wordmark } from '../components/Wordmark';
 
 const SAVE_LABEL: Record<SaveState, string> = {
   idle: 'Ready',
@@ -69,7 +70,7 @@ export function Toolbar({ onPreviewToolsHost }: { onPreviewToolsHost: (host: HTM
   return (
     <header className="toolbar">
       <div className="toolbar-identity" title={project.message}>
-        <span className="toolbar-brand" aria-label="Magazoo! editor">Magazoo!</span>
+        <Wordmark className="toolbar-brand" />
         <span className={`project-save-status${project.status==='error'||project.status==='conflict' ? ' is-error':''}`} role="status">{project.message}</span>
         {saveState === 'error' && <span className="toolbar-save-error">Autosave failed</span>}
       </div>
