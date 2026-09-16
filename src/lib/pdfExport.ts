@@ -352,10 +352,7 @@ export function clonePages(source: HTMLElement, targetDocument: Document) {
  * That keeps the preview's measured pagination while retaining selectable,
  * searchable, resolution-independent text in the exported PDF.
  */
-export async function exportPreviewPdf(title: string) {
-  const source = document.querySelector<HTMLElement>('.pages');
-  if (!source) throw new Error('The page preview is not ready yet.');
-
+export async function waitForPreviewResources(source: HTMLElement) {
   await waitForFonts(document);
   await Promise.all([
     ...Array.from(source.querySelectorAll<HTMLImageElement>('img')).map(waitForImage),
@@ -364,6 +361,13 @@ export async function exportPreviewPdf(title: string) {
   await nextPaint();
   await nextPaint();
   await waitForStablePreview(source);
+}
+
+export async function exportPreviewPdf(title: string, suppliedSource?: HTMLElement) {
+  const source = suppliedSource ?? document.querySelector<HTMLElement>('.pages');
+  if (!source) throw new Error('The page preview is not ready yet.');
+
+  await waitForPreviewResources(source);
   // Pagination can replace sheets while images/fonts are loading. Resolve
   // counters and clone only the sheets from the settled render.
   const pages = Array.from(source.children).filter(
