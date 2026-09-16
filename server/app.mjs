@@ -80,6 +80,19 @@ export function createApp({storage,origin,passwordHash,staticDir,authOptions={}}
       if(path==='/api/auth/logout' && req.method==='POST'){auth.logout(jar.magazoo_admin);res.setHeader('Set-Cookie',cookie('magazoo_admin','',0));return send(200,{ok:true});}
       if(path==='/api/projects' && req.method==='GET')return send(200,storage.list());
       if(path==='/api/projects' && req.method==='POST'){const data=await body(req,4096);return send(201,storage.createProject(projectName(data.name)));}
+      const issue=path.match(/^\/api\/projects\/([\w-]+)\/issue(\/finalize)?$/);
+      if(issue){
+        if(!issue[2] && req.method==='GET')return send(200,storage.readIssue(issue[1]));
+        if(!issue[2] && req.method==='PUT'){
+          const data=await body(req,2*1024*1024);
+          return send(200,storage.saveIssue(issue[1],data?.version,data?.plan));
+        }
+        if(issue[2] && req.method==='POST'){
+          const data=await body(req,2*1024*1024);
+          return send(200,storage.finalizeIssue(issue[1],data?.version,data?.plan,data?.documents));
+        }
+        fail(405,'Method not allowed.');
+      }
       const project=path.match(/^\/api\/projects\/([\w-]+)$/);
       if(project && req.method==='DELETE'){const data=await body(req,4096);if(!storage.removeProject(project[1],data.confirmation))fail(400,'Type the exact project name to confirm deletion.');return send(200,{ok:true});}
       const items=path.match(/^\/api\/projects\/([\w-]+)\/documents$/);

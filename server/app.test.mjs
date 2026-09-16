@@ -77,3 +77,62 @@ test('logout revokes session, password attempts are rate limited, responses are 
   for(let i=0;i<20;i++)await request('auth/login',{method:'POST',data:{password:'wrong password'}});
   assert.equal((await request('auth/login',{method:'POST',data:{password:'wrong password'}})).status,429);
 });
+
+test('issue API requires admin and CSRF, does not disclose shared tokens, and validates arrangements', async t => {
+  const { storage, request, admin, cookie } = await fixture(t);
+  const project = storage.createProject('Issue');
+  const item = storage.createDocument(project.id, 'article.json', JSON.stringify(doc));
+  const route = `projects/${project.id}/issue`;
+  const plan = { order: ['__contents__', item.id], startNumber: 1, countCovers: false,
+    contentsTitle: 'Contents', contentsSubtitle: '', direction: 'ltr', contentsExcluded: [] };
+  assert.equal((await request(route)).status, 401);
+  assert.equal((await request(route, { headers: { Authorization: `Bearer ${item.token}` } })).status, 401);
+  assert.equal((await request(route, { method: 'PUT', data: { version: 0, plan }, headers: { Cookie: cookie } })).status, 403);
+  assert.equal((await request(`${route}/finalize`, { method: 'POST', data: {}, headers: { Cookie: cookie } })).status, 403);
+  const initial = await (await admin(route)).json();
+  assert.equal(initial.version, 0);
+  assert.equal(initial.plan, null);
+  assert.equal(initial.items[0].id, item.id);
+  assert.equal(initial.items[0].token, undefined);
+  assert.deepEqual(initial.items[0].doc, doc);
+  for (const order of [[item.id, item.id, '__contents__'], ['__contents__'], [item.id], [item.id, '__contents__', 'unknown']]) {
+    assert.equal((await admin(route, { method: 'PUT', data: { version: 0, plan: { ...plan, order } } })).status, 400);
+  }
+  assert.equal((await admin(route, { method: 'PUT', data: { version: 0, plan: { ...plan, contentsTitle: 'a'.repeat(501) } } })).status, 400);
+  assert.equal((await admin(route, { method: 'PUT', data: { version: 0, plan: { ...plan, contentsExcluded: ['unknown'] } } })).status, 400);
+  assert.equal((await admin(route, { method: 'PUT', data: { version: 0, plan } })).status, 200);
+  assert.equal(storage.read(item.token).version, 1, 'arrangement save does not touch source files');
+  assert.equal((await admin(route, { method: 'PUT', data: { version: 0, plan } })).status, 409);
+  assert.equal((await admin('projects/missing/issue')).status, 404);
+});
+
+test('issue finalization rejects a concurrent editor save without partial writes', async t => {
+  const { storage, request, admin } = await fixture(t);
+  const project = storage.createProject('Concurrent issue');
+  const first = storage.createDocument(project.id, 'first.json', JSON.stringify(doc));
+  const second = storage.createDocument(project.id, 'second.json', JSON.stringify(doc));
+  const route = `projects/${project.id}/issue`;
+  const plan = { order: [first.id, '__contents__', second.id], startNumber: 1, countCovers: false,
+    contentsTitle: 'Contents', contentsSubtitle: '', direction: 'rtl', contentsExcluded: [] };
+  const documents = [{ id: first.id, version: 1, pageCount: 3, startNumber: 1 }, { id: second.id, version: 1, pageCount: 2, startNumber: 6 }];
+  const originalFirst = storage.read(first.token);
+  const edited = { ...doc, meta: { title: 'Live author edits محفوظ' }, highlights: { title: 'Keep', items: ['Preserved'] } };
+  await request('documents/shared', { method: 'PUT', data: edited,
+    headers: { Authorization: `Bearer ${second.token}`, 'If-Match': '1' } });
+  assert.equal((await admin(`${route}/finalize`, { method: 'POST', data: { version: 0, plan, documents } })).status, 409);
+  assert.deepEqual(storage.read(first.token), originalFirst);
+  assert.deepEqual(JSON.parse(storage.read(second.token).body), edited);
+  assert.equal((await (await admin(route)).json()).version, 0);
+  documents[1].version = 2;
+  const finalized = await admin(`${route}/finalize`, { method: 'POST', data: { version: 0, plan, documents } });
+  assert.equal(finalized.status, 200);
+  assert.deepEqual(await finalized.json(), { version: 1, items: [{ id: first.id, version: 2 }, { id: second.id, version: 3 }] });
+  const snapshot = await (await admin(route)).json();
+  assert.equal(snapshot.finalized.contentsStartNumber, 4);
+  assert.equal(snapshot.sourcesChanged, false);
+  // A stale shared editor cannot silently overwrite the newly assigned folio.
+  assert.equal((await request('documents/shared', { method: 'PUT', data: edited,
+    headers: { Authorization: `Bearer ${second.token}`, 'If-Match': '2' } })).status, 409);
+  storage.update(second.token, 3, JSON.stringify({ ...edited, footer: { startNumber: 6 } }));
+  assert.equal((await (await admin(route)).json()).sourcesChanged, true);
+});
