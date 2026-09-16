@@ -222,14 +222,17 @@ export function PaperPreview({ toolbarHost }: { toolbarHost: HTMLElement | null 
   return <PaperPreviewLayout doc={previewDoc} toolbarHost={toolbarHost} pending={previewDoc !== liveDoc} />;
 }
 
-const PaperPreviewLayout = memo(function PaperPreviewLayout({
+export const PaperPreviewLayout = memo(function PaperPreviewLayout({
   doc: storedDoc,
   toolbarHost,
   pending,
+  readOnly = false,
 }: {
   doc: ReturnType<typeof useDoc.getState>['doc'];
   toolbarHost: HTMLElement | null;
   pending: boolean;
+  /** Used by the issue compiler: layout without editing or store writes. */
+  readOnly?: boolean;
 }) {
   const doc = useImageTheme(storedDoc);
   const updateDoc = useDoc((state) => state.update);
@@ -989,6 +992,7 @@ const PaperPreviewLayout = memo(function PaperPreviewLayout({
     [pages, doc.templateId],
   );
   useEffect(() => {
+    if (readOnly) return;
     if (!hlFree || !populatedPages.length) return;
     const requested = (doc.highlightBox ?? defaultPlacedHighlights(doc.design)).anchor.page;
     if (populatedPages.includes(requested)) return;
@@ -1002,9 +1006,9 @@ const PaperPreviewLayout = memo(function PaperPreviewLayout({
         current.highlightBox.anchor.page = target;
       }
     });
-  }, [doc.design, doc.highlightBox, hlFree, populatedPages, updateDoc]);
+  }, [doc.design, doc.highlightBox, hlFree, populatedPages, readOnly, updateDoc]);
 
-  const scale = zoom === 'fit' ? fitScale : zoom;
+  const scale = readOnly ? 1 : zoom === 'fit' ? fitScale : zoom;
   const pct = Math.round(scale * 100);
   // Magazine adds the cover sheet on top of the flowed content pages. magazine-2
   // instead puts the flow's first page ON sheet 1 and spends sheet 2 on the photo.
@@ -1328,12 +1332,15 @@ const PaperPreviewLayout = memo(function PaperPreviewLayout({
     <div
         className={`paper-scroll${doc.design.textDirection === 'rtl' ? ' paper-scroll--rtl' : ''}`}
         data-preview-pending={pending ? 'true' : undefined}
+        data-preview-overflow={isStructured && frontMatterStatus.overflow ? 'true' : undefined}
+        data-preview-fit-message={fit.text}
+        inert={readOnly || undefined}
       ref={scrollRef}
     >
       {/* Escape hatch — raw CSS from the design panel, scoped by author intent. */}
       {doc.design.customCss && <style>{doc.design.customCss}</style>}
 
-      {toolbarHost ? createPortal(previewControls, toolbarHost) : previewControls}
+      {!readOnly && (toolbarHost ? createPortal(previewControls, toolbarHost) : previewControls)}
 
       <div className="pages-frame" style={frame}>
         <div
@@ -1341,7 +1348,7 @@ const PaperPreviewLayout = memo(function PaperPreviewLayout({
           className={`pages${spreadOn ? ' pages--spread' : ''}${doc.design.textDirection === 'rtl' ? ' pages--rtl' : ''}${dropCapEnabled(doc.design,doc.templateId) ? '' : ' drop-caps-off'}`}
           lang={doc.design.textDirection === 'rtl' ? 'ar' : undefined}
           style={{ transform: `scale(${scale})` }}
-          onClickCapture={focusPreviewObject}
+          onClickCapture={readOnly ? undefined : focusPreviewObject}
         >
           {isNews ? (
             <NewsPages doc={doc} vars={vars} onStatus={reportFrontMatter} />
