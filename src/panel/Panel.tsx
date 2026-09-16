@@ -50,6 +50,7 @@ const TEMPLATE_GROUPS: { family: TemplateFamily; label: string }[] = [
  */
 export function Panel() {
   const [tab, setTab] = useState<TabId>('content');
+  const [pendingTemplate, setPendingTemplate] = useState<TemplateId | null>(null);
   const sidebarCount = useDoc(
     (s) => s.doc.highlights.filter((h) => h.trim()).length + s.doc.references.length,
   );
@@ -143,7 +144,10 @@ export function Panel() {
             className="select-control"
             value={templateId}
             aria-label="Layout template"
-            onChange={(event) => switchTemplate(event.target.value as TemplateId)}
+            onChange={(event) => {
+              const next = event.target.value as TemplateId;
+              if (next !== templateId) setPendingTemplate(next);
+            }}
           >
             {TEMPLATE_GROUPS.map((group) => (
               <optgroup label={group.label} key={group.family}>
@@ -182,6 +186,24 @@ export function Panel() {
         )}
         {tab === 'design' && <><DirectionSection />{isBackCover ? <BackCoverDesign /> : isFrontMatter || isNews ? <FrontMatterDesign /> : <DesignSection />}</>}
       </div>
+      {pendingTemplate && <div className="template-warning-backdrop" role="presentation">
+        <section className="template-warning" role="alertdialog" aria-modal="true" aria-labelledby="template-warning-title" aria-describedby="template-warning-copy">
+          <span className="template-warning-icon" aria-hidden="true">!</span>
+          <h2 id="template-warning-title">Changing the layout can reflow every page</h2>
+          <p id="template-warning-copy">
+            You are changing from <strong>{TEMPLATE_META.find(t=>t.id===templateId)?.name ?? templateId}</strong> to <strong>{TEMPLATE_META.find(t=>t.id===pendingTemplate)?.name ?? pendingTemplate}</strong>. Your writing, images and saved project data will remain, but page breaks, image positions and template-specific settings may look different.
+          </p>
+          <p className="template-warning-advice">For an important issue, save a separate copy before continuing. You can also use Undo immediately after the change.</p>
+          <div className="template-warning-actions">
+            <button type="button" className="tool-btn" autoFocus onClick={()=>setPendingTemplate(null)}>Keep current layout</button>
+            <button type="button" className="tool-btn template-warning-confirm" onClick={()=>{
+              const next = pendingTemplate;
+              setPendingTemplate(null);
+              switchTemplate(next);
+            }}>Change layout</button>
+          </div>
+        </section>
+      </div>}
     </aside>
   );
 }
