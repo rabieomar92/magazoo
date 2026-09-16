@@ -39,6 +39,14 @@ describe('template registry', () => {
     expect(a.hero.assetId).not.toBe(b.hero.assetId);
   });
 
+  it('fresh presets carry the Magazoo sample identity without touching loaded documents', () => {
+    for (const template of TEMPLATES) {
+      const doc = template.make();
+      expect(doc.meta.masthead).toBe('Magazoo!');
+      if (doc.templateId === 'backcover-1') expect(doc.backCover?.brand).toBe('Magazoo!');
+    }
+  });
+
   it('switchTemplate changes only the renderer and preserves the edited document', () => {
     const doc = presetFor('paper-1');
     doc.meta.title = 'Edited title';

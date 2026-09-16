@@ -116,8 +116,8 @@ export const useDoc = create<State>()(
           const direction = next.design.textDirection;
           const barSide = next.design.barSide;
           const customCss = next.design.customCss;
-          next.backCover = preset.backCover;
-          next.footer = preset.footer;
+          next.backCover = preset.backCover ? { ...preset.backCover, brand: 'Magazoo!' } : preset.backCover;
+          next.footer = preset.footer ? { ...preset.footer, text: 'Magazoo! · School of Physics' } : preset.footer;
           next.design = {
             ...preset.design,
             textDirection: direction,

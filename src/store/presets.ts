@@ -554,23 +554,38 @@ const makePaper3 = (): Doc => {
   return d;
 };
 
+/** Apply the small publication identity used by a brand-new template. This is
+ * deliberately done only at preset creation time: loaded project JSON and
+ * existing editor content are never rewritten when a layout is changed. */
+const freshMagazooPreset = (make: () => Doc): (() => Doc) => () => {
+  const doc = make();
+  doc.meta = { ...doc.meta, masthead: 'Magazoo!' };
+  // The back-cover brand is rendered from its dedicated content model rather
+  // than the article masthead, so give a fresh back cover the same identity.
+  if (doc.templateId === 'backcover-1' && doc.backCover) {
+    doc.backCover = { ...doc.backCover, brand: 'Magazoo!' };
+    doc.footer = doc.footer ? { ...doc.footer, text: 'Magazoo! · School of Physics' } : doc.footer;
+  }
+  return doc;
+};
+
 export const TEMPLATES: (TemplateMeta & { make: () => Doc })[] = [
-  { id: 'news-briefs', family: 'news', name: 'News & Briefs', kind: 'Campus & Research News', make: makeNews },
-  { id: 'backcover-1', family: 'backcover', name: 'Back Cover', kind: 'Brand & links', make: makeBackCover },
-  { id: 'frontmatter-dean', family: 'frontmatter', name: 'Dean’s Message', kind: 'Letter from the Dean', make: () => makeFrontMatter('frontmatter-dean') },
-  { id: 'frontmatter-contents', family: 'frontmatter', name: 'Contents', kind: 'Table of Contents', make: () => makeFrontMatter('frontmatter-contents') },
-  { id: 'frontmatter-board', family: 'frontmatter', name: 'Editorial Board', kind: 'People & Publication', make: () => makeFrontMatter('frontmatter-board') },
-  { id: 'paper-1', family: 'paper', name: 'Paper 1', kind: 'Academic Journal', make: makePaper1 },
-  { id: 'paper-2', family: 'paper', name: 'Paper 2', kind: 'Physics Letter', make: makePaper2 },
-  { id: 'paper-3', family: 'paper', name: 'Paper 3', kind: 'Image-led Feature', make: makePaper3 },
-  { id: 'magazine-1', family: 'magazine', name: 'Magazine 1', kind: 'Modern Editorial', make: makeMagazine1 },
-  { id: 'magazine-2', family: 'magazine', name: 'Magazine 2', kind: 'Particle Feature', make: makeMagazine2 },
-  { id: 'magazine-3', family: 'magazine', name: 'Magazine 3', kind: 'Cosmos Gatefold', make: makeMagazine3 },
-  { id: 'magazine-4', family: 'magazine', name: 'Magazine Cover', kind: 'Front Page Only', make: makeMagazine4 },
-  { id: 'gallery-1', family: 'gallery', name: 'Gallery 1', kind: 'Photo Spread', make: makeGallery1 },
-  { id: 'gallery-2', family: 'gallery', name: 'Gallery 2', kind: 'Centre Fold', make: makeGallery2 },
-  { id: 'gallery-3', family: 'gallery', name: 'Gallery 3', kind: 'Mosaic Band', make: makeGallery3 },
-  { id: 'gallery-4', family: 'gallery', name: 'Gallery 4', kind: 'Long Read', make: makeGallery4 },
+  { id: 'news-briefs', family: 'news', name: 'News & Briefs', kind: 'Campus & Research News', make: freshMagazooPreset(makeNews) },
+  { id: 'backcover-1', family: 'backcover', name: 'Back Cover', kind: 'Brand & links', make: freshMagazooPreset(makeBackCover) },
+  { id: 'frontmatter-dean', family: 'frontmatter', name: 'Dean’s Message', kind: 'Letter from the Dean', make: freshMagazooPreset(() => makeFrontMatter('frontmatter-dean')) },
+  { id: 'frontmatter-contents', family: 'frontmatter', name: 'Contents', kind: 'Table of Contents', make: freshMagazooPreset(() => makeFrontMatter('frontmatter-contents')) },
+  { id: 'frontmatter-board', family: 'frontmatter', name: 'Editorial Board', kind: 'People & Publication', make: freshMagazooPreset(() => makeFrontMatter('frontmatter-board')) },
+  { id: 'paper-1', family: 'paper', name: 'Paper 1', kind: 'Academic Journal', make: freshMagazooPreset(makePaper1) },
+  { id: 'paper-2', family: 'paper', name: 'Paper 2', kind: 'Physics Letter', make: freshMagazooPreset(makePaper2) },
+  { id: 'paper-3', family: 'paper', name: 'Paper 3', kind: 'Image-led Feature', make: freshMagazooPreset(makePaper3) },
+  { id: 'magazine-1', family: 'magazine', name: 'Magazine 1', kind: 'Modern Editorial', make: freshMagazooPreset(makeMagazine1) },
+  { id: 'magazine-2', family: 'magazine', name: 'Magazine 2', kind: 'Particle Feature', make: freshMagazooPreset(makeMagazine2) },
+  { id: 'magazine-3', family: 'magazine', name: 'Magazine 3', kind: 'Cosmos Gatefold', make: freshMagazooPreset(makeMagazine3) },
+  { id: 'magazine-4', family: 'magazine', name: 'Magazine Cover', kind: 'Front Page Only', make: freshMagazooPreset(makeMagazine4) },
+  { id: 'gallery-1', family: 'gallery', name: 'Gallery 1', kind: 'Photo Spread', make: freshMagazooPreset(makeGallery1) },
+  { id: 'gallery-2', family: 'gallery', name: 'Gallery 2', kind: 'Centre Fold', make: freshMagazooPreset(makeGallery2) },
+  { id: 'gallery-3', family: 'gallery', name: 'Gallery 3', kind: 'Mosaic Band', make: freshMagazooPreset(makeGallery3) },
+  { id: 'gallery-4', family: 'gallery', name: 'Gallery 4', kind: 'Long Read', make: freshMagazooPreset(makeGallery4) },
 ];
 
 export const TEMPLATE_META: TemplateMeta[] = TEMPLATES.map(({ id, family, name, kind }) => ({
