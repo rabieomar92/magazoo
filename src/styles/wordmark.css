@@ -1,0 +1,18 @@
+/* The one description of the Magazoo! letterforms. Callers set font-size and
+   color; nothing else about the mark is theirs to choose. `--brand-accent`
+   tints the exclamation when a surface wants it to carry the accent. */
+.brand-mark {
+  font-family: var(--brand-font, 'Playfair Display', Georgia, serif);
+  font-style: italic;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.brand-mark i {
+  font-style: inherit;
+  font-weight: inherit;
+  color: var(--brand-accent, currentColor);
+  padding-left: 0.02em;
+}

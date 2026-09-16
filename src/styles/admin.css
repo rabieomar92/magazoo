@@ -2,7 +2,7 @@
 .admin-page *, .admin-dialog { box-sizing:border-box; }
 .admin-header { display:flex; justify-content:space-between; gap:24px; align-items:center; padding:22px max(24px,calc((100vw - 1160px)/2)); background:#fff; border-bottom:1px solid #e1e5ed; }
 .admin-header>div,.admin-header nav { display:flex; align-items:center; gap:24px; }
-.admin-brand { color:#4f46e5; text-decoration:none; font-weight:800; font-size:26px; }
+.admin-brand { color:#4f46e5; text-decoration:none; font-size:26px; }
 .admin-header span { border-left:1px solid #d8dde7; padding-left:24px; color:#6b7280; }
 .admin-content { max-width:1160px; padding:44px 24px 60px; margin:auto; }
 .admin-intro { margin-bottom:32px;max-width:740px; }
@@ -104,23 +104,15 @@
   backdrop-filter:blur(16px);
 }
 .admin-header > div { min-width:0; }
+/* Letterforms and the exclamation come from .brand-mark. The teal dot this
+   rule used to append was a fifth version of the same logo; the mark now ends
+   the way it ends everywhere else. */
 .admin-brand {
   display:inline-flex;
   align-items:center;
   color:#4338ca;
-  font-family:"Avenir Next LT Pro", "Avenir Next", Inter, sans-serif;
   font-size:26px;
-  font-weight:800;
-  letter-spacing:-.055em;
-  line-height:1;
-}
-.admin-brand::after {
-  content:"";
-  width:7px;
-  height:7px;
-  margin:14px 0 0 3px;
-  border-radius:50%;
-  background:#14b8a6;
+  --brand-accent:#14b8a6;
 }
 .admin-header span { color:#738096; font-size:13px; font-weight:600; }
 .admin-header nav a, .admin-header nav button {

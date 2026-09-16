@@ -16,8 +16,13 @@
   --accent-strong: #4338ca;
   --accent-soft: #eef2ff;
 
-  --brand-font: 'Mochibop', 'Mochibop Bold', 'Mochiy Pop One',
-    'Arial Rounded MT Bold', 'Segoe Print', cursive;
+  /* Bundled with the app (styles/fonts.css), so the mark resolves identically
+     on every machine and inside the exported PDF. The previous stack named
+     faces that ship with neither the app nor most systems, so the brand fell
+     through to whatever rounded or cursive face the OS happened to have —
+     which is why the same wordmark looked different on different screens. */
+  --brand-font: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  --brand-accent: #4f46e5;
 
   --radius-sm: 3px;
   --radius: 4px;
@@ -59,10 +64,10 @@
   border-bottom: 1px solid var(--line);
 }
 
+/* Superseded by the premium-workspace rule further down; kept as the base size
+   only. Weight and tracking belong to .brand-mark, not to this surface. */
 .toolbar-brand {
   font-size: 13px;
-  font-weight: 650;
-  letter-spacing: -0.01em;
   color: var(--ink);
 }
 
@@ -1046,14 +1051,11 @@
   line-height: 1.1;
 }
 
+/* Letterforms come from .brand-mark (styles/wordmark.css). Size and colour are
+   all this surface gets to choose. */
 .toolbar-brand {
   color: var(--accent-strong);
-  font-family: var(--brand-font);
   font-size: 20px;
-  font-weight: 700;
-  letter-spacing: -0.025em;
-  line-height: 1;
-  white-space: nowrap;
 }
 
 .toolbar-tagline {
