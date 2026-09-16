@@ -4,6 +4,28 @@ import { makeFrontMatter } from '../store/frontMatter';
 import { FrontMatterPages } from './FrontMatterPages';
 
 describe('editorial board page', () => {
+  it('keeps its measuring copy out of the real page collection', () => {
+    const doc = makeFrontMatter('frontmatter-board');
+    const host = document.createElement('div');
+    host.innerHTML = renderToStaticMarkup(
+      <FrontMatterPages doc={doc} vars={{}} onStatus={() => undefined} />,
+    );
+
+    expect(host.querySelectorAll('.page')).toHaveLength(1);
+    expect(host.querySelectorAll('.fm-measure-page')).toHaveLength(1);
+    expect(host.querySelector('.fm-measure-page')?.classList.contains('page')).toBe(false);
+    expect(host.querySelector('.fm-measure-page')?.getAttribute('data-layout-helper')).toBe('true');
+  });
+
+  it('applies an editor-selected about-copy column count', () => {
+    const doc = makeFrontMatter('frontmatter-board');
+    doc.design.frontMatterAboutColumns = 2;
+    const html = renderToStaticMarkup(
+      <FrontMatterPages doc={doc} vars={{}} onStatus={() => undefined} />,
+    );
+    expect(html).toContain('--fm-about-columns:2');
+  });
+
   it('keeps the bleed hero and publication logo independent', () => {
     const doc = makeFrontMatter('frontmatter-board');
     doc.assets['board-hero'] = {
