@@ -1,4 +1,4 @@
-import { useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { Fragment, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import type { Doc } from '../schema/document';
 import { emptyFrontMatter } from '../store/frontMatter';
 import { packFrontMatter, type FrontMatterUnit } from '../lib/frontMatterLayout';
@@ -7,6 +7,7 @@ import { dropCapEnabled } from '../lib/textDirection';
 import { requestBlockEditorFocus } from '../lib/editorNavigation';
 import { FramedImage } from '../components/FramedImage';
 import { TagBar } from './TagBar';
+import { largestBoardScaleThatFits } from '../lib/frontMatterBoardFit';
 
 export interface FrontMatterStatus { pages: number; overflow: boolean }
 const target = (name: string, tab = 'content') => ({'data-editor-tab':tab,'data-editor-target':name});
@@ -29,9 +30,18 @@ export function FrontMatterPages({doc,vars,onStatus}: {doc:Doc;vars:CSSPropertie
   const board = doc.templateId === 'frontmatter-board';
   const content = doc.frontMatter ?? emptyFrontMatter();
   const aboutColumns = Math.max(1,Math.min(3,doc.design.frontMatterAboutColumns ?? 3));
+  const logoWidth = Math.max(8,Math.min(40,content.logoWidth ?? 18));
+  const logoAsset = content.logo?.assetId ? doc.assets[content.logo.assetId] : null;
+  const logoAspect = logoAsset ? Math.max(.8,Math.min(8,logoAsset.naturalWidth/Math.max(1,logoAsset.naturalHeight))) : 3.2;
+  const [boardScale,setBoardScale] = useState(1);
   const pageVars = {
     ...vars,
     '--fm-about-columns': String(aboutColumns),
+    '--fm-board-body-size': `${doc.design.sizes.body * boardScale}pt`,
+    '--fm-board-heading-size': `${7.2 * boardScale}pt`,
+    '--fm-board-entry-gap': `${2.8 * boardScale}mm`,
+    '--fm-logo-width': `${logoWidth}mm`,
+    '--fm-logo-height': `${logoWidth / logoAspect}mm`,
   } as CSSProperties;
   const initial = dean && dropCapEnabled(doc.design,doc.templateId);
   const measureRef = useRef<HTMLDivElement>(null);
@@ -54,8 +64,9 @@ export function FrontMatterPages({doc,vars,onStatus}: {doc:Doc;vars:CSSPropertie
     if (!root || !column) return;
     const nodes = [...column.querySelectorAll<HTMLElement>('.fm-unit')];
     const height = column.clientHeight;
-    const gap = parseFloat(getComputedStyle(column).rowGap) || 0;
+    let gap = parseFloat(getComputedStyle(column).rowGap) || 0;
     let widthOverflow = false;
+    let trackWidthOverflow = !board;
     const measure = (unit:FrontMatterUnit) => {
       const node = nodes.find(n=>n.dataset.measureId===unit.id);
       if (!node) return 0;
@@ -69,15 +80,43 @@ export function FrontMatterPages({doc,vars,onStatus}: {doc:Doc;vars:CSSPropertie
       }
       column.append(copy);
       const size = copy.offsetHeight;
-      widthOverflow ||= copy.scrollWidth > copy.clientWidth + 1;
+      if (trackWidthOverflow) widthOverflow ||= copy.scrollWidth > copy.clientWidth + 1;
       copy.remove();
       return size;
     };
-    const packed = packFrontMatter(units,Math.max(1,height-2),measure,gap);
+    const applyBoardScale = (scale:number) => {
+      root.style.setProperty('--fm-board-body-size',`${doc.design.sizes.body * scale}pt`);
+      root.style.setProperty('--fm-board-heading-size',`${7.2 * scale}pt`);
+      root.style.setProperty('--fm-board-entry-gap',`${2.8 * scale}mm`);
+      gap = parseFloat(getComputedStyle(column).rowGap) || 0;
+    };
+    const packAtScale = (scale:number) => {
+      if (board) applyBoardScale(scale);
+      return packFrontMatter(units,Math.max(1,height-2),measure,gap);
+    };
+    let selectedBoardScale = 1;
+    if (board) {
+      const fitsBoardScale = (scale:number) => {
+        const trial = packAtScale(scale);
+        return !trial.overflow && trial.columns.length <= 2;
+      };
+      // Keep a genuinely readable floor. If the role list still needs a
+      // continuation sheet, retain full-size type and use the continuation
+      // layout instead of shrinking the publication credits into fine print.
+      selectedBoardScale = fitsBoardScale(.78)
+        ? largestBoardScaleThatFits(fitsBoardScale,.78)
+        : 1;
+      applyBoardScale(selectedBoardScale);
+      setBoardScale(previous => Math.abs(previous-selectedBoardScale) < .001 ? previous : selectedBoardScale);
+      trackWidthOverflow = true;
+    } else {
+      setBoardScale(previous => previous === 1 ? previous : 1);
+    }
+    let packed = packAtScale(selectedBoardScale);
     // Contents and board groups are modular editorial cards, not article
     // paragraphs. Balance their final pair of columns without changing gaps.
     if (!dean && !packed.overflow) {
-      const start = Math.floor((packed.columns.length-1)/2)*2;
+      const start = board ? 0 : Math.floor((packed.columns.length-1)/2)*2;
       const tail = packed.columns.slice(start).flat();
       let low = Math.max(1,...tail.map(measure)), high = height-2;
       let balanced = packFrontMatter(tail,high,measure,gap);
@@ -94,7 +133,7 @@ export function FrontMatterPages({doc,vars,onStatus}: {doc:Doc;vars:CSSPropertie
     packed.overflow ||= fixedOverflow || widthOverflow;
     setLayout(packed);
     onStatus({pages:Math.max(1,Math.ceil(packed.columns.length/2)),overflow:packed.overflow});
-  },[units,doc,dean,initial,fontEpoch,onStatus]);
+  },[units,doc,dean,board,initial,fontEpoch,onStatus]);
 
   type Frame = {assetId:string|null;offsetX:number;offsetY:number;scale:number};
   const framedPhoto = (frame:Frame|undefined, className:string, editorTarget:string, placeholder?:string, fit:'cover'|'contain'='cover') => {
@@ -123,14 +162,31 @@ export function FrontMatterPages({doc,vars,onStatus}: {doc:Doc;vars:CSSPropertie
       </figcaption>}
     </figure>;
   };
+  const boardAbout = () => {
+    const paragraphs = content.about.split(/\n\s*\n/u);
+    const after = Math.max(0,Math.min(paragraphs.length,content.logoAfterParagraph ?? Math.max(0,paragraphs.length-1)));
+    const wrap = content.logoWrap ?? 'end';
+    const logo = framedPhoto(
+      content.logo,
+      `fm-board-logo fm-board-logo--wrap-${wrap} fm-board-logo--${content.logoAlign ?? 'center'}`,
+      'image-logo',undefined,'contain',
+    );
+    return <div className="fm-note-text">
+      {after===0 && logo}
+      {paragraphs.map((paragraph,index)=><Fragment key={`${index}-${paragraph.slice(0,16)}`}>
+        <p className="fm-note-paragraph" dangerouslySetInnerHTML={{__html:runsToHtml(paragraph)}} />
+        {after===index+1 && logo}
+      </Fragment>)}
+    </div>;
+  };
   const sheet = (pageIndex:number, children:ReactNode, measuring=false) => <div
-    className={`${measuring?'fm-measure-page':'page'} fm-page fm-page--${dean?'dean':board?'board':'contents'}`}
+    className={`${measuring?'fm-measure-page':'page'} fm-page fm-page--${dean?'dean':board?'board':'contents'}${board&&pageIndex>0&&!measuring?' fm-page--continuation':''}${board&&doc.design.showTopBar===false?' fm-page--no-topbar':''}`}
     style={pageVars} dir={doc.design.textDirection ?? 'ltr'} key={pageIndex}
     data-layout-helper={measuring ? 'true' : undefined}
     data-layout-overflow={!measuring && layout.overflow ? 'true' : undefined}>
     {(!board || doc.design.showTopBar !== false) && <TagBar doc={doc} pageIndex={pageIndex} detail={doc.meta.volume} />}
     <div className="fm-shell">
-      {board ? boardHero() : <header className="fm-header">
+      {board ? (pageIndex===0 || measuring ? boardHero() : null) : <header className="fm-header">
         <p className="fm-kicker" {...target('meta-category')}>{doc.meta.categoryLabel}{pageIndex>0 ? ' · continued' : ''}</p>
         <h1 {...target('meta-title')}>{doc.meta.title}</h1>
         {doc.meta.subtitle && <p className="fm-subtitle" {...target('meta-subtitle')}>{doc.meta.subtitle}</p>}
@@ -142,22 +198,21 @@ export function FrontMatterPages({doc,vars,onStatus}: {doc:Doc;vars:CSSPropertie
       <div className="fm-middle">
         <div className="fm-columns" dir={doc.design.textDirection === 'rtl' ? 'rtl' : 'ltr'}>
           {board && <div className="fm-board-list-header">
-            <h1 {...target('meta-title')}>{doc.meta.title}</h1>
-            {doc.meta.subtitle && <p {...target('meta-subtitle')}>{doc.meta.subtitle}</p>}
+            <h1 {...target('meta-title')}>{doc.meta.title}{pageIndex>0 ? ' · continued' : ''}</h1>
+            {pageIndex===0 && doc.meta.subtitle && <p {...target('meta-subtitle')}>{doc.meta.subtitle}</p>}
           </div>}
           {children}
         </div>
-        <aside className="fm-rail">
+        {!(board&&pageIndex>0&&!measuring) && <aside className="fm-rail">
           {!board && photo('cover', 'fm-feature')}
           {!board && doc.meta.photoCredit && <p className="fm-credit" {...target('meta-photo-credit')}>{doc.meta.photoCredit}</p>}
           <div {...target('fm-note')}><h2>{board ? content.aboutTitle : content.noteTitle}</h2>
-            <div className="fm-note-text" dangerouslySetInnerHTML={{__html:runsToHtml(board ? content.about : content.note)}} />
+            {board ? boardAbout() : <div className="fm-note-text" dangerouslySetInnerHTML={{__html:runsToHtml(content.note)}} />}
           </div>
           {board && content.contact && <p className="fm-board-contact" {...target('fm-contact')}>{content.contact}</p>}
-          {board && framedPhoto(content.logo,'fm-board-logo','image-logo',undefined,'contain')}
           {dean && <div className="fm-signoff" {...target('meta-author')}><span>{content.signoff}</span><strong>{doc.meta.author}</strong></div>}
           {!dean && !board && photo('hero','fm-feature fm-feature-secondary')}
-        </aside>
+        </aside>}
       </div>
       <div className="fm-footer" aria-hidden="true" />
     </div>

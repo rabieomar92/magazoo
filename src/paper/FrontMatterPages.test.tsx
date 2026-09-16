@@ -46,6 +46,9 @@ describe('editorial board page', () => {
     doc.cover = { assetId: 'board-hero', offsetX: 0, offsetY: 0, scale: 1 };
     doc.hero = { assetId: 'article-only', offsetX: 0, offsetY: 0, scale: 1 };
     doc.frontMatter!.logo = { assetId: 'school-logo', offsetX: 0, offsetY: 0, scale: 1 };
+    doc.frontMatter!.logoAfterParagraph = 1;
+    doc.frontMatter!.logoWrap = 'end';
+    doc.frontMatter!.about = 'First publication paragraph.\n\nSecond publication paragraph.\n\nThird publication paragraph.';
     doc.meta.categoryLabel = 'Laboratory portrait';
     doc.meta.heroCaption = 'A complete caption with normal white space.';
     doc.meta.photoCredit = 'Photo: School of Physics';
@@ -63,6 +66,15 @@ describe('editorial board page', () => {
     expect(html).toContain('data-editor-target="image-logo"');
     expect(html).toContain('data-image-fit="contain"');
     expect(html).not.toContain('data:image/png;base64,article-only');
+    const host = document.createElement('div');
+    host.innerHTML = html;
+    expect(host.querySelector('.fm-note-text .fm-board-logo')).not.toBeNull();
+    expect(host.querySelector('.fm-rail > .fm-board-logo')).toBeNull();
+    const flow = host.querySelector('.fm-note-text')!;
+    expect(flow.children[0]?.textContent).toContain('First publication paragraph.');
+    expect(flow.children[1]?.classList.contains('fm-board-logo')).toBe(true);
+    expect(flow.children[1]?.classList.contains('fm-board-logo--wrap-end')).toBe(true);
+    expect(flow.children[2]?.textContent).toContain('Second publication paragraph.');
     expect(html).toContain('class="tag-bar');
     expect(html).not.toContain('class="fm-header');
   });

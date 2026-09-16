@@ -4,6 +4,7 @@ export const emptyFrontMatter = (): FrontMatter => ({
   entries: [], aboutTitle: 'About the magazine', about: '',
   noteTitle: 'In this issue', note: '', contact: '',
   logo: { assetId: null, offsetX: 0, offsetY: 0, scale: 1 },
+  logoWidth: 18, logoAlign: 'center', logoAfterParagraph: 2, logoWrap: 'end',
   signoff: 'With best wishes,', pageStart: 1,
 });
 

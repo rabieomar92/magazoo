@@ -43,14 +43,37 @@ export function FrontMatterContent() {
 }
 
 export function FrontMatterImages() {
+  const doc = useDoc(s => s.doc);
+  const update = useDoc(s => s.update);
   const dean = useDoc(s => s.doc.templateId === 'frontmatter-dean');
   const contents = useDoc(s => s.doc.templateId === 'frontmatter-contents');
   const board = useDoc(s => s.doc.templateId === 'frontmatter-board');
+  const aboutParagraphs = (doc.frontMatter?.about ?? '').split(/\n\s*\n/u);
+  const logoPosition = Math.max(0,Math.min(aboutParagraphs.length,doc.frontMatter?.logoAfterParagraph ?? Math.max(0,aboutParagraphs.length-1)));
+  const logoWrap = doc.frontMatter?.logoWrap ?? 'end';
   return <>
     {dean && <ImagePicker slot="hero" title="Dean’s portrait" blurb="An optional portrait beside the dean’s name. Upload your own photograph." />}
     <ImagePicker slot="cover" title={dean ? 'Issue / cover image' : board ? 'Bleed hero image' : 'Feature image'} blurb={board ? 'The main editorial photograph runs to both page edges. Zoom and shift adjust its framing.' : 'Replace the sample science artwork with your own photograph. Zoom and shift adjust its framing.'} />
     {contents && <ImagePicker slot="hero" title="Second feature image" blurb="Optional supporting photograph below the feature note." />}
-    {board && <ImagePicker slot="frontmatter-logo" title="School of Physics logo" blurb="Upload the official School of Physics logo. It is saved separately from article photographs and fitted without cropping." fit="contain" thumbAspectRatio="3 / 1" />}
+    {board && <ImagePicker slot="frontmatter-logo" title="School of Physics logo" blurb="Upload the official School of Physics logo. It flows with the About text instead of being pinned to the page, so copy can reflow naturally through one, two or three columns." fit="contain" thumbAspectRatio="3 / 1" />}
+    {board && <Section title="Logo in text flow" editorTarget="image-logo">
+      <p className="hint">The logo participates in the About copy like an editorial image. It moves naturally when copy or column count changes; it is never pinned to a page coordinate.</p>
+      <LabeledSelect label="Position in copy" value={String(logoPosition)}
+        options={[
+          {value:'0',label:'Before paragraph 1'},
+          ...aboutParagraphs.map((_,index)=>({value:String(index+1),label:index===aboutParagraphs.length-1 ? `After paragraph ${index+1} · end` : `After paragraph ${index+1}`})),
+        ]}
+        onChange={value=>update(d=>{d.frontMatter ??= emptyFrontMatter(); d.frontMatter.logoAfterParagraph=Number(value);})} />
+      <LabeledNumber label="Logo width" unit="mm" min={8} max={40} step={1} value={doc.frontMatter?.logoWidth ?? 18}
+        onChange={value => update(d=>{d.frontMatter ??= emptyFrontMatter(); d.frontMatter.logoWidth=Math.max(8,Math.min(40,value));})} />
+      <SegmentField<'block'|'start'|'end'> label="Text wrapping" value={logoWrap}
+        options={[{value:'block',label:'Above & below'},{value:'start',label:'Wrap · start'},{value:'end',label:'Wrap · end'}]}
+        onChange={value=>update(d=>{d.frontMatter ??= emptyFrontMatter(); d.frontMatter.logoWrap=value;})} />
+      {logoWrap === 'block' && <SegmentField<'start'|'center'|'end'> label="Block alignment" value={doc.frontMatter?.logoAlign ?? 'center'}
+        options={[{value:'start',label:'Start'},{value:'center',label:'Centre'},{value:'end',label:'End'}]}
+        onChange={value=>update(d=>{d.frontMatter ??= emptyFrontMatter(); d.frontMatter.logoAlign=value;})} />}
+      <p className="hint">Start and end follow the reading direction, so the same setting remains correct in Arabic.</p>
+    </Section>}
   </>;
 }
 

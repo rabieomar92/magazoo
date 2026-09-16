@@ -495,6 +495,17 @@ export interface FrontMatter {
   /** Publication mark used by the editorial-board page. Kept separate from
    * the article hero/cover so changing templates can never replace either. */
   logo?: { assetId: string | null; offsetX: number; offsetY: number; scale: number };
+  /** The publication mark participates in the About-copy flow instead of
+   * being pinned to the page. Width is millimetres within the current column. */
+  logoWidth?: number;
+  logoAlign?: 'start' | 'center' | 'end';
+  /** Insert the logo after this About paragraph (zero = before the first).
+   * The bounded position follows edits to the text instead of using a fragile
+   * absolute page coordinate. */
+  logoAfterParagraph?: number;
+  /** Block keeps text above/below. Start/end floats the mark inside its current
+   * editorial column so following copy wraps beside it; sides are RTL-aware. */
+  logoWrap?: 'block' | 'start' | 'end';
   signoff?: string;
   pageStart: number;
 }
