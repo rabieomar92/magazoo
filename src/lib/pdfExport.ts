@@ -312,7 +312,17 @@ function freezeColumnLayout(source: HTMLElement, clone: HTMLElement) {
   }
 }
 
-export function clonePages(source: HTMLElement, targetDocument: Document) {
+/**
+ * `freezeColumns` bakes each multi-column box's measured geometry into the
+ * clone. Print needs it: the print engine re-runs column balancing against a
+ * different medium and can drop or clip a column otherwise. A clone that stays
+ * on screen must NOT have it — a box whose width came from `40mm` laid out at
+ * its full fractional precision, re-pinned to a rounded pixel measurement,
+ * puts every glyph after it on a slightly different subpixel origin. The text
+ * and the line breaks survive, so it reads as "almost right", which is exactly
+ * how it looked beside the editor's own preview.
+ */
+export function clonePages(source: HTMLElement, targetDocument: Document, { freezeColumns = true } = {}) {
   const pages = source.cloneNode(true) as HTMLElement;
   pages.classList.remove('pages--spread');
   pages.classList.add('pdf-export-pages');
@@ -334,11 +344,11 @@ export function clonePages(source: HTMLElement, targetDocument: Document) {
     child.style.setProperty('box-shadow', 'none', 'important');
   });
 
-  freezeColumnLayout(source, pages);
+  if (freezeColumns) freezeColumnLayout(source, pages);
 
   // Structured templates carry hidden measuring sheets beside their visible
-  // pages. Keep source/clone node indices matched until geometry is frozen,
-  // then exclude those helpers from the printed document completely.
+  // pages. Keep source/clone node indices matched until any geometry freeze is
+  // done, then exclude those helpers from the cloned document completely.
   Array.from(pages.children).forEach(child => {
     if (!child.classList.contains('page')) child.remove();
   });

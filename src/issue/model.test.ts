@@ -27,19 +27,21 @@ describe('issue numbering and preservation', () => {
     expect(revised.order).toEqual(['__contents__', 'a', 'new', 'back']);
     expect(new Set(revised.order).size).toBe(revised.order.length);
   });
-  it('carries a subtitle into the contents only while it still reads as a deck', () => {
+  it('keeps every subtitle, trimming only what could never reach the sheet', () => {
     const short = item('short'), long = item('long');
     short.doc.meta.subtitle = 'A new perspective on trapped ions';
-    // A real editor subtitle: one abstract sentence. Past the deck limit it is
-    // dropped whole, never truncated, so the two fixed contents sheets cannot
-    // be pushed into overflow by an article nobody can identify from the error.
-    long.doc.meta.subtitle = 'Researchers at the School of Physics have demonstrated a new approach to laser cooling that reaches the microkelvin regime using a fraction of the optical power previously required.';
+    long.doc.meta.subtitle = 'Researchers at the School of Physics have demonstrated a new approach to laser cooling that reaches the microkelvin regime using a fraction of the optical power previously required, opening a route to portable optical clocks that survive a van ride.';
     expect(long.doc.meta.subtitle.length).toBeGreaterThan(CONTENTS_DECK_MAX);
     const plan = defaultIssuePlan([short, long]);
-    const entries = contentsEntries(plan, [short, long], assignIssuePages(plan, [short, long], { short: 1, long: 1 }));
-    expect(entries.map(entry => entry.subtitle)).toEqual(['A new perspective on trapped ions', '']);
-    // The document itself is untouched — this is a contents-sheet decision.
-    expect(long.doc.meta.subtitle).toMatch(/^Researchers/u);
+    const [first, second] = contentsEntries(plan, [short, long], assignIssuePages(plan, [short, long], { short: 1, long: 1 }));
+    expect(first.subtitle).toBe('A new perspective on trapped ions');
+    // Trimmed on a word boundary, never mid-word, and never emptied: the deck
+    // is what tells a reader what the article is. CSS clamps what shows.
+    expect(second.subtitle.length).toBeLessThanOrEqual(CONTENTS_DECK_MAX + 1);
+    expect(second.subtitle.endsWith('\u2026')).toBe(true);
+    expect(second.subtitle).toMatch(/^Researchers at the School of Physics/u);
+    expect(second.subtitle.replace(/\u2026$/u, '').endsWith(' ')).toBe(false);
+    expect(long.doc.meta.subtitle).toMatch(/van ride\.$/u);
   });
   it('extracts authored text and the appropriate hero without altering the JSON', () => {
     const a = item('a', 'magazine-3');

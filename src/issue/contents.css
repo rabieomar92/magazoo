@@ -37,6 +37,32 @@
 .issue-contents-dense .issue-contents-entry p { font-size:7.5pt; }
 .issue-contents-empty { display:flex; flex:1; flex-direction:column; align-items:center; justify-content:center; color:#9aa89e; border:1px solid #d7dfd7; }
 .issue-contents-empty .brand-mark { font-size:34pt; --brand-accent:var(--contents-accent); }
+/* Deterministic slot heights. Each deck is clamped to its cell's line budget,
+   so a 300-character subtitle changes what an entry says, never how tall it is
+   — which is what keeps a two-page spread two pages, whatever the editor typed. */
+.issue-contents-feature h2,.issue-contents-feature p,.issue-contents-entry h2,.issue-contents-entry p { display:-webkit-box; -webkit-box-orient:vertical; overflow:hidden; }
+.issue-contents-feature h2 { -webkit-line-clamp:2; }
+.issue-contents-feature p { -webkit-line-clamp:3; }
+.issue-contents-entry h2 { -webkit-line-clamp:2; }
+.issue-contents-entry p { -webkit-line-clamp:2; }
+.issue-contents-airy .issue-contents-feature p { -webkit-line-clamp:4; }
+.issue-contents-dense .issue-contents-feature p { -webkit-line-clamp:2; }
+.issue-contents-packed .issue-contents-entry p { -webkit-line-clamp:1; }
+
+/* A dense list keeps every hero: the picture moves from a banner above the copy
+   to a thumb beside it, which is the only way to carry twelve entries and
+   twelve pictures on one sheet. Entries without a hero span both columns so
+   they do not sit against an empty gutter. */
+.issue-contents-dense .issue-contents-entry { display:grid; grid-template-columns:19mm minmax(0,1fr); column-gap:3mm; align-items:start; }
+.issue-contents-dense .issue-contents-entry > img { height:13mm; margin:0; }
+.issue-contents-dense .issue-contents-entry:not(:has(> img)) .issue-contents-entry-copy { grid-column:1 / -1; }
+.issue-contents-dense .issue-contents-entry-copy { grid-template-columns:8mm minmax(0,1fr); gap:2mm; }
+.issue-contents-dense .issue-contents-entry .issue-contents-number { font-size:14pt; }
+.issue-contents-packed .issue-contents-entry { grid-template-columns:15mm minmax(0,1fr); }
+.issue-contents-packed .issue-contents-entry > img { height:10.5mm; }
+.issue-contents-packed .issue-contents-entry h2 { font-size:9pt; }
+.issue-contents-packed .issue-contents-entry p { font-size:7pt; }
+.issue-contents-packed .issue-contents-list { row-gap:2.5mm; }
 .issue-contents-page[dir=rtl] h1,.issue-contents-page[dir=rtl] h2 { letter-spacing:normal; line-height:1.35; }
 /* These selectors formerly required the article wrapper. Snapshots retain
    the same flags on their physical pages inside a mixed-template issue. */

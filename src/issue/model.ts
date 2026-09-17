@@ -18,21 +18,24 @@ export const isIssueCover = (doc: Doc) => doc.templateId === 'magazine-4' || doc
 export const issuePlainText = (text = '') => parseRuns(text).map(run => run.text).join('').replace(/\s+/gu, ' ').trim();
 
 /**
- * A contents deck is a cue, not the article's standfirst. An editor's subtitle
- * is often a full abstract sentence; dropped into a contents cell it wraps to
- * four or five lines, shoves the entries below it off the sheet, and turns the
- * spread into grey mass — and because the spread is fixed at two pages, that
- * surfaces to the editor as "the contents do not fit" with no hint of which
- * article caused it.
+ * A contents deck is a cue, not the article's standfirst — but the answer to a
+ * long subtitle is to fit it, not to throw it away: an entry with no deck tells
+ * the reader nothing about the article.
  *
- * So a subtitle is used only when it already reads as a deck. Over the limit
- * it is dropped whole rather than truncated: a deck cut mid-clause with an
- * ellipsis reads worse on a printed contents page than a title standing alone.
+ * So fitting is split in two. The visible fit is CSS's business: every deck is
+ * line-clamped to its slot in contents.css, which makes each entry's height
+ * deterministic no matter what the editor typed, so a long subtitle can never
+ * push the entries under it off a sheet that cannot grow. This function only
+ * bounds what reaches the DOM at all, cutting on a word boundary so the clamp
+ * never has to render a half-word before the fade.
  */
-export const CONTENTS_DECK_MAX = 120;
+export const CONTENTS_DECK_MAX = 240;
 export const contentsDeck = (text: string | undefined, limit = CONTENTS_DECK_MAX) => {
   const deck = issuePlainText(text);
-  return deck.length <= limit ? deck : '';
+  if (deck.length <= limit) return deck;
+  const cut = deck.slice(0, limit);
+  const space = cut.lastIndexOf(' ');
+  return `${(space > limit * 0.6 ? cut.slice(0, space) : cut).replace(/[\s,;:.\u2013\u2014-]+$/u, '')}\u2026`;
 };
 
 export function defaultIssuePlan(items: readonly IssueItem[]): IssuePlan {
