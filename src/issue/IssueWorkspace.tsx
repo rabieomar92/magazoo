@@ -291,7 +291,7 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
           <section className="card">
             <h2>Compile</h2>
             {ready
-              ? <p className="field-hint">{physicalPages} physical pages across {items.length} {items.length === 1 ? 'article' : 'articles'}, {entries.length} listed in the contents{isFinalized ? ' · finalised' : ''}. These sheets are the ones the PDF prints — the preview is the export, not a picture of it.</p>
+              ? <p className="field-hint">{physicalPages} physical pages across {items.length} {items.length === 1 ? 'article' : 'articles'}, {entries.length} listed in the contents{isFinalized ? ' · finalised' : ''}. Every page beside you is that article’s own editor preview, and the PDF prints these very pages — one article at a time, the same way each article prints on its own.</p>
               : <p className="field-hint">Setting the issue…</p>}
             <div className="card-actions">
               <button type="button" disabled={busy || !ready} onClick={rebuildContents}>Rebuild contents page</button>
@@ -325,7 +325,7 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
         </div>
         <div className="stage-scroll" ref={stageRef}>
           {ready
-            ? <IssueProof plan={proofPlan} entries={entries} documents={compiled!.documents} magazineName={data.project.name} design={proofDesign} contentsStart={contentsStart} scale={scale} pagesRef={pagesRef} onOverflow={setContentsOverflow} />
+            ? <IssueProof plan={proofPlan} entries={entries} documents={compiled!.numbered} magazineName={data.project.name} design={proofDesign} contentsStart={contentsStart} scale={scale} pagesRef={pagesRef} onOverflow={setContentsOverflow} />
             : <div className="stage-progress" role="status">
                 <Wordmark className="stage-mark" />
                 <h3>{renderError ? 'An article needs attention' : progress.pass > 1 ? 'Numbering the pages' : 'Setting the issue'}</h3>

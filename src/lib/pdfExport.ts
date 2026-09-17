@@ -380,55 +380,46 @@ export function issuePageGroups(root: HTMLElement): PageGroup[] {
   return groups;
 }
 
-export function cloneGroupedPages(groups: readonly PageGroup[], targetDocument: Document) {
-  for (const { owner, sheets } of groups) {
-    const container = owner.cloneNode(false) as HTMLElement;
-    // On screen these containers are laid out for the proof stage — dropped
-    // out of flow with `display:contents`, or carrying the stage's transform.
-    // Stripping the studio's classes keeps those rules off the printed copy;
-    // the explicit position/display/transform resets below are what actually
-    // undo them, since an inline !important beats a stylesheet rule whatever
-    // the classes say.
-    container.classList.remove('pages--spread', 'issue-render-target', 'issue-proof-pages', 'issue-proof-doc');
-    container.classList.add('pdf-export-pages');
-    container.removeAttribute('style');
-    container.style.setProperty('position', 'static', 'important');
-    container.style.setProperty('inset', 'auto', 'important');
-    container.style.setProperty('display', 'block', 'important');
-    container.style.setProperty('width', '210mm', 'important');
-    container.style.setProperty('min-width', '210mm', 'important');
-    container.style.setProperty('transform', 'none', 'important');
-    for (const sheet of sheets) {
-      const copy = sheet.cloneNode(true) as HTMLElement;
-      copy.classList.add('pdf-export-page');
-      copy.style.setProperty('display', window.getComputedStyle(sheet).display, 'important');
-      copy.style.setProperty('width', '210mm', 'important');
-      copy.style.setProperty('height', '297mm', 'important');
-      copy.style.setProperty('margin', '0', 'important');
-      copy.style.setProperty('box-shadow', 'none', 'important');
-      copy.querySelectorAll('[data-editor-target], [data-source-block-id], [contenteditable]').forEach(element => {
-        element.removeAttribute('data-editor-target');
-        element.removeAttribute('data-source-block-id');
-        element.removeAttribute('contenteditable');
-        element.removeAttribute('tabindex');
-      });
-      freezeColumnLayout(sheet, copy);
-      container.appendChild(copy);
-    }
-    targetDocument.body.appendChild(container);
-  }
+/**
+ * Every `.pages` container in the compiled issue, in reading order.
+ *
+ * One per article plus the contents spread — the same element the editor hands
+ * `exportPreviewPdf` when you print that article on its own.
+ */
+export function issuePageContainers(root: HTMLElement): HTMLElement[] {
+  return Array.from(root.querySelectorAll<HTMLElement>('.pages'))
+    .filter(container => Array.from(container.children).some(
+      child => child instanceof HTMLElement && child.classList.contains('page'),
+    ));
 }
 
 /**
- * Print a compiled issue. The sheets are the live preview's own DOM — the same
- * React output the editor prints for one article — so the issue PDF and the
- * single-article PDF come off the same engine rather than off a snapshot taken
- * of it.
+ * Print each article exactly the way the article's own editor prints it.
+ *
+ * This is the whole point of the issue export: it runs `clonePages` — the
+ * single-article function, with the single-article settings — once per article
+ * against that article's own live preview, and appends the results into one
+ * print document. There is no issue-specific cloning path that could drift
+ * from the single-article one, because there is no issue-specific cloning
+ * path. Printing the issue is printing each article, in order, in one job.
+ */
+export function cloneIssuePages(containers: readonly HTMLElement[], targetDocument: Document) {
+  for (const container of containers) clonePages(container, targetDocument);
+}
+
+/**
+ * Print a compiled issue: each article printed the way its own editor prints
+ * it, concatenated into a single job. `clonePages` is called once per article
+ * against that article's live preview with the same settings the single-article
+ * export uses, so an article's pages in the issue PDF and the same article's
+ * own PDF come out of identical code reading identical DOM.
  */
 export async function exportIssuePdf(title: string, root: HTMLElement) {
   await waitForPreviewResources(root);
-  const groups = issuePageGroups(root);
-  const sheets = groups.flatMap(group => group.sheets);
+  const containers = issuePageContainers(root);
+  const sheets = containers.flatMap(container => Array.from(container.children).filter(
+    (child): child is HTMLElement => child instanceof HTMLElement && child.classList.contains('page'),
+  ));
   if (!sheets.length) throw new Error('The issue preview is not ready yet.');
 
   const restoreCounters = sheets.map(resolveReferenceCounters);
@@ -461,7 +452,7 @@ export async function exportIssuePdf(title: string, root: HTMLElement) {
     const transform = root.style.getPropertyValue('transform');
     const priority = root.style.getPropertyPriority('transform');
     root.style.setProperty('transform', 'none', 'important');
-    try { cloneGroupedPages(groups, printDocument); }
+    try { cloneIssuePages(containers, printDocument); }
     finally {
       if (transform) root.style.setProperty('transform', transform, priority);
       else root.style.removeProperty('transform');

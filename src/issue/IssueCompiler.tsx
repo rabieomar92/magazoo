@@ -3,7 +3,14 @@ import { assignIssuePages, documentWithIssueNumber, type IssueAssignment, type I
 import { IssueRenderer, type IssueSourceDocument, type RenderedIssueDocument } from './IssueRenderer';
 
 export interface CompiledIssue {
-  /** Finished sheets, carrying this issue's page numbers, in plan order. */
+  /**
+   * Each article's document with this issue's starting page number written
+   * into it — what the proof and the export render. These are documents, not
+   * pictures of pages: the proof lays them out with the same component the
+   * article's own editor uses, so there is no copy in between to drift.
+   */
+  numbered: readonly IssueSourceDocument[];
+  /** The measuring pass's sheets. Used for counts and validation only. */
   documents: RenderedIssueDocument[];
   counts: Record<string, number>;
   assignments: IssueAssignment[];
@@ -71,15 +78,16 @@ export function IssueCompiler({ sources, plan, items, onComplete, onError, onPro
     const signature = JSON.stringify(counts);
     const settled = pass > 0 && signature === previousCounts.current;
     previousCounts.current = signature;
-    if (settled || pass + 1 >= MAX_PASSES) {
-      handlers.current.onComplete({ documents: rendered, counts, assignments, plan: frozen.current.plan });
-      return;
-    }
     const starts = new Map(assignments.map(row => [row.id, row.startNumber]));
-    setDocuments(sources.map(source => {
+    const numbered = sources.map(source => {
       const start = starts.get(source.id);
       return start === undefined ? source : { ...source, doc: documentWithIssueNumber(source.doc, start) };
-    }));
+    });
+    if (settled || pass + 1 >= MAX_PASSES) {
+      handlers.current.onComplete({ numbered, documents: rendered, counts, assignments, plan: frozen.current.plan });
+      return;
+    }
+    setDocuments(numbered);
     setPass(pass + 1);
   }, [pass, sources]);
 

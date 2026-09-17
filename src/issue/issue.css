@@ -235,18 +235,22 @@
 .stage-progress-count { font-size:11px; color:#79839a; font-variant-numeric:tabular-nums; }
 .stage-progress button { margin-top:16px; }
 
-/* The compiled sheets. These are the exporter's own pages, mounted here —
-   `flex:none` is not cosmetic: a sheet is a fixed physical object and must
-   never be shrunk to fit the pane, which would silently re-flow the text
-   the pagination engine already measured. */
+/* The compiled issue: each article's own editor preview, stacked.
+   ---------------------------------------------------------------------------
+   Deliberately almost no styling below `.paper-scroll`. Every rule that
+   reaches a sheet here is a rule that could make it differ from the same sheet
+   in the article's own editor, so this pane only neutralises the editor pane's
+   own chrome (its grey backdrop, its padding, its scrolling) and then leaves
+   `.pages-frame`, `.pages` and `.page` to lay themselves out exactly as they
+   do in the editor — same component, same CSS, same geometry.
+   The stack is a plain block flow, never flex or grid: a sheet is a fixed
+   physical object, and a flex item's automatic shrinking is what used to
+   squeeze sheets under 297mm and spill a page. */
 .issue-proof-frame { position:relative; margin:0 auto; }
-.issue-proof-pages { position:absolute; left:0; top:0; transform-origin:top left; display:flex; flex-direction:column; align-items:center; gap:18px; width:max-content; pointer-events:none; }
-.issue-proof-pages .issue-proof-doc { display:contents; }
-.issue-proof-pages > .page,
-.issue-proof-pages .issue-proof-doc > .page {
-  flex:none !important; margin:0 !important; width:210mm !important; height:297mm !important;
-  box-shadow:0 12px 34px -8px rgba(0,0,0,.55) !important;
-}
+.issue-proof-pages { position:absolute; left:0; top:0; transform-origin:top left; display:block; width:max-content; pointer-events:none; }
+.issue-proof-doc,.issue-proof-contents { display:block; }
+.issue-proof-pages .paper-scroll { flex:none; height:auto; overflow:visible; background:transparent; padding:0; }
+.issue-proof-pages .page { box-shadow:0 12px 34px -8px rgba(0,0,0,.55); }
 
 /* --- action bar ------------------------------------------------------- */
 .studio-actions {

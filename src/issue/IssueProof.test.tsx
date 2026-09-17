@@ -3,8 +3,8 @@ import { createRoot } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { IssueProof } from './IssueProof';
 import { snapshotIssuePages } from './snapshotIssuePages';
-import type { RenderedIssueDocument } from './IssueRenderer';
 import type { IssuePlan } from './model';
+import { presetFor } from '../store/presets';
 
 let host: HTMLDivElement;
 let root: ReturnType<typeof createRoot>;
@@ -34,19 +34,12 @@ it('copies only physical pages and preserves each article’s design without edi
   expect(source.outerHTML).toBe(original);
 });
 
-const sheet = (label: string) => {
-  const page = document.createElement('section');
-  page.className = 'page issue-snapshot';
-  page.dataset.sheet = label;
-  return page;
-};
+const item = (id: string) => ({ id, name: id.toUpperCase(), doc: presetFor('paper-1') });
 
-it('mounts the compiled sheets themselves, in plan order, around the contents spread', () => {
+it('shows each article through the editor’s own preview, in plan order, around the contents spread', () => {
   const pagesRef = createRef<HTMLDivElement>();
-  const documents: RenderedIssueDocument[] = [
-    { id: 'a', name: 'A', pages: [sheet('a1'), sheet('a2')], pageCount: 2 },
-    { id: 'b', name: 'B', pages: [sheet('b1')], pageCount: 1 },
-  ];
+  const documents = [item('a'), item('b')];
+  const before = documents.map(entry => JSON.stringify(entry.doc));
   const plan: IssuePlan = { order: ['a', '__contents__', 'b'], startNumber: 1, countCovers: false, contentsTitle: 'المحتويات', contentsSubtitle: '', contentsExcluded: [], direction: 'rtl' };
   const entries = [
     { id: 'a', title: 'عنوان', subtitle: 'وصف', page: 1, hero: { src: 'hero.jpg', naturalWidth: 20, naturalHeight: 10 } },
@@ -60,18 +53,20 @@ it('mounts the compiled sheets themselves, in plan order, around the contents sp
   render();
   const articles = () => [...pagesRef.current!.querySelectorAll('[data-issue-article]')].map(node => node.getAttribute('data-issue-article'));
   expect(articles()).toEqual(['a', 'b']);
-  // The sheets on screen are copies of the compiled ones — each article keeps
-  // its own `.pages` container, which is the unit the PDF path groups by.
-  expect(pagesRef.current!.querySelectorAll('[data-issue-article="a"] > .page')).toHaveLength(2);
-  expect(pagesRef.current!.querySelectorAll('[data-issue-article="b"] > .page')).toHaveLength(1);
-  expect([...pagesRef.current!.querySelectorAll('[data-issue-article="a"] > .page')].map(node => (node as HTMLElement).dataset.sheet)).toEqual(['a1', 'a2']);
-  // The compiler's masters are never handed to the DOM, so a rebuild still has them.
-  expect(documents[0].pages.every(page => !page.isConnected)).toBe(true);
+  // One live editor preview per article — not a copy of one, and not a shared one.
+  expect(pagesRef.current!.querySelectorAll('[data-issue-article] .paper-scroll')).toHaveLength(2);
+  expect(pagesRef.current!.querySelectorAll('[data-issue-article] .paper-scroll > .pages-frame > .pages')).toHaveLength(2);
+  // The export walks `.pages` containers in document order: one per article
+  // plus the contents spread, in reading order.
+  expect([...pagesRef.current!.querySelectorAll('.pages')].map(node => node.className.includes('issue-proof-contents') ? 'contents' : 'article'))
+    .toEqual(['article', 'contents', 'article']);
   expect(host.querySelectorAll('.issue-contents-page')).toHaveLength(2);
   expect([...host.querySelectorAll('[data-contents-id]')].map(node => node.getAttribute('data-contents-id'))).toEqual(['a', 'b']);
   expect([...host.querySelectorAll('.issue-contents-page')].every(node => node.getAttribute('dir') === 'rtl')).toBe(true);
 
   render(['b', '__contents__', 'a']);
   expect(articles()).toEqual(['b', 'a']);
-  expect(pagesRef.current!.querySelectorAll('[data-issue-article="b"] > .page')).toHaveLength(1);
+  // Issue numbering reaches the page as document data, so nothing writes back
+  // into the article the editor owns.
+  expect(documents.map(entry => JSON.stringify(entry.doc))).toEqual(before);
 });
