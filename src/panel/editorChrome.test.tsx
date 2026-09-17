@@ -8,7 +8,9 @@ describe('editor chrome', () => {
     const host = document.createElement('div');
     host.innerHTML = renderToStaticMarkup(<Toolbar onPreviewToolsHost={() => undefined} />);
 
-    expect(host.querySelector('.toolbar-brand')?.textContent).toBe('Magazoo!');
+    // The brand mark is the illustrated Magazoo! logo (an <img>), not text —
+    // assert on its alt text rather than textContent.
+    expect(host.querySelector('img.toolbar-brand')?.getAttribute('alt')).toBe('Magazoo!');
     expect(host.querySelector('.save-status')).toBeNull();
     expect(host.querySelector('.project-save-status')?.textContent).toContain('Draft');
     expect(host.querySelector('.visually-hidden[role="status"]')?.textContent).toContain('Autosave: Ready');
