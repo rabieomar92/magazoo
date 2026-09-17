@@ -356,6 +356,138 @@ export function clonePages(source: HTMLElement, targetDocument: Document, { free
   targetDocument.body.appendChild(pages);
 }
 
+/** One article's sheets together with the element they inherit from. A sheet
+ * cloned on its own loses everything its `.pages` wrapper contributes — the
+ * RTL and drop-cap flags that scope descendant rules, and any custom property
+ * the article's design set on that wrapper. Cloning the wrapper shallowly and
+ * refilling it keeps all of that without copying computed styles onto the
+ * sheet, which is what used to distort inherited line-height. */
+export interface PageGroup { owner: HTMLElement; sheets: HTMLElement[] }
+
+/** Sheets in reading order. A physical sheet is a `.page` whose parent is a
+ * `.pages` container; the hidden measuring twins inside `.measure-root` and
+ * `.fm-measure` are `.page`-like but never sit directly in one, so they are
+ * excluded here exactly as the single-document path excludes them. */
+export function issuePageGroups(root: HTMLElement): PageGroup[] {
+  const groups: PageGroup[] = [];
+  for (const sheet of Array.from(root.querySelectorAll<HTMLElement>('.page'))) {
+    const owner = sheet.parentElement;
+    if (!owner || !(owner === root || owner.classList.contains('pages'))) continue;
+    const last = groups[groups.length - 1];
+    if (last && last.owner === owner) last.sheets.push(sheet);
+    else groups.push({ owner, sheets: [sheet] });
+  }
+  return groups;
+}
+
+export function cloneGroupedPages(groups: readonly PageGroup[], targetDocument: Document) {
+  for (const { owner, sheets } of groups) {
+    const container = owner.cloneNode(false) as HTMLElement;
+    container.classList.remove('pages--spread', 'issue-preview-pages');
+    container.classList.add('pdf-export-pages');
+    container.removeAttribute('style');
+    container.style.setProperty('display', 'block', 'important');
+    container.style.setProperty('width', '210mm', 'important');
+    container.style.setProperty('min-width', '210mm', 'important');
+    container.style.setProperty('transform', 'none', 'important');
+    for (const sheet of sheets) {
+      const copy = sheet.cloneNode(true) as HTMLElement;
+      copy.classList.add('pdf-export-page');
+      copy.style.setProperty('display', window.getComputedStyle(sheet).display, 'important');
+      copy.style.setProperty('width', '210mm', 'important');
+      copy.style.setProperty('height', '297mm', 'important');
+      copy.style.setProperty('margin', '0', 'important');
+      copy.style.setProperty('box-shadow', 'none', 'important');
+      copy.querySelectorAll('[data-editor-target], [data-source-block-id], [contenteditable]').forEach(element => {
+        element.removeAttribute('data-editor-target');
+        element.removeAttribute('data-source-block-id');
+        element.removeAttribute('contenteditable');
+        element.removeAttribute('tabindex');
+      });
+      freezeColumnLayout(sheet, copy);
+      container.appendChild(copy);
+    }
+    targetDocument.body.appendChild(container);
+  }
+}
+
+/**
+ * Print a compiled issue. The sheets are the live preview's own DOM — the same
+ * React output the editor prints for one article — so the issue PDF and the
+ * single-article PDF come off the same engine rather than off a snapshot taken
+ * of it.
+ */
+export async function exportIssuePdf(title: string, root: HTMLElement) {
+  await waitForPreviewResources(root);
+  const groups = issuePageGroups(root);
+  const sheets = groups.flatMap(group => group.sheets);
+  if (!sheets.length) throw new Error('The issue preview is not ready yet.');
+
+  const restoreCounters = sheets.map(resolveReferenceCounters);
+  let frame: HTMLIFrameElement | null = null;
+  try {
+    document.querySelector(`.${PRINT_FRAME_CLASS}`)?.remove();
+    frame = document.createElement('iframe');
+    frame.className = PRINT_FRAME_CLASS;
+    frame.title = 'PDF export';
+    frame.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(frame);
+
+    const printDocument = frame.contentDocument;
+    const printWindow = frame.contentWindow;
+    if (!printDocument || !printWindow) throw new Error('The browser could not create a PDF document.');
+
+    printDocument.open();
+    printDocument.write('<!doctype html><html><head></head><body></body></html>');
+    printDocument.close();
+    printDocument.title = `${safeFileStem(title)} - Magazoo`;
+    copyAuthorStyles(document, printDocument);
+
+    const exportCss = printDocument.createElement('style');
+    exportCss.textContent = PDF_EXPORT_CSS;
+    printDocument.head.appendChild(exportCss);
+
+    // The proof pane carries a zoom, and column geometry has to be frozen from
+    // the unscaled layout. Restored as soon as the clone is taken, so the pane
+    // never flashes at full size behind the print dialog.
+    const transform = root.style.getPropertyValue('transform');
+    const priority = root.style.getPropertyPriority('transform');
+    root.style.setProperty('transform', 'none', 'important');
+    try { cloneGroupedPages(groups, printDocument); }
+    finally {
+      if (transform) root.style.setProperty('transform', transform, priority);
+      else root.style.removeProperty('transform');
+    }
+
+    // Each article keeps its own container, so the stylesheet's per-container
+    // :last-child rule would let the next article share a sheet. Numbering the
+    // breaks across the whole issue is the only thing that spans containers.
+    const printed = Array.from(printDocument.querySelectorAll<HTMLElement>('.pdf-export-page'));
+    printed.forEach((sheet, index) => {
+      const last = index === printed.length - 1;
+      sheet.style.setProperty('break-after', last ? 'auto' : 'page', 'important');
+      sheet.style.setProperty('page-break-after', last ? 'auto' : 'always', 'important');
+    });
+
+    await waitForStyles(printDocument);
+    await waitForFonts(printDocument);
+    await Promise.all(Array.from(printDocument.images).map(waitForImage));
+    await nextPaint(printWindow);
+    await nextPaint(printWindow);
+
+    let removed = false;
+    const cleanup = () => { if (removed) return; removed = true; frame?.remove(); };
+    printWindow.addEventListener('afterprint', cleanup, { once: true });
+    printWindow.focus();
+    printWindow.print();
+  } catch (error) {
+    frame?.remove();
+    throw error;
+  } finally {
+    restoreCounters.forEach(restore => restore());
+  }
+}
+
 /**
  * Print the committed preview DOM directly. The browser still owns PDF
  * generation, but it receives real HTML/CSS rather than a bitmap snapshot.
