@@ -21,10 +21,15 @@
 .issue-stat { min-width:75px; display:grid; gap:1px; }
 .issue-stat strong { font-size:30px; font-weight:650; }
 .issue-stat span { font-size:11px; color:#727d94; }
-/* Arrangement only: one column of cards, no separate compiled-preview pane —
-   the actual pages are the same ones each article's own editor shows, and
-   exporting is the only place they're ever rendered for real. */
-.issue-body { display:grid; grid-template-columns:minmax(0,900px); justify-content:center; gap:16px; max-width:900px; margin:auto; padding:0 28px; }
+/* Two columns: controls on the left, the compiled preview on the right.
+   The preview pane renders the very same pages each article's own editor
+   shows — the arrangement UI and the compiled issue are never out of sync
+   because they share one rendering engine (see .issue-render-target below). */
+.issue-body { display:grid; grid-template-columns:minmax(320px,420px) minmax(0,1fr); align-items:start; gap:24px; max-width:1400px; margin:auto; padding:0 28px; }
+.issue-controls { display:grid; gap:16px; min-width:0; }
+.issue-proof { position:sticky; top:16px; min-width:0; max-height:calc(100dvh - 132px); overflow:auto; background:#e4e7ef; border:1px solid #d7dceb; border-radius:13px; padding:22px; display:flex; flex-direction:column; align-items:center; gap:14px; scrollbar-width:thin; }
+.issue-proof-label { align-self:stretch; display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:11px; font-weight:700; color:#4a5573; text-transform:uppercase; letter-spacing:.06em; }
+.issue-proof-empty { padding:60px 20px; color:#7b859c; font-size:13px; text-align:center; }
 .issue-card { background:#fff; border:1px solid #e0e5ee; border-radius:13px; padding:18px; box-shadow:0 5px 20px #1d2c4404; }
 .issue-card h2 { font-size:16px; margin:0 0 13px; letter-spacing:-.01em; }
 .issue-section-title { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; }
@@ -32,6 +37,17 @@
 .issue-section-title button { font-size:11px; min-height:34px; padding:6px 9px; }
 .issue-help { font-size:12px; line-height:1.55; color:#717b8f; margin:6px 0 14px; }
 .issue-card label { display:grid; gap:6px; font-size:12px; font-weight:600; margin:12px 0; }
+.issue-card-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:4px 16px; margin:12px 0; }
+.issue-card-grid label { margin:8px 0; }
+.issue-range-value { font-weight:400; color:#5f6a86; font-variant-numeric:tabular-nums; }
+.issue-entry-list { display:grid; gap:12px; }
+.issue-entry-row { border:1px solid #e2e6f0; border-radius:10px; padding:12px 14px; background:#fbfcff; }
+.issue-entry-row label,.issue-entry-row-pair label { margin:8px 0; }
+.issue-entry-row-head { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.issue-entry-row-head strong { font-size:13px; overflow-wrap:anywhere; }
+.issue-entry-row-head button { font-size:11px; min-height:28px; padding:4px 9px; }
+.issue-entry-row-pair { display:grid; grid-template-columns:1fr 1fr; gap:0 12px; }
+.issue-entry-hint { font-weight:400; color:#8790a6; text-transform:none; letter-spacing:normal; }
 .issue-card input:not([type=checkbox]),.issue-card textarea,.issue-card select { width:100%; min-width:0; padding:9px 10px; border:1px solid #d7ddeb; border-radius:7px; font:14px/1.4 system-ui,sans-serif; color:#24324a; background:#fbfcfe; }
 .issue-card textarea { resize:vertical; }
 .issue-card label.issue-checkbox,.issue-card label.issue-toc-check { display:flex; flex-direction:row; gap:7px; align-items:center; font-weight:400; }
@@ -52,10 +68,10 @@
 .issue-page-range { font-weight:700; font-size:13px; font-variant-numeric:tabular-nums; color:#5146b3; }
 .issue-order-end > div { display:flex; gap:3px; }
 .issue-order-end button { padding:3px; min-height:27px; width:25px; font-size:13px; border-radius:5px; }
-/* The render target never appears on screen: it exists only so the contents
+/* This IS the compiled preview — not a hidden measuring rig. The contents
    fit-check and the PDF export both measure and print the very same pages
-   the editor's own preview produces — no separate compiled-preview UI. */
-.issue-render-target { position:fixed !important; left:-12000px; top:0; display:grid !important; grid-template-columns:210mm; gap:0; width:max-content; pointer-events:none; }
+   shown here, so the preview can never drift from what actually exports. */
+.issue-render-target { display:flex !important; flex-direction:column; align-items:center; gap:14px; width:max-content; max-width:100%; pointer-events:none; }
 /* Each article is rendered by the editor's own preview component, which
    brings its own scroll pane and page frame. Those boxes are dropped out of
    layout so the sheets themselves become the grid items; the elements stay
@@ -87,6 +103,6 @@
 .issue-loading-card { margin:70px auto; width:min(540px,calc(100% - 40px)); padding:35px; background:#fff; border:1px solid #e1e5ed; border-radius:14px; }
 .issue-loading-card h1 { font-size:25px; }
 .issue-sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
-@media (max-width:1100px) { .issue-intro { padding:24px 18px; gap:18px; }.issue-stat { min-width:54px; }.issue-stat strong { font-size:24px; } }
+@media (max-width:1100px) { .issue-intro { padding:24px 18px; gap:18px; }.issue-stat { min-width:54px; }.issue-stat strong { font-size:24px; }.issue-body { grid-template-columns:1fr; max-width:900px; }.issue-proof { position:static; max-height:none; } }
 @media (max-width:760px) { .issue-workspace { padding-bottom:155px; }.issue-header { padding:12px 16px; }.issue-header-label { font-size:12px; }.issue-header-actions { width:100%; justify-content:space-between; }.issue-intro { flex-wrap:wrap; }.issue-intro > div:first-child { flex-basis:100%; }.issue-stat { min-width:80px; }.issue-body { padding:0 16px; }.issue-order { max-height:390px; }.issue-actionbar { flex-direction:column; align-items:stretch; gap:9px; padding:12px 16px; }.issue-actionbar > div:last-child { width:100%; }.issue-actionbar button { flex:1; }.issue-message { margin:12px 16px; } }
 @media (prefers-reduced-motion:reduce) { .issue-order li { transition:none; } }

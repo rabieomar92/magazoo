@@ -48,11 +48,20 @@ export interface ContentsDesign {
   thumbHeight: number;
   rules: boolean;
   paddedNumbers: boolean;
+  /** Headline typeface: the same two families the rest of the issue offers. */
+  titleFont: 'serif' | 'sans';
+  /** Multiplies every contents type size at once, from 85% to 115%. */
+  textScale: number;
+  /** Added to each headline's own letter-spacing, in em. */
+  tracking: number;
+  /** Multiplies every gap between entries, sections and rails at once. */
+  gapScale: number;
 }
 
 export const DEFAULT_CONTENTS_DESIGN: ContentsDesign = {
   layout: 'sections', density: 'auto', accent: '#9a603c', headingColor: '#1f6f8b', columns: 2,
   showHeroes: true, pageLabels: false, featureHeight: 59, thumbHeight: 25, rules: true, paddedNumbers: true,
+  titleFont: 'serif', textScale: 1, tracking: 0, gapScale: 1,
 };
 
 const CONTENTS_LAYOUTS: ContentsLayout[] = ['feature', 'sections'];
@@ -79,6 +88,10 @@ export function contentsDesignOf(plan: Pick<IssuePlan, 'contentsDesign'>): Conte
     thumbHeight: clampNumber(stored.thumbHeight, 8, 90, base.thumbHeight),
     rules: typeof stored.rules === 'boolean' ? stored.rules : base.rules,
     paddedNumbers: typeof stored.paddedNumbers === 'boolean' ? stored.paddedNumbers : base.paddedNumbers,
+    titleFont: stored.titleFont === 'sans' ? 'sans' : base.titleFont,
+    textScale: clampNumber(stored.textScale, 0.85, 1.15, base.textScale),
+    tracking: clampNumber(stored.tracking, -0.02, 0.04, base.tracking),
+    gapScale: clampNumber(stored.gapScale, 0.7, 1.3, base.gapScale),
   };
 }
 export interface IssueItem { id: string; name: string; version: number; updated: number; doc: Doc }

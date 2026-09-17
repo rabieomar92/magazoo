@@ -125,6 +125,10 @@ function ContentsPage({ group, index, title, subtitle, direction, startNumber, m
     '--contents-feature-h': `${design.featureHeight}mm`,
     '--contents-thumb-h': `${design.thumbHeight}mm`,
     '--contents-cols': design.columns,
+    '--contents-headline-font': design.titleFont === 'sans' ? "'Avenir Next LT Pro','Helvetica',Arial,sans-serif" : "'Playfair Display',Georgia,serif",
+    '--contents-scale': design.textScale,
+    '--contents-tracking': `${design.tracking}em`,
+    '--contents-gap-scale': design.gapScale,
     '--text-dir': direction,
   } as CSSProperties;
   const className = ['page issue-contents-page', index === 1 && 'issue-contents-second', TIERS[tier],
