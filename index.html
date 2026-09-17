@@ -2,20 +2,22 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/favicon-180.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#5b4cf0" />
     <title>Magazoo! — Editorial Studio</title>
   </head>
   <body>
     <style>
-      .app-loading{font:16px/1.5 system-ui,sans-serif;padding:32px;margin:12vh auto;max-width:420px;color:#334155}
+      .app-loading{font:16px/1.5 system-ui,sans-serif;padding:32px;margin:12vh auto;max-width:420px;color:#334155;text-align:center}
+      .app-loading-logo{display:block;height:64px;width:auto;margin:0 auto 16px}
       .loading-track{height:3px;background:#e0e7ff;overflow:hidden;margin-top:12px;border-radius:4px}
       .loading-track span{display:block;width:35%;height:100%;background:#4f46e5;animation:loading-slide 1.2s ease-in-out infinite}
       @keyframes loading-slide{from{transform:translateX(-100%)}to{transform:translateX(390%)}}
       @media(prefers-reduced-motion:reduce){.loading-track span{animation:none;width:100%;opacity:.65}}
     </style>
-    <div id="root"><div class="app-loading" role="status">Loading Magazoo…<div class="loading-track"><span></span></div></div></div>
+    <div id="root"><div class="app-loading" role="status"><img class="app-loading-logo" src="/magazoo-mark.png" alt="Magazoo!" />Loading Magazoo…<div class="loading-track"><span></span></div></div></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
