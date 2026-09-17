@@ -9,6 +9,17 @@
    sheet is taller/wider than the pane. Flex `align-items: center` would make
    the overflow unreachable. */
 .paper-scroll {
+  /* Pinned inherited text base — see the note on `.pages`. `.measure-root`
+     holds the hidden twins the pagination engine measures against, so it needs
+     the same base as the sheets themselves: a measuring twin laid out at a
+     different inherited line-height reports a header a few pixels taller than
+     the one that will actually be drawn, and every column on the page is then
+     filled against the wrong body height. */
+  font: 14px/1.4 system-ui, 'Segoe UI', Roboto, sans-serif;
+  letter-spacing: normal;
+  word-spacing: normal;
+  text-transform: none;
+  font-variant: normal;
   flex: 1;
   min-width: 0;
   height: 100%;
@@ -1331,6 +1342,25 @@
 .pages {
   width: var(--page-w);
   transform-origin: top left;
+  /* A sheet must render identically wherever it is mounted: the article
+     editor's pane, the issue studio's compiled proof, the hidden measuring
+     renderer, and the bare iframe the PDF is printed from. Those four places
+     have four different surrounding text contexts, and font-size and
+     line-height are inherited — so a page mounted in a pane whose chrome
+     happens to use 1.5 line-height gets taller line boxes in every element
+     that doesn't set its own. That is not a cosmetic difference: a header a
+     few pixels taller leaves the flow box a few pixels shorter, which
+     re-breaks every column on the page and can push the tail of an article
+     onto an extra sheet. Pinning the inherited text base here (the same
+     14px/1.4 the app shell has always supplied) makes a page self-contained,
+     so all four contexts produce the same pagination. Anything a page's own
+     design sets — family, colour, direction, per-element sizes — still wins
+     below this. */
+  font: 14px/1.4 system-ui, 'Segoe UI', Roboto, sans-serif;
+  letter-spacing: normal;
+  word-spacing: normal;
+  text-transform: none;
+  font-variant: normal;
 }
 
 /* Preview objects are editor shortcuts. The page remains visually clean; a
@@ -1403,6 +1433,17 @@
 }
 
 .measure-root {
+  /* Pinned inherited text base — see the note on `.pages`. `.measure-root`
+     holds the hidden twins the pagination engine measures against, so it needs
+     the same base as the sheets themselves: a measuring twin laid out at a
+     different inherited line-height reports a header a few pixels taller than
+     the one that will actually be drawn, and every column on the page is then
+     filled against the wrong body height. */
+  font: 14px/1.4 system-ui, 'Segoe UI', Roboto, sans-serif;
+  letter-spacing: normal;
+  word-spacing: normal;
+  text-transform: none;
+  font-variant: normal;
   position: fixed;
   top: 0;
   left: -99999px;
