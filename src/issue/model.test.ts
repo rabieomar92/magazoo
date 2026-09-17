@@ -50,7 +50,13 @@ describe('issue numbering and preservation', () => {
     a.doc.assets.cover = { src: 'cover.jpg', naturalWidth: 20, naturalHeight: 10 };
     a.doc.hero.assetId = 'hero'; a.doc.cover = { assetId: 'cover', scale: 1, offsetX: 0, offsetY: 0 };
     const before = JSON.stringify(a), plan = defaultIssuePlan([a]);
-    expect(contentsEntries(plan, [a], assignIssuePages(plan, [a], { a: 4 }))).toEqual([{ id: 'a', title: 'عالم الضوء', subtitle: 'A new perspective', page: 3, hero: 'cover.jpg' }]);
+    // The hero is carried as the asset itself, so the contents can crop and
+    // frame it the way the article templates do rather than just showing a src.
+    expect(contentsEntries(plan, [a], assignIssuePages(plan, [a], { a: 4 }))).toEqual([{
+      id: 'a', title: 'عالم الضوء', subtitle: 'A new perspective', page: 3,
+      hero: { src: 'cover.jpg', naturalWidth: 20, naturalHeight: 10 },
+      badge: undefined, section: undefined, frame: undefined, pageLabel: undefined,
+    }]);
     const numbered = documentWithIssueNumber(a.doc, 13);
     expect(numbered.footer?.startNumber).toBe(13);
     expect(numbered.blocks).toBe(a.doc.blocks);

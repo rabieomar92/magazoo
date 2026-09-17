@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { migrate } from '../schema/document';
-import { exportPreviewPdf } from '../lib/pdfExport';
+import { exportIssuePdf, issuePageGroups } from '../lib/pdfExport';
 import { issueApi } from './api';
-import { assignIssuePages, contentsEntries, defaultIssuePlan, reconcileIssuePlan, CONTENTS_ID, type IssueItem, type IssuePlan, type IssueResponse } from './model';
+import { assignIssuePages, contentsDesignOf, contentsEntries, defaultIssuePlan, reconcileIssuePlan, CONTENTS_ID, type IssueItem, type IssuePlan, type IssueResponse } from './model';
 import { IssueRenderer, type RenderedIssueDocument } from './IssueRenderer';
 import { IssuePreview } from './IssuePreview';
 import { IssueOrder } from './IssueOrder';
@@ -53,6 +53,7 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
   }, [ready, plan, items, counts]);
   const assignments = numbering.assignments;
   const entries = useMemo(() => ready && !numbering.error ? contentsEntries(plan, items, assignments) : [], [ready, plan, items, assignments, numbering.error]);
+  const contentsDesign = useMemo(() => contentsDesignOf(plan), [plan]);
   const physicalPages = assignments.reduce((total, row) => total + row.pageCount, 0);
   const isFinalized = finalizedPlan === JSON.stringify(plan);
   useEffect(() => {
@@ -85,10 +86,20 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
   });
   const exportIssue = () => execute(async () => {
     setShowAll(true);
-    await new Promise<void>(resolve => window.setTimeout(resolve, 60));
-    const root = pagesRef.current;
-    if (!root || root.querySelectorAll(':scope > .page').length !== physicalPages) throw new Error('The complete issue preview is still loading. Try exporting again.');
-    await exportPreviewPdf(data.project.name, root);
+    // Every article is now a live preview that paginates on mount, so the
+    // export waits for the sheets to actually exist instead of assuming one
+    // frame is enough. A sheet is a `.page` sitting directly in a `.pages`
+    // container; the hidden measuring twins never are.
+    const sheetCount = (root: HTMLElement) => issuePageGroups(root).reduce((total, group) => total + group.sheets.length, 0);
+    let root: HTMLDivElement | null = null;
+    for (let attempt = 0; attempt < 100; attempt++) {
+      root = pagesRef.current;
+      if (root && sheetCount(root) === physicalPages) break;
+      root = null;
+      await new Promise<void>(resolve => window.setTimeout(resolve, 100));
+    }
+    if (!root) throw new Error('The complete issue preview is still loading. Try exporting again.');
+    await exportIssuePdf(data.project.name, root);
   });
   return <main className="issue-workspace" aria-busy={busy}>
     <header className="issue-header"><div><Wordmark className="issue-brand" /><span className="issue-header-label">Issue studio</span></div><div className="issue-header-actions"><span className={`issue-save-status is-${save.status}`} role="status">{save.status === 'saved' ? 'Arrangement saved' : save.status === 'saving' ? 'Saving arrangement…' : save.status === 'pending' ? 'Unsaved arrangement' : 'Arrangement not saved'}</span><button disabled={busy} onClick={() => void execute(async () => { await save.flush(); onClose(); })}>Back to library</button></div></header>
@@ -102,7 +113,7 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
         <section className="issue-card"><h2>Contents spread</h2><label>Heading<input maxLength={100} value={plan.contentsTitle} disabled={busy} onChange={event => updatePlan({ ...plan, contentsTitle: event.target.value })} /></label><label>Introduction<textarea rows={2} maxLength={500} value={plan.contentsSubtitle} disabled={busy} onChange={event => updatePlan({ ...plan, contentsSubtitle: event.target.value })} /></label><label>Contents reading direction<select value={plan.direction} disabled={busy} onChange={event => updatePlan({ ...plan, direction: event.target.value as 'ltr' | 'rtl' })}><option value="ltr">Left to right</option><option value="rtl">Arabic · right to left</option></select></label><p className="issue-help">Titles, subtitles and hero images come from the saved articles. Uncheck “List in contents” for covers or supporting pages. Refresh articles to pick up later edits.</p></section>
       </aside>
       <section className="issue-proof"><div className="issue-proof-toolbar"><div><h2>{showAll ? 'Complete issue' : 'Contents spread'}</h2><p>{ready ? `${entries.length} entries · ${isFinalized ? 'Finalised' : 'Draft preview'}` : 'Preparing the actual page layouts…'}</p></div><div className="issue-view-toggle"><button aria-pressed={!showAll} onClick={() => setShowAll(false)}>Contents</button><button aria-pressed={showAll} disabled={!ready} onClick={() => setShowAll(true)}>All pages</button></div></div>
-        {!ready ? <div className="issue-preparing" role="status"><Wordmark className="issue-preparing-symbol" /><h3>{renderError ? 'An article needs attention' : 'Preparing your issue'}</h3><p>{renderError || `Measuring ${progress.name || 'article layouts'} using the editor’s page engine.`}</p><progress value={progress.completed} max={Math.max(1, progress.total)} /><p>{progress.completed} of {progress.total} articles prepared</p>{renderError && <button onClick={() => { setRenderError(''); setAttempt(value => value + 1); }}>Try again</button>}</div> : <IssuePreview plan={plan} entries={entries} assignments={assignments} rendered={rendered} showAll={showAll} magazineName={data.project.name} pagesRef={pagesRef} onOverflow={setContentsOverflow} />}
+        {!ready ? <div className="issue-preparing" role="status"><Wordmark className="issue-preparing-symbol" /><h3>{renderError ? 'An article needs attention' : 'Preparing your issue'}</h3><p>{renderError || `Measuring ${progress.name || 'article layouts'} using the editor’s page engine.`}</p><progress value={progress.completed} max={Math.max(1, progress.total)} /><p>{progress.completed} of {progress.total} articles prepared</p>{renderError && <button onClick={() => { setRenderError(''); setAttempt(value => value + 1); }}>Try again</button>}</div> : <IssuePreview plan={plan} entries={entries} assignments={assignments} items={items} showAll={showAll} magazineName={data.project.name} design={contentsDesign} pagesRef={pagesRef} onOverflow={setContentsOverflow} />}
         {ready && contentsOverflow && <div className="issue-message is-error" role="alert">The contents text does not fit its two pages. Shorten the heading/introduction or uncheck some “List in contents” entries before finalising.</div>}
       </section>
     </div>

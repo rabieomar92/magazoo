@@ -1,14 +1,92 @@
-import type { Doc } from '../schema/document';
+import type { Asset, Doc } from '../schema/document';
 import { parseRuns } from '../lib/richtext';
+import { normalizeImageFrame, type ImageFrame } from '../lib/imageFrame';
 
 export const CONTENTS_ID = '__contents__';
 export interface IssuePlan {
   order: string[]; startNumber: number; countCovers: boolean;
   contentsTitle: string; contentsSubtitle: string; direction: 'ltr' | 'rtl'; contentsExcluded: string[];
+  /** Optional so plans saved before the contents designer existed still load. */
+  contentsDesign?: Partial<ContentsDesign>;
+  contentsStyle?: Record<string, ContentsEntryStyle>;
+}
+
+/** What the editor may override per line of the contents, independently of the
+ * article itself: the contents is its own page, not a mirror of the documents. */
+export interface ContentsEntryStyle {
+  title?: string;
+  deck?: string;
+  /** A chip beside the title — 'COVER STORY', 'IN DEPTH', whatever the issue uses. */
+  badge?: string;
+  /** Groups consecutive entries under one heading, the way a section-led
+   * contents page reads. Empty string or absent = no heading above this entry. */
+  section?: string;
+  /** Which picture this line shows. null pins it to no picture at all; absent
+   * falls back to the article's own hero. */
+  assetId?: string | null;
+  /** Zoom and pan inside the fixed contents frame — the same frame model the
+   * article templates use, so a crop set here behaves like a crop set there. */
+  frame?: ImageFrame;
+  /** The 'p.12' chip over the picture. */
+  pageLabel?: boolean;
+}
+
+export type ContentsLayout = 'feature' | 'sections';
+export type ContentsDensity = 'auto' | 'airy' | 'normal' | 'dense' | 'packed';
+
+export interface ContentsDesign {
+  layout: ContentsLayout;
+  density: ContentsDensity;
+  accent: string;
+  /** Second accent, for the section headings in the sections layout. */
+  headingColor: string;
+  columns: 1 | 2;
+  showHeroes: boolean;
+  pageLabels: boolean;
+  /** Printed millimetres. The lead picture and the per-entry thumbnails. */
+  featureHeight: number;
+  thumbHeight: number;
+  rules: boolean;
+  paddedNumbers: boolean;
+}
+
+export const DEFAULT_CONTENTS_DESIGN: ContentsDesign = {
+  layout: 'feature', density: 'auto', accent: '#9a603c', headingColor: '#1f6f8b', columns: 2,
+  showHeroes: true, pageLabels: false, featureHeight: 59, thumbHeight: 25, rules: true, paddedNumbers: true,
+};
+
+const CONTENTS_LAYOUTS: ContentsLayout[] = ['feature', 'sections'];
+const CONTENTS_DENSITIES: ContentsDensity[] = ['auto', 'airy', 'normal', 'dense', 'packed'];
+const clampNumber = (value: unknown, low: number, high: number, fallback: number) =>
+  typeof value === 'number' && Number.isFinite(value) ? Math.min(high, Math.max(low, value)) : fallback;
+const colorOr = (value: unknown, fallback: string) =>
+  typeof value === 'string' && /^#[0-9a-f]{3,8}$/iu.test(value.trim()) ? value.trim() : fallback;
+
+/** Always hand the page a complete design, whatever a stored plan happens to
+ * carry: an issue saved by an older build has no contents design at all. */
+export function contentsDesignOf(plan: Pick<IssuePlan, 'contentsDesign'>): ContentsDesign {
+  const stored = plan.contentsDesign ?? {};
+  const base = DEFAULT_CONTENTS_DESIGN;
+  return {
+    layout: CONTENTS_LAYOUTS.includes(stored.layout as ContentsLayout) ? stored.layout as ContentsLayout : base.layout,
+    density: CONTENTS_DENSITIES.includes(stored.density as ContentsDensity) ? stored.density as ContentsDensity : base.density,
+    accent: colorOr(stored.accent, base.accent),
+    headingColor: colorOr(stored.headingColor, base.headingColor),
+    columns: stored.columns === 1 || stored.columns === 2 ? stored.columns : base.columns,
+    showHeroes: typeof stored.showHeroes === 'boolean' ? stored.showHeroes : base.showHeroes,
+    pageLabels: typeof stored.pageLabels === 'boolean' ? stored.pageLabels : base.pageLabels,
+    featureHeight: clampNumber(stored.featureHeight, 20, 150, base.featureHeight),
+    thumbHeight: clampNumber(stored.thumbHeight, 8, 90, base.thumbHeight),
+    rules: typeof stored.rules === 'boolean' ? stored.rules : base.rules,
+    paddedNumbers: typeof stored.paddedNumbers === 'boolean' ? stored.paddedNumbers : base.paddedNumbers,
+  };
 }
 export interface IssueItem { id: string; name: string; version: number; updated: number; doc: Doc }
 export interface IssueAssignment { id: string; startNumber: number; pageCount: number; counted: boolean }
-export interface ContentsEntry { id: string; title: string; subtitle: string; page: number; hero?: string }
+export interface ContentsEntry {
+  id: string; title: string; subtitle: string; page: number;
+  hero?: Asset; badge?: string; section?: string; frame?: ImageFrame; pageLabel?: boolean;
+}
 export interface IssueResponse {
   project: { id: string; name: string }; version: number; plan: IssuePlan | null; items: IssueItem[];
   sourcesChanged?: boolean;
@@ -89,13 +167,33 @@ export function assignIssuePages(plan: IssuePlan, items: readonly IssueItem[], c
   });
 }
 
-export function issueHero(doc: Doc): string | undefined {
+/** Every picture in an article, in the order the contents would reach for them,
+ * so the designer can offer a real choice instead of only the automatic pick. */
+export function issueHeroChoices(doc: Doc): { id: string; asset: Asset }[] {
   const useCover = doc.templateId?.startsWith('magazine') || doc.templateId?.startsWith('frontmatter');
   const frames = useCover ? [doc.cover?.assetId, doc.hero?.assetId] : [doc.hero?.assetId, doc.cover?.assetId];
-  const figure = doc.blocks.find(block => block.type === 'figure');
-  const ids = [...frames, doc.news?.stories.find(story => story.assetId)?.assetId, figure?.type === 'figure' ? figure.assetId : undefined, doc.images?.[0]?.assetId];
-  for (const id of ids) if (id && doc.assets[id]?.src) return doc.assets[id].src;
-  return undefined;
+  const figures = doc.blocks.flatMap(block => (block.type === 'figure' && block.assetId ? [block.assetId] : []));
+  const ordered = [
+    ...frames,
+    ...(doc.news?.stories ?? []).map(story => story.assetId),
+    ...figures,
+    ...(doc.images ?? []).map(image => image.assetId),
+    ...Object.keys(doc.assets ?? {}),
+  ];
+  const seen = new Set<string>();
+  const choices: { id: string; asset: Asset }[] = [];
+  for (const id of ordered) {
+    if (!id || seen.has(id)) continue;
+    const asset = doc.assets?.[id];
+    if (!asset?.src) continue;
+    seen.add(id);
+    choices.push({ id, asset });
+  }
+  return choices;
+}
+
+export function issueHero(doc: Doc): Asset | undefined {
+  return issueHeroChoices(doc)[0]?.asset;
 }
 
 export function contentsEntries(plan: IssuePlan, items: readonly IssueItem[], assignments: readonly IssueAssignment[]): ContentsEntry[] {
@@ -105,7 +203,24 @@ export function contentsEntries(plan: IssuePlan, items: readonly IssueItem[], as
     const item = sources.get(id);
     const page = pages.get(id);
     if (!item || page === undefined) throw new Error('Prepare every article before generating contents.');
-    return { id, title: issuePlainText(item.doc.meta.title) || item.name.replace(/\.json$/iu, ''), subtitle: contentsDeck(item.doc.meta.subtitle), page, hero: issueHero(item.doc) };
+    // The article supplies the defaults; the issue's own contents style wins
+    // wherever the editor has set one, so rewording a contents line or
+    // recropping its picture never edits the article.
+    const style = plan.contentsStyle?.[id] ?? {};
+    const chosen = style.assetId === null ? undefined
+      : style.assetId ? item.doc.assets?.[style.assetId] ?? issueHero(item.doc)
+      : issueHero(item.doc);
+    return {
+      id,
+      title: issuePlainText(style.title) || issuePlainText(item.doc.meta.title) || item.name.replace(/\.json$/iu, ''),
+      subtitle: contentsDeck(style.deck ?? item.doc.meta.subtitle),
+      page,
+      hero: chosen?.src ? chosen : undefined,
+      badge: issuePlainText(style.badge) || undefined,
+      section: issuePlainText(style.section) || undefined,
+      frame: style.frame ? normalizeImageFrame(style.frame) : undefined,
+      pageLabel: style.pageLabel,
+    };
   });
 }
 

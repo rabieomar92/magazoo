@@ -65,7 +65,20 @@
 .issue-preview-view { padding:20px; overflow:auto; max-height:calc(100dvh - 300px); min-height:350px; background:#e5e5e5; border-radius:8px; }
 .issue-preview-frame { position:relative; margin:auto; }
 .issue-preview-pages.pages { display:grid !important; gap:20px; width:max-content; transform-origin:top left; margin:0; padding:0; }
-.issue-preview-pages.pages > .page { margin:0 !important; width:210mm !important; height:297mm !important; box-shadow:0 2px 10px #16253b20 !important; }
+/* Each article is rendered by the editor's own preview component, which brings
+   its own scroll pane and page frame. Those boxes are dropped out of layout so
+   the sheets themselves become the grid items; the elements stay in the DOM, so
+   every `.pages ...` rule, RTL flag and inherited custom property still reaches
+   them exactly as it does in the editor. */
+.issue-preview-pages .issue-article,
+.issue-preview-pages .issue-article .paper-scroll,
+.issue-preview-pages .issue-article .pages-frame,
+.issue-preview-pages .issue-article .pages { display:contents !important; }
+/* No box-shadow override: the sheet keeps the drop shadow page.css already
+   gives it in the editor. A different shadow here painted the sheet's corners
+   differently from the same sheet in the editor's own preview. */
+.issue-preview-pages > .page,
+.issue-preview-pages .pages > .page { margin:0 !important; width:210mm !important; height:297mm !important; }
 .issue-preparing { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:60px 30px; min-height:420px; text-align:center; }
 .issue-preparing-symbol { display:block; font-size:40px; color:#5146df; --brand-accent:#9a90ee; }
 .issue-preparing h3 { margin:16px 0 4px; font-size:19px; }

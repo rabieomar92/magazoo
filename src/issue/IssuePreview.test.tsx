@@ -4,6 +4,7 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { IssuePreview } from './IssuePreview';
 import { snapshotIssuePages } from './snapshotIssuePages';
 import type { IssuePlan } from './model';
+import { presetFor } from '../store/presets';
 
 let host: HTMLDivElement;
 let root: ReturnType<typeof createRoot>;
@@ -33,29 +34,33 @@ it('copies only physical pages and preserves each article’s design without edi
   expect(source.outerHTML).toBe(original);
 });
 
-it('keeps exactly two contents pages and each article sheet once across rearrangements and view changes', () => {
+it('places every article through the editor’s own preview, in plan order, without touching the stored documents', () => {
   const pagesRef = createRef<HTMLDivElement>();
-  const makePage = (number: number) => {
-    const node = document.createElement('section'); node.className = 'page';
-    node.innerHTML = `<footer class="page-folio"><b class="page-folio-number">${number}</b></footer>`;
-    return node;
-  };
-  const a = { id: 'a', name: 'A', pageCount: 2, pages: [makePage(91), makePage(92)] };
-  const b = { id: 'b', name: 'B', pageCount: 1, pages: [makePage(61)] };
-  const original = a.pages.map(page => page.outerHTML);
+  const item = (id: string) => ({ id, name: id.toUpperCase(), version: 1, updated: 0, doc: presetFor('paper-1') });
+  const items = [item('a'), item('b')];
+  const before = items.map(entry => JSON.stringify(entry.doc));
   const plan: IssuePlan = { order: ['a', '__contents__', 'b'], startNumber: 1, countCovers: false, contentsTitle: 'المحتويات', contentsSubtitle: '', contentsExcluded: [], direction: 'rtl' };
-  const entries = [{ id: 'a', title: 'عنوان', subtitle: 'وصف', page: 1, hero: 'hero.jpg' }, { id: 'b', title: 'Light', subtitle: 'A discovery', page: 5 }];
+  const entries = [{ id: 'a', title: 'عنوان', subtitle: 'وصف', page: 1, hero: { src: 'hero.jpg', naturalWidth: 20, naturalHeight: 10 } }, { id: 'b', title: 'Light', subtitle: 'A discovery', page: 5 }];
   const assignments = [{ id: 'a', startNumber: 1, pageCount: 2, counted: true }, { id: '__contents__', startNumber: 3, pageCount: 2, counted: true }, { id: 'b', startNumber: 5, pageCount: 1, counted: true }];
-  const render = (all: boolean, order = plan.order) => act(() => root.render(<IssuePreview plan={{ ...plan, order }} entries={entries} assignments={assignments} rendered={[a, b]} showAll={all} magazineName="Magazoo!" pagesRef={pagesRef} onOverflow={() => {}} />));
+  const render = (all: boolean, order = plan.order) => act(() => root.render(<IssuePreview plan={{ ...plan, order }} entries={entries} assignments={assignments} items={items} showAll={all} magazineName="Magazoo!" pagesRef={pagesRef} onOverflow={() => {}} />));
+
   render(true);
-  expect(pagesRef.current!.children).toHaveLength(5);
+  const articles = () => [...pagesRef.current!.querySelectorAll('[data-issue-article]')].map(node => node.getAttribute('data-issue-article'));
+  expect(articles()).toEqual(['a', 'b']);
+  // One live preview per article — not a copy of one.
+  expect(pagesRef.current!.querySelectorAll('[data-issue-article] .paper-scroll')).toHaveLength(2);
   expect(host.querySelectorAll('.issue-contents-page')).toHaveLength(2);
   expect([...host.querySelectorAll('[data-contents-id]')].map(node => node.getAttribute('data-contents-id'))).toEqual(['a', 'b']);
   expect([...host.querySelectorAll('.issue-contents-page')].every(node => node.getAttribute('dir') === 'rtl')).toBe(true);
-  expect([...host.querySelectorAll('.page-folio-number')].map(node => node.textContent)).toEqual(['1', '2', '5']);
+
   render(true, ['b', '__contents__', 'a']);
-  expect([...pagesRef.current!.children].map(node => node.getAttribute('data-issue-article'))).toEqual(['b', null, null, 'a', 'a']);
-  render(false); expect(pagesRef.current!.children).toHaveLength(2);
-  render(true); expect(pagesRef.current!.children).toHaveLength(5);
-  expect(a.pages.map(page => page.outerHTML)).toEqual(original);
+  expect(articles()).toEqual(['b', 'a']);
+  render(false);
+  expect(articles()).toEqual([]);
+  expect(host.querySelectorAll('.issue-contents-page')).toHaveLength(2);
+  render(true);
+  expect(articles()).toEqual(['a', 'b']);
+  // Issue numbering reaches the page as document data, so nothing writes back
+  // into the article the editor owns.
+  expect(items.map(entry => JSON.stringify(entry.doc))).toEqual(before);
 });
