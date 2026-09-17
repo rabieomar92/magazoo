@@ -16,9 +16,33 @@ export interface ContentsSpreadProps {
  * which left a six-entry page in small type with a third of the sheet empty
  * while a page of long titles overflowed at the same count. An editor who wants
  * one fixed treatment across the spread can pin it instead.
+ *
+ * That decides how dense the TEXT reads. The pictures don't get force-grown to
+ * fill whatever's left over — a photo keeps its own aspect ratio (see Shot
+ * below), so a portrait shot reads tall and narrow next to a landscape one
+ * reading short and wide, the way an actual magazine page varies, instead of
+ * every picture being stretched into the same flat wide bar. What "fills the
+ * space" instead is the density tier itself: a lightly-loaded page settles on
+ * a roomier tier with a wider picture rail and bigger type; a busy one steps
+ * down. Two sections on the same page still end up looking different from
+ * each other, just for a truer reason than one flexing harder than the other.
  */
 const TIERS = ['issue-contents-airy', '', 'issue-contents-dense', 'issue-contents-dense issue-contents-packed'];
 const PINNED: Record<Exclude<ContentsDensity, 'auto'>, number> = { airy: 0, normal: 1, dense: 2, packed: 3 };
+
+/** One colour per section — a sectioned contents page reads section by
+ * section (Editorial, People, Research…), each in its own colour, rather
+ * than the whole spread sharing one accent. Picked by a stable hash of the
+ * section's own name rather than its position, so "Research highlights"
+ * reads the same colour wherever it lands — including when a long section
+ * spills from page one onto page two and is regrouped there as its own
+ * block, which would otherwise recolour it by coincidence of position. */
+const SECTION_PALETTE = ['#c1652b', '#c23b52', '#1f6f8b', '#3f8f52', '#7a4fb0', '#0e8f86'];
+function sectionColor(key: string): string {
+  let hash = 0;
+  for (let i = 0; i < key.length; i++) hash = (hash * 31 + key.charCodeAt(i)) | 0;
+  return SECTION_PALETTE[Math.abs(hash) % SECTION_PALETTE.length];
+}
 
 function overflows(page: HTMLElement) {
   const content = page.querySelector<HTMLElement>('.issue-contents-body');
@@ -33,13 +57,25 @@ function overflows(page: HTMLElement) {
 
 const number = (value: number, padded: boolean) => (padded ? String(value).padStart(2, '0') : String(value));
 
-function Shot({ entry, design, kind }: { entry: ContentsEntry; design: ContentsDesign; kind: 'feature' | 'thumb' }) {
+/** A framed picture that keeps its own shape: `aspect-ratio` comes straight
+ * from the source photo, so a tall shot and a wide one end up genuinely
+ * different sizes on the page instead of both being stretched to the same
+ * flat rectangle. `kind` only picks the size ceiling for where it sits
+ * (a full-width feature vs. a picture in a narrow rail beside a list). */
+function Shot({ entry, design, kind }: { entry: ContentsEntry; design: ContentsDesign; kind: 'feature' | 'thumb' | 'rail' }) {
   if (!design.showHeroes || !entry.hero) return null;
   const label = entry.pageLabel ?? design.pageLabels;
-  return <div className={`issue-contents-shot is-${kind}`}>
+  const { naturalWidth, naturalHeight } = entry.hero;
+  const ratio = naturalWidth > 0 && naturalHeight > 0 ? naturalWidth / naturalHeight : 4 / 3;
+  return <div className={`issue-contents-shot is-${kind}`} style={{ aspectRatio: ratio }}>
     <FramedImage asset={entry.hero} frame={entry.frame} fit="cover" />
     {label && <span className="issue-contents-plabel">p.{entry.page}</span>}
   </div>;
+}
+
+/** A "COVER STORY"-style flag, read as a small chip under the headline. */
+function Badge({ entry }: { entry: ContentsEntry }) {
+  return entry.badge ? <span className="issue-contents-badge">{entry.badge}</span> : null;
 }
 
 /** Consecutive entries carrying the same section name read as one block. */
@@ -95,7 +131,7 @@ function ContentsPage({ group, index, title, subtitle, direction, startNumber, m
     `issue-contents-${design.layout}`, !design.rules && 'issue-contents-ruleless'].filter(Boolean).join(' ');
 
   const head = <header className="issue-contents-header">
-    <div className="issue-contents-masthead"><span dir="auto">{magazineName}</span><span>{index === 0 ? '01 / 02' : '02 / 02'}</span></div>
+    <div className="issue-contents-masthead"><span className="issue-contents-kicker">Table of contents</span><span dir="auto">{magazineName} &middot; {index === 0 ? '01 / 02' : '02 / 02'}</span></div>
     <h1>{title || 'Contents'}{index === 1 && <span aria-hidden="true"> / 2</span>}</h1>
     {subtitle && <p>{subtitle}</p>}
   </header>;
@@ -107,22 +143,43 @@ function ContentsPage({ group, index, title, subtitle, direction, startNumber, m
       <div className="issue-contents-body">
         {group.length ? <div className="issue-contents-sections">{grouped(group).map((block, position) => {
           const [lead] = block.entries;
-          return <section key={`${block.section}-${position}`} className="issue-contents-block">
+          const color = sectionColor(block.section || lead.title);
+          const sectionStyle = { '--contents-heading': color, '--contents-accent': color } as CSSProperties;
+          // A section that names only one article reads like its own small
+          // feature — one picture, at its own shape, above the headline. A
+          // section with several reads as a numbered list with a narrow rail
+          // of pictures beside it, one per entry that actually has a photo
+          // (not every row) — which is why one section can carry two
+          // differently-shaped pictures and another carries none at all.
+          const solo = block.entries.length === 1;
+          const rail = block.entries.filter(entry => design.showHeroes && entry.hero);
+          return <section key={`${block.section}-${position}`} className="issue-contents-block" style={sectionStyle}>
             <div className="issue-contents-block-head">
               <span className="issue-contents-number">{number(lead.page, design.paddedNumbers)}</span>
               <h3 dir="auto">{block.section || lead.title}</h3>
+              {solo && <Badge entry={lead} />}
             </div>
-            <Shot entry={lead} design={design} kind="feature" />
-            <ol className="issue-contents-rows">
-              {block.entries.map(entry => <li key={entry.id} data-contents-id={entry.id}>
-                <span className="issue-contents-rownum">{number(entry.page, design.paddedNumbers)}</span>
-                <div>
-                  <h2 dir="auto">{entry.title}</h2>
-                  {entry.badge && <span className="issue-contents-badge">{entry.badge}</span>}
-                  {entry.subtitle && <p dir="auto">{entry.subtitle}</p>}
-                </div>
-              </li>)}
-            </ol>
+            {solo ? <article className="issue-contents-block-solo-wrap" data-contents-id={lead.id}>
+              <Shot entry={lead} design={design} kind="feature" />
+              <div className="issue-contents-block-solo">
+                <h2 dir="auto">{lead.title}</h2>
+                {lead.subtitle && <p dir="auto">{contentsDeck(lead.subtitle)}</p>}
+              </div>
+            </article> : <div className="issue-contents-block-body">
+              <ol className="issue-contents-rows">
+                {block.entries.map(entry => <li key={entry.id} data-contents-id={entry.id}>
+                  <span className="issue-contents-rownum">{number(entry.page, design.paddedNumbers)}</span>
+                  <div>
+                    <h2 dir="auto">{entry.title}</h2>
+                    <Badge entry={entry} />
+                    {entry.subtitle && <p dir="auto">{entry.subtitle}</p>}
+                  </div>
+                </li>)}
+              </ol>
+              {!!rail.length && <div className="issue-contents-block-rail">
+                {rail.map(entry => <Shot key={entry.id} entry={entry} design={design} kind="rail" />)}
+              </div>}
+            </div>}
           </section>;
         })}</div> : <div className="issue-contents-empty"><Wordmark name={magazineName} /></div>}
       </div>
@@ -141,7 +198,7 @@ function ContentsPage({ group, index, title, subtitle, direction, startNumber, m
           : <div className="issue-contents-art" aria-hidden="true"><i /><i /><Wordmark name={magazineName} /></div>}
         <div className="issue-contents-feature-copy">
           <span className="issue-contents-number">{number(feature.page, design.paddedNumbers)}</span>
-          <div><h2 dir="auto">{feature.title}</h2>{feature.badge && <span className="issue-contents-badge">{feature.badge}</span>}{featureDeck && <p dir="auto">{featureDeck}</p>}</div>
+          <div><h2 dir="auto">{feature.title}</h2><Badge entry={feature} />{featureDeck && <p dir="auto">{featureDeck}</p>}</div>
         </div>
       </article> : <div className="issue-contents-empty"><Wordmark name={magazineName} /></div>}
       {!!rest.length && <div className="issue-contents-list">{grouped(rest).map((block, position) => <div key={`${block.section}-${position}`} className="issue-contents-group">
@@ -150,7 +207,7 @@ function ContentsPage({ group, index, title, subtitle, direction, startNumber, m
           <Shot entry={entry} design={design} kind="thumb" />
           <div className="issue-contents-entry-copy">
             <span className="issue-contents-number">{number(entry.page, design.paddedNumbers)}</span>
-            <div><h2 dir="auto">{entry.title}</h2>{entry.badge && <span className="issue-contents-badge">{entry.badge}</span>}{entry.subtitle && <p dir="auto">{entry.subtitle}</p>}</div>
+            <div><h2 dir="auto">{entry.title}</h2><Badge entry={entry} />{entry.subtitle && <p dir="auto">{entry.subtitle}</p>}</div>
           </div>
         </article>)}
       </div>)}</div>}

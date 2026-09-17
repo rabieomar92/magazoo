@@ -1,45 +1,80 @@
 .issue-renderer { position:fixed; left:-12000px; top:0; width:900px; height:1200px; overflow:hidden; pointer-events:none; z-index:-1; }
 .issue-renderer .paper-scroll { width:900px; height:1200px; }
 .issue-renderer .pages { pointer-events:none; }
+
 .page.issue-contents-page { --page-w:210mm; --page-h:297mm; --margin:15mm; --paper-bg:#faf8f2; --ink:#213238; --sans:'Helvetica',Arial,sans-serif; display:flex; flex-direction:column; gap:8mm; padding:14mm 15mm 12mm; background:#faf8f2; color:#213238; font:10pt/1.4 'Helvetica',Arial,sans-serif; text-align:start; direction:var(--text-dir,ltr); }
 .issue-contents-masthead { display:flex; justify-content:space-between; gap:5mm; padding-bottom:4mm; border-bottom:.3mm solid #a4aca8; font:8pt/1.3 'Helvetica',Arial,sans-serif; color:#59706e; }
+.issue-contents-kicker { font-weight:700; letter-spacing:.16em; text-transform:uppercase; color:#8a968f; }
 .issue-contents-header { flex:none; }
 .issue-contents-header h1 { font:600 43pt/1.05 'Playfair Display',Georgia,serif; margin:5mm 0 3mm; letter-spacing:-.035em; color:#20383a; overflow-wrap:anywhere; }
 .issue-contents-header h1 > span { font:300 22pt/1 'Helvetica',Arial,sans-serif; color:#8e9c96; letter-spacing:-.03em; }
 .issue-contents-header > p { font:10pt/1.45 'Helvetica',Arial,sans-serif; margin:0; color:#697670; }
+
+/* The body is the only part of the sheet allowed to grow or shrink: the
+   header/footer stay a fixed height. Filling it is left to the density tier
+   below, not to any one picture stretching — a picture keeps its own shape
+   (see .issue-contents-shot) whatever room there is. */
 .issue-contents-body { flex:1; min-height:0; display:flex; flex-direction:column; gap:7mm; }
-.issue-contents-feature { flex:none; }
-.issue-contents-feature > img,.issue-contents-art { display:block; width:100%; height:59mm; object-fit:cover; }
-.issue-contents-art { position:relative; overflow:hidden; background:#dce4de; display:grid; place-items:center; }
+
+/* A framed picture. `aspect-ratio` is set inline per instance from the
+   source photo's own dimensions (ContentsSpread.tsx), so a tall shot and a
+   wide one end up genuinely different sizes — the point of this class is
+   only to cap how large any of them is allowed to get, per the slot it's in. */
+.issue-contents-shot { position:relative; overflow:hidden; background:#dce4de; width:100%; height:auto; }
+.issue-contents-shot.is-feature { width:auto; max-width:100%; height:var(--contents-feature-h); }
+.issue-contents-shot.is-rail { max-height:var(--contents-thumb-h); }
+/* The one shot type that ISN'T aspect-true on purpose: a grid of many small
+   thumbnails (the plain "feature" layout's entry list) reads as a tidy wall
+   of tiles, so it keeps a fixed height instead of a jagged one per photo. */
+.issue-contents-entry .issue-contents-shot.is-thumb { height:var(--contents-thumb-h); max-height:none; flex:none; margin-bottom:3mm; }
+.issue-contents-plabel { position:absolute; left:3mm; bottom:3mm; padding:.8mm 2.6mm; border-radius:1mm; background:#182421cc; color:#f6f4ec; font:700 7pt/1.2 'Helvetica',Arial,sans-serif; letter-spacing:.02em; }
+
+/* A colour chip for "COVER STORY"-style flags — an eyebrow set above the
+   headline, the way a section front reads, rather than a caption trailing
+   after the title. */
+.issue-contents-badge { display:inline-block; margin:1mm 0; padding:.7mm 2.4mm; border-radius:.8mm; background:var(--contents-accent); color:#fff; font:700 7pt/1.3 'Helvetica',Arial,sans-serif; letter-spacing:.09em; text-transform:uppercase; }
+.issue-contents-block-head .issue-contents-badge { margin:0; }
+
+.issue-contents-feature { flex:1 1 auto; min-height:0; display:flex; flex-direction:column; overflow:hidden; }
+.issue-contents-art { position:relative; overflow:hidden; background:#dce4de; display:grid; place-items:center; height:var(--contents-feature-h); }
 .issue-contents-art i { position:absolute; width:160mm; height:160mm; border:1px solid #99aca480; border-radius:50%; transform:translate(45mm,25mm); }
 .issue-contents-art i:nth-child(2) { transform:translate(-40mm,-40mm); }
 .issue-contents-art .brand-mark { font-size:32pt; color:#44685d; --brand-accent:var(--contents-accent); }
-.issue-contents-feature-copy { display:grid; grid-template-columns:19mm minmax(0,1fr); gap:5mm; border-top:.7mm solid var(--contents-accent); padding-top:4mm; margin-top:4mm; }
+.issue-contents-feature-copy { flex:none; display:grid; grid-template-columns:19mm minmax(0,1fr); gap:5mm; border-top:.7mm solid var(--contents-accent); padding-top:4mm; margin-top:4mm; }
 .issue-contents-number { font:400 29pt/1.03 'Playfair Display',Georgia,serif; color:var(--contents-accent); font-variant-numeric:tabular-nums; }
 .issue-contents-feature h2 { font:600 20pt/1.16 'Playfair Display',Georgia,serif; letter-spacing:-.015em; margin:0 0 2mm; }
-.issue-contents-feature p { font:9.5pt/1.4 'Helvetica',Arial,sans-serif; margin:0; color:#65716e; }
-.issue-contents-list { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); column-gap:7mm; row-gap:5mm; align-items:start; }
+.issue-contents-feature p { font:italic 9.5pt/1.4 'Helvetica',Arial,sans-serif; margin:0; color:#65716e; }
+
+.issue-contents-list { flex:0 1 auto; min-height:0; overflow:hidden; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); column-gap:7mm; row-gap:5mm; align-items:start; }
+.issue-contents-group { grid-column:1 / -1; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); column-gap:7mm; row-gap:5mm; }
+.issue-contents-section { grid-column:1 / -1; margin:0; font:700 10pt/1.2 'Helvetica',Arial,sans-serif; color:var(--contents-heading); text-transform:uppercase; letter-spacing:.08em; }
 .issue-contents-entry { min-width:0; border-top:.25mm solid #c7ceca; padding-top:3mm; }
-.issue-contents-entry > img { display:block; width:100%; height:25mm; object-fit:cover; margin-bottom:3mm; }
 .issue-contents-entry-copy { display:grid; grid-template-columns:12mm minmax(0,1fr); gap:3mm; }
 .issue-contents-entry .issue-contents-number { font-size:19pt; }
 .issue-contents-entry h2 { font:600 11pt/1.22 'Playfair Display',Georgia,serif; margin:0 0 1.5mm; }
-.issue-contents-entry p { font:8pt/1.38 'Helvetica',Arial,sans-serif; color:#697570; margin:0; }
+.issue-contents-entry p { font:italic 8pt/1.38 'Helvetica',Arial,sans-serif; color:#697570; margin:0; }
+
 .issue-contents-footer { flex:none; display:flex; justify-content:space-between; gap:6mm; border-top:.25mm solid #adb9b0; padding-top:4mm; font:7pt/1.3 'Helvetica',Arial,sans-serif; color:#596d67; }
 .issue-contents-second .issue-contents-footer { flex-direction:row-reverse; }
-.issue-contents-airy .issue-contents-feature > img,.issue-contents-airy .issue-contents-art { height:97mm; }
-.issue-contents-airy .issue-contents-entry > img { height:37mm; }
-.issue-contents-dense .issue-contents-feature > img,.issue-contents-dense .issue-contents-art { height:35mm; }
+
+.issue-contents-airy .issue-contents-shot.is-feature { height:90mm; }
+.issue-contents-airy .issue-contents-art { height:90mm; }
+.issue-contents-airy .issue-contents-entry .issue-contents-shot.is-thumb { height:37mm; }
+.issue-contents-dense .issue-contents-shot.is-feature { height:38mm; }
+.issue-contents-dense .issue-contents-art { height:38mm; }
 .issue-contents-dense .issue-contents-feature h2 { font-size:16pt; }
 .issue-contents-dense .issue-contents-feature p { font-size:8.5pt; }
 .issue-contents-dense .issue-contents-list { row-gap:3mm; }
 .issue-contents-dense .issue-contents-entry h2 { font-size:10pt; }
 .issue-contents-dense .issue-contents-entry p { font-size:7.5pt; }
+.issue-contents-packed .issue-contents-shot.is-feature { height:26mm; }
+.issue-contents-packed .issue-contents-art { height:26mm; }
 .issue-contents-empty { display:flex; flex:1; flex-direction:column; align-items:center; justify-content:center; color:#9aa89e; border:1px solid #d7dfd7; }
 .issue-contents-empty .brand-mark { font-size:34pt; --brand-accent:var(--contents-accent); }
-/* Deterministic slot heights. Each deck is clamped to its cell's line budget,
-   so a 300-character subtitle changes what an entry says, never how tall it is
-   — which is what keeps a two-page spread two pages, whatever the editor typed. */
+/* Deterministic slot heights. Each deck is line-clamped to its slot in this
+   file, which makes each entry's height deterministic no matter what the
+   editor typed, so a long subtitle can never push the entries under it off a
+   sheet that cannot grow. */
 .issue-contents-feature h2,.issue-contents-feature p,.issue-contents-entry h2,.issue-contents-entry p { display:-webkit-box; -webkit-box-orient:vertical; overflow:hidden; }
 .issue-contents-feature h2 { -webkit-line-clamp:2; }
 .issue-contents-feature p { -webkit-line-clamp:3; }
@@ -49,20 +84,74 @@
 .issue-contents-dense .issue-contents-feature p { -webkit-line-clamp:2; }
 .issue-contents-packed .issue-contents-entry p { -webkit-line-clamp:1; }
 
-/* A dense list keeps every hero: the picture moves from a banner above the copy
-   to a thumb beside it, which is the only way to carry twelve entries and
-   twelve pictures on one sheet. Entries without a hero span both columns so
-   they do not sit against an empty gutter. */
+/* A dense list keeps every hero: the picture moves from a banner above the
+   copy to a thumb beside it, which is the only way to carry twelve entries
+   and twelve pictures on one sheet. Entries without a hero span both columns
+   so they do not sit against an empty gutter. */
 .issue-contents-dense .issue-contents-entry { display:grid; grid-template-columns:19mm minmax(0,1fr); column-gap:3mm; align-items:start; }
-.issue-contents-dense .issue-contents-entry > img { height:13mm; margin:0; }
-.issue-contents-dense .issue-contents-entry:not(:has(> img)) .issue-contents-entry-copy { grid-column:1 / -1; }
+.issue-contents-dense .issue-contents-entry .issue-contents-shot.is-thumb { height:13mm; margin:0; }
+.issue-contents-dense .issue-contents-entry:not(:has(.issue-contents-shot)) .issue-contents-entry-copy { grid-column:1 / -1; }
 .issue-contents-dense .issue-contents-entry-copy { grid-template-columns:8mm minmax(0,1fr); gap:2mm; }
 .issue-contents-dense .issue-contents-entry .issue-contents-number { font-size:14pt; }
 .issue-contents-packed .issue-contents-entry { grid-template-columns:15mm minmax(0,1fr); }
-.issue-contents-packed .issue-contents-entry > img { height:10.5mm; }
+.issue-contents-packed .issue-contents-entry .issue-contents-shot.is-thumb { height:10.5mm; }
 .issue-contents-packed .issue-contents-entry h2 { font-size:9pt; }
 .issue-contents-packed .issue-contents-entry p { font-size:7pt; }
 .issue-contents-packed .issue-contents-list { row-gap:2.5mm; }
+
+/* ---- Sectioned layout ----
+   A section naming a single article reads like its own small feature: one
+   picture at its own shape, above the headline (.issue-contents-block-solo).
+   A section with several reads as a numbered list with a narrow rail of
+   pictures beside it — one per entry that actually carries a photo, not one
+   per row — so a section can carry two differently-shaped pictures (a tall
+   one and a wide one) and the next section over can carry none at all. That
+   variety, not a shared flex-grown banner, is what makes two sections on the
+   same page look different from each other. */
+.issue-contents-sections { flex:1 1 auto; min-height:0; display:flex; flex-direction:column; justify-content:space-between; gap:7mm; }
+.issue-contents-block { flex:0 0 auto; min-height:0; display:flex; flex-direction:column; gap:3.5mm; overflow:hidden; }
+.issue-contents-block-head { flex:none; display:flex; align-items:baseline; gap:3mm; padding-bottom:1.5mm; border-bottom:.6mm solid var(--contents-heading); }
+.issue-contents-block-head h3 { flex:1; margin:0; font:700 11.5pt/1.2 'Helvetica',Arial,sans-serif; color:var(--contents-heading); text-transform:uppercase; letter-spacing:.09em; }
+.issue-contents-block-head .issue-contents-number { font-size:15pt; color:var(--contents-heading); }
+
+.issue-contents-block-solo h2 { font:600 14pt/1.18 'Playfair Display',Georgia,serif; letter-spacing:-.01em; margin:3mm 0 1.5mm; display:-webkit-box; -webkit-box-orient:vertical; overflow:hidden; -webkit-line-clamp:2; }
+.issue-contents-block-solo p { font:italic 9pt/1.4 'Helvetica',Arial,sans-serif; color:#65716e; margin:0; display:-webkit-box; -webkit-box-orient:vertical; overflow:hidden; -webkit-line-clamp:3; }
+
+.issue-contents-block-body { flex:1 1 auto; min-height:0; display:flex; flex-direction:row; gap:5mm; overflow:hidden; }
+.issue-contents-rows { flex:1 1 auto; min-width:0; min-height:0; overflow:hidden; list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:3.5mm; }
+.issue-contents-rows > li { display:grid; grid-template-columns:10mm minmax(0,1fr); column-gap:3mm; align-items:start; border-top:.25mm solid #c7ceca; padding-top:2.6mm; }
+.issue-contents-rows .issue-contents-rownum { font:400 15pt/1.1 'Playfair Display',Georgia,serif; color:var(--contents-accent); font-variant-numeric:tabular-nums; }
+.issue-contents-rows h2 { font:600 10.5pt/1.22 'Playfair Display',Georgia,serif; margin:0 0 1mm; }
+.issue-contents-rows p { font:italic 8pt/1.35 'Helvetica',Arial,sans-serif; color:#697570; margin:0; display:-webkit-box; -webkit-box-orient:vertical; overflow:hidden; -webkit-line-clamp:2; }
+
+/* The rail: a narrow column of the block's own pictures, each at its own
+   shape, stacked beside the list rather than stretched across the top of
+   it. Its width is a share of the block, not a fixed measurement, so it
+   scales with the page the way everything else here does. */
+.issue-contents-block-rail { flex:0 0 34%; max-width:34%; min-width:0; display:flex; flex-direction:column; gap:3mm; overflow:hidden; }
+.issue-contents-airy .issue-contents-block-rail { flex-basis:40%; max-width:40%; }
+.issue-contents-airy .issue-contents-block-rail .issue-contents-shot.is-rail { max-height:70mm; }
+.issue-contents-dense .issue-contents-block-rail { flex-basis:30%; max-width:30%; }
+.issue-contents-dense .issue-contents-block-rail .issue-contents-shot.is-rail { max-height:34mm; }
+.issue-contents-packed .issue-contents-block-rail { flex-basis:26%; max-width:26%; gap:2mm; }
+.issue-contents-packed .issue-contents-block-rail .issue-contents-shot.is-rail { max-height:24mm; }
+
+.issue-contents-airy .issue-contents-sections,.issue-contents-airy .issue-contents-block,.issue-contents-airy .issue-contents-rows,.issue-contents-airy .issue-contents-block-body { gap:5mm; }
+.issue-contents-dense .issue-contents-sections,.issue-contents-dense .issue-contents-block,.issue-contents-dense .issue-contents-rows,.issue-contents-dense .issue-contents-block-body { gap:2.5mm; }
+.issue-contents-dense .issue-contents-rows h2 { font-size:9.5pt; }
+.issue-contents-dense .issue-contents-rows p { font-size:7.3pt; }
+.issue-contents-packed .issue-contents-sections,.issue-contents-packed .issue-contents-block,.issue-contents-packed .issue-contents-rows,.issue-contents-packed .issue-contents-block-body { gap:1.8mm; }
+.issue-contents-packed .issue-contents-rows p { -webkit-line-clamp:1; }
+
+/* An editor who turns off rules gets a clean sheet with nothing dividing
+   entries, sections or the masthead from the page around them. */
+.issue-contents-ruleless .issue-contents-entry,
+.issue-contents-ruleless .issue-contents-rows > li,
+.issue-contents-ruleless .issue-contents-feature-copy,
+.issue-contents-ruleless .issue-contents-block-head,
+.issue-contents-ruleless .issue-contents-footer,
+.issue-contents-ruleless .issue-contents-masthead { border:0; }
+
 .issue-contents-page[dir=rtl] h1,.issue-contents-page[dir=rtl] h2 { letter-spacing:normal; line-height:1.35; }
 /* These selectors formerly required the article wrapper. Snapshots retain
    the same flags on their physical pages inside a mixed-template issue. */

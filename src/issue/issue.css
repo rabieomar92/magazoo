@@ -13,7 +13,7 @@
 .issue-save-status { font-size:12px; color:#12775d; }
 .issue-save-status.is-saving,.issue-save-status.is-pending { color:#776135; }
 .issue-save-status.is-error { color:#be2343; }
-.issue-intro { display:flex; align-items:center; gap:32px; padding:28px; max-width:1800px; margin:auto; }
+.issue-intro { display:flex; align-items:center; gap:32px; padding:28px; max-width:900px; margin:auto; }
 .issue-intro > div:first-child { flex:1; min-width:0; }
 .issue-eyebrow { color:#7460bc; font-size:12px; margin:0 0 5px; }
 .issue-intro h1 { font-size:clamp(24px,3vw,36px); line-height:1.16; letter-spacing:-.04em; margin:0 0 10px; overflow-wrap:anywhere; }
@@ -21,10 +21,12 @@
 .issue-stat { min-width:75px; display:grid; gap:1px; }
 .issue-stat strong { font-size:30px; font-weight:650; }
 .issue-stat span { font-size:11px; color:#727d94; }
-.issue-body { display:grid; grid-template-columns:minmax(320px,390px) minmax(0,1fr); align-items:start; gap:22px; max-width:1800px; margin:auto; padding:0 28px; }
-.issue-arrangement { display:grid; gap:16px; min-width:0; }
+/* Arrangement only: one column of cards, no separate compiled-preview pane —
+   the actual pages are the same ones each article's own editor shows, and
+   exporting is the only place they're ever rendered for real. */
+.issue-body { display:grid; grid-template-columns:minmax(0,900px); justify-content:center; gap:16px; max-width:900px; margin:auto; padding:0 28px; }
 .issue-card { background:#fff; border:1px solid #e0e5ee; border-radius:13px; padding:18px; box-shadow:0 5px 20px #1d2c4404; }
-.issue-card h2,.issue-proof-toolbar h2 { font-size:16px; margin:0 0 13px; letter-spacing:-.01em; }
+.issue-card h2 { font-size:16px; margin:0 0 13px; letter-spacing:-.01em; }
 .issue-section-title { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; }
 .issue-section-title h2 { margin:0; }
 .issue-section-title button { font-size:11px; min-height:34px; padding:6px 9px; }
@@ -50,38 +52,27 @@
 .issue-page-range { font-weight:700; font-size:13px; font-variant-numeric:tabular-nums; color:#5146b3; }
 .issue-order-end > div { display:flex; gap:3px; }
 .issue-order-end button { padding:3px; min-height:27px; width:25px; font-size:13px; border-radius:5px; }
-.issue-proof { min-width:0; background:#e8ebf1; border:1px solid #dce1eb; border-radius:13px; overflow:hidden; }
-.issue-proof-toolbar { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; padding:17px 20px; background:#fafbfe; border-bottom:1px solid #dce1eb; }
-.issue-proof-toolbar h2 { margin:0 0 4px; }
-.issue-proof-toolbar p { color:#7d879a; font-size:11px; margin:0; }
-.issue-view-toggle { display:flex; gap:3px; padding:3px; border:1px solid #e1e5ee; border-radius:8px; background:#f2f3f8; }
-.issue-view-toggle button { border:0; background:transparent; min-height:33px; padding:6px 11px; font-size:11px; }
-.issue-view-toggle button[aria-pressed=true] { background:#fff; box-shadow:0 1px 5px #2b314015; color:#5146b3; }
-/* The proof pane mirrors the editor's .paper-scroll: a grey bed so the white
-   A4 sheets read as paper rather than dissolving into the panel, and its own
-   scroll on both axes so a zoomed-in sheet stays reachable. */
-.issue-preview { display:flex; flex-direction:column; min-height:0; }
-.issue-preview-bar { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; padding:0 0 10px; }
-.issue-preview-view { padding:20px; overflow:auto; max-height:calc(100dvh - 300px); min-height:350px; background:#e5e5e5; border-radius:8px; }
-.issue-preview-frame { position:relative; margin:auto; }
-.issue-preview-pages.pages { display:grid !important; gap:20px; width:max-content; transform-origin:top left; margin:0; padding:0; }
-/* Each article is rendered by the editor's own preview component, which brings
-   its own scroll pane and page frame. Those boxes are dropped out of layout so
-   the sheets themselves become the grid items; the elements stay in the DOM, so
-   every `.pages ...` rule, RTL flag and inherited custom property still reaches
-   them exactly as it does in the editor. */
-.issue-preview-pages .issue-article,
-.issue-preview-pages .issue-article .paper-scroll,
-.issue-preview-pages .issue-article .pages-frame,
-.issue-preview-pages .issue-article .pages { display:contents !important; }
+/* The render target never appears on screen: it exists only so the contents
+   fit-check and the PDF export both measure and print the very same pages
+   the editor's own preview produces — no separate compiled-preview UI. */
+.issue-render-target { position:fixed !important; left:-12000px; top:0; display:grid !important; grid-template-columns:210mm; gap:0; width:max-content; pointer-events:none; }
+/* Each article is rendered by the editor's own preview component, which
+   brings its own scroll pane and page frame. Those boxes are dropped out of
+   layout so the sheets themselves become the grid items; the elements stay
+   in the DOM, so every `.pages ...` rule, RTL flag and inherited custom
+   property still reaches them exactly as it does in the editor. */
+.issue-render-target .issue-article,
+.issue-render-target .issue-article .paper-scroll,
+.issue-render-target .issue-article .pages-frame,
+.issue-render-target .issue-article .pages { display:contents !important; }
 /* No box-shadow override: the sheet keeps the drop shadow page.css already
-   gives it in the editor. A different shadow here painted the sheet's corners
-   differently from the same sheet in the editor's own preview. */
-.issue-preview-pages > .page,
-.issue-preview-pages .pages > .page { margin:0 !important; width:210mm !important; height:297mm !important; }
-.issue-preparing { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:60px 30px; min-height:420px; text-align:center; }
-.issue-preparing-symbol { display:block; font-size:40px; color:#5146df; --brand-accent:#9a90ee; }
-.issue-preparing h3 { margin:16px 0 4px; font-size:19px; }
+   gives it in the editor. A different shadow here painted the sheet's
+   corners differently from the same sheet in the editor's own preview. */
+.issue-render-target > .page,
+.issue-render-target .pages > .page { margin:0 !important; width:210mm !important; height:297mm !important; }
+.issue-preparing { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:30px 10px 10px; text-align:center; }
+.issue-preparing-symbol { display:block; font-size:34px; color:#5146df; --brand-accent:#9a90ee; }
+.issue-preparing h3 { margin:14px 0 4px; font-size:17px; }
 .issue-preparing p { max-width:430px; color:#6d788d; font-size:13px; }
 .issue-preparing progress { width:min(280px,100%); accent-color:#6558e5; height:7px; }
 .issue-actionbar { position:fixed; inset:auto 0 0; z-index:40; display:flex; justify-content:space-between; align-items:center; gap:18px; background:#fffffff5; backdrop-filter:blur(12px); border-top:1px solid #dce2ed; padding:16px 28px; box-shadow:0 -4px 20px #27375306; }
@@ -96,6 +87,6 @@
 .issue-loading-card { margin:70px auto; width:min(540px,calc(100% - 40px)); padding:35px; background:#fff; border:1px solid #e1e5ed; border-radius:14px; }
 .issue-loading-card h1 { font-size:25px; }
 .issue-sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
-@media (max-width:1100px) { .issue-body { grid-template-columns:330px minmax(0,1fr); gap:15px; padding:0 16px; }.issue-intro { padding:24px 18px; gap:18px; }.issue-stat { min-width:54px; }.issue-stat strong { font-size:24px; } }
-@media (max-width:760px) { .issue-workspace { padding-bottom:155px; }.issue-header { padding:12px 16px; }.issue-header-label { font-size:12px; }.issue-header-actions { width:100%; justify-content:space-between; }.issue-intro { flex-wrap:wrap; }.issue-intro > div:first-child { flex-basis:100%; }.issue-stat { min-width:80px; }.issue-body { grid-template-columns:1fr; }.issue-arrangement { display:contents; }.issue-proof { grid-row:2; }.issue-order { max-height:390px; }.issue-preview-view { max-height:70dvh; }.issue-actionbar { flex-direction:column; align-items:stretch; gap:9px; padding:12px 16px; }.issue-actionbar > div:last-child { width:100%; }.issue-actionbar button { flex:1; }.issue-message { margin:12px 16px; } }
+@media (max-width:1100px) { .issue-intro { padding:24px 18px; gap:18px; }.issue-stat { min-width:54px; }.issue-stat strong { font-size:24px; } }
+@media (max-width:760px) { .issue-workspace { padding-bottom:155px; }.issue-header { padding:12px 16px; }.issue-header-label { font-size:12px; }.issue-header-actions { width:100%; justify-content:space-between; }.issue-intro { flex-wrap:wrap; }.issue-intro > div:first-child { flex-basis:100%; }.issue-stat { min-width:80px; }.issue-body { padding:0 16px; }.issue-order { max-height:390px; }.issue-actionbar { flex-direction:column; align-items:stretch; gap:9px; padding:12px 16px; }.issue-actionbar > div:last-child { width:100%; }.issue-actionbar button { flex:1; }.issue-message { margin:12px 16px; } }
 @media (prefers-reduced-motion:reduce) { .issue-order li { transition:none; } }

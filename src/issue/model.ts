@@ -51,7 +51,7 @@ export interface ContentsDesign {
 }
 
 export const DEFAULT_CONTENTS_DESIGN: ContentsDesign = {
-  layout: 'feature', density: 'auto', accent: '#9a603c', headingColor: '#1f6f8b', columns: 2,
+  layout: 'sections', density: 'auto', accent: '#9a603c', headingColor: '#1f6f8b', columns: 2,
   showHeroes: true, pageLabels: false, featureHeight: 59, thumbHeight: 25, rules: true, paddedNumbers: true,
 };
 
