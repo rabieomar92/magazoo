@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { emptyDoc } from '../schema/document';
-import { assignIssuePages, CONTENTS_DECK_MAX, contentsEntries, defaultIssuePlan, documentWithIssueNumber, reconcileIssuePlan, reorderIssue, type IssueItem } from './model';
+import { assignIssuePages, CONTENTS_DECK_MAX, contentsEntries, defaultIssuePlan, documentWithIssueNumber, issueSection, reconcileIssuePlan, reorderIssue, type IssueItem } from './model';
 
 const item = (id: string, templateId: IssueItem['doc']['templateId'] = 'paper-1'): IssueItem => ({ id, name: `${id}.json`, version: 1, updated: 0, doc: { ...emptyDoc(), templateId } });
 describe('issue numbering and preservation', () => {
@@ -61,5 +61,34 @@ describe('issue numbering and preservation', () => {
     expect(numbered.footer?.startNumber).toBe(13);
     expect(numbered.blocks).toBe(a.doc.blocks);
     expect(JSON.stringify(a)).toBe(before);
+  });
+});
+
+describe('contents lines follow the pages they describe', () => {
+  const withMasthead = (id: string, masthead: string, templateId: IssueItem['doc']['templateId'] = 'paper-1'): IssueItem => {
+    const base = item(id, templateId);
+    return { ...base, doc: { ...base.doc, meta: { ...base.doc.meta, masthead } } };
+  };
+
+  it('takes each entry’s section from the article’s own top bar, and lets the issue overrule it', () => {
+    const items = [withMasthead('a', 'Research highlights'), withMasthead('b', 'Research highlights'), withMasthead('c', 'In focus')];
+    const plan = { ...defaultIssuePlan(items), contentsStyle: { c: { section: 'People' } } };
+    const assignments = assignIssuePages(plan, items, { a: 1, b: 1, c: 1 });
+    expect(contentsEntries(plan, items, assignments).map(entry => entry.section))
+      .toEqual(['Research highlights', 'Research highlights', 'People']);
+    // A cover has no top bar to read, so it contributes no section at all.
+    expect(issueSection(item('cover', 'magazine-4'))).toBeUndefined();
+    expect(issueSection(withMasthead('a', '  Research  highlights '))).toBe('Research highlights');
+  });
+
+  it('lets one entry keep or drop its picture independently of the spread', () => {
+    const items = [item('a'), item('b')];
+    const plan = { ...defaultIssuePlan(items), contentsStyle: { a: { hero: false }, b: { hero: true } } };
+    const assignments = assignIssuePages(plan, items, { a: 1, b: 1 });
+    expect(contentsEntries(plan, items, assignments).map(entry => entry.showHero)).toEqual([false, true]);
+    // No override means "follow the spread-wide switch", not "off".
+    const plain = { ...defaultIssuePlan(items) };
+    expect(contentsEntries(plain, items, assignIssuePages(plain, items, { a: 1, b: 1 })).map(entry => entry.showHero))
+      .toEqual([undefined, undefined]);
   });
 });

@@ -1,108 +1,289 @@
-.issue-workspace { height:100dvh; overflow:auto; background:#f3f4f8; color:#18243b; font:14px/1.5 system-ui,Arial,sans-serif; padding-bottom:108px; scrollbar-gutter:stable; }
-.issue-header { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px; padding:16px 28px; background:#fff; border-bottom:1px solid #e1e5ed; }
-.issue-header > div { display:flex; align-items:center; gap:18px; flex-wrap:wrap; }
-/* Size and colour only — the mark itself is .brand-mark (styles/wordmark.css). */
-.issue-brand { font-size:27px; color:#4f46e5; --brand-accent:#8b83e8; }
-.issue-header-label { border-inline-start:1px solid #dce0e8; padding-inline-start:18px; color:#65708a; }
-.issue-workspace button { border:1px solid #d8deea; border-radius:8px; padding:9px 13px; min-height:40px; background:#fff; color:#34415b; font:600 13px/1.4 system-ui,sans-serif; cursor:pointer; }
-.issue-workspace button:hover:not(:disabled) { border-color:#8d87e5; background:#f9f8ff; }
-.issue-workspace button:disabled { opacity:.45; cursor:not-allowed; }
-.issue-workspace button.primary { background:#5146df; color:#fff; border-color:#5146df; }
-.issue-workspace button.primary:hover:not(:disabled) { background:#4339c7; }
-.issue-workspace :focus-visible { outline:3px solid #aea8fc; outline-offset:3px; }
-.issue-save-status { font-size:12px; color:#12775d; }
-.issue-save-status.is-saving,.issue-save-status.is-pending { color:#776135; }
-.issue-save-status.is-error { color:#be2343; }
-.issue-intro { display:flex; align-items:center; gap:32px; padding:28px; max-width:900px; margin:auto; }
-.issue-intro > div:first-child { flex:1; min-width:0; }
-.issue-eyebrow { color:#7460bc; font-size:12px; margin:0 0 5px; }
-.issue-intro h1 { font-size:clamp(24px,3vw,36px); line-height:1.16; letter-spacing:-.04em; margin:0 0 10px; overflow-wrap:anywhere; }
-.issue-intro p:last-child { margin:0; color:#6c7690; }
-.issue-stat { min-width:75px; display:grid; gap:1px; }
-.issue-stat strong { font-size:30px; font-weight:650; }
-.issue-stat span { font-size:11px; color:#727d94; }
-/* Two columns: controls on the left, the compiled preview on the right.
-   The preview pane renders the very same pages each article's own editor
-   shows — the arrangement UI and the compiled issue are never out of sync
-   because they share one rendering engine (see .issue-render-target below). */
-.issue-body { display:grid; grid-template-columns:minmax(320px,420px) minmax(0,1fr); align-items:start; gap:24px; max-width:1400px; margin:auto; padding:0 28px; }
-.issue-controls { display:grid; gap:16px; min-width:0; }
-.issue-proof { position:sticky; top:16px; min-width:0; max-height:calc(100dvh - 132px); overflow:auto; background:#e4e7ef; border:1px solid #d7dceb; border-radius:13px; padding:22px; display:flex; flex-direction:column; align-items:center; gap:14px; scrollbar-width:thin; }
-.issue-proof-label { align-self:stretch; display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:11px; font-weight:700; color:#4a5573; text-transform:uppercase; letter-spacing:.06em; }
-.issue-proof-empty { padding:60px 20px; color:#7b859c; font-size:13px; text-align:center; }
-.issue-card { background:#fff; border:1px solid #e0e5ee; border-radius:13px; padding:18px; box-shadow:0 5px 20px #1d2c4404; }
-.issue-card h2 { font-size:16px; margin:0 0 13px; letter-spacing:-.01em; }
-.issue-section-title { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; }
-.issue-section-title h2 { margin:0; }
-.issue-section-title button { font-size:11px; min-height:34px; padding:6px 9px; }
-.issue-help { font-size:12px; line-height:1.55; color:#717b8f; margin:6px 0 14px; }
-.issue-card label { display:grid; gap:6px; font-size:12px; font-weight:600; margin:12px 0; }
-.issue-card-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:4px 16px; margin:12px 0; }
-.issue-card-grid label { margin:8px 0; }
-.issue-range-value { font-weight:400; color:#5f6a86; font-variant-numeric:tabular-nums; }
-.issue-entry-list { display:grid; gap:12px; }
-.issue-entry-row { border:1px solid #e2e6f0; border-radius:10px; padding:12px 14px; background:#fbfcff; }
-.issue-entry-row label,.issue-entry-row-pair label { margin:8px 0; }
-.issue-entry-row-head { display:flex; align-items:center; justify-content:space-between; gap:10px; }
-.issue-entry-row-head strong { font-size:13px; overflow-wrap:anywhere; }
-.issue-entry-row-head button { font-size:11px; min-height:28px; padding:4px 9px; }
-.issue-entry-row-pair { display:grid; grid-template-columns:1fr 1fr; gap:0 12px; }
-.issue-entry-hint { font-weight:400; color:#8790a6; text-transform:none; letter-spacing:normal; }
-.issue-card input:not([type=checkbox]),.issue-card textarea,.issue-card select { width:100%; min-width:0; padding:9px 10px; border:1px solid #d7ddeb; border-radius:7px; font:14px/1.4 system-ui,sans-serif; color:#24324a; background:#fbfcfe; }
-.issue-card textarea { resize:vertical; }
-.issue-card label.issue-checkbox,.issue-card label.issue-toc-check { display:flex; flex-direction:row; gap:7px; align-items:center; font-weight:400; }
-.issue-card input[type=checkbox] { accent-color:#5146df; width:15px; height:15px; margin:0; flex-shrink:0; }
-.issue-order { list-style:none; padding:0 5px 0 0; margin:0 -5px 0 0; max-height:560px; overflow:auto; scrollbar-width:thin; overscroll-behavior:contain; }
-.issue-order li { position:relative; display:flex; align-items:center; gap:9px; padding:13px 9px 13px 0; margin:9px 0; border:1px solid #e2e6f0; border-radius:9px; background:#fff; transition:border-color .12s,background .12s; }
-.issue-order li.issue-order-contents { background:#f7f5ff; border-color:#dcd6f5; }
-.issue-order li.is-grabbed { border-color:#8f83dc; background:#f0edff; box-shadow:0 5px 12px #48378d12; }
-.issue-order li.is-drop-target { border-top:3px solid #5146df; padding-top:11px; }
-.issue-workspace .issue-grip { border:0; background:transparent; cursor:grab; width:31px; padding:8px 5px; flex-shrink:0; touch-action:none; user-select:none; }
-.issue-workspace .issue-grip:active { cursor:grabbing; }
+/* ===========================================================================
+   Issue studio
+   ---------------------------------------------------------------------------
+   Two panes that never fight for the window: an inspector that scrolls its own
+   settings, and a stage that holds the compiled sheets still while you work on
+   them. The stage is dark on purpose — a printed sheet is judged by its own
+   contrast, and a white page floating on a white app never looks like paper.
+   Every token below is declared once here so the studio, its controls and the
+   proof canvas stay one system rather than a pile of local colours.
+   ======================================================================== */
+.studio {
+  --ink:#101728; --ink-2:#4a5468; --ink-3:#818ca3;
+  --line:#e3e7f0; --line-2:#edf0f6;
+  --surface:#fff; --surface-2:#f9fafd; --canvas:#f4f6fa;
+  --brand:#4f46e5; --brand-ink:#4036c4; --brand-wash:#eeedfe; --brand-line:#c9c5f6;
+  --good:#0e7a5f; --good-wash:#e9f8f2; --warn:#a1620b; --warn-wash:#fdf4e5;
+  --bad:#c0264a; --bad-wash:#fdf0f3;
+  --r-xs:7px; --r-sm:9px; --r:12px; --r-lg:16px;
+  --shadow-1:0 1px 2px rgba(16,23,40,.05);
+  --shadow-2:0 6px 18px -8px rgba(16,23,40,.18),0 1px 3px rgba(16,23,40,.06);
+  --shadow-3:0 24px 48px -22px rgba(16,23,40,.35);
+
+  --ui:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,Arial,sans-serif;
+  height:100dvh; display:flex; flex-direction:column; overflow:hidden;
+  background:var(--canvas); color:var(--ink);
+  font:14px/1.5 var(--ui);
+  -webkit-font-smoothing:antialiased;
+}
+.studio.is-booting { display:block; overflow:auto; }
+
+/* --- controls -------------------------------------------------------- */
+.studio button {
+  border:1px solid var(--line); border-radius:var(--r-sm); padding:8px 13px; min-height:36px;
+  background:var(--surface); color:var(--ink); font:600 13px/1.2 var(--ui); cursor:pointer;
+  box-shadow:var(--shadow-1); transition:background .13s,border-color .13s,box-shadow .13s,color .13s;
+}
+.studio button:hover:not(:disabled) { border-color:var(--brand-line); background:var(--brand-wash); color:var(--brand-ink); }
+.studio button:active:not(:disabled) { box-shadow:none; transform:translateY(.5px); }
+.studio button:disabled { opacity:.42; cursor:not-allowed; box-shadow:none; }
+.studio button.primary { background:var(--brand); border-color:var(--brand); color:#fff; box-shadow:0 1px 2px rgba(79,70,229,.4); }
+.studio button.primary:hover:not(:disabled) { background:var(--brand-ink); border-color:var(--brand-ink); color:#fff; }
+.studio button.ghost { background:transparent; border-color:transparent; box-shadow:none; color:var(--ink-2); padding:6px 9px; min-height:30px; font-size:12px; }
+.studio button.ghost:hover:not(:disabled) { background:var(--brand-wash); color:var(--brand-ink); }
+.studio :focus-visible { outline:2px solid var(--brand); outline-offset:2px; border-radius:var(--r-xs); }
+
+/* --- top bar ---------------------------------------------------------- */
+.studio-bar {
+  flex:none; display:flex; align-items:center; justify-content:space-between; gap:16px;
+  padding:9px 20px; background:var(--surface); border-bottom:1px solid var(--line); z-index:5;
+}
+.studio-bar-lead,.studio-bar-end { display:flex; align-items:center; gap:12px; min-width:0; }
+.studio-brand { font-size:21px; color:var(--brand); --brand-accent:#8b83e8; flex:none; }
+.studio-chip {
+  flex:none; font:700 10px/1 var(--ui); letter-spacing:.09em; text-transform:uppercase;
+  color:var(--brand-ink); background:var(--brand-wash); border:1px solid var(--brand-line);
+  padding:5px 8px; border-radius:999px;
+}
+.studio-project { font-weight:600; color:var(--ink-2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.save-pill { flex:none; display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:600; color:var(--good); }
+.save-pill::before { content:''; width:7px; height:7px; border-radius:50%; background:currentColor; }
+.save-pill.is-saving,.save-pill.is-pending { color:var(--warn); }
+.save-pill.is-error { color:var(--bad); }
+
+/* --- banners ---------------------------------------------------------- */
+.banner {
+  flex:none; display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+  margin:10px 20px 0; padding:11px 15px; border-radius:var(--r-sm); font-size:13px;
+  background:var(--surface-2); border:1px solid var(--line); color:var(--ink-2);
+}
+.banner span { flex:1; min-width:200px; }
+.banner.is-error { background:var(--bad-wash); border-color:#f2ccd6; color:var(--bad); }
+.banner.is-success { background:var(--good-wash); border-color:#c6e8dc; color:var(--good); }
+.inline-alert { margin:10px 0 0; padding:10px 12px; border-radius:var(--r-xs); font-size:12px; line-height:1.5; background:var(--bad-wash); border:1px solid #f2ccd6; color:var(--bad); }
+
+/* --- shell ------------------------------------------------------------ */
+/* Both panes scroll themselves rather than growing the window. A grid item's
+   automatic minimum size is its content, so without `min-height:0` a pane full
+   of A4 sheets stretches the row to twelve thousand pixels, the pane's own
+   `overflow:auto` never engages, and the action bar ends up underneath it. */
+.studio-shell { flex:1; min-height:0; display:grid; grid-template-columns:minmax(330px,390px) minmax(0,1fr); }
+.studio-shell > * { min-height:0; min-width:0; }
+
+/* --- inspector -------------------------------------------------------- */
+.inspector {
+  min-width:0; overflow:auto; overscroll-behavior:contain; scrollbar-width:thin;
+  background:var(--surface); border-right:1px solid var(--line);
+  padding:0 14px 28px; display:flex; flex-direction:column; gap:13px;
+}
+.inspector-metrics { margin-top:14px; display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:var(--line); border:1px solid var(--line); border-radius:var(--r); overflow:hidden; }
+.inspector-metrics > div { background:var(--surface-2); padding:10px 12px; display:grid; gap:2px; }
+.inspector-metrics strong { font:650 20px/1 var(--ui); font-variant-numeric:tabular-nums; letter-spacing:-.02em; }
+.inspector-metrics span { font-size:10.5px; color:var(--ink-3); text-transform:uppercase; letter-spacing:.07em; }
+.inspector-tabs {
+  position:sticky; top:0; z-index:3; display:flex; gap:0;
+  margin:0 -14px; padding:0 14px; background:var(--surface); border-bottom:1px solid var(--line);
+}
+.inspector-tabs button {
+  flex:1; border:0; border-bottom:2px solid transparent; border-radius:0; background:transparent;
+  box-shadow:none; min-height:38px; padding:10px 4px;
+  font:600 12.5px/1 var(--ui); color:var(--ink-3);
+}
+.inspector-tabs button:hover:not(:disabled) { background:transparent; color:var(--ink); }
+.inspector-tabs button.is-active { color:var(--brand-ink); border-bottom-color:var(--brand); background:transparent; }
+.panel { display:flex; flex-direction:column; gap:13px; }
+
+.card { background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:15px; box-shadow:var(--shadow-1); }
+.card h2 { font:650 14px/1.3 var(--ui); letter-spacing:-.01em; margin:0 0 4px; }
+.card-head { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px; }
+.card-head h2 { margin:0; }
+.card-head button { min-height:30px; padding:5px 10px; font-size:12px; }
+.card-actions { display:flex; gap:8px; flex-wrap:wrap; margin:12px 0 4px; }
+.card-actions button { flex:1; min-width:150px; }
+
+.field { display:grid; gap:5px; margin:11px 0; font:600 12px/1.35 var(--ui); color:var(--ink-2); }
+.field em { font-style:normal; font-weight:400; color:var(--ink-3); }
+.field-pair { display:grid; grid-template-columns:1fr 1fr; gap:0 11px; }
+.field-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(142px,1fr)); gap:0 12px; }
+.field-hint { font-size:11.5px; line-height:1.55; color:var(--ink-3); margin:8px 0 0; }
+.studio input:not([type=checkbox]):not([type=range]):not([type=color]),.studio textarea,.studio select {
+  width:100%; min-width:0; padding:8px 10px; border:1px solid var(--line); border-radius:var(--r-xs);
+  font:400 13px/1.4 var(--ui); color:var(--ink); background:var(--surface-2);
+  transition:border-color .12s,box-shadow .12s,background .12s;
+}
+.studio input:focus,.studio textarea:focus,.studio select:focus {
+  outline:none; border-color:var(--brand); background:var(--surface); box-shadow:0 0 0 3px rgba(79,70,229,.14);
+}
+.studio textarea { resize:vertical; }
+.field.swatch { align-content:start; }
+.field.swatch input[type=color] { width:100%; height:32px; padding:2px; border:1px solid var(--line); border-radius:var(--r-xs); background:var(--surface-2); cursor:pointer; }
+.field.range { grid-template-columns:1fr auto; align-items:center; gap:4px 8px; }
+.field.range b { font:600 11.5px/1 ui-monospace,SFMono-Regular,Menlo,monospace; color:var(--ink); font-variant-numeric:tabular-nums; }
+.field.range input[type=range] { grid-column:1 / -1; width:100%; accent-color:var(--brand); }
+
+.switch { display:flex; align-items:center; gap:9px; margin:10px 0; font:500 12.5px/1.3 var(--ui); color:var(--ink); cursor:pointer; }
+.switch input[type=checkbox] {
+  appearance:none; -webkit-appearance:none; flex:none; position:relative; width:32px; height:19px;
+  border-radius:999px; background:#c8cfdd; border:0; cursor:pointer; transition:background .15s; margin:0;
+}
+.switch input[type=checkbox]::after {
+  content:''; position:absolute; top:2px; left:2px; width:15px; height:15px; border-radius:50%;
+  background:#fff; box-shadow:0 1px 2px rgba(16,23,40,.32); transition:transform .15s;
+}
+.switch input[type=checkbox]:checked { background:var(--brand); }
+.switch input[type=checkbox]:checked::after { transform:translateX(13px); }
+.switch input[type=checkbox]:disabled { opacity:.42; cursor:not-allowed; }
+.switch-set { display:grid; gap:0; margin-top:6px; padding-top:6px; border-top:1px solid var(--line-2); }
+
+/* --- contents entries ------------------------------------------------- */
+.entry-list { display:grid; gap:8px; margin-top:10px; }
+.entry-card { border:1px solid var(--line); border-radius:var(--r); background:var(--surface); }
+.entry-card.is-open { border-color:var(--brand-line); box-shadow:var(--shadow-2); }
+.entry-summary { display:flex; align-items:center; gap:10px; width:100%; padding:9px 11px; background:transparent; border:0; box-shadow:none; text-align:start; border-radius:var(--r); }
+.entry-summary:hover:not(:disabled) { background:var(--surface-2); color:inherit; }
+.entry-index { flex:none; font:700 10.5px/1 ui-monospace,SFMono-Regular,Menlo,monospace; color:var(--brand-ink); background:var(--brand-wash); padding:5px 6px; border-radius:5px; }
+.entry-summary-copy { flex:1; min-width:0; display:grid; gap:2px; }
+.entry-summary-copy strong { font:600 12.5px/1.35 var(--ui); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.entry-summary-copy small { font-size:10.5px; color:var(--ink-3); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.entry-chevron { flex:none; width:7px; height:7px; border-right:1.6px solid var(--ink-3); border-bottom:1.6px solid var(--ink-3); transform:rotate(45deg); transition:transform .15s; margin-inline-end:3px; }
+.entry-card.is-open .entry-chevron { transform:rotate(-135deg); }
+.entry-body { padding:2px 13px 13px; border-top:1px solid var(--line-2); margin-top:2px; }
+.entry-picture { margin-top:12px; padding-top:10px; border-top:1px solid var(--line-2); }
+.entry-reset { margin-top:10px; }
+
+/* --- crop control ----------------------------------------------------- */
+.crop-editor { margin:10px 0 4px; }
+.crop-stage {
+  position:relative; width:100%; max-width:264px; overflow:hidden; border-radius:var(--r-xs);
+  background:#0d1017; cursor:grab; touch-action:none; user-select:none; box-shadow:inset 0 0 0 1px rgba(16,23,40,.16);
+}
+.crop-stage.is-grabbing { cursor:grabbing; }
+.crop-stage img { position:absolute; }
+.crop-guides {
+  position:absolute; inset:0; pointer-events:none; opacity:.55;
+  background:
+    linear-gradient(to right,transparent calc(33.33% - .5px),rgba(255,255,255,.5) calc(33.33% - .5px),rgba(255,255,255,.5) calc(33.33% + .5px),transparent calc(33.33% + .5px),transparent calc(66.66% - .5px),rgba(255,255,255,.5) calc(66.66% - .5px),rgba(255,255,255,.5) calc(66.66% + .5px),transparent calc(66.66% + .5px)),
+    linear-gradient(to bottom,transparent calc(33.33% - .5px),rgba(255,255,255,.5) calc(33.33% - .5px),rgba(255,255,255,.5) calc(33.33% + .5px),transparent calc(33.33% + .5px),transparent calc(66.66% - .5px),rgba(255,255,255,.5) calc(66.66% - .5px),rgba(255,255,255,.5) calc(66.66% + .5px),transparent calc(66.66% + .5px));
+}
+.crop-controls { display:flex; align-items:center; gap:10px; margin-top:8px; max-width:264px; }
+.crop-zoom { flex:1; display:flex; align-items:center; gap:7px; font:600 11px/1 var(--ui); color:var(--ink-2); }
+.crop-zoom input[type=range] { flex:1; min-width:0; accent-color:var(--brand); }
+.crop-zoom b { font:600 11px/1 ui-monospace,SFMono-Regular,Menlo,monospace; color:var(--ink); font-variant-numeric:tabular-nums; }
+
+/* --- reading order ---------------------------------------------------- */
+.issue-order,.issue-order-list { list-style:none; padding:0; margin:8px 0 0; max-height:540px; overflow:auto; scrollbar-width:thin; overscroll-behavior:contain; }
+.issue-order li,.issue-order-list li {
+  position:relative; display:flex; align-items:center; gap:8px; padding:9px 9px 9px 0; margin:7px 0;
+  border:1px solid var(--line); border-radius:10px; background:var(--surface); transition:border-color .12s,background .12s,box-shadow .12s;
+}
+.issue-order li.issue-order-contents { background:var(--brand-wash); border-color:var(--brand-line); }
+.issue-order li.is-grabbed { border-color:var(--brand); background:var(--brand-wash); box-shadow:var(--shadow-2); }
+.issue-order li.is-drop-target { border-top:2.5px solid var(--brand); padding-top:7px; }
+.studio .issue-grip,.studio .issue-drag-handle { border:0; background:transparent; box-shadow:none; cursor:grab; width:28px; min-height:34px; padding:6px 4px; flex-shrink:0; touch-action:none; user-select:none; color:var(--ink-3); }
+.studio .issue-grip:hover:not(:disabled),.studio .issue-drag-handle:hover:not(:disabled) { background:transparent; color:var(--brand); }
+.studio .issue-grip:active { cursor:grabbing; }
 .issue-order-copy { min-width:0; flex:1; }
-.issue-order-copy strong { display:block; font-size:13px; line-height:1.35; margin:5px 0; overflow-wrap:anywhere; }
-.issue-order-type { display:block; color:#6d7492; font-size:10px; overflow-wrap:anywhere; }
-.issue-order-copy small { font-size:10px; color:#8590a2; }
-.issue-card label.issue-toc-check { font-size:10px; color:#6a7490; margin:7px 0 0; }
-.issue-order-end { display:grid; gap:8px; justify-items:center; flex-shrink:0; min-width:46px; }
-.issue-page-range { font-weight:700; font-size:13px; font-variant-numeric:tabular-nums; color:#5146b3; }
+.issue-order-copy strong { display:block; font:600 12.5px/1.35 var(--ui); margin:3px 0; overflow-wrap:anywhere; }
+.issue-order-type,.issue-order-meta { display:block; color:var(--ink-3); font-size:10px; overflow-wrap:anywhere; }
+.issue-order-copy small { font-size:10px; color:var(--ink-3); }
+.issue-order-end,.issue-order-moves { display:grid; gap:6px; justify-items:center; flex-shrink:0; min-width:44px; }
+.issue-page-range { font:700 12.5px/1 var(--ui); font-variant-numeric:tabular-nums; color:var(--brand-ink); }
 .issue-order-end > div { display:flex; gap:3px; }
-.issue-order-end button { padding:3px; min-height:27px; width:25px; font-size:13px; border-radius:5px; }
-/* This IS the compiled preview — not a hidden measuring rig. The contents
-   fit-check and the PDF export both measure and print the very same pages
-   shown here, so the preview can never drift from what actually exports. */
-.issue-render-target { display:flex !important; flex-direction:column; align-items:center; gap:14px; width:max-content; max-width:100%; pointer-events:none; }
-/* Each article is rendered by the editor's own preview component, which
-   brings its own scroll pane and page frame. Those boxes are dropped out of
-   layout so the sheets themselves become the grid items; the elements stay
-   in the DOM, so every `.pages ...` rule, RTL flag and inherited custom
-   property still reaches them exactly as it does in the editor. */
-.issue-render-target .issue-article,
-.issue-render-target .issue-article .paper-scroll,
-.issue-render-target .issue-article .pages-frame,
-.issue-render-target .issue-article .pages { display:contents !important; }
-/* No box-shadow override: the sheet keeps the drop shadow page.css already
-   gives it in the editor. A different shadow here painted the sheet's
-   corners differently from the same sheet in the editor's own preview. */
-.issue-render-target > .page,
-.issue-render-target .pages > .page { margin:0 !important; width:210mm !important; height:297mm !important; }
-.issue-preparing { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:30px 10px 10px; text-align:center; }
-.issue-preparing-symbol { display:block; font-size:34px; color:#5146df; --brand-accent:#9a90ee; }
-.issue-preparing h3 { margin:14px 0 4px; font-size:17px; }
-.issue-preparing p { max-width:430px; color:#6d788d; font-size:13px; }
-.issue-preparing progress { width:min(280px,100%); accent-color:#6558e5; height:7px; }
-.issue-actionbar { position:fixed; inset:auto 0 0; z-index:40; display:flex; justify-content:space-between; align-items:center; gap:18px; background:#fffffff5; backdrop-filter:blur(12px); border-top:1px solid #dce2ed; padding:16px 28px; box-shadow:0 -4px 20px #27375306; }
-.issue-actionbar > div:first-child { display:grid; gap:3px; min-width:0; }
-.issue-actionbar strong { font-size:13px; }
-.issue-actionbar span { color:#7b8599; font-size:11px; }
-.issue-actionbar > div:last-child { display:flex; gap:10px; flex-shrink:0; }
-.issue-message { display:flex; gap:14px; align-items:center; flex-wrap:wrap; margin:12px 28px; padding:14px 18px; border-radius:9px; font-size:13px; }
-.issue-message.is-error { background:#fff1f3; color:#982945; border:1px solid #f1ced7; }
-.issue-message.is-success { background:#eaf9f2; color:#16684f; border:1px solid #c8e9da; }
-.issue-message span { flex:1; min-width:200px; }
-.issue-loading-card { margin:70px auto; width:min(540px,calc(100% - 40px)); padding:35px; background:#fff; border:1px solid #e1e5ed; border-radius:14px; }
-.issue-loading-card h1 { font-size:25px; }
+.studio .issue-order-end button,.studio .issue-order-moves button { padding:2px; min-height:24px; width:24px; font-size:12px; border-radius:5px; }
+.studio label.issue-toc-check,.studio label.issue-checkbox { display:flex; flex-direction:row; align-items:center; gap:6px; font:400 10px/1.3 var(--ui); color:var(--ink-3); margin:5px 0 0; }
+.studio label.issue-toc-check input[type=checkbox],.studio label.issue-checkbox input[type=checkbox] { accent-color:var(--brand); width:13px; height:13px; margin:0; flex:none; }
+.issue-help,.issue-reorder-hint,.issue-drag-help { font-size:11.5px; line-height:1.55; color:var(--ink-3); margin:8px 0 0; }
 .issue-sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
-@media (max-width:1100px) { .issue-intro { padding:24px 18px; gap:18px; }.issue-stat { min-width:54px; }.issue-stat strong { font-size:24px; }.issue-body { grid-template-columns:1fr; max-width:900px; }.issue-proof { position:static; max-height:none; } }
-@media (max-width:760px) { .issue-workspace { padding-bottom:155px; }.issue-header { padding:12px 16px; }.issue-header-label { font-size:12px; }.issue-header-actions { width:100%; justify-content:space-between; }.issue-intro { flex-wrap:wrap; }.issue-intro > div:first-child { flex-basis:100%; }.issue-stat { min-width:80px; }.issue-body { padding:0 16px; }.issue-order { max-height:390px; }.issue-actionbar { flex-direction:column; align-items:stretch; gap:9px; padding:12px 16px; }.issue-actionbar > div:last-child { width:100%; }.issue-actionbar button { flex:1; }.issue-message { margin:12px 16px; } }
-@media (prefers-reduced-motion:reduce) { .issue-order li { transition:none; } }
+
+/* --- stage ------------------------------------------------------------ */
+.stage { min-width:0; min-height:0; display:flex; flex-direction:column; background:#151a24; }
+.stage-bar {
+  flex:none; display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;
+  padding:10px 18px; background:#1b2130; border-bottom:1px solid #2b3345; color:#e6eaf3;
+}
+.stage-title { display:flex; align-items:baseline; gap:10px; min-width:0; }
+.stage-title strong { font:700 11px/1 var(--ui); letter-spacing:.09em; text-transform:uppercase; }
+.stage-title span { font-size:11.5px; color:#98a3b8; font-variant-numeric:tabular-nums; }
+.stage-tools { display:flex; align-items:center; gap:10px; }
+.studio .stale-pill {
+  background:#3a2a10; border-color:#6b4f19; color:#f5c66a; box-shadow:none; min-height:30px;
+  padding:5px 11px; font-size:11.5px; border-radius:999px;
+}
+.studio .stale-pill:hover:not(:disabled) { background:#4a3614; border-color:#8a671f; color:#ffd98a; }
+.zoom { display:flex; align-items:center; gap:2px; background:#141924; border:1px solid #2b3345; border-radius:999px; padding:2px; }
+.studio .zoom button { background:transparent; border:0; box-shadow:none; color:#c3cbdb; min-height:26px; padding:3px 9px; border-radius:999px; font-size:12px; }
+.studio .zoom button:hover:not(:disabled) { background:#28304180; color:#fff; }
+.studio .zoom button.is-active { background:var(--brand); color:#fff; }
+.zoom span { font:600 11px/1 ui-monospace,SFMono-Regular,Menlo,monospace; color:#98a3b8; min-width:38px; text-align:center; font-variant-numeric:tabular-nums; }
+.stage-scroll { flex:1; min-height:0; overflow:auto; overscroll-behavior:contain; padding:20px; scrollbar-width:thin; scrollbar-color:#3a4357 #151a24; }
+
+.stage-progress { max-width:430px; margin:9vh auto; text-align:center; color:#aab3c6; }
+.stage-mark { font-size:24px; color:#fff; --brand-accent:#9a90ee; }
+.stage-progress h3 { margin:14px 0 5px; font:650 16px/1.3 var(--ui); color:#f1f4fa; }
+.stage-progress p { margin:0; font-size:12.5px; line-height:1.6; }
+.stage-progress progress { width:min(280px,100%); accent-color:var(--brand); height:6px; margin:16px 0 8px; }
+.stage-progress-count { font-size:11px; color:#79839a; font-variant-numeric:tabular-nums; }
+.stage-progress button { margin-top:16px; }
+
+/* The compiled sheets. These are the exporter's own pages, mounted here —
+   `flex:none` is not cosmetic: a sheet is a fixed physical object and must
+   never be shrunk to fit the pane, which would silently re-flow the text
+   the pagination engine already measured. */
+.issue-proof-frame { position:relative; margin:0 auto; }
+.issue-proof-pages { position:absolute; left:0; top:0; transform-origin:top left; display:flex; flex-direction:column; align-items:center; gap:18px; width:max-content; pointer-events:none; }
+.issue-proof-pages .issue-proof-doc { display:contents; }
+.issue-proof-pages > .page,
+.issue-proof-pages .issue-proof-doc > .page {
+  flex:none !important; margin:0 !important; width:210mm !important; height:297mm !important;
+  box-shadow:0 12px 34px -8px rgba(0,0,0,.55) !important;
+}
+
+/* --- action bar ------------------------------------------------------- */
+.studio-actions {
+  flex:none; display:flex; align-items:center; justify-content:space-between; gap:16px;
+  padding:12px 20px; background:var(--surface); border-top:1px solid var(--line); box-shadow:0 -4px 18px rgba(16,23,40,.05);
+}
+.studio-actions > div:first-child { display:grid; gap:2px; min-width:0; }
+.studio-actions strong { font:650 12.5px/1.3 var(--ui); }
+.studio-actions span { color:var(--ink-3); font-size:11px; }
+.studio-actions > div:last-child { display:flex; gap:9px; flex-shrink:0; }
+
+/* --- boot ------------------------------------------------------------- */
+.studio-boot { margin:14vh auto; width:min(520px,calc(100% - 40px)); padding:32px; background:var(--surface); border:1px solid var(--line); border-radius:var(--r-lg); box-shadow:var(--shadow-2); text-align:center; }
+.studio-boot h1 { font:650 22px/1.2 var(--ui); margin:0 0 8px; letter-spacing:-.02em; }
+.studio-boot p { color:var(--ink-2); margin:0 0 16px; }
+.studio-boot .loading-track { height:3px; background:var(--brand-wash); overflow:hidden; border-radius:4px; }
+.studio-boot .loading-track span { display:block; width:35%; height:100%; background:var(--brand); animation:studio-slide 1.2s ease-in-out infinite; }
+@keyframes studio-slide { from { transform:translateX(-100%) } to { transform:translateX(390%) } }
+
+@media (max-width:1080px) {
+  .studio { height:auto; min-height:100dvh; overflow:auto; }
+  .studio-shell { grid-template-columns:1fr; }
+  .inspector { border-right:0; border-bottom:1px solid var(--line); overflow:visible; }
+  .inspector-tabs { position:static; }
+  .stage { min-height:70dvh; }
+  .studio-actions { position:sticky; bottom:0; z-index:6; }
+}
+@media (max-width:640px) {
+  .studio-bar { padding:10px 14px; flex-wrap:wrap; }
+  .studio-project { display:none; }
+  .inspector { padding:12px 12px 22px; }
+  .banner { margin:10px 14px 0; }
+  .studio-actions { flex-direction:column; align-items:stretch; gap:9px; }
+  .studio-actions > div:last-child { width:100%; }
+  .studio-actions button { flex:1; }
+  .field-pair { grid-template-columns:1fr; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .studio *,.studio *::after { transition:none !important; animation:none !important; }
+}

@@ -47,15 +47,33 @@ function sectionColor(key: string): string {
 function overflows(page: HTMLElement) {
   const content = page.querySelector<HTMLElement>('.issue-contents-body');
   if (!content) return true;
-  const bounds = content.getBoundingClientRect();
   if (content.scrollHeight > content.clientHeight + 2 || content.scrollWidth > content.clientWidth + 2) return true;
+  const bounds = content.getBoundingClientRect();
+  // The compiled preview shows these sheets scaled down to fit the pane, and
+  // getBoundingClientRect reports that scale. A fixed pixel tolerance would
+  // therefore mean something stricter at 40% than at 100% and report an
+  // overflow the printed page does not have, so the slack is scaled too.
+  const zoom = content.offsetWidth > 0 ? bounds.width / content.offsetWidth : 1;
+  const slack = Math.max(0.5, zoom);
   return Array.from(content.querySelectorAll<HTMLElement>('h2,h3,p,.issue-contents-shot')).some(element => {
     const box = element.getBoundingClientRect();
-    return box.bottom > bounds.bottom + 1 || box.right > bounds.right + 1 || box.left < bounds.left - 1;
+    return box.bottom > bounds.bottom + slack || box.right > bounds.right + slack || box.left < bounds.left - slack;
   });
 }
 
 const number = (value: number, padded: boolean) => (padded ? String(value).padStart(2, '0') : String(value));
+
+/**
+ * Does this line carry a picture? The spread-wide switch sets the habit; a
+ * single entry can depart from it either way. Some photographs simply do not
+ * survive a thumbnail — a wide group shot, a portrait that has to be cropped
+ * past the chin — and a contents page reads better when those lines are text
+ * beside the ones that are carrying a real picture, rather than every line
+ * being illustrated on principle.
+ */
+export function showsHero(entry: ContentsEntry, design: ContentsDesign) {
+  return (entry.showHero ?? design.showHeroes) && !!entry.hero;
+}
 
 /** A framed picture that keeps its own shape: `aspect-ratio` comes straight
  * from the source photo, so a tall shot and a wide one end up genuinely
@@ -63,12 +81,16 @@ const number = (value: number, padded: boolean) => (padded ? String(value).padSt
  * flat rectangle. `kind` only picks the size ceiling for where it sits
  * (a full-width feature vs. a picture in a narrow rail beside a list). */
 function Shot({ entry, design, kind }: { entry: ContentsEntry; design: ContentsDesign; kind: 'feature' | 'thumb' | 'rail' }) {
-  if (!design.showHeroes || !entry.hero) return null;
+  const hero = entry.hero;
+  if (!hero || !showsHero(entry, design)) return null;
   const label = entry.pageLabel ?? design.pageLabels;
-  const { naturalWidth, naturalHeight } = entry.hero;
+  const { naturalWidth, naturalHeight } = hero;
   const ratio = naturalWidth > 0 && naturalHeight > 0 ? naturalWidth / naturalHeight : 4 / 3;
-  return <div className={`issue-contents-shot is-${kind}`} style={{ aspectRatio: ratio }}>
-    <FramedImage asset={entry.hero} frame={entry.frame} fit="cover" />
+  // Tagged so the studio's crop control can measure the slot this picture
+  // actually lands in — a rail slot and a feature slot cut the same photo
+  // very differently, and guessing that shape is how heads get cropped off.
+  return <div className={`issue-contents-shot is-${kind}`} data-contents-shot={entry.id} style={{ aspectRatio: ratio }}>
+    <FramedImage asset={hero} frame={entry.frame} fit="cover" />
     {label && <span className="issue-contents-plabel">p.{entry.page}</span>}
   </div>;
 }
@@ -97,7 +119,7 @@ function ContentsPage({ group, index, title, subtitle, direction, startNumber, m
   const page = useRef<HTMLElement>(null);
   const pinned = design.density === 'auto' ? null : PINNED[design.density];
   const [tier, setTier] = useState(pinned ?? 0);
-  const signature = `${group.map(entry => `${entry.id}:${entry.title}:${entry.subtitle}:${entry.hero?.src ?? ''}:${entry.badge ?? ''}:${entry.section ?? ''}`).join('|')}|${title}|${subtitle}|${direction}|${JSON.stringify(design)}`;
+  const signature = `${group.map(entry => `${entry.id}:${entry.title}:${entry.subtitle}:${entry.hero?.src ?? ''}:${entry.badge ?? ''}:${entry.section ?? ''}:${entry.showHero ?? ''}:${JSON.stringify(entry.frame ?? null)}`).join('|')}|${title}|${subtitle}|${direction}|${JSON.stringify(design)}`;
   const settled = useRef(signature);
   if (settled.current !== signature) { settled.current = signature; const next = pinned ?? 0; if (tier !== next) setTier(next); }
 
@@ -149,18 +171,25 @@ function ContentsPage({ group, index, title, subtitle, direction, startNumber, m
           const [lead] = block.entries;
           const color = sectionColor(block.section || lead.title);
           const sectionStyle = { '--contents-heading': color, '--contents-accent': color } as CSSProperties;
+          // The block heading is the section the articles announce on their
+          // own pages. Where an article carries no top bar there is no
+          // section to print, so a run of them reads under one neutral
+          // heading rather than borrowing the first article's headline —
+          // which used to print that headline twice, once as the heading
+          // and again as the entry underneath it.
+          const solo = block.entries.length === 1;
+          const heading = block.section || (solo ? '' : 'In this issue');
           // A section that names only one article reads like its own small
           // feature — one picture, at its own shape, above the headline. A
           // section with several reads as a numbered list with a narrow rail
           // of pictures beside it, one per entry that actually has a photo
           // (not every row) — which is why one section can carry two
           // differently-shaped pictures and another carries none at all.
-          const solo = block.entries.length === 1;
-          const rail = block.entries.filter(entry => design.showHeroes && entry.hero);
+          const rail = block.entries.filter(entry => showsHero(entry, design));
           return <section key={`${block.section}-${position}`} className="issue-contents-block" style={sectionStyle}>
             <div className="issue-contents-block-head">
               <span className="issue-contents-number">{number(lead.page, design.paddedNumbers)}</span>
-              <h3 dir="auto">{block.section || lead.title}</h3>
+              {heading && <h3 dir="auto">{heading}</h3>}
               {solo && <Badge entry={lead} />}
             </div>
             {solo ? <article className="issue-contents-block-solo-wrap" data-contents-id={lead.id}>
@@ -197,7 +226,7 @@ function ContentsPage({ group, index, title, subtitle, direction, startNumber, m
     {head}
     <div className="issue-contents-body">
       {feature ? <article className="issue-contents-feature" data-contents-id={feature.id}>
-        {design.showHeroes && feature.hero
+        {showsHero(feature, design)
           ? <Shot entry={feature} design={design} kind="feature" />
           : <div className="issue-contents-art" aria-hidden="true"><i /><i /><Wordmark name={magazineName} /></div>}
         <div className="issue-contents-feature-copy">

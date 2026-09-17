@@ -24,6 +24,13 @@ export interface ContentsEntryStyle {
   /** Which picture this line shows. null pins it to no picture at all; absent
    * falls back to the article's own hero. */
   assetId?: string | null;
+  /** Show a picture on this line at all. Absent follows the spread-wide
+   * "Show hero images" switch; false drops the picture for this one entry
+   * even when the spread shows pictures, true keeps it when the spread
+   * does not. A contents page is not obliged to illustrate every line —
+   * a portrait that crops badly, or a story with no usable photo, reads
+   * better as a text line beside the ones that do carry a picture. */
+  hero?: boolean;
   /** Zoom and pan inside the fixed contents frame — the same frame model the
    * article templates use, so a crop set here behaves like a crop set there. */
   frame?: ImageFrame;
@@ -99,6 +106,9 @@ export interface IssueAssignment { id: string; startNumber: number; pageCount: n
 export interface ContentsEntry {
   id: string; title: string; subtitle: string; page: number;
   hero?: Asset; badge?: string; section?: string; frame?: ImageFrame; pageLabel?: boolean;
+  /** Resolved per-entry answer to "does this line show a picture", already
+   * combined with the spread-wide switch. Absent = follow the spread. */
+  showHero?: boolean;
 }
 export interface IssueResponse {
   project: { id: string; name: string }; version: number; plan: IssuePlan | null; items: IssueItem[];
@@ -209,6 +219,25 @@ export function issueHero(doc: Doc): Asset | undefined {
   return issueHeroChoices(doc)[0]?.asset;
 }
 
+/**
+ * Which heading a contents line sits under.
+ *
+ * The article already announces its own section on the page itself: the top
+ * bar running across the head of every sheet ("Research highlights", "In
+ * focus", "People"). That bar is the magazine's section system, so the
+ * contents page reads from it rather than asking the editor to retype the
+ * same words into a second field — arrange the issue, and the sectioned
+ * contents groups itself the way the printed pages already do. A per-entry
+ * Section override still wins where an editor wants the contents to depart
+ * from the page, and covers/front matter (no top bar) simply carry none.
+ */
+export function issueSection(item: IssueItem, style: ContentsEntryStyle = {}): string | undefined {
+  const explicit = issuePlainText(style.section);
+  if (explicit) return explicit;
+  if (isIssueCover(item.doc)) return undefined;
+  return issuePlainText(item.doc.meta.masthead) || undefined;
+}
+
 export function contentsEntries(plan: IssuePlan, items: readonly IssueItem[], assignments: readonly IssueAssignment[]): ContentsEntry[] {
   const sources = new Map(items.map(item => [item.id, item]));
   const pages = new Map(assignments.map(item => [item.id, item.startNumber]));
@@ -230,9 +259,10 @@ export function contentsEntries(plan: IssuePlan, items: readonly IssueItem[], as
       page,
       hero: chosen?.src ? chosen : undefined,
       badge: issuePlainText(style.badge) || undefined,
-      section: issuePlainText(style.section) || undefined,
+      section: issueSection(item, style),
       frame: style.frame ? normalizeImageFrame(style.frame) : undefined,
       pageLabel: style.pageLabel,
+      showHero: typeof style.hero === 'boolean' ? style.hero : undefined,
     };
   });
 }

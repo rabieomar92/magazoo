@@ -383,12 +383,13 @@ export function issuePageGroups(root: HTMLElement): PageGroup[] {
 export function cloneGroupedPages(groups: readonly PageGroup[], targetDocument: Document) {
   for (const { owner, sheets } of groups) {
     const container = owner.cloneNode(false) as HTMLElement;
-    // The render target lives off-screen (position:fixed; left:-12000px) so it
-    // never shows up in the workspace UI. Stripping its class isn't enough on
-    // its own to undo that in the printed copy — an inline !important always
-    // wins over a stylesheet rule regardless of class — but the explicit
-    // position/inset reset below is what actually does it.
-    container.classList.remove('pages--spread', 'issue-render-target');
+    // On screen these containers are laid out for the proof stage — dropped
+    // out of flow with `display:contents`, or carrying the stage's transform.
+    // Stripping the studio's classes keeps those rules off the printed copy;
+    // the explicit position/display/transform resets below are what actually
+    // undo them, since an inline !important beats a stylesheet rule whatever
+    // the classes say.
+    container.classList.remove('pages--spread', 'issue-render-target', 'issue-proof-pages', 'issue-proof-doc');
     container.classList.add('pdf-export-pages');
     container.removeAttribute('style');
     container.style.setProperty('position', 'static', 'important');
