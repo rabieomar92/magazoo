@@ -1,6 +1,8 @@
-/* The one description of the Magazoo! letterforms. Callers set font-size and
-   color; nothing else about the mark is theirs to choose. `--brand-accent`
-   tints the exclamation when a surface wants it to carry the accent. */
+/* The one description of the Magazoo! mark. Callers set font-size (and,
+   for the text fallback, color); nothing else about the mark is theirs to
+   choose. `--brand-accent` tints the exclamation when a surface wants the
+   text fallback's mark to carry the accent — the image mark carries its own
+   fixed colours and ignores it. */
 .brand-mark {
   font-family: var(--brand-font, 'Playfair Display', Georgia, serif);
   font-style: italic;
@@ -15,4 +17,16 @@
   font-weight: inherit;
   color: var(--brand-accent, currentColor);
   padding-left: 0.02em;
+}
+
+/* The illustrated logo scales off the same font-size every caller already
+   sets for the text fallback, so no call site needs its own rule. 2.2x
+   keeps it legible at the app's smallest brand size (the toolbar, ~18-20px)
+   without dwarfing its surroundings at the largest (the compile spinner and
+   contents-page placeholder art, both well above 30px). */
+.brand-mark-img {
+  height: 2.2em;
+  width: auto;
+  display: inline-block;
+  vertical-align: middle;
 }

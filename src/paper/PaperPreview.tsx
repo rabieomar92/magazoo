@@ -1028,11 +1028,39 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
   const lastPlacedImagePage = isGallery || isFixedCover || isStructured
     ? 0
     : (doc.images ?? []).reduce((last, image) => Math.max(last, image.anchor.page), 0);
+  // The free highlight box's stored anchor.page can be stale — pointing past
+  // whatever page the flowed content actually reaches now (the article got
+  // shorter, or this is a readOnly render where the mutation below never
+  // gets to run). Relocating it is normally the effect below's job, but that
+  // effect writes to the SHARED global doc store (`updateDoc`) and is
+  // deliberately skipped when readOnly, since a bank of simultaneously
+  // mounted readOnly previews (the compiled issue view) must never fight
+  // over that one global slot. Page COUNT can't wait for that persisted fix
+  // to land, though, or a readOnly render manufactures extra blank sheets
+  // just to give the box somewhere valid to sit — so the same relocation is
+  // recomputed here, purely locally, and used for every downstream render
+  // decision (nPages below, and the `effectiveDoc` passed to the actual page
+  // components) regardless of whether the store ever gets updated.
+  const requestedHighlightPage = hlFree
+    ? (doc.highlightBox ?? defaultPlacedHighlights(doc.design)).anchor.page
+    : null;
+  const effectiveHighlightPage = (() => {
+    if (requestedHighlightPage === null) return null;
+    if (!populatedPages.length || populatedPages.includes(requestedHighlightPage)) return requestedHighlightPage;
+    const earlier = populatedPages.filter((page) => page < requestedHighlightPage);
+    return earlier.at(-1) ?? populatedPages[0];
+  })();
+  const effectiveDoc = useMemo(() => {
+    if (effectiveHighlightPage === null || effectiveHighlightPage === requestedHighlightPage) return doc;
+    const base = doc.highlightBox ?? defaultPlacedHighlights(doc.design);
+    return { ...doc, highlightBox: { ...base, anchor: { ...base.anchor, page: effectiveHighlightPage } } };
+  }, [doc, effectiveHighlightPage, requestedHighlightPage]);
   const highlightPage =
     !isGallery && !isFixedCover && !isStructured && hlFree
-      ? (doc.highlightBox ?? defaultPlacedHighlights(doc.design)).anchor.page
+      ? (effectiveHighlightPage ?? 0)
       : 0;
   const nPages = Math.max(flowPageCount, lastPlacedImagePage, highlightPage, calloutPageCount);
+
 
   // Measure the real page after its header/template geometry has settled.
   // Every image/flow-column overlap becomes an alpha-based CSS Shape in that
@@ -1351,27 +1379,27 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
           onClickCapture={readOnly ? undefined : focusPreviewObject}
         >
           {isNews ? (
-            <NewsPages doc={doc} vars={vars} onStatus={reportFrontMatter} />
+            <NewsPages doc={effectiveDoc} vars={vars} onStatus={reportFrontMatter} />
           ) : isStructured ? (
-            <FrontMatterPages doc={doc} vars={vars} onStatus={reportFrontMatter} />
+            <FrontMatterPages doc={effectiveDoc} vars={vars} onStatus={reportFrontMatter} />
           ) : isGallery ? (
-            <GalleryPage doc={doc} vars={vars} />
+            <GalleryPage doc={effectiveDoc} vars={vars} />
           ) : isFrontCover ? (
-            <MagazineFrontCover doc={doc} vars={vars} />
+            <MagazineFrontCover doc={effectiveDoc} vars={vars} />
           ) : isBackCover ? (
-            <BackCoverPage doc={doc} vars={vars} />
+            <BackCoverPage doc={effectiveDoc} vars={vars} />
           ) : isSplit ? (
             <>
               <MagSplitCover
-                doc={doc}
+                doc={effectiveDoc}
                 vars={vars}
                 pieces={pages[0] ?? []}
               />
-              <MagPhotoPage doc={doc} vars={vars} pageIndex={1} />
+              <MagPhotoPage doc={effectiveDoc} vars={vars} pageIndex={1} />
               {Array.from({ length: Math.max(0, nPages - 2) }, (_, i) => (
                 <MagazinePage
                   key={i}
-                  doc={doc}
+                  doc={effectiveDoc}
                   vars={vars}
                   pieces={pages[i + 1] ?? []}
                   lead={false}
@@ -1381,12 +1409,12 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
             </>
           ) : isGate ? (
             <>
-              <MagGateA doc={doc} vars={vars} />
-              <MagGateB doc={doc} vars={vars} />
+              <MagGateA doc={effectiveDoc} vars={vars} />
+              <MagGateB doc={effectiveDoc} vars={vars} />
               {Array.from({ length: Math.max(0, nPages - 2) }, (_, i) => (
                 <MagazinePage
                   key={i}
-                  doc={doc}
+                  doc={effectiveDoc}
                   vars={vars}
                   pieces={pages[i] ?? []}
                   lead={i === 0}
@@ -1397,11 +1425,11 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
             </>
           ) : isMag ? (
             <>
-              <MagazineCover doc={doc} vars={vars} />
+              <MagazineCover doc={effectiveDoc} vars={vars} />
               {Array.from({ length: Math.max(0, nPages - 1) }, (_, i) => (
                 <MagazinePage
                   key={i}
-                  doc={doc}
+                  doc={effectiveDoc}
                   vars={vars}
                   pieces={pages[i] ?? []}
                   lead={i === 0}
@@ -1412,7 +1440,7 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
           ) : isP2 ? (
             <>
               <PaperTwoPage
-                doc={doc}
+                doc={effectiveDoc}
                 vars={vars}
                 left={pages[0] ?? []}
                 right={pages[1] ?? []}
@@ -1420,7 +1448,7 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
               {Array.from({ length: Math.max(0, nPages - 1) }, (_, i) => (
                 <ContPage
                   key={i}
-                  doc={doc}
+                  doc={effectiveDoc}
                   vars={vars}
                   pieces={pages[i + 2] ?? []}
                   pageIndex={i + 1}
@@ -1430,14 +1458,14 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
           ) : (
             <>
               <Page1
-                doc={doc}
+                doc={effectiveDoc}
                 vars={vars}
                 pieces={pages[0] ?? []}
               />
               {Array.from({ length: Math.max(0, nPages - 1) }, (_, i) => (
                 <ContPage
                   key={i}
-                  doc={doc}
+                  doc={effectiveDoc}
                   vars={vars}
                   pieces={pages[i + 1] ?? []}
                   pageIndex={i + 1}
@@ -1448,7 +1476,7 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
         </div>
       </div>
 
-      <PageFooters doc={doc} root={pagesRef} />
+      <PageFooters doc={effectiveDoc} root={pagesRef} />
       {/* Hidden measuring rig — same box as the real body columns. */}
       <div className={`measure-root${doc.design.textDirection === 'rtl' ? ' measure-root--rtl' : ''}${dropCapEnabled(doc.design,doc.templateId) ? '' : ' drop-caps-off'}`} lang={doc.design.textDirection === 'rtl' ? 'ar' : undefined} style={vars} aria-hidden>
         {isSplit ? (
@@ -1459,14 +1487,14 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
             <div className="mag2-page">
               <div className="mag2-inner" style={{ height: 'auto' }}>
                 <div ref={splitHeadRef}>
-                  <MagSplitHead doc={doc} />
+                  <MagSplitHead doc={effectiveDoc} />
                 </div>
                 <div className="mag2-cols mag2-cols--p1" ref={splitHost1Ref} />
                 {/* Measured at one column's width — the width it renders at
                     inside the flow, so its atom's height is the real one. */}
                 <div style={{ width: 'var(--mag2-col)' }}>
                   <div ref={splitAsideRef}>
-                    <MagSplitAside doc={doc} />
+                    <MagSplitAside doc={effectiveDoc} />
                   </div>
                 </div>
               </div>
@@ -1481,7 +1509,7 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
               ref={magHeadRef}
               style={{ width: 'calc(var(--page-w) - 2 * var(--margin))' }}
             >
-              <MagazineHead doc={doc} />
+              <MagazineHead doc={effectiveDoc} />
             </div>
             <div className="mag-cols mag-cols--p1" ref={magHost1Ref} />
             <div className="mag-cols mag-cols--p2" ref={magHost2Ref} />
@@ -1506,7 +1534,7 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
         {hlBelow && (
           <div style={{ width: isMag ? 'calc(var(--page-w) - 2 * var(--margin))' : 'var(--body-1)' }}>
             <aside className="hl-below" ref={hlRef}>
-              <HighlightsBody doc={doc} hideRefs={doc.templateId === 'magazine-1'} />
+              <HighlightsBody doc={effectiveDoc} hideRefs={doc.templateId === 'magazine-1'} />
             </aside>
           </div>
         )}
@@ -1514,7 +1542,7 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
         {hlFlow && (
           <div style={{ width: 'var(--col)' }}>
             <aside className="hl-col" ref={hlColRef}>
-              <HighlightsBody doc={doc} />
+              <HighlightsBody doc={effectiveDoc} />
             </aside>
           </div>
         )}
