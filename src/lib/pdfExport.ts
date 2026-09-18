@@ -79,6 +79,12 @@ export const PDF_EXPORT_CSS = `
       display: block !important;
     }
   }
+  /* The contents spread measures itself against hidden twins of its own cards.
+     They are laid out but never painted; the printed copy has no use for them
+     at all, and dropping them keeps the PDF free of invisible duplicates. */
+  .issue-mosaic-probe {
+    display: none !important;
+  }
 `;
 
 function safeFileStem(title: string) {
