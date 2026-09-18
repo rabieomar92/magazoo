@@ -38,7 +38,10 @@ export interface ContentsEntryStyle {
   pageLabel?: boolean;
 }
 
-export type ContentsLayout = 'feature' | 'sections';
+export type ContentsLayout = 'mosaic' | 'feature' | 'sections';
+/** Who decides whether a contents card carries a picture. 'auto' lets the
+ * spread work it out from the room it actually has. */
+export type ContentsPictures = 'auto' | 'all' | 'none';
 export type ContentsDensity = 'auto' | 'airy' | 'normal' | 'dense' | 'packed';
 
 export interface ContentsDesign {
@@ -63,15 +66,29 @@ export interface ContentsDesign {
   tracking: number;
   /** Multiplies every gap between entries, sections and rails at once. */
   gapScale: number;
+  /**
+   * Pictures on the mosaic's cards. On 'auto' the spread decides for itself:
+   * it lays the whole contents out as text, then gives pictures back to as
+   * many entries as the sheets can actually hold, best candidates first. That
+   * is the setting that fills a page without ever overflowing it. 'all' and
+   * 'none' are the manual overrides; a per-entry choice beats all three.
+   */
+  pictures: ContentsPictures;
+  /** Re-rolls the mosaic layout's card arrangement. The arrangement is a pure
+   * function of the listed entries and this number, so a page is stable until
+   * the editor asks for a different one. */
+  mosaicSalt: number;
 }
 
 export const DEFAULT_CONTENTS_DESIGN: ContentsDesign = {
-  layout: 'sections', density: 'auto', accent: '#9a603c', headingColor: '#1f6f8b', columns: 2,
+  layout: 'mosaic', density: 'auto', accent: '#9a603c', headingColor: '#1f6f8b', columns: 2,
   showHeroes: true, pageLabels: false, featureHeight: 59, thumbHeight: 25, rules: true, paddedNumbers: true,
-  titleFont: 'serif', textScale: 1, tracking: 0, gapScale: 1,
+  titleFont: 'serif', textScale: 1, tracking: 0, gapScale: 1, mosaicSalt: 0, pictures: 'auto',
 };
 
-const CONTENTS_LAYOUTS: ContentsLayout[] = ['feature', 'sections'];
+const CONTENTS_PICTURES: ContentsPictures[] = ['auto', 'all', 'none'];
+
+const CONTENTS_LAYOUTS: ContentsLayout[] = ['mosaic', 'feature', 'sections'];
 const CONTENTS_DENSITIES: ContentsDensity[] = ['auto', 'airy', 'normal', 'dense', 'packed'];
 const clampNumber = (value: unknown, low: number, high: number, fallback: number) =>
   typeof value === 'number' && Number.isFinite(value) ? Math.min(high, Math.max(low, value)) : fallback;
@@ -99,6 +116,8 @@ export function contentsDesignOf(plan: Pick<IssuePlan, 'contentsDesign'>): Conte
     textScale: clampNumber(stored.textScale, 0.85, 1.15, base.textScale),
     tracking: clampNumber(stored.tracking, -0.02, 0.04, base.tracking),
     gapScale: clampNumber(stored.gapScale, 0.7, 1.3, base.gapScale),
+    mosaicSalt: Math.round(clampNumber(stored.mosaicSalt, 0, 9999, base.mosaicSalt)),
+    pictures: CONTENTS_PICTURES.includes(stored.pictures as ContentsPictures) ? stored.pictures as ContentsPictures : base.pictures,
   };
 }
 export interface IssueItem { id: string; name: string; version: number; updated: number; doc: Doc }

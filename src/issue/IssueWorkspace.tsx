@@ -2,7 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { migrate } from '../schema/document';
 import { exportIssuePdf, issuePageGroups } from '../lib/pdfExport';
 import { issueApi } from './api';
-import { contentsDesignOf, contentsEntries, defaultIssuePlan, reconcileIssuePlan, CONTENTS_ID, type ContentsDensity, type ContentsDesign, type ContentsEntryStyle, type ContentsLayout, type IssueItem, type IssuePlan, type IssueResponse } from './model';
+import { contentsDesignOf, contentsEntries, defaultIssuePlan, reconcileIssuePlan, CONTENTS_ID, type ContentsDensity, type ContentsDesign, type ContentsEntryStyle, type ContentsLayout, type ContentsPictures, type IssueItem, type IssuePlan, type IssueResponse } from './model';
 import { IssueCompiler, type CompiledIssue, type CompileProgress } from './IssueCompiler';
 import { IssueProof } from './IssueProof';
 import { ContentsEntryCard } from './ContentsEntryCards';
@@ -13,14 +13,11 @@ import { Wordmark } from '../components/Wordmark';
 
 const PAGE_WIDTH_PX = (210 * 96) / 25.4;
 const PAGE_HEIGHT_PX = (297 * 96) / 25.4;
-/** What the compiled sheets are built from. Everything else an editor can
- * change — wording, colours, crops — is contents design, which the spread
- * re-renders on its own without re-setting the issue. */
+/** What the compiled sheets are built from, and the only thing that can put
+ * the proof out of date. Everything else an editor can change — wording,
+ * colours, crops, which entries are listed — the contents spread re-lays on
+ * its own, live, without the issue being set again. */
 const numberingKey = (plan: IssuePlan) => JSON.stringify([plan.order, plan.startNumber, plan.countCovers]);
-const contentsKey = (plan: IssuePlan) => JSON.stringify([
-  plan.contentsTitle, plan.contentsSubtitle, plan.direction, plan.contentsExcluded,
-  plan.contentsDesign ?? null, plan.contentsStyle ?? null,
-]);
 
 export default function IssueWorkspace({ projectId, csrf, onClose }: { projectId: string; csrf: string; onClose: () => void }) {
   const [loaded, setLoaded] = useState<IssueResponse | null>(null);
@@ -57,7 +54,7 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
   const [plan, setPlan] = useState<IssuePlan>(() => data.plan ? reconcileIssuePlan(data.plan, data.items) : defaultIssuePlan(data.items));
   /** The arrangement the sheets on screen were built from. Editing is free;
    * re-setting the issue is deliberate. */
-  const [proofPlan, setProofPlan] = useState<IssuePlan>(plan);
+
   const [compiled, setCompiled] = useState<CompiledIssue | null>(null);
   const [compileToken, setCompileToken] = useState(0);
   const [renderError, setRenderError] = useState('');
@@ -81,9 +78,29 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
   const ready = !!compiled;
   const assignments = compiled?.assignments ?? [];
   const contentsDesign = useMemo(() => contentsDesignOf(plan), [plan]);
-  const proofDesign = useMemo(() => contentsDesignOf(proofPlan), [proofPlan]);
+  /**
+   * What the contents spread on screen is drawn from.
+   *
+   * Live for everything the contents owns — wording, colours, crops, which
+   * entries are listed — because none of that moves a page number, so the
+   * spread can simply re-lay itself as the editor types. The arrangement
+   * itself (reading order, first page, whether covers count) is taken from
+   * the compiled issue instead: changing those renumbers the sheets, and a
+   * contents page numbered against an arrangement the sheets were not built
+   * from is exactly the error a proof exists to catch.
+   */
+  const proofPlan = useMemo<IssuePlan | null>(() => (compiled ? {
+    ...compiled.plan,
+    contentsTitle: plan.contentsTitle,
+    contentsSubtitle: plan.contentsSubtitle,
+    direction: plan.direction,
+    contentsExcluded: plan.contentsExcluded,
+    contentsDesign: plan.contentsDesign,
+    contentsStyle: plan.contentsStyle,
+  } : null), [compiled, plan]);
+  const proofDesign = contentsDesign;
   const entries = useMemo(() => {
-    if (!compiled) return [];
+    if (!compiled || !proofPlan) return [];
     try { return contentsEntries(proofPlan, items, compiled.assignments); } catch { return []; }
   }, [compiled, proofPlan, items]);
   const contentsItems = useMemo(() => plan.order
@@ -93,9 +110,8 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
   const physicalPages = assignments.reduce((total, row) => total + row.pageCount, 0);
   const contentsStart = assignments.find(row => row.id === CONTENTS_ID)?.startNumber ?? plan.startNumber;
   const isFinalized = finalizedPlan === JSON.stringify(plan);
-  const issueStale = ready && numberingKey(compiled!.plan) !== numberingKey(plan);
-  const contentsStale = ready && contentsKey(proofPlan) !== contentsKey(plan);
-  const proofStale = issueStale || contentsStale;
+  // Only the arrangement can go stale now; everything else is live.
+  const proofStale = ready && numberingKey(compiled!.plan) !== numberingKey(plan);
 
   useEffect(() => {
     if (!ready || restoredFinalization.current) return;
@@ -120,10 +136,15 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
 
   const onCompiled = useCallback((result: CompiledIssue) => {
     setCompiled(result);
-    setProofPlan(result.plan);
     setRenderError('');
     setProofVersion(value => value + 1);
   }, []);
+  // The crop control measures the real slot on the compiled sheet, so it has
+  // to re-read after the spread has settled from an edit.
+  useEffect(() => {
+    const timer = window.setTimeout(() => setProofVersion(value => value + 1), 420);
+    return () => window.clearTimeout(timer);
+  }, [plan]);
   const onCompileError = useCallback((failure: Error) => setRenderError(failure.message), []);
   const onProgress = useCallback((value: CompileProgress) => setProgress(value), []);
 
@@ -152,16 +173,6 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
     setProgress({ completed: 0, total: items.length, name: '', pass: 1, passes: 2 });
     setCompileToken(value => value + 1);
   }, [items.length]);
-  const rebuildContents = useCallback(() => {
-    // Wording and crops never move a folio, so the contents sheet can be
-    // re-laid on its own. Anything that renumbers the issue cannot be, and
-    // quietly showing a contents page numbered against a stale arrangement
-    // is exactly the kind of error a proof exists to prevent.
-    if (issueStale) { recompile(); return; }
-    setProofPlan(plan);
-    setProofVersion(value => value + 1);
-    setNotice('');
-  }, [issueStale, plan, recompile]);
 
   const reloadArticles = () => {
     if (save.status !== 'saved' && !window.confirm('Reload the saved arrangement and articles? Your unsaved arrangement changes will be discarded.')) return;
@@ -173,7 +184,7 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
     finally { setBusy(false); }
   };
   const finalize = () => execute(async () => {
-    if (!ready || contentsOverflow || proofStale) throw new Error('Rebuild the compiled issue and resolve the contents layout before finalising.');
+    if (!ready || contentsOverflow || proofStale) throw new Error('Recompile the issue and resolve the contents layout before finalising.');
     const version = await save.flush();
     const documents = assignments.filter(row => row.id !== CONTENTS_ID).map(row => ({ id: row.id, version: items.find(item => item.id === row.id)!.version, startNumber: row.startNumber, pageCount: row.pageCount }));
     const result = await issueApi<{ version: number; items: { id: string; version: number }[] }>(data.project.id, csrf, '/finalize', 'POST', { version, plan, documents });
@@ -249,25 +260,31 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
           <section className="card">
             <div className="card-head"><h2>Design</h2><button type="button" disabled={busy} onClick={() => updatePlan({ ...plan, contentsDesign: undefined })}>Reset</button></div>
             <div className="field-grid">
-              <label className="field">Layout<select value={contentsDesign.layout} disabled={busy} onChange={event => updateDesign({ layout: event.target.value as ContentsLayout })}><option value="sections">Sectioned list</option><option value="feature">Lead feature + grid</option></select></label>
+              <label className="field">Layout<select value={contentsDesign.layout} disabled={busy} onChange={event => updateDesign({ layout: event.target.value as ContentsLayout })}><option value="mosaic">Mosaic — tiled cards</option><option value="sections">Sectioned list</option><option value="feature">Lead feature + grid</option></select></label>
               <label className="field">Density<select value={contentsDesign.density} disabled={busy} onChange={event => updateDesign({ density: event.target.value as ContentsDensity })}><option value="auto">Auto (fills page)</option><option value="airy">Airy</option><option value="normal">Normal</option><option value="dense">Dense</option><option value="packed">Packed</option></select></label>
               {contentsDesign.layout === 'feature' && <label className="field">List columns<select value={contentsDesign.columns} disabled={busy} onChange={event => updateDesign({ columns: Number(event.target.value) as 1 | 2 })}><option value={1}>1</option><option value={2}>2</option></select></label>}
               <label className="field">Headline font<select value={contentsDesign.titleFont} disabled={busy} onChange={event => updateDesign({ titleFont: event.target.value as 'serif' | 'sans' })}><option value="serif">Serif · Playfair</option><option value="sans">Sans · Avenir Next</option></select></label>
               <label className="field swatch">Accent<input type="color" value={contentsDesign.accent} disabled={busy} onChange={event => updateDesign({ accent: event.target.value })} /></label>
               <label className="field swatch">Headings<input type="color" value={contentsDesign.headingColor} disabled={busy} onChange={event => updateDesign({ headingColor: event.target.value })} /></label>
               <label className="field">Feature picture (mm)<input type="number" min={20} max={150} step={1} value={contentsDesign.featureHeight} disabled={busy} onChange={event => { const value = event.target.valueAsNumber; if (Number.isFinite(value)) updateDesign({ featureHeight: value }); }} /></label>
+              {contentsDesign.layout === 'mosaic' && <label className="field">Pictures<select value={contentsDesign.pictures} disabled={busy} onChange={event => updateDesign({ pictures: event.target.value as ContentsPictures })}><option value="auto">Automatic — as many as fit</option><option value="all">On every entry that has one</option><option value="none">Text only</option></select></label>}
               <label className="field">Thumbnail (mm)<input type="number" min={8} max={90} step={1} value={contentsDesign.thumbHeight} disabled={busy} onChange={event => { const value = event.target.valueAsNumber; if (Number.isFinite(value)) updateDesign({ thumbHeight: value }); }} /></label>
             </div>
             <label className="field range">Text size <b>{Math.round(contentsDesign.textScale * 100)}%</b><input type="range" min={0.85} max={1.15} step={0.01} value={contentsDesign.textScale} disabled={busy} onChange={event => updateDesign({ textScale: event.target.valueAsNumber })} /></label>
             <label className="field range">Character spacing <b>{contentsDesign.tracking >= 0 ? '+' : ''}{contentsDesign.tracking.toFixed(3)}em</b><input type="range" min={-0.02} max={0.04} step={0.005} value={contentsDesign.tracking} disabled={busy} onChange={event => updateDesign({ tracking: event.target.valueAsNumber })} /></label>
             <label className="field range">Gaps <b>{Math.round(contentsDesign.gapScale * 100)}%</b><input type="range" min={0.7} max={1.3} step={0.05} value={contentsDesign.gapScale} disabled={busy} onChange={event => updateDesign({ gapScale: event.target.valueAsNumber })} /></label>
             <div className="switch-set">
-              <label className="switch"><input type="checkbox" checked={contentsDesign.showHeroes} disabled={busy} onChange={event => updateDesign({ showHeroes: event.target.checked })} /><span>Show pictures</span></label>
+              {contentsDesign.layout !== 'mosaic' && <label className="switch"><input type="checkbox" checked={contentsDesign.showHeroes} disabled={busy} onChange={event => updateDesign({ showHeroes: event.target.checked })} /><span>Show pictures</span></label>}
               <label className="switch"><input type="checkbox" checked={contentsDesign.pageLabels} disabled={busy} onChange={event => updateDesign({ pageLabels: event.target.checked })} /><span>Page chip on pictures</span></label>
               <label className="switch"><input type="checkbox" checked={contentsDesign.rules} disabled={busy} onChange={event => updateDesign({ rules: event.target.checked })} /><span>Dividing rules</span></label>
               <label className="switch"><input type="checkbox" checked={contentsDesign.paddedNumbers} disabled={busy} onChange={event => updateDesign({ paddedNumbers: event.target.checked })} /><span>Zero-padded numbers</span></label>
             </div>
-            <p className="field-hint">Density decides how much each page tries to hold before shrinking; on Auto it steps down only as far as it must to still fit two pages. The three sliders apply on top of whichever density ends up showing.</p>
+            {contentsDesign.layout === 'mosaic' && <div className="card-actions">
+              <button type="button" disabled={busy} onClick={() => updateDesign({ mosaicSalt: (contentsDesign.mosaicSalt + 1) % 10000 })}>Shuffle the tiles</button>
+            </div>}
+            <p className="field-hint">{contentsDesign.layout === 'mosaic'
+              ? 'The mosaic divides each sheet into cards that tile it exactly — every card a different size, none of them able to overflow or leave a gap. Cards large enough to carry a picture get one; the rest read as type. Shuffling re-rolls the arrangement; it stays put otherwise.'
+              : 'Density decides how much each page tries to hold before shrinking; on Auto it steps down only as far as it must to still fit two pages. The three sliders apply on top of whichever density ends up showing.'}</p>
           </section>
         </div>}
 
@@ -294,10 +311,9 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
               ? <p className="field-hint">{physicalPages} physical pages across {items.length} {items.length === 1 ? 'article' : 'articles'}, {entries.length} listed in the contents{isFinalized ? ' · finalised' : ''}. Every page beside you is that article’s own editor preview, and the PDF prints these very pages — one article at a time, the same way each article prints on its own.</p>
               : <p className="field-hint">Setting the issue…</p>}
             <div className="card-actions">
-              <button type="button" disabled={busy || !ready} onClick={rebuildContents}>Rebuild contents page</button>
-              <button type="button" className={issueStale ? 'primary' : ''} disabled={busy || !ready} onClick={recompile}>Recompile whole issue</button>
+              <button type="button" className={proofStale ? 'primary' : ''} disabled={busy || !ready} onClick={recompile}>Recompile whole issue</button>
             </div>
-            <p className="field-hint">Nothing recompiles while you type. Rebuild the contents page after wording, colour or crop changes; recompile the whole issue after reordering, renumbering, or editing the articles themselves.</p>
+            <p className="field-hint">The contents spread re-lays itself as you type — wording, colours and crops need nothing. Recompiling is only for the arrangement itself: reordering, renumbering, or editing the articles.</p>
           </section>
           <section className="card">
             <h2>Finalise &amp; export</h2>
@@ -314,7 +330,7 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
             {ready && <span>{physicalPages} {physicalPages === 1 ? 'page' : 'pages'}</span>}
           </div>
           <div className="stage-tools">
-            {proofStale && <button type="button" className="stale-pill" disabled={busy} onClick={rebuildContents}>{issueStale ? 'Arrangement changed — recompile' : 'Edits not shown yet — rebuild'}</button>}
+            {proofStale && <button type="button" className="stale-pill" disabled={busy} onClick={recompile}>Arrangement changed — recompile</button>}
             <div className="zoom">
               <button type="button" title="Zoom out" aria-label="Zoom out" onClick={() => setZoom(Math.max(0.12, Math.round((scale - 0.05) * 100) / 100))}>−</button>
               <button type="button" className={zoom === 'fit' ? 'is-active' : ''} onClick={() => setZoom('fit')}>Fit</button>
@@ -325,7 +341,7 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
         </div>
         <div className="stage-scroll" ref={stageRef}>
           {ready
-            ? <IssueProof plan={proofPlan} entries={entries} documents={compiled!.numbered} magazineName={data.project.name} design={proofDesign} contentsStart={contentsStart} scale={scale} pagesRef={pagesRef} onOverflow={setContentsOverflow} />
+            ? <IssueProof plan={proofPlan!} entries={entries} documents={compiled!.numbered} magazineName={data.project.name} design={proofDesign} contentsStart={contentsStart} scale={scale} pagesRef={pagesRef} onOverflow={setContentsOverflow} />
             : <div className="stage-progress" role="status">
                 <Wordmark className="stage-mark" />
                 <h3>{renderError ? 'An article needs attention' : progress.pass > 1 ? 'Numbering the pages' : 'Setting the issue'}</h3>
@@ -339,7 +355,7 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
     </div>
 
     <footer className="studio-actions">
-      <div><strong>{isFinalized ? 'Issue finalised' : proofStale && ready ? 'Preview is out of date' : 'Ready when you are'}</strong><span>{busy ? 'Working… please wait.' : proofStale && ready ? 'Rebuild the preview so the export matches what you have set.' : 'Finalising updates page numbers in the project’s saved articles.'}</span></div>
+      <div><strong>{isFinalized ? 'Issue finalised' : proofStale && ready ? 'Arrangement changed' : 'Ready when you are'}</strong><span>{busy ? 'Working… please wait.' : proofStale && ready ? 'Recompile so the page numbers match the order you have set.' : 'Finalising updates page numbers in the project’s saved articles.'}</span></div>
       <div>
         <button disabled={blocked} onClick={() => void exportIssue()}>{busy ? 'Please wait…' : 'Export issue PDF'}</button>
         <button className="primary" disabled={blocked || isFinalized || save.status === 'error' || items.length === 0} onClick={() => void finalize()}>{isFinalized ? 'Finalised ✓' : busy ? 'Working…' : 'Finalise issue & page numbers'}</button>

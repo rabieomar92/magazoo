@@ -61,7 +61,15 @@ it('shows each article through the editor’s own preview, in plan order, around
   expect([...pagesRef.current!.querySelectorAll('.pages')].map(node => node.className.includes('issue-proof-contents') ? 'contents' : 'article'))
     .toEqual(['article', 'contents', 'article']);
   expect(host.querySelectorAll('.issue-contents-page')).toHaveLength(2);
-  expect([...host.querySelectorAll('[data-contents-id]')].map(node => node.getAttribute('data-contents-id'))).toEqual(['a', 'b']);
+  // The contents spread measures before it places, and jsdom has no layout to
+  // measure, so the visible columns stay empty here. What this can check is
+  // that every entry reached the spread — each one twice, once with its
+  // picture and once without, which is how the page works out how many
+  // pictures it can afford.
+  expect([...host.querySelectorAll('.issue-mosaic-probe [data-variant=photo] [data-contents-id]')]
+    .map(node => node.getAttribute('data-contents-id'))).toEqual(['a', 'b']);
+  expect([...host.querySelectorAll('.issue-mosaic-probe [data-variant=text] [data-contents-id]')]
+    .map(node => node.getAttribute('data-contents-id'))).toEqual(['a', 'b']);
   expect([...host.querySelectorAll('.issue-contents-page')].every(node => node.getAttribute('dir') === 'rtl')).toBe(true);
 
   render(['b', '__contents__', 'a']);

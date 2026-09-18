@@ -159,3 +159,88 @@
 .issue-snapshot.pages--rtl.front-cover :is(h1,.front-cover-masthead) { line-height:1.3; }
 .issue-snapshot.pages--rtl.gallery--p1 .g-fold { margin-right:0; margin-left:calc(-1 * var(--margin)); }
 .issue-snapshot.pages--rtl.gallery--p2 .g-fold { margin-left:0; margin-right:calc(-1 * var(--margin)); }
+
+/* ===========================================================================
+   Mosaic layout — two columns of cards
+   ---------------------------------------------------------------------------
+   Two columns per sheet. Cards drop in from the top, each as tall as its own
+   content: a picture, a headline and a standfirst make a tall card, a bare
+   brief makes a short one. Which card lands in which column is decided in
+   ContentsSpread.tsx from measured heights, so a column is filled to the last
+   millimetre and never past it; the row gap it is given spreads whatever slack
+   is left so the column reaches the foot of the page instead of stopping
+   short. Nothing below sets a card height — that is the point.
+   ======================================================================== */
+.issue-contents-page.issue-contents-mosaic {
+  --mosaic-col-gap:calc(9mm * var(--contents-gap-scale,1));
+  gap:calc(5mm * var(--contents-gap-scale,1)); padding:13mm 14mm 12mm;
+}
+.issue-contents-mosaic .issue-contents-masthead { padding-bottom:3mm; }
+.issue-contents-mosaic .issue-contents-kicker { font-size:calc(9pt * var(--contents-scale,1)); letter-spacing:.2em; color:#4c5f5c; }
+.issue-contents-mosaic .issue-contents-body { position:relative; }
+
+/* The columns are full height, not content height. They look identical while
+   a column is full — cards stack from the top either way — but a column that
+   is only as tall as its cards has nothing to centre a short one inside. */
+.issue-mosaic-columns { flex:1; min-height:0; display:grid; grid-template-columns:1fr 1fr; gap:var(--mosaic-col-gap); align-items:stretch; }
+/* `overflow:hidden` is a backstop, not the mechanism: the packer has already
+   proved every card fits. If some future change ever broke that, a card would
+   be clipped at the column edge rather than bleeding across the footer or the
+   next column — and the studio would still be showing the overflow warning. */
+.issue-mosaic-col { min-width:0; display:flex; flex-direction:column; align-items:stretch; overflow:hidden; }
+/* Too little in this column to reach the foot of the page by spacing alone. */
+.issue-mosaic-col.is-settled { justify-content:center; }
+
+/* The hidden twin: one column's width, off to the side, where every card is
+   laid out once so its real height can be read before any of them are dealt
+   into the visible columns. */
+.issue-mosaic-probe {
+  position:absolute; top:0; left:0; width:calc((100% - var(--mosaic-col-gap)) / 2);
+  visibility:hidden; pointer-events:none; z-index:-1;
+}
+/* Print never needs the twins — they have already done their work by then. */
+@media print { .issue-mosaic-probe { display:none !important; } }
+
+.issue-mosaic-card { min-width:0; border-top:.35mm solid var(--contents-accent,#9a603c); padding-top:2.6mm; }
+.issue-contents-ruleless .issue-mosaic-card { border-top:0; padding-top:0; }
+
+.issue-mosaic-photo { position:relative; width:100%; overflow:hidden; background:#dce4de; margin-bottom:2.8mm; }
+
+.issue-mosaic-head { display:flex; align-items:baseline; gap:2.6mm; min-width:0; margin-bottom:1.2mm; }
+.issue-mosaic-number {
+  flex:none; font:600 calc(15pt * var(--contents-scale,1))/1 var(--contents-headline-font,'Playfair Display',Georgia,serif);
+  color:var(--contents-accent,#9a603c); font-variant-numeric:tabular-nums;
+}
+.issue-mosaic-section {
+  min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  font:700 calc(6.6pt * var(--contents-scale,1))/1.2 'Helvetica',Arial,sans-serif;
+  letter-spacing:.14em; text-transform:uppercase; color:var(--contents-heading,#1f6f8b);
+}
+.issue-mosaic-card h2 {
+  margin:0; color:#17282b; overflow-wrap:break-word;
+  font:600 calc(12.5pt * var(--contents-scale,1))/1.22 var(--contents-headline-font,'Playfair Display',Georgia,serif);
+  letter-spacing:calc(-.008em + var(--contents-tracking,0em));
+}
+.issue-mosaic-card.has-photo h2 { font-size:calc(13.5pt * var(--contents-scale,1)); }
+.issue-mosaic-card p {
+  margin:1.4mm 0 0; color:#5d6f6b; overflow-wrap:break-word;
+  font:calc(8pt * var(--contents-scale,1))/1.45 'Helvetica',Arial,sans-serif;
+}
+.issue-mosaic-card .issue-contents-badge { display:inline-block; margin-top:1.4mm; }
+
+/* Density decides how hard the type works; the packing then re-measures
+   against it, so a tighter tier genuinely fits more cards on a sheet. */
+.issue-contents-airy .issue-mosaic-card h2 { font-size:calc(14.5pt * var(--contents-scale,1)); }
+.issue-contents-airy .issue-mosaic-card.has-photo h2 { font-size:calc(16pt * var(--contents-scale,1)); }
+.issue-contents-airy .issue-mosaic-card p { font-size:calc(8.6pt * var(--contents-scale,1)); }
+.issue-contents-dense .issue-mosaic-card h2 { font-size:calc(11pt * var(--contents-scale,1)); }
+.issue-contents-dense .issue-mosaic-card.has-photo h2 { font-size:calc(11.5pt * var(--contents-scale,1)); }
+.issue-contents-dense .issue-mosaic-card p { font-size:calc(7.4pt * var(--contents-scale,1)); }
+.issue-contents-dense .issue-mosaic-number { font-size:calc(13pt * var(--contents-scale,1)); }
+.issue-contents-packed .issue-mosaic-card h2 { font-size:calc(10pt * var(--contents-scale,1)); }
+.issue-contents-packed .issue-mosaic-card.has-photo h2 { font-size:calc(10.5pt * var(--contents-scale,1)); }
+.issue-contents-packed .issue-mosaic-card p { font-size:calc(6.9pt * var(--contents-scale,1)); }
+.issue-contents-packed .issue-mosaic-number { font-size:calc(11.5pt * var(--contents-scale,1)); }
+.issue-contents-packed .issue-mosaic-photo { margin-bottom:2mm; }
+
+.issue-contents-page[dir=rtl] .issue-mosaic-section { letter-spacing:normal; }

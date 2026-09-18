@@ -34,7 +34,15 @@ export function ContentsEntryCard({ item, index, style, design, busy, proofVersi
   const choices = issueHeroChoices(item.doc);
   const automatic = choices[0];
   const chosen = style.assetId === null ? undefined : style.assetId ? item.doc.assets?.[style.assetId] ?? automatic?.asset : automatic?.asset;
-  const showsPicture = (style.hero ?? design.showHeroes) && !!chosen?.src;
+  // What the summary line says. On automatic the page works it out from the
+  // room it has, so the honest answer here is "maybe" rather than a guess.
+  const pictureState = !chosen?.src ? 'no picture'
+    : style.hero === true ? 'picture'
+    : style.hero === false ? 'text only'
+    : design.layout !== 'mosaic' ? (design.showHeroes ? 'picture' : 'text only')
+    : design.pictures === 'auto' ? 'picture if it fits'
+    : design.pictures === 'none' ? 'text only' : 'picture';
+  const showsPicture = !!chosen?.src && style.hero !== false;
   const hiddenDeck = style.deck === '';
   const customDeck = typeof style.deck === 'string' && style.deck !== '';
   const overridden = Object.keys(style).length > 0;
@@ -45,7 +53,7 @@ export function ContentsEntryCard({ item, index, style, design, busy, proofVersi
       <span className="entry-index">{String(index + 1).padStart(2, '0')}</span>
       <span className="entry-summary-copy">
         <strong dir="auto">{style.title || realTitle}</strong>
-        <small dir="auto">{style.section || realSection || 'No section'}{showsPicture ? ' · picture' : ' · text only'}{overridden ? ' · edited' : ''}</small>
+        <small dir="auto">{style.section || realSection || 'No section'} · {pictureState}{overridden ? ' · edited' : ''}</small>
       </span>
       <span className="entry-chevron" aria-hidden="true" />
     </button>
@@ -77,10 +85,13 @@ export function ContentsEntryCard({ item, index, style, design, busy, proofVersi
       <p className="field-hint">Sections come from each article’s own top bar, so consecutive articles carrying the same bar are grouped together. Type here only to depart from it.</p>
 
       <div className="entry-picture">
-        <label className="switch">
-          <input type="checkbox" checked={style.hero ?? design.showHeroes} disabled={busy || !chosen?.src}
-            onChange={event => onChange({ hero: event.target.checked === design.showHeroes ? undefined : event.target.checked })} />
-          <span>Show a picture for this entry</span>
+        <label className="field">Picture on the contents page
+          <select value={style.hero === undefined ? '__auto__' : style.hero ? '__on__' : '__off__'} disabled={busy || !chosen?.src}
+            onChange={event => onChange({ hero: event.target.value === '__auto__' ? undefined : event.target.value === '__on__' })}>
+            <option value="__auto__">Let the page decide</option>
+            <option value="__on__">Always show one</option>
+            <option value="__off__">Never</option>
+          </select>
         </label>
         {!chosen?.src && <p className="field-hint">This article has no picture the contents page can use.</p>}
         {choices.length > 1 && <label className="field">Which picture
