@@ -33,7 +33,10 @@
   margin-bottom: var(--back-qr-gap, 7mm);
   overflow: hidden;
   background: var(--paper-bg, #f5b719);
-  border: .25mm solid color-mix(in srgb, var(--ink) 75%, transparent);
+  /* No frame around the artwork. A logo carries its own edge — a printed rule
+     around it reads as part of the mark and fights whatever lockup the logo
+     already has. The empty slot below keeps a dashed outline, because there
+     an outline is the only thing telling the editor something belongs here. */
 }
 
 .back-cover-qr .framed-image,
@@ -44,8 +47,7 @@
 .back-cover-qr--empty {
   display: grid;
   place-items: center;
-  border-style: dashed;
-  border-color: color-mix(in srgb, var(--ink) 52%, transparent);
+  border: .25mm dashed color-mix(in srgb, var(--ink) 52%, transparent);
   background:
     repeating-conic-gradient(from 45deg, color-mix(in srgb, var(--ink) 16%, transparent) 0 25%, transparent 0 50%) 50% / 4mm 4mm,
     var(--paper-bg, #f5b719);
