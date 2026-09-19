@@ -1,0 +1,499 @@
+/* Dedicated reverse cover: a calm, single-colour sheet with an editable brand
+   lock-up and a restrained social footer. It never borrows the running folio. */
+.back-cover-page {
+  padding: 0;
+  overflow: hidden;
+  background: var(--paper-bg, #f5b719);
+  color: var(--ink, #161616);
+}
+
+.back-cover-inner {
+  box-sizing: border-box;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 0 var(--back-side-inset, var(--margin)) var(--back-social-bottom, 12mm);
+}
+
+.back-cover-brand-block {
+  align-self: var(--back-brand-items, center);
+  margin-top: var(--back-brand-top, 82mm);
+  width: min(var(--back-brand-width, 88mm), 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: var(--back-brand-items, center);
+  text-align: var(--back-brand-align, center);
+}
+
+.back-cover-qr {
+  position: relative;
+  width: var(--back-qr-size, 27mm);
+  height: var(--back-qr-size, 27mm);
+  margin-bottom: var(--back-qr-gap, 7mm);
+  overflow: hidden;
+  background: var(--paper-bg, #f5b719);
+  /* No frame around the artwork. A logo carries its own edge — a printed rule
+     around it reads as part of the mark and fights whatever lockup the logo
+     already has. The empty slot below keeps a dashed outline, because there
+     an outline is the only thing telling the editor something belongs here. */
+}
+
+.back-cover-qr .framed-image,
+.back-cover-logo-frame .framed-image {
+  pointer-events: none;
+}
+
+.back-cover-qr--empty {
+  display: grid;
+  place-items: center;
+  border: .25mm dashed color-mix(in srgb, var(--ink) 52%, transparent);
+  background:
+    repeating-conic-gradient(from 45deg, color-mix(in srgb, var(--ink) 16%, transparent) 0 25%, transparent 0 50%) 50% / 4mm 4mm,
+    var(--paper-bg, #f5b719);
+}
+
+.back-cover-qr-placeholder {
+  display: grid;
+  place-items: center;
+  width: 13mm;
+  height: 13mm;
+  background: var(--paper-bg, #f5b719);
+  border: .25mm solid var(--ink);
+  font: 700 7pt/1 var(--sans);
+  letter-spacing: .12em;
+}
+
+.back-cover-brand-block h1 {
+  margin: var(--back-brand-space, 0) 0 0;
+  color: var(--back-brand-color, var(--ink));
+  font-family: var(--back-brand-font, var(--sans));
+  font-size: var(--back-brand-size, 25pt);
+  font-style: var(--back-brand-style, normal);
+  font-weight: var(--back-brand-weight, 800);
+  line-height: var(--back-brand-leading, .95);
+  letter-spacing: var(--back-brand-tracking, -.045em);
+  text-transform: none;
+}
+
+.back-cover-brand-block h2 {
+  margin: var(--back-tagline-space, 1.5mm) 0 0;
+  color: var(--back-tagline-color, var(--ink));
+  font-family: var(--back-tagline-font, var(--sans));
+  font-size: var(--back-tagline-size, 10pt);
+  font-style: var(--back-tagline-style, normal);
+  font-weight: var(--back-tagline-weight, 700);
+  line-height: var(--back-tagline-leading, 1);
+  letter-spacing: var(--back-tagline-tracking, .015em);
+  text-transform: none;
+}
+
+.back-cover-rule {
+  display: block;
+  width: var(--back-rule-width, 18mm);
+  height: var(--back-rule-thickness, .35mm);
+  margin: var(--back-rule-top-gap, 4mm) 0 var(--back-rule-bottom-gap, 3mm);
+  background: var(--back-rule-color, var(--accent));
+}
+
+.back-cover-website,
+.back-cover-qr-label {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  text-transform: none;
+}
+
+.back-cover-website {
+  margin: var(--back-website-space, 0) 0 0;
+  color: var(--back-website-color, var(--ink));
+  font-family: var(--back-website-font, var(--sans));
+  font-size: var(--back-website-size, 7.2pt);
+  font-style: var(--back-website-style, normal);
+  font-weight: var(--back-website-weight, 400);
+  line-height: var(--back-website-leading, 1.35);
+  letter-spacing: var(--back-website-tracking, 0);
+}
+
+.back-cover-qr-label {
+  margin: var(--back-qr-label-space, 2.2mm) 0 0;
+  color: var(--back-qr-label-color, color-mix(in srgb, var(--ink) 66%, transparent));
+  font-family: var(--back-qr-label-font, var(--sans));
+  font-size: var(--back-qr-label-size, 6.2pt);
+  font-style: var(--back-qr-label-style, normal);
+  font-weight: var(--back-qr-label-weight, 400);
+  line-height: var(--back-qr-label-leading, 1.35);
+  letter-spacing: var(--back-qr-label-tracking, 0);
+}
+
+.back-cover-footer {
+  width: 100%;
+  margin-top: auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: end;
+  gap: var(--back-footer-gap, 8mm);
+}
+
+.back-cover-social {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-wrap: anywhere;
+}
+
+.back-cover-social--left { text-align: start; }
+.back-cover-social--right { text-align: end; }
+
+.back-cover-social-line {
+  display: block;
+  color: var(--back-social-url-color, color-mix(in srgb, var(--ink) 72%, transparent));
+  font-family: var(--back-social-url-font, var(--sans));
+  font-size: var(--back-social-url-size, 6.5pt);
+  font-style: var(--back-social-url-style, normal);
+  font-weight: var(--back-social-url-weight, 400);
+  line-height: var(--back-social-url-leading, 1.15);
+  letter-spacing: var(--back-social-url-tracking, 0);
+}
+.back-cover-social-gap { display: block; height: 2.2mm; }
+
+.back-cover-social-links {
+  display: flex;
+  flex-direction: column;
+  gap: var(--back-social-item-gap, 2.6mm);
+  min-width: 0;
+}
+
+.back-cover-social-link {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--back-social-text-gap, 1.8mm);
+  direction: ltr;
+  text-align: start;
+}
+
+.back-cover-social--right .back-cover-social-link {
+  flex-direction: row-reverse;
+  text-align: end;
+}
+
+.back-cover-social-icon {
+  flex: 0 0 var(--back-social-icon-size, 5.5mm);
+  width: var(--back-social-icon-size, 5.5mm);
+  height: var(--back-social-icon-size, 5.5mm);
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  color: var(--back-social-icon-color, var(--accent, #161616));
+}
+
+.back-cover-social-icon svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  fill: currentColor;
+}
+
+.back-cover-social-copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-wrap: anywhere;
+}
+
+.back-cover-social-label {
+  margin-top: var(--back-social-label-space, 0);
+  color: var(--back-social-label-color, var(--ink));
+  font-family: var(--back-social-label-font, var(--sans));
+  font-size: var(--back-social-label-size, 7.1pt);
+  font-style: var(--back-social-label-style, normal);
+  font-weight: var(--back-social-label-weight, 700);
+  line-height: var(--back-social-label-leading, 1.15);
+  letter-spacing: var(--back-social-label-tracking, 0);
+}
+
+.back-cover-social-url {
+  margin-top: var(--back-social-url-space, .4mm);
+  color: var(--back-social-url-color, color-mix(in srgb, var(--ink) 72%, transparent));
+  font-family: var(--back-social-url-font, var(--sans));
+  font-size: var(--back-social-url-size, 6.5pt);
+  font-style: var(--back-social-url-style, normal);
+  font-weight: var(--back-social-url-weight, 400);
+  line-height: var(--back-social-url-leading, 1.15);
+  letter-spacing: var(--back-social-url-tracking, 0);
+  overflow-wrap: anywhere;
+  text-decoration: none;
+}
+
+.back-cover-social-line:first-child,
+.back-cover-social-line:nth-child(4) {
+  color: var(--back-social-label-color, var(--ink));
+  font-family: var(--back-social-label-font, var(--sans));
+  font-size: var(--back-social-label-size, 7.1pt);
+  font-style: var(--back-social-label-style, normal);
+  font-weight: var(--back-social-label-weight, 700);
+  line-height: var(--back-social-label-leading, 1.15);
+  letter-spacing: var(--back-social-label-tracking, 0);
+}
+
+.back-cover-centre-mark {
+  width: var(--back-logo-width, 32mm);
+  min-width: var(--back-logo-width, 32mm);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: end;
+  text-align: center;
+}
+
+.back-cover-logo-frame {
+  position: relative;
+  width: var(--back-logo-width, 32mm);
+  height: var(--back-logo-height, 16mm);
+  overflow: hidden;
+}
+
+.back-cover-footer-text {
+  display: block;
+  max-width: var(--back-logo-width, 32mm);
+  margin-top: var(--back-footer-text-space, 1.4mm);
+  overflow-wrap: anywhere;
+  color: var(--back-footer-text-color, var(--ink));
+  font-family: var(--back-footer-text-font, var(--sans));
+  font-size: var(--back-footer-text-size, 5.8pt);
+  font-style: var(--back-footer-text-style, normal);
+  font-weight: var(--back-footer-text-weight, 700);
+  line-height: var(--back-footer-text-leading, 1.2);
+  letter-spacing: var(--back-footer-text-tracking, .035em);
+  text-transform: none;
+}
+
+.back-cover-logo-fallback {
+  display: grid;
+  justify-items: center;
+  width: var(--back-logo-width, 32mm);
+  min-height: var(--back-logo-height, 16mm);
+  align-content: center;
+  gap: .8mm;
+  font-family: var(--sans);
+  line-height: 1;
+}
+
+.back-cover-logo-symbol {
+  display: block;
+  height: calc(var(--back-logo-height, 16mm) * .5);
+  color: var(--back-social-icon-color, var(--accent));
+  font: 800 clamp(15pt, calc(var(--back-logo-height, 16mm) * 1.6), 44pt)/.7 var(--sans);
+  transform: rotate(-20deg);
+}
+
+.back-cover-logo-fallback strong {
+  max-width: var(--back-logo-width, 38mm);
+  overflow-wrap: anywhere;
+  font-size: 7pt;
+  font-weight: 800;
+}
+
+.back-cover-logo-fallback small {
+  max-width: var(--back-logo-width, 38mm);
+  overflow-wrap: anywhere;
+  font-size: 5.6pt;
+  font-weight: 600;
+}
+
+.back-cover-imprint {
+  align-self: end;
+  margin-top: var(--back-imprint-space, 5mm);
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  text-align: end;
+  color: var(--back-imprint-color, var(--ink));
+  font-family: var(--back-imprint-font, var(--sans));
+  font-size: var(--back-imprint-size, 5.5pt);
+  font-style: var(--back-imprint-style, normal);
+  font-weight: var(--back-imprint-weight, 400);
+  line-height: var(--back-imprint-leading, 1.2);
+  letter-spacing: var(--back-imprint-tracking, .06em);
+  text-transform: none;
+}
+
+.back-cover-page [data-editor-target] { cursor: pointer; }
+
+/* The structured-link editor is deliberately carded: each URL, icon and
+   column choice stays together when a footer has several platforms. */
+.back-cover-social-editor {
+  display: grid;
+  gap: 12px;
+}
+
+.back-cover-social-column-editor {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--panel-border, #e2e6ef);
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--panel-surface, #fbfcff) 82%, #eef1f8);
+}
+
+.back-cover-social-column-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.back-cover-social-column-head h3 {
+  margin: 0;
+  color: var(--panel-ink, #26324a);
+  font-size: 12px;
+}
+
+.back-cover-social-column-head .add-btn {
+  width: auto;
+  min-height: 32px;
+  margin: 0;
+  padding: 5px 9px;
+}
+
+.back-cover-link-editor {
+  display: grid;
+  gap: 6px;
+  padding: 10px;
+  border: 1px solid var(--panel-border, #e2e6ef);
+  border-radius: 10px;
+  background: var(--panel-surface, #fbfcff);
+}
+
+.back-cover-link-editor-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.back-cover-link-editor-head strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--panel-ink, #26324a);
+  font-size: 12px;
+}
+
+.back-cover-link-editor .field {
+  margin: 0;
+}
+
+.back-cover-social-add-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.back-cover-social-add-actions .add-btn {
+  min-width: 0;
+  margin: 0;
+}
+
+/* Numbered, collapsible groups keep the large back-cover control set usable in
+   a narrow editor. They alter panel chrome only, never the physical A4 page. */
+.back-cover-design-intro { margin-bottom: 12px; }
+
+.back-cover-design-group {
+  min-width: 0;
+  margin-bottom: 10px;
+  overflow: hidden;
+  border: 1px solid var(--line, #dfe3ee);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.back-cover-design-group > summary,
+.back-cover-text-editor > summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 3px 10px;
+  padding: 12px;
+  color: var(--ink, #273449);
+  cursor: pointer;
+  list-style: none;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.back-cover-design-group > summary::-webkit-details-marker,
+.back-cover-text-editor > summary::-webkit-details-marker { display: none; }
+
+.back-cover-design-group > summary::after,
+.back-cover-text-editor > summary::after {
+  content: '';
+  grid-column: 2;
+  grid-row: 1;
+  align-self: center;
+  width: 7px;
+  height: 7px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(-45deg);
+}
+
+.back-cover-design-group[open] > summary::after,
+.back-cover-text-editor[open] > summary::after { transform: rotate(45deg); }
+
+.back-cover-design-group > summary > span,
+.back-cover-text-editor > summary > span {
+  grid-column: 1 / -1;
+  color: var(--muted, #66748b);
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.35;
+}
+
+.back-cover-design-group[open] > summary {
+  border-bottom: 1px solid var(--line-soft, #e5e8f0);
+  background: #f6f7fb;
+}
+
+.back-cover-design-fields {
+  min-width: 0;
+  padding: 10px 12px 12px;
+}
+
+.back-cover-design-fields > .field,
+.back-cover-text-fields > .field { margin-block: 0 9px; }
+
+.back-cover-text-editor {
+  min-width: 0;
+  border-bottom: 1px solid var(--line-soft, #e5e8f0);
+}
+
+.back-cover-text-editor:last-of-type { border-bottom: 0; }
+.back-cover-text-editor > summary { padding-inline: 2px; }
+
+.back-cover-text-fields {
+  min-width: 0;
+  padding: 2px 2px 12px;
+}
+
+.back-cover-reset-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.back-cover-reset-row .add-btn,
+.back-cover-reset-design {
+  width: 100%;
+  min-height: 36px;
+  margin: 0;
+  white-space: normal;
+}
+
+.back-cover-reset-design { margin-top: 8px; }
+
+@media (max-width: 420px) {
+  .back-cover-social-add-actions { grid-template-columns: 1fr; }
+  .back-cover-reset-row { grid-template-columns: 1fr; }
+}

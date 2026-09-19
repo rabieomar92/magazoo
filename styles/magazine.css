@@ -1,0 +1,1051 @@
+/* Magazine template (magazine-1). Self-contained — the paper-1 styles in
+   page.css are never touched. A full-bleed photo cover + a 2-column spread that
+   shares the same photo and red accent, so the two pages read as one piece. */
+
+:root {
+  --mag-red: #e11d2e;
+  --mag-ink: #14181f;
+  --mag-dark: #0b1220;
+}
+
+/* Each magazine template recolors from its own accent (design.colors.accent,
+   exposed as --accent on the page/measure vars). --mag-red is the fallback. */
+.mag-cover,
+.mag-page,
+.mag-head,
+.mag-cols {
+  --mag-red: var(--accent, #e11d2e);
+}
+
+/* ---- Page 1: full-bleed photo cover / masthead ---------------------------- */
+
+.mag-cover {
+  overflow: hidden;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  color: #fff;
+}
+
+.page > .mag-cover-photo,
+.page > .front-cover-photo {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.mag-cover-scrim {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(6, 10, 25, 0.9) 0%,
+      rgba(6, 10, 25, 0.4) 52%,
+      rgba(6, 10, 25, 0.05) 100%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(6, 10, 25, 0.55) 0%,
+      rgba(6, 10, 25, 0) 30%,
+      rgba(6, 10, 25, 0.82) 100%
+    );
+}
+
+.mag-cover-inner {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  font-family: var(--sans);
+}
+
+.mag-cover-mid {
+  margin: auto 0;
+}
+
+/* Optional first-page editorial offset: only the main cover content moves.
+   The masthead remains governed by --topbar-offset and the foot stays pinned
+   to the bottom, matching image-led layouts with a deliberately quiet upper
+   field. */
+.page--first-offset .mag-cover-mid,
+.page--first-offset .mag-gate-mid {
+  margin: max(
+      0mm,
+      calc(var(--first-page-top, 0mm) - var(--topbar-offset, 10mm) - var(--bar-h))
+    )
+    0 auto;
+}
+
+.mag-kicker {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0 0 16px;
+  color: var(--mag-red);
+  font-size: 10pt;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: none;
+}
+
+.mag-kicker-dash {
+  width: 28px;
+  height: 2px;
+  background: currentColor;
+}
+
+.mag-title {
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 800;
+  font-size: 44pt;
+  line-height: 0.92;
+  letter-spacing: -0.03em;
+  text-transform: none;
+  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.35);
+}
+
+.mag-title-word {
+  display: block;
+  color: #fff;
+}
+
+.mag-title-word.is-accent {
+  color: var(--mag-kicker-color, var(--mag-red));
+}
+
+.mag-lede {
+  max-width: 74%;
+  margin: var(--subtitle-gap, 6mm) 0 0;
+  font-family: var(--font-subtitle);
+  font-style: var(--subtitle-style, italic);
+  font-weight: var(--subtitle-weight, 400);
+  font-size: var(--fs-subtitle);
+  line-height: 1.45;
+  color: var(--subtitle-color, #e5e7eb);
+}
+
+.mag-cover-foot {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.28);
+}
+
+.mag-cover-credits {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 8.5pt;
+  letter-spacing: 0.14em;
+  text-transform: none;
+  color: #cbd5e1;
+}
+
+.mag-cover-author {
+  color: var(--author-color, #cbd5e1);
+  font-family: var(--font-author);
+  font-size: var(--fs-author);
+  font-weight: var(--author-weight, 400);
+  font-style: var(--author-style, normal);
+  text-transform: none;
+}
+
+/* ---- Dedicated one-page front cover (magazine-4) ------------------------- */
+
+.front-cover {
+  padding: var(--margin);
+  color: #fff;
+  background-color: var(--hero);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  font-family: var(--sans);
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+
+.front-cover-scrim {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  background:
+    linear-gradient(
+      180deg,
+      rgb(10 14 8 / var(--front-overlay, 0.68)) 0%,
+      rgb(10 14 8 / calc(var(--front-overlay, 0.68) * 0.12)) 27%,
+      rgb(10 14 8 / calc(var(--front-overlay, 0.68) * 0.08)) 55%,
+      rgb(10 14 8 / min(1, calc(var(--front-overlay, 0.68) * 1.3))) 100%
+    ),
+    linear-gradient(
+      90deg,
+      rgb(10 14 8 / calc(var(--front-overlay, 0.68) * 0.44)) 0%,
+      transparent 62%
+    );
+  pointer-events: none;
+}
+
+.front-cover-inner {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  width: 100%;
+  /* A concrete content-box height avoids Chromium's print fragmentation
+     interpreting grid percentage height against the page border box. */
+  height: calc(var(--page-h) - var(--margin) - var(--bottom-margin, var(--margin)));
+  min-width: 0;
+  min-height: 0;
+}
+
+.front-cover-brand {
+  display: flex;
+  align-items: center;
+  justify-content: var(--front-items, flex-start);
+  gap: 6mm;
+  min-width: 0;
+  min-height: 23mm;
+  height: auto;
+  box-sizing: border-box;
+  margin: calc(var(--topbar-offset, 10mm) - var(--margin)) calc(-1 * var(--margin)) 0;
+  padding: 3.5mm var(--margin);
+  text-align: var(--front-align, left);
+}
+
+.front-cover-brand-copy {
+  min-width: 0;
+  width: 100%;
+}
+
+.front-cover-masthead {
+  overflow: hidden;
+  color: var(--front-masthead-color, var(--accent));
+  font-family: var(--front-masthead-font, var(--serif));
+  font-size: var(--front-masthead-size, 34pt);
+  font-weight: var(--front-masthead-weight, 900);
+  font-style: var(--front-masthead-style, normal);
+  line-height: 0.88;
+  letter-spacing: var(--front-masthead-tracking, -0.055em);
+  text-transform: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.front-cover-strap {
+  overflow: hidden;
+  margin-top: 2mm;
+  color: var(--front-strapline-color, #fff);
+  font-family: var(--front-strapline-font, var(--font-affil));
+  font-size: var(--front-strapline-size, var(--fs-affil));
+  font-weight: var(--front-strapline-weight, 700);
+  font-style: var(--front-strapline-style, normal);
+  letter-spacing: var(--front-strapline-tracking, 0.11em);
+  line-height: 1.2;
+  text-transform: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.front-cover-story {
+  display: flex;
+  flex-direction: column;
+  align-items: var(--front-copy-items, flex-start);
+  justify-self: var(--front-align, left);
+  align-self: start;
+  width: min(var(--front-story-width, 88%), 158mm);
+  min-width: 0;
+  margin-top: var(--front-story-top, 15mm);
+  overflow: hidden;
+  text-align: var(--front-align, left);
+}
+
+.front-cover-kicker {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  margin-bottom: 3mm;
+  padding: 1.6mm 2.6mm;
+  color: var(--front-kicker-color, #111);
+  background: var(--front-kicker-bg, var(--accent));
+  font-family: var(--front-kicker-font, var(--font-category));
+  font-size: var(--front-kicker-size, var(--fs-eyebrow));
+  font-weight: var(--front-kicker-weight, 900);
+  font-style: var(--front-kicker-style, normal);
+  letter-spacing: var(--front-kicker-tracking, 0.13em);
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  text-transform: none;
+  white-space: nowrap;
+}
+
+.front-cover-story h1 {
+  width: 100%;
+  max-height: 4.05em;
+  overflow: hidden;
+  margin: 0;
+  color: var(--front-title-color, #fff);
+  font-family: var(--front-title-font, var(--serif));
+  font-size: var(--front-title-size, var(--fs-title));
+  font-weight: var(--front-title-weight, 900);
+  font-style: var(--front-title-style, normal);
+  line-height: 0.93;
+  letter-spacing: var(--front-title-tracking, -0.04em);
+  text-transform: none;
+  text-shadow: 0 2px 22px rgba(0, 0, 0, 0.45);
+}
+
+.front-cover-lede {
+  width: min(82%, 112mm);
+  max-height: 4.3em;
+  overflow: hidden;
+  margin: var(--subtitle-gap, 4mm) 0 0;
+  color: var(--front-subtitle-color, #fff);
+  font-family: var(--front-subtitle-font, var(--font-subtitle));
+  font-size: var(--front-subtitle-size, var(--fs-subtitle));
+  font-weight: var(--front-subtitle-weight, 600);
+  font-style: var(--front-subtitle-style, normal);
+  letter-spacing: var(--front-subtitle-tracking, 0);
+  line-height: 1.42;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.7);
+}
+
+.front-cover-byline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2mm 5mm;
+  justify-content: var(--front-copy-items, flex-start);
+  width: 100%;
+  margin-top: 4mm;
+  line-height: 1.25;
+  text-transform: none;
+}
+
+.front-cover-author {
+  color: var(--front-author-color, #fff);
+  font-family: var(--front-author-font, var(--font-author));
+  font-size: var(--front-author-size, var(--fs-author));
+  font-weight: var(--front-author-weight, 800);
+  font-style: var(--front-author-style, normal);
+  text-transform: none;
+  letter-spacing: var(--front-author-tracking, 0.1em);
+}
+
+.front-cover-story-tag {
+  color: var(--front-story-tag-color, #fff);
+  font-family: var(--front-story-tag-font, var(--sans));
+  font-size: var(--front-story-tag-size, var(--fs-author));
+  font-weight: var(--front-story-tag-weight, 800);
+  font-style: var(--front-story-tag-style, normal);
+  letter-spacing: var(--front-story-tag-tracking, 0.1em);
+}
+
+.front-cover-footer {
+  min-width: 0;
+  padding-top: 4mm;
+  background: linear-gradient(
+    180deg,
+    transparent,
+    color-mix(
+      in srgb,
+      var(--front-teaser-bg, #071006) var(--front-teaser-bg-opacity, 45%),
+      transparent
+    )
+  );
+}
+
+.front-cover-teasers {
+  display: grid;
+  grid-template-columns: repeat(var(--front-teaser-count, 3), minmax(0, 1fr));
+  gap: var(--gutter);
+  min-width: 0;
+  padding: 4mm 0;
+}
+
+.front-cover-teaser {
+  min-width: 0;
+  max-height: 28mm;
+  overflow: hidden;
+  padding-inline-start: 2.4mm;
+  border-inline-start: 2px solid var(--front-kicker-bg, var(--accent));
+  line-height: 1.25;
+  direction: var(--text-dir, ltr);
+}
+
+.front-cover-teaser h2 {
+  margin: 0 0 1.4mm;
+  color: var(--front-card-color, var(--front-teaser-title-color, #fff));
+  font-family: var(--front-teaser-title-font, var(--sans));
+  font-size: var(--front-card-title-size, var(--front-teaser-title-size, var(--fs-body)));
+  font-weight: var(--front-teaser-title-weight, 900);
+  font-style: var(--front-teaser-title-style, normal);
+  letter-spacing: var(--front-teaser-title-tracking, 0.055em);
+  line-height: var(--front-teaser-title-leading, 1.05);
+  text-transform: none;
+}
+
+.front-cover-teaser p {
+  margin: 0;
+  color: var(--front-card-color, var(--front-teaser-body-color, #fff));
+  font-family: var(--front-teaser-body-font, var(--sans));
+  font-size: var(--front-card-body-size, var(--front-teaser-body-size, calc(var(--fs-body) * 0.88)));
+  font-weight: var(--front-teaser-body-weight, 400);
+  font-style: var(--front-teaser-body-style, normal);
+  letter-spacing: var(--front-teaser-body-tracking, 0);
+  line-height: var(--front-teaser-body-leading, 1.28);
+  opacity: 0.86;
+}
+
+.front-cover-credit-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 5mm;
+  min-width: 0;
+  padding-top: 2.6mm;
+  line-height: 1.2;
+  text-transform: none;
+}
+
+.front-cover-footer-brand {
+  color: var(--front-footer-brand-color, #fff);
+  font-family: var(--front-footer-brand-font, var(--sans));
+  font-size: var(--front-footer-brand-size, 5.9pt);
+  font-weight: var(--front-footer-brand-weight, 800);
+  font-style: var(--front-footer-brand-style, normal);
+  text-transform: none;
+  letter-spacing: var(--front-footer-brand-tracking, 0.13em);
+}
+
+.front-cover-photo-credit {
+  color: var(--front-photo-credit-color, #fff);
+  font-family: var(--front-photo-credit-font, var(--sans));
+  font-size: var(--front-photo-credit-size, 5.9pt);
+  font-weight: var(--front-photo-credit-weight, 800);
+  font-style: var(--front-photo-credit-style, normal);
+  letter-spacing: var(--front-photo-credit-tracking, 0.13em);
+}
+
+.front-cover-credit-row span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---- Page 2+: 2-column justified spread ----------------------------------- */
+
+.mag-page {
+  font-family: var(--sans);
+  color: var(--ink);
+}
+
+/* Spread header: hero photo + location tag + credit + pull-quote. padding-bottom
+   (not child margins) so its measured height includes the gap to the columns. */
+.mag-head {
+  padding-bottom: 14px;
+}
+
+.mag-hero {
+  position: relative;
+  margin: 0;
+  aspect-ratio: 16 / 7;
+  overflow: hidden;
+  background: var(--hero);
+}
+
+.mag-hero img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.mag-hero-tag {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  padding: 5px 10px;
+  background: rgba(11, 18, 32, 0.82);
+  color: #fff;
+  font-size: 8pt;
+  letter-spacing: 0.14em;
+  text-transform: none;
+}
+
+.mag-hero-credit {
+  margin: 7px 0 0;
+  font-size: 8pt;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: none;
+  color: var(--mag-red);
+}
+
+.mag-quote {
+  margin: 14px 0 0;
+  padding: 14px 0 0;
+  border-top: 3px solid var(--mag-red);
+}
+
+.mag-quote-text {
+  display: block;
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 700;
+  font-size: 18pt;
+  line-height: 1.28;
+  color: var(--ink);
+}
+
+.mag-quote-by {
+  display: block;
+  margin-top: 10px;
+  font-family: var(--sans);
+  font-style: normal;
+  font-size: 8.5pt;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: none;
+  color: var(--mag-red);
+}
+
+.mag-cols {
+  /* Driven by the Design panel: columns, gutter, alignment, body size, font. */
+  column-count: var(--body-cols, 2);
+  /* How many flowing columns a spanning figure divides itself across — see
+     .flow-fig--n in page.css (shared across every template). */
+  --fcols: var(--body-cols, 2);
+  column-gap: var(--gutter);
+  column-fill: auto;
+  width: calc(var(--page-w) - 2 * var(--margin));
+  box-sizing: border-box;
+  overflow: hidden;
+  text-align: var(--body-align, justify);
+  hyphens: auto;
+  -webkit-hyphens: auto;
+  font-family: var(--sans);
+  font-size: var(--fs-body);
+  color: var(--ink);
+  line-height: 1.55;
+  --drop-cap-color: var(--mag-red);
+  --drop-cap-font-size: calc(var(--fs-body) * 5.3);
+  --drop-cap-line-height: calc(var(--fs-body) * 3.84);
+  --drop-cap-weight: 800;
+  /* RTL — see page.css's .body-cols comment; same reasoning applies here. */
+  direction: var(--text-dir, ltr);
+}
+
+/* Both subtract the masthead rule now — its height (--bar-h) plus the gap its
+   own margin-bottom adds, same accounting the paper templates use for their
+   TagBar. */
+.mag-cols--p2 {
+  height: calc(
+    var(--page-h) - var(--bottom-margin, var(--margin)) - var(--topbar-offset, 10mm) - var(--footer-h) -
+      var(--bar-h) - var(--gutter)
+  );
+}
+
+/* Lead spread: shorter still by the measured hero-header height. */
+.mag-cols--p1 {
+  height: calc(
+    var(--page-h) - var(--bottom-margin, var(--margin)) - var(--topbar-offset, 10mm) - var(--footer-h) - var(--bar-h) - var(--gutter) - var(
+        --mag-head-h,
+        0px
+      )
+  );
+}
+
+.mag-cols p {
+  margin: 0 0 0.7em;
+}
+
+/* Magazine paragraphs are flush by default (no rule above sets text-indent) —
+   this only matters when a paragraph explicitly turns indent ON. `.cont` never
+   carries one of these classes (paint()/Flow.tsx keep them mutually exclusive). */
+.mag-cols p.indent-on {
+  text-indent: 1.5em;
+}
+.mag-cols p.indent-off {
+  text-indent: 0;
+}
+
+.mag-cols .flow-fig figcaption {
+  margin-top: 0.3em;
+  font-size: 8.5pt;
+  line-height: 1.3;
+  font-style: italic;
+  color: #64748b;
+}
+
+/* ---- magazine-2: split-photo spread ---------------------------------------
+   Sheet 1 is the article on white with a photo strip bleeding off its right
+   edge; sheet 2 is the SAME photo continued full-bleed. There is one asset —
+   each sheet paints a different window into it (sizes computed in lib/magSplit,
+   applied inline in mm), so the halves join at the fold like an open book.  */
+
+.mag2-page,
+.mag2-photo {
+  --mag-red: var(--accent, #e11d2e);
+  /* --mag2-strip comes from MAG2_STRIP (lib/magSplit) via the page vars — the
+     photo's crop math and this layout must agree, so the number lives once. */
+  /* The article box: the sheet minus its margins, the photo strip, and one
+     gutter of air before the strip. Two columns, so the quote + highlights atom
+     that closes the flow renders at --mag2-col — the width it's measured at. */
+  --mag2-body-w: calc(var(--page-w) - 2 * var(--margin) - var(--mag2-strip) - var(--gutter));
+  --mag2-col: calc((var(--mag2-body-w) - var(--gutter)) / 2);
+}
+
+.mag2-page {
+  font-family: var(--sans);
+  color: var(--ink);
+}
+
+/* The article column stops where the strip begins. */
+.mag2-inner {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: var(--mag2-body-w);
+  box-sizing: border-box;
+}
+
+/* Full-bleed: pulled out of the page padding on three sides, clipped by
+   .page overflow:hidden. Margins are layout, so this survives zoom + print. */
+.mag2-strip {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: var(--mag2-strip);
+  overflow: hidden;
+  background-color: var(--mag-dark);
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+
+/* The hero/photo layer always wins where it overlaps the full-width band.
+   Use a direct-child selector so it outranks page.css's shared z-index:1 rule. */
+.mag2-page > .mag2-strip {
+  z-index: 2;
+}
+
+.mag2-strip-credit {
+  position: absolute;
+  bottom: var(--bottom-margin, var(--margin));
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 7pt;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: none;
+  color: rgba(255, 255, 255, 0.85);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.6);
+}
+
+/* The shared TagBar owns the masthead band. Padding-bottom remains on the
+   measured head so the gap down to the columns is included in its height. */
+.mag2-head {
+  flex: none;
+  padding-bottom: 6mm;
+}
+
+.mag2-head-content {
+  padding-top: max(
+    0mm,
+    calc(var(--first-page-top, 0mm) - var(--topbar-offset, 10mm) - var(--bar-h) - var(--gutter))
+  );
+}
+
+.mag2-kicker {
+  margin: 0 0 3mm;
+  font-family: var(--font-category);
+  font-size: var(--fs-eyebrow);
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: none;
+  color: var(--mag-red);
+}
+
+.mag2-title {
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 800;
+  font-size: var(--fs-title);
+  line-height: 1.02;
+  letter-spacing: -0.015em;
+  text-transform: none;
+  color: var(--ink);
+}
+
+.mag2-lede {
+  margin: var(--subtitle-gap, 3mm) 0 0;
+  font-family: var(--font-subtitle);
+  font-style: var(--subtitle-style, italic);
+  font-weight: var(--subtitle-weight, 400);
+  font-size: var(--fs-subtitle);
+  line-height: 1.4;
+  color: var(--subtitle-color, var(--ink));
+}
+
+.mag2-byline {
+  display: flex;
+  align-items: baseline;
+  gap: 6mm;
+  margin: 5mm 0 0;
+  padding-top: 3mm;
+  border-top: 1px solid #cbd5e1;
+}
+
+.mag2-author {
+  font-family: var(--font-author);
+  font-size: var(--fs-author);
+  font-weight: var(--author-weight, 800);
+  font-style: var(--author-style, normal);
+  letter-spacing: 0.1em;
+  text-transform: none;
+  color: var(--author-color, var(--ink));
+}
+
+.mag2-affil {
+  font-family: var(--font-affil);
+  font-size: var(--fs-affil);
+  letter-spacing: 0.08em;
+  text-transform: none;
+  color: var(--affiliation-color, var(--ink));
+  font-weight: var(--affiliation-weight, 400);
+  font-style: var(--affiliation-style, normal);
+}
+
+/* Body box: narrower than .mag-cols by the strip. Fixed at 2 columns — the
+   quote + highlights atom is measured against --mag2-col, which assumes 2. The
+   Design panel's column count still drives sheet 3+ (.mag-cols). */
+.mag2-cols {
+  column-count: 2;
+  --fcols: 2;
+  column-gap: var(--gutter);
+  column-fill: auto;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  text-align: var(--body-align, justify);
+  hyphens: auto;
+  -webkit-hyphens: auto;
+  font-family: var(--sans);
+  font-size: var(--fs-body);
+  color: var(--ink);
+  line-height: 1.55;
+  --drop-cap-color: var(--mag-red);
+  --drop-cap-font-size: calc(var(--fs-body) * 5.3);
+  --drop-cap-line-height: calc(var(--fs-body) * 3.84);
+  --drop-cap-weight: 800;
+  /* RTL — see page.css's .body-cols comment. */
+  direction: var(--text-dir, ltr);
+}
+
+/* Sheet 1: whatever the head leaves behind. The quote + highlights live inside
+   this box now (last atom of the flow), so they take no height off it. */
+.mag2-cols--p1 {
+  flex: none;
+  /* The inner column starts at page padding, not the top bar's independent
+     offset. Subtracting that offset allowed text into the footer reserve. */
+  height: calc(
+    var(--page-h) - var(--bottom-margin, var(--margin)) - var(--margin) - var(--mag2-head-h, 0px)
+  );
+  /* Containing block for the pinned quote + highlights (see .mag2-aside). */
+  position: relative;
+}
+
+.mag2-cols p {
+  margin: 0 0 0.7em;
+}
+
+.mag2-cols p.indent-on {
+  text-indent: 1.5em;
+}
+.mag2-cols p.indent-off {
+  text-indent: 0;
+}
+
+/* Closes column 2: pull-quote above the highlights box, always at its foot.
+   paginate() carries it as the flow's last atom, one column wide, so the text
+   can never run past it (the atom moves to the next sheet whole if it stops
+   fitting). The atom's slot in the flow stays an empty reservation and the box
+   paints the real thing pinned bottom-right — i.e. the foot of column 2. */
+.mag2-cols .mag2-aside {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: var(--mag2-col);
+}
+
+.mag2-aside {
+  display: flex;
+  flex-direction: column;
+  gap: 4mm;
+  break-inside: avoid;
+  -webkit-column-break-inside: avoid;
+}
+
+.mag2-quote {
+  margin: 0;
+  padding-top: 3mm;
+  border-top: 3px solid var(--mag-red);
+  text-align: left;
+}
+
+.mag2-quote-text {
+  display: block;
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 700;
+  font-size: 11pt;
+  line-height: 1.32;
+  color: var(--ink);
+}
+
+.mag2-quote-by {
+  display: block;
+  margin-top: 2mm;
+  font-family: var(--sans);
+  font-style: normal;
+  font-size: 7.5pt;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: none;
+  color: var(--mag-red);
+}
+
+.mag2-hl {
+  box-sizing: border-box;
+  padding: 4mm;
+  background: var(--accent-soft);
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+  /* Same RTL gotcha as page.css's .sidebar: direction alone doesn't beat a
+     physical text-align inherited from further up, so it's set explicitly
+     here too even though nothing above currently forces text-align:left —
+     cheap insurance against the same bug recurring here silently. */
+  direction: var(--text-dir, ltr);
+  text-align: start;
+}
+
+.mag2-hl h3 {
+  margin: 0 0 2mm;
+  font-size: 8pt;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: none;
+  color: var(--mag-red);
+}
+
+.mag2-hl ul {
+  margin: 0;
+  padding-inline-start: 4mm;
+  font-size: 8pt;
+  line-height: 1.45;
+  color: var(--ink);
+}
+
+.mag2-hl li {
+  margin-bottom: 1.5mm;
+}
+
+/* Match the shared callout marker geometry: the bullet begins at the same
+   logical edge as the HIGHLIGHTS heading, including in RTL. */
+.mag2-hl ul {
+  padding-inline: 0;
+  list-style: none;
+}
+
+.mag2-hl li {
+  display: grid;
+  grid-template-columns: 1.3em minmax(0, 1fr);
+  column-gap: 0.12em;
+  align-items: start;
+}
+
+.mag2-hl li::before {
+  content: '•';
+  grid-column: 1;
+  text-align: start;
+}
+
+/* Sheet 2: the photo's other half. No padding — the image owns the sheet. */
+.mag2-photo {
+  padding: 0;
+  background-color: var(--mag-dark);
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+
+.mag2-photo-tag {
+  position: absolute;
+  right: var(--margin);
+  bottom: var(--bottom-margin, var(--margin));
+  padding: 2mm 3mm;
+  background: rgba(11, 18, 32, 0.82);
+  color: #fff;
+  font-family: var(--sans);
+  font-size: 8pt;
+  letter-spacing: 0.14em;
+  text-transform: none;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+
+/* ---- magazine-3: gatefold cover -------------------------------------------
+   ONE photo split across the two facing cover sheets. Each sheet paints the
+   image at 200% width and shows one half (`position: left` / `right`), so the
+   two halves join at the fold like an open gatefold. Sheet 1 carries the
+   masthead + title, sheet 2 the lede + pull-quote + byline; then the article
+   flows as plain columns from sheet 3 (no lead hero — the photo lives here). */
+.mag-gate {
+  --mag-red: var(--accent, #e11d2e);
+  color: #fff;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+.mag-gate-scrim {
+  position: absolute;
+  inset: 0;
+}
+.mag-gate-scrim--a {
+  background:
+    linear-gradient(90deg, rgba(6, 10, 25, 0.9) 0%, rgba(6, 10, 25, 0.35) 55%, rgba(6, 10, 25, 0) 100%),
+    linear-gradient(180deg, rgba(6, 10, 25, 0.5) 0%, rgba(6, 10, 25, 0) 32%, rgba(6, 10, 25, 0.85) 100%);
+}
+.mag-gate-scrim--b {
+  background:
+    linear-gradient(270deg, rgba(6, 10, 25, 0.72) 0%, rgba(6, 10, 25, 0.2) 55%, rgba(6, 10, 25, 0) 100%),
+    linear-gradient(180deg, rgba(6, 10, 25, 0.45) 0%, rgba(6, 10, 25, 0) 34%, rgba(6, 10, 25, 0.9) 100%);
+}
+
+.mag-gate-inner {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  font-family: var(--sans);
+}
+.mag-gate-inner--b {
+  text-align: right;
+}
+
+.mag-gate-mid {
+  margin: auto 0;
+}
+.mag-gate-title {
+  font-size: var(--gate-title-size, 46pt);
+}
+
+.mag-gate-title--natural { white-space: pre-line; color: #fff; overflow-wrap: break-word; }
+.mag-gate-title .mag-title-word { color: inherit; }
+.mag-gate-title .mag-title-word.is-accent { color: var(--mag-kicker-color, var(--mag-red)); }
+.mag-gate--positioned .mag-gate-inner { direction: var(--text-dir, ltr); }
+.mag-gate--positioned .mag-gate-mid {
+  position: absolute;
+  top: 0;
+  inset-inline-start: var(--gate-inset);
+  width: var(--gate-width);
+  margin: 0;
+  text-align: var(--gate-align, start) !important;
+}
+.mag-gate--positioned :is(.mag-gate-lede, .mag-gate-quote) { max-width: 100%; }
+.mag-gate--positioned .mag-kicker { display: block; }
+.mag-gate--positioned .mag-kicker-dash { display: inline-block; vertical-align: middle; margin-inline-end: 9px; }
+.mag-gate--positioned .mag-gate-foot { margin-top: auto; }
+/* Cover blocks are placed by hand: press one and drag it up or down. Sideways
+   movement stays with the numeric inset/width controls, so a block keeps its
+   column. The editor's own hover highlight already marks the block as
+   interactive, so only the cursor is added here — and only on screen. */
+@media screen {
+  .mag-gate-mid--draggable,
+  .front-cover-story--draggable {
+    cursor: grab;
+  }
+  .mag-gate-mid--draggable.is-dragging,
+  .front-cover-story--draggable.is-dragging {
+    cursor: grabbing;
+    user-select: none;
+  }
+}
+
+.gate-layout-warning {
+  position: absolute; z-index: 20; bottom: var(--bottom-margin, 14mm); left: 14mm; right: 14mm;
+  padding: 8px; background: #fff3cd; color: #664d03; font: 12px/1.4 Arial, sans-serif;
+}
+@media print { .gate-layout-warning { display: none !important; } }
+
+.mag-gate-lede {
+  margin: var(--subtitle-gap, 0mm) 0 18px auto;
+  max-width: 84%;
+  font-family: var(--font-subtitle);
+  font-style: var(--subtitle-style, italic);
+  font-weight: var(--subtitle-weight, 400);
+  font-size: var(--fs-subtitle);
+  line-height: 1.45;
+  color: var(--subtitle-color, #eef2f7);
+}
+.mag-gate-quote {
+  margin: 0 0 0 auto;
+  max-width: 90%;
+  padding-top: var(--gate-quote-rule-gap, 12px);
+  border-top: var(--gate-quote-rule, 3px) solid var(--mag-kicker-color, var(--mag-red));
+}
+.mag-gate-quote-text {
+  display: block;
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 700;
+  font-size: 17pt;
+  line-height: 1.3;
+  color: #fff;
+}
+.mag-gate-quote-by {
+  display: block;
+  margin-top: 10px;
+  font-family: var(--sans);
+  font-style: normal;
+  font-size: 8.5pt;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: none;
+  color: var(--mag-kicker-color, var(--mag-red));
+}
+
+.mag-gate-foot {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.28);
+}
+.mag-gate-foot--footer-hidden {
+  border-top: 0;
+  padding-top: 0;
+}
+.mag-gate-credits {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 8.5pt;
+  letter-spacing: 0.14em;
+  text-transform: none;
+  color: #cbd5e1;
+  text-align: left;
+}
+
+.mag-gate-author {
+  color: var(--author-color, #cbd5e1);
+  font-family: var(--font-author);
+  font-size: var(--fs-author);
+  font-weight: var(--author-weight, 400);
+  font-style: var(--author-style, normal);
+  text-transform: none;
+}

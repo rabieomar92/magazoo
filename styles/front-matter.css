@@ -1,0 +1,298 @@
+/* Front-of-magazine layouts use their own grid; existing article flow is untouched. */
+.fm-page {
+  padding: var(--margin);
+  font-size: var(--fs-body);
+  line-height: 1.48;
+}
+/* The pagination probe needs the exact A4 geometry but must never identify as
+   a real `.page`. Preview counters and PDF export can therefore only see the
+   committed sheets, even if a future selector becomes less specific. */
+.fm-measure-page {
+  position: relative;
+  box-sizing: border-box;
+  width: var(--page-w);
+  height: var(--page-h);
+  text-align: left;
+  background-color: var(--paper-bg,#fff);
+  color: var(--ink);
+  font-family: var(--sans);
+  overflow: hidden;
+  overflow-wrap: break-word;
+}
+.fm-page > .tag-bar {
+  position: absolute;
+  inset: var(--topbar-offset) 0 auto;
+  width: 100%;
+  margin: 0;
+}
+.fm-shell {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding-top: max(17mm, calc(var(--topbar-offset) + 10mm - var(--margin)));
+  box-sizing: border-box;
+}
+.fm-header { flex: none; margin-bottom: 9mm; }
+.fm-kicker {
+  margin: 0 0 4mm;
+  color: var(--accent);
+  font: 700 var(--fs-eyebrow)/1.3 var(--sans);
+  letter-spacing: .12em;
+}
+.fm-header h1 {
+  margin: 0;
+  max-width: 160mm;
+  font: 650 var(--fs-title)/1.12 var(--serif);
+  letter-spacing: -.025em;
+  white-space: pre-line;
+  text-transform: none;
+}
+.fm-subtitle {
+  margin: 4mm 0 0;
+  max-width: 150mm;
+  font: 400 var(--fs-subtitle)/1.5 var(--font-subtitle);
+}
+.fm-identity { display: flex; align-items: end; gap: 5mm; margin-top: 8mm; }
+.fm-identity strong { font: 700 var(--fs-author)/1.4 var(--font-author); }
+.fm-identity p { margin: 1mm 0 0; font: 400 var(--fs-affil)/1.4 var(--font-affil); }
+.fm-portrait { position: relative; flex: none; width: 20mm; height: 27mm; overflow: hidden; }
+.fm-photo-placeholder { display: grid; place-items: center; height: 100%; background: var(--accent-soft); color: #34494d; font-size: 7pt; text-align: center; }
+.fm-middle { flex: 1 1 0; min-height: 0; display: grid; grid-template-columns: minmax(0,1fr) 35mm; gap: 7mm; }
+.fm-columns { min-width: 0; min-height: 0; display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 6mm; }
+.fm-column { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 5mm; }
+.fm-unit { flex: none; min-width: 0; display: flex; gap: 3mm; box-sizing: border-box; line-height: 1.48; }
+.fm-entry-copy { min-width: 0; flex: 1; }
+.fm-unit h2, .fm-rail h2 { margin: 0 0 2.5mm; color: var(--accent); font: 650 14pt/1.2 var(--serif); }
+.fm-unit h2 small { font: 400 8pt/1.2 var(--sans); }
+.fm-unit [data-fm-text], .fm-note-text { white-space: pre-line; overflow-wrap: anywhere; }
+.fm-page-number { flex: none; color: var(--accent); font: 400 23pt/1 var(--serif); min-width: 9mm; max-width: 14mm; overflow-wrap: anywhere; }
+.fm-rail { min-height: 0; min-width: 0; border-inline-start: .25mm solid color-mix(in srgb,var(--ink) 22%,transparent); padding-inline-start: 5mm; font-size: 8.5pt; }
+.fm-feature { position: relative; width: 100%; height: var(--hero-h); overflow: hidden; margin-bottom: 5mm; }
+.fm-feature-secondary { margin-top: 6mm; }
+.fm-rail h2 { font-family: var(--sans); font-size: 9pt; }
+.fm-signoff { margin-top: 8mm; display: grid; gap: 3mm; }
+.fm-signoff span { font: italic 11pt/1.3 var(--serif); }
+.fm-signoff strong { font-size: 9pt; }
+.fm-footer { flex: none; display: flex; align-items: end; justify-content: space-between; gap: 6mm; padding-top: 4mm; margin-top: 7mm; border-top: .25mm solid color-mix(in srgb,var(--ink) 25%,transparent); font: 400 7pt/1.4 var(--sans); white-space: pre-line; }
+.fm-footer b { font-size: 9pt; }
+.fm-page--dean .fm-column { gap: 3.2mm; }
+.fm-page--dean .fm-paragraph { font-family: var(--sans); }
+.fm-page--dean .fm-header { padding-top: var(--fm-dean-category-gap,0mm); }
+.fm-page--dean .fm-header h1 { margin-bottom: var(--fm-dean-title-gap,8mm); }
+.fm-page--dean .fm-subtitle,
+.fm-page--dean .fm-identity { margin-top: 0; }
+.fm-page--dean .fm-dean-cover {
+  height: auto;
+  aspect-ratio: 210 / 297;
+  margin: 3mm 0 3.5mm;
+  background: color-mix(in srgb,var(--ink) 6%,var(--paper-bg,#fff));
+}
+.fm-dean-signature {
+  display: block;
+  break-inside: avoid;
+  padding-top: 2mm;
+  font-family: var(--sans);
+}
+.fm-signature-image {
+  position: relative;
+  width: min(var(--fm-signature-width,34mm),100%);
+  height: calc(min(var(--fm-signature-width,34mm),100%) / 3);
+  margin: 0 0 2mm;
+  overflow: hidden;
+}
+.fm-dean-signature .fm-signoff { margin-top: 0; gap: 1.5mm; }
+.fm-credit { font: 400 7pt/1.4 var(--sans); margin: 2mm 0 4mm; }
+.fm-page--contents .fm-middle { grid-template-columns: minmax(0,1fr) 48mm; }
+.fm-page--contents .fm-column { gap: 8mm; }
+.fm-page--contents .fm-unit { font-size: var(--fs-body); }
+.fm-page--contents .fm-header { margin-bottom: 12mm; }
+.fm-banner { position: relative; height: var(--hero-h); overflow: hidden; margin-top: 7mm; }
+.fm-page--board { padding-top: 0; }
+.fm-page--board .fm-shell { padding-top: 0; }
+.fm-page--board > .tag-bar { z-index: 3; }
+.fm-board-hero {
+  flex: none;
+  min-width: 0;
+  margin: 0;
+}
+.fm-page--board .fm-banner--bleed {
+  width: calc(100% + 2 * var(--margin));
+  height: var(--hero-h);
+  margin: 0 calc(-1 * var(--margin));
+  background: color-mix(in srgb,var(--ink) 10%,var(--paper-bg,#fff));
+}
+.fm-board-caption {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0,1fr) auto;
+  align-items: start;
+  gap: 2mm 5mm;
+  padding: 4.5mm 0 5mm;
+  font: 400 6.6pt/1.32 var(--sans);
+}
+.fm-board-caption-line {
+  min-width: 0;
+  margin: 0;
+}
+.fm-board-caption-line strong {
+  display: inline;
+  margin-inline-end: .7em;
+  font-weight: 750;
+}
+.fm-board-caption-line strong::before {
+  content: '▲';
+  margin-inline-end: .55em;
+  color: var(--accent);
+  font-size: .72em;
+  vertical-align: .12em;
+}
+.fm-board-caption small {
+  max-width: 45mm;
+  color: color-mix(in srgb,var(--ink) 68%,transparent);
+  font: inherit;
+  text-align: end;
+  overflow-wrap: anywhere;
+}
+.fm-page--board .fm-middle {
+  grid-template-columns: minmax(0,1.18fr) minmax(0,.82fr);
+  gap: 6mm;
+  align-items: stretch;
+  border-top: .25mm solid color-mix(in srgb,var(--ink) 48%,transparent);
+  padding-top: 5.5mm;
+}
+.fm-page--board .fm-rail {
+  grid-column: 1;
+  grid-row: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border: 0;
+  padding: 0;
+  font-size: var(--fs-body);
+}
+.fm-page--board .fm-rail h2 {
+  margin-bottom: 3.5mm;
+  color: var(--ink);
+  font: 780 12.5pt/1.08 var(--sans);
+  letter-spacing: -.015em;
+}
+.fm-page--board .fm-note-text {
+  column-count: var(--fm-about-columns,3);
+  column-gap: 4mm;
+  line-height: 1.4;
+}
+.fm-note-paragraph {
+  margin: 0 0 2mm;
+  white-space: pre-line;
+}
+.fm-note-paragraph:last-child { margin-bottom: 0; }
+.fm-page--board .fm-columns {
+  grid-column: 2;
+  height: 100%;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  grid-template-rows: auto minmax(0,1fr);
+  column-gap: 4mm;
+  row-gap: 3.5mm;
+  border-inline-start: .25mm solid color-mix(in srgb,var(--ink) 34%,transparent);
+  padding-inline-start: 6mm;
+}
+.fm-board-list-header {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+.fm-board-list-header h1 {
+  margin: 0;
+  color: var(--ink);
+  font: 780 var(--fs-title)/1.08 var(--sans);
+  letter-spacing: -.015em;
+  white-space: pre-line;
+  text-transform: none;
+}
+.fm-board-list-header p {
+  margin: 1.2mm 0 0;
+  color: color-mix(in srgb,var(--ink) 72%,transparent);
+  font: 400 var(--fs-subtitle)/1.32 var(--font-subtitle);
+}
+.fm-page--board .fm-column { gap: var(--fm-board-entry-gap,2.8mm); }
+.fm-page--board .fm-unit h2 {
+  margin-bottom: 1mm;
+  color: var(--ink);
+  font: 720 var(--fm-board-heading-size,7.2pt)/1.25 var(--sans);
+  text-transform: none;
+}
+.fm-page--board .fm-unit { font-size: var(--fm-board-body-size,var(--fs-body)); line-height: 1.3; }
+.fm-board-contact {
+  width: calc((100% - 8mm) / 3);
+  margin-block: auto 3mm;
+  margin-inline-start: auto;
+  padding-top: 3mm;
+  font: 600 6.4pt/1.35 var(--sans);
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+.fm-board-logo {
+  position: relative;
+  display: block;
+  width: min(var(--fm-logo-width,18mm),100%);
+  height: var(--fm-logo-height,5.625mm);
+  margin-block: 3mm 0;
+  break-inside: avoid;
+  -webkit-column-break-inside: avoid;
+  overflow: hidden;
+}
+.fm-board-logo--wrap-block.fm-board-logo--start { margin-inline: 0 auto; }
+.fm-board-logo--wrap-block.fm-board-logo--center { margin-inline: auto; }
+.fm-board-logo--wrap-block.fm-board-logo--end { margin-inline: auto 0; }
+.fm-board-logo--wrap-start {
+  float: left;
+  margin: .8mm 3mm 1.8mm 0;
+}
+.fm-board-logo--wrap-end {
+  float: right;
+  margin: .8mm 0 1.8mm 3mm;
+}
+.fm-page--board[dir="rtl"] .fm-board-logo--wrap-start {
+  float: right;
+  margin: .8mm 0 1.8mm 3mm;
+}
+.fm-page--board[dir="rtl"] .fm-board-logo--wrap-end {
+  float: left;
+  margin: .8mm 3mm 1.8mm 0;
+}
+.fm-page--board.fm-page--continuation .fm-shell {
+  padding-top: max(17mm,calc(var(--topbar-offset) + 10mm - var(--margin)));
+}
+.fm-page--board.fm-page--continuation.fm-page--no-topbar .fm-shell { padding-top: 0; }
+.fm-page--board.fm-page--continuation .fm-middle {
+  display: block;
+  border-top: 0;
+  padding-top: 0;
+}
+.fm-page--board.fm-page--continuation .fm-columns {
+  width: 100%;
+  height: 100%;
+  grid-column: auto;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  grid-template-rows: auto minmax(0,1fr);
+  column-gap: 7mm;
+  border-inline-start: 0;
+  padding-inline-start: 0;
+}
+.fm-page--board.fm-page--continuation .fm-board-list-header {
+  padding-bottom: 5mm;
+  margin-bottom: 2mm;
+  border-bottom: .25mm solid color-mix(in srgb,var(--ink) 38%,transparent);
+}
+.fm-page--board[dir="rtl"] :is(.fm-board-caption-line strong,.fm-board-list-header h1,.fm-unit h2) {
+  letter-spacing: normal;
+}
+.fm-page--board .fm-footer {
+  margin-top: 4mm;
+  padding-top: 0;
+  border-top: 0;
+}
+.fm-measure { position: absolute; left: -20000px; top: 0; visibility: hidden; pointer-events: none; }
+.fm-measure-unit { flex: none; }
+.fm-page [data-editor-target], .fm-paragraph { cursor: pointer; }
+@media print { .fm-measure { display: none !important; } }

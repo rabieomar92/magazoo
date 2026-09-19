@@ -1,0 +1,73 @@
+import type { CSSProperties } from 'react';
+import type { Doc } from '../schema/document';
+import type { Piece } from '../lib/paginate';
+import { grid } from '../lib/geometry';
+import { Sidebar } from './Sidebar';
+import { Flow } from './Flow';
+import { TagBar } from './TagBar';
+import { PlacedImages } from './PlacedImages';
+import { FramedImage } from '../components/FramedImage';
+import { PageArtwork } from '../components/PageArtwork';
+
+interface Props {
+  doc: Doc;
+  vars: CSSProperties;
+  pieces: Piece[];
+}
+
+export function Page1({ doc, vars, pieces }: Props) {
+  const { meta, hero, design } = doc;
+  const heroAsset = hero.assetId ? doc.assets[hero.assetId] : null;
+  const { rail } = grid(design);
+  // Paper 3 can print its photograph rising from the foot of the page. The
+  // picture is lifted out of the flow there, so the page keeps the very text
+  // height the measuring pass computed for it — only the picture moves, and
+  // the masthead stays at the head of the page on its own.
+  const heroAtBottom = doc.templateId === 'paper-3' && design.heroAtBottom === true && design.showHero !== false;
+
+  return (
+    <div className={`page${doc.templateId === 'paper-3' ? ' page--paper3' : ''}${heroAtBottom ? ' page--hero-bottom' : ''}`} style={vars}>
+      <PageArtwork doc={doc} />
+      <div
+        className={`hero${design.showHero === false ? ' hero--hidden' : ''}`}
+        data-editor-tab="images"
+        data-editor-target="image-hero"
+      >
+        {/* The bar always exists — it's the first paint in this box. A hero
+            photo sits above it in z-order, so once a photo is set it simply
+            covers the strip; with no photo the bar reads on the plain
+            hero-colour backdrop. */}
+        {!heroAtBottom && <TagBar doc={doc} pageIndex={0} />}
+        {design.showHero !== false && heroAsset && (
+          <FramedImage asset={heroAsset} frame={hero} />
+        )}
+      </div>
+      {heroAtBottom && <TagBar doc={doc} pageIndex={0} />}
+      <header className="header">
+        <p className="eyebrow" data-editor-tab="content" data-editor-target="meta-category">{meta.categoryLabel}</p>
+        <h1 className="title" data-editor-tab="content" data-editor-target="meta-title">{meta.title}</h1>
+        {meta.subtitle && <p className="subtitle" data-editor-tab="content" data-editor-target="meta-subtitle">{meta.subtitle}</p>}
+        <p className="byline">
+          <span data-editor-tab="content" data-editor-target="meta-author">{meta.author}</span>
+          {meta.affiliation && <span className="affiliation" data-editor-tab="content" data-editor-target="meta-affiliation"> · {meta.affiliation}</span>}
+        </p>
+      </header>
+      <div className="body-row">
+        <div data-flow-host className={`body-cols body-cols--p1${rail ? ' body-cols--railed' : ''}`}>
+          {/* Top bleed stays off: the header always owns the top of page 1
+              (the hero does too, when set). Nothing sits below the body row,
+              so a figure that lands last on the page can still bleed down. */}
+          <Flow
+            pieces={pieces}
+            doc={doc}
+            /* With the photograph at the foot of the page there is no free
+               bottom edge left for a figure to bleed into. */
+            allowBottomBleed={!heroAtBottom}
+          />
+        </div>
+        {rail && <Sidebar doc={doc} />}
+      </div>
+      <PlacedImages doc={doc} pageIndex={0} />
+    </div>
+  );
+}
