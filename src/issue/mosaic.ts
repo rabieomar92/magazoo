@@ -4,8 +4,8 @@
  * Two columns. Cards drop into them from the top, each one as tall as its own
  * content needs to be — a card with a picture and a standfirst is tall, a bare
  * one-line brief is short — and a column takes cards until the next one would
- * not fit, at which point the next column starts. Reading order is never
- * disturbed: down the first column, down the second, then over the leaf.
+ * not fit. A later text-only brief may fill that hole before the next column
+ * starts. Otherwise page order is retained, including all picture cards.
  *
  * This is deliberately not a grid of equal boxes and not a tiling puzzle. The
  * card's height is decided by what is in it, which is what makes the page look
@@ -33,6 +33,8 @@ export interface PackOptions {
   gap: number;
   columnsPerPage?: number;
   pages?: number;
+  /** Only these cards may be pulled forward to fill a hole. */
+  textOnly?: readonly boolean[];
 }
 
 /** Height of a run of cards in one column, gaps included. */
@@ -101,26 +103,31 @@ function balance(heights: readonly number[], gap: number, parts: number): number
  *
  * Anything that will not fit at all is reported rather than drawn.
  */
-export function packColumns(heights: readonly number[], { columnHeight, gap, columnsPerPage = 2, pages = 2 }: PackOptions): PackedPlan {
+export function packColumns(heights: readonly number[], { columnHeight, gap, columnsPerPage = 2, pages = 2, textOnly }: PackOptions): PackedPlan {
   const total = pages * columnsPerPage;
   const empty = (): number[][][] => Array.from({ length: pages }, () => Array.from({ length: columnsPerPage }, () => [] as number[]));
   if (columnHeight <= 0 || heights.length === 0) return { pages: empty(), placed: 0 };
 
   // Greedy, column by column.
   const columns: number[][] = Array.from({ length: total }, () => [] as number[]);
-  let column = 0;
-  let used = 0;
   let placed = 0;
-  for (let index = 0; index < heights.length; index++) {
-    const height = Math.max(0, heights[index]);
-    const needed = used + (used > 0 ? gap : 0) + height;
-    if (needed <= columnHeight || used === 0) { columns[column].push(index); used = needed; placed++; continue; }
-    column++;
-    if (column >= total) break;
-    columns[column].push(index);
-    used = height;
-    placed++;
+  // Oversized/non-finite cards remain unplaced, so the caller reports overflow
+  // instead of clipping them or allowing them to block every later card.
+  const pending = heights.flatMap((height, index) => Number.isFinite(height) && Math.max(0, height) <= columnHeight ? [index] : []);
+  for (let column = 0; column < total && pending.length; column++) {
+    let used = 0;
+    while (pending.length) {
+      const fits = (index: number) => used + (columns[column].length ? gap : 0) + Math.max(0, heights[index]) <= columnHeight;
+      const next = fits(pending[0]) ? 0 : pending.findIndex(index => textOnly?.[index] && fits(index));
+      if (next < 0) break;
+      const [index] = pending.splice(next, 1);
+      used += (columns[column].length ? gap : 0) + Math.max(0, heights[index]);
+      columns[column].push(index);
+      placed++;
+    }
   }
+  const groupHeight = (group: number[]) => group.reduce((sum, index) => sum + Math.max(0, heights[index]), 0) + gap * Math.max(0, group.length - 1);
+  const groupFits = (group: number[]) => groupHeight(group) <= columnHeight;
 
   // A contents spread is two sheets whether or not the second is needed, so a
   // short issue that all fits on the first one would print a blank page. When
@@ -130,7 +137,7 @@ export function packColumns(heights: readonly number[], { columnHeight, gap, col
   if (placed > 1 && Math.floor(lastUsed / columnsPerPage) < pages - 1) {
     const all = columns.flat();
     const spread = balance(all.map(index => heights[index]), gap, total).map(group => group.map(offset => all[offset]));
-    if (spread.every(group => runHeight(heights, group[0] ?? 0, (group[group.length - 1] ?? -1) + 1, gap) <= columnHeight)) {
+    if (spread.every(groupFits)) {
       spread.forEach((group, index) => { columns[index] = group; });
     }
   }
@@ -142,8 +149,32 @@ export function packColumns(heights: readonly number[], { columnHeight, gap, col
   if (tail.length > 1) {
     const spread = balance(tail.map(index => heights[index]), gap, columnsPerPage)
       .map(group => group.map(offset => tail[offset]));
-    const fits = spread.every(group => runHeight(heights, group[0] ?? 0, (group[group.length - 1] ?? -1) + 1, gap) <= columnHeight);
+    const fits = spread.every(groupFits);
     if (fits) spread.forEach((group, offset) => { columns[lastPage * columnsPerPage + offset] = group; });
+  }
+
+  // A contiguous split can leave two tall photos beside a long list of briefs.
+  // Move a brief into the shorter final-sheet column only when it improves
+  // balance and still fits. Each move strictly reduces the height difference;
+  // picture order is never changed, and there can be no oscillation.
+  if (textOnly && columnsPerPage === 2) {
+    const left = columns[lastPage * columnsPerPage];
+    const right = columns[lastPage * columnsPerPage + 1];
+    for (let step = 0; step < heights.length; step++) {
+      const [short, tall] = groupHeight(left) <= groupHeight(right) ? [left, right] : [right, left];
+      const difference = groupHeight(tall) - groupHeight(short);
+      const candidates = short === right ? [...tall].reverse() : tall;
+      const candidate = candidates.find(index => {
+        if (!textOnly[index]) return false;
+        const enlarged = [...short, index];
+        const reduced = tall.filter(value => value !== index);
+        return groupFits(enlarged) && Math.abs(groupHeight(enlarged) - groupHeight(reduced)) < difference - .01;
+      });
+      if (candidate === undefined) break;
+      tall.splice(tall.indexOf(candidate), 1);
+      if (short === right) short.unshift(candidate);
+      else short.push(candidate);
+    }
   }
 
   const plan = empty();
@@ -259,7 +290,7 @@ export function choosePictures({ text, picture, eligible, forced, order, pack }:
   const count = text.length;
   const chosen = Array.from({ length: count }, (_, i) => eligible[i] && forced[i] === true);
   const heights = (state: readonly boolean[]) => state.map((on, i) => (on ? picture[i] : text[i]));
-  const fits = (state: readonly boolean[]) => packColumns(heights(state), pack).placed === count;
+  const fits = (state: readonly boolean[]) => packColumns(heights(state), { ...pack, textOnly: state.map(on => !on) }).placed === count;
 
   // Where the editor has asked for more pictures than the sheets can hold,
   // give them up worst-candidate first until the contents fits at all.

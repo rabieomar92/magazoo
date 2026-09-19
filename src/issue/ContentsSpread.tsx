@@ -3,11 +3,14 @@ import { contentsDeck, DEFAULT_CONTENTS_DESIGN, type ContentsDensity, type Conte
 import { choosePictures, columnGap, mosaicSeed, packColumns, pictureRatios } from './mosaic';
 import { FramedImage } from '../components/FramedImage';
 import { Wordmark } from '../components/Wordmark';
+import { readableInk } from '../lib/geometry';
+import { barStartsRight } from '../lib/barSide';
 import './contents.css';
 
 export interface ContentsSpreadProps {
   entries: readonly ContentsEntry[]; title?: string; subtitle?: string; direction?: 'ltr' | 'rtl';
   startNumber?: number; magazineName?: string; design?: ContentsDesign; onOverflow?: (overflow: boolean) => void;
+  mastheadSide?: 'left' | 'right';
 }
 
 /**
@@ -186,10 +189,11 @@ function pictureScore(entry: ContentsEntry, salt: number) {
  * density, the surplus is reported rather than drawn off the page, and the
  * studio shows the editor which way to go.
  */
-function MosaicSpread({ entries, title, direction, startNumber, magazineName, design, onOverflow }: {
+function MosaicSpread({ entries, title, direction, startNumber, magazineName, design, onOverflow, mastheadSide }: {
   entries: readonly ContentsEntry[]; title: string; direction: 'ltr' | 'rtl';
   startNumber: number; magazineName: string; design: ContentsDesign;
   onOverflow?: (overflow: boolean) => void;
+  mastheadSide: 'left' | 'right';
 }) {
   const probe = useRef<HTMLDivElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
@@ -214,7 +218,7 @@ function MosaicSpread({ entries, title, direction, startNumber, magazineName, de
     .map(item => item.index);
 
   const signature = `${entries.map((entry, i) => `${entry.id}:${entry.title}:${entry.subtitle}:${entry.hero?.src ?? ''}:${entry.badge ?? ''}:${entry.section ?? ''}:${entry.showHero ?? ''}:${ratios[i].toFixed(3)}`).join('|')}|${title}|${direction}|${JSON.stringify(design)}`;
-  const [plan, setPlan] = useState<{ signature: string; tier: number; pages: number[][][]; gaps: number[][]; centred: boolean[][]; photos: boolean[] } | null>(null);
+  const [plan, setPlan] = useState<{ signature: string; tier: number; pages: number[][][]; gaps: number[][]; photos: boolean[] } | null>(null);
   const settled = useRef(signature);
   if (settled.current !== signature) { settled.current = signature; const next = pinned ?? 0; if (tier !== next) setTier(next); }
   const first = useRef(true);
@@ -223,7 +227,9 @@ function MosaicSpread({ entries, title, direction, startNumber, magazineName, de
     const host = probe.current;
     const body = bodyRef.current;
     if (!host || !body) return;
+    let live = true;
     const measure = () => {
+      if (!live) return;
       // Every measurement has to be in the same units. The pane carries a
       // zoom, so a bounding rect is scaled while clientHeight is not — mixing
       // the two packs a column against the wrong ceiling and pushes its last
@@ -248,27 +254,17 @@ function MosaicSpread({ entries, title, direction, startNumber, magazineName, de
       const pack = { columnHeight: columnHeight - scale, gap };
       const photos = choosePictures({ text, picture, eligible, forced, order, pack });
       const heights = photos.map((on, index) => (on ? picture[index] : text[index]));
-      const packed = packColumns(heights, pack);
+      const packed = packColumns(heights, { ...pack, textOnly: photos.map(on => !on) });
       const gaps = packed.pages.map(page => page.map(column =>
         columnGap(column.map(index => heights[index]), pack.columnHeight, gap, maxExtra) / scale));
-      // A column holding one or two short cards cannot be spread to the foot
-      // of the page — there are not enough gaps to put the slack into — and a
-      // card marooned at the top of an empty column is the thing that reads as
-      // a hole. Centring the little that is there makes the same white space
-      // read as margin instead.
-      const centred = packed.pages.map((page, pageIndex) => page.map((column, columnIndex) => {
-        if (!column.length) return false;
-        const content = column.reduce((sum, index) => sum + heights[index], 0)
-          + gaps[pageIndex][columnIndex] * scale * (column.length - 1);
-        return content / pack.columnHeight < 0.62;
-      }));
       const over = packed.placed < entries.length;
       if (over && pinned === null && tier < TIERS.length - 1) { setTier(tier + 1); return; }
       onOverflow?.(over);
       setPlan(current => (current && current.signature === signature && current.tier === tier
         && JSON.stringify(current.pages) === JSON.stringify(packed.pages)
+        && JSON.stringify(current.gaps) === JSON.stringify(gaps)
         && JSON.stringify(current.photos) === JSON.stringify(photos) ? current
-        : { signature, tier, pages: packed.pages, gaps, centred, photos }));
+        : { signature, tier, pages: packed.pages, gaps, photos }));
     };
     // The first paint of a spread measures straight away, so it is never seen
     // unplaced. After that the work is deferred a beat: an editor typing into
@@ -282,13 +278,17 @@ function MosaicSpread({ entries, title, direction, startNumber, magazineName, de
     void document.fonts?.ready.then(measure);
     const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => measure());
     observer?.observe(body);
-    return () => { window.clearTimeout(timer); window.clearTimeout(settle); observer?.disconnect(); };
+    return () => { live = false; window.clearTimeout(timer); window.clearTimeout(settle); observer?.disconnect(); };
     // `eligible`, `forced` and `order` are all derived from `entries` and
     // `design`, which the signature already covers.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [signature, tier, pinned, entries, design.gapScale, onOverflow]);
 
   const style = {
+    '--contents-paper': design.pageColor,
+    '--contents-ink': design.textColor,
+    '--contents-bar': design.topBarColor,
+    '--contents-bar-ink': readableInk(design.topBarColor),
     '--contents-accent': design.accent,
     '--contents-heading': design.headingColor,
     '--contents-cols': design.columns,
@@ -316,14 +316,14 @@ function MosaicSpread({ entries, title, direction, startNumber, magazineName, de
   return <>{[0, 1].map(index => (
     <section key={index} className={className(index)} dir={direction} lang={direction === 'rtl' ? 'ar' : 'en'} style={style}
       aria-label={`${title || 'Contents'} · ${index + 1} of 2`}>
-      <div className="issue-contents-masthead">
-        <span className="issue-contents-kicker">{title || 'Contents'}</span>
+      <div className={`issue-contents-masthead${barStartsRight(mastheadSide, index) ? ' is-right' : ''}`}>
+        <span className="issue-contents-kicker" dir="auto">{title || 'Contents'}</span>
         <span dir="auto">{magazineName} &middot; {startNumber + index}</span>
       </div>
       <div className="issue-contents-body" ref={index === 0 ? bodyRef : undefined}>
         <div className="issue-mosaic-columns">
           {columnsFor(index).map((column, position) => (
-            <div key={position} className={`issue-mosaic-col${current?.centred[index]?.[position] ? ' is-settled' : ''}`} style={{ rowGap: gapFor(index, position) }}>
+            <div key={position} className="issue-mosaic-col" style={{ rowGap: gapFor(index, position) }}>
               {column.map(entryIndex => (
                 <MosaicCard key={entries[entryIndex].id} entry={entries[entryIndex]} design={design}
                   ratio={ratios[entryIndex]} photo={photoFor(entryIndex)} />
@@ -352,9 +352,10 @@ function MosaicSpread({ entries, title, direction, startNumber, magazineName, de
   ))}</>;
 }
 
-function ContentsPage({ group, index, title, subtitle, direction, startNumber, magazineName, design, onOverflow }: {
+function ContentsPage({ group, index, title, subtitle, direction, startNumber, magazineName, design, onOverflow, mastheadSide }: {
   group: readonly ContentsEntry[]; index: number; title: string; subtitle: string; direction: 'ltr' | 'rtl';
   startNumber: number; magazineName: string; design: ContentsDesign; onOverflow: (overflow: boolean) => void;
+  mastheadSide: 'left' | 'right';
 }) {
   const page = useRef<HTMLElement>(null);
   const pinned = design.density === 'auto' ? null : PINNED[design.density];
@@ -382,6 +383,10 @@ function ContentsPage({ group, index, title, subtitle, direction, startNumber, m
   }, [tier, pinned, signature, onOverflow]);
 
   const style = {
+    '--contents-paper': design.pageColor,
+    '--contents-ink': design.textColor,
+    '--contents-bar': design.topBarColor,
+    '--contents-bar-ink': readableInk(design.topBarColor),
     '--contents-accent': design.accent,
     '--contents-heading': design.headingColor,
     '--contents-feature-h': `${design.featureHeight}mm`,
@@ -397,7 +402,7 @@ function ContentsPage({ group, index, title, subtitle, direction, startNumber, m
     `issue-contents-${design.layout}`, !design.rules && 'issue-contents-ruleless'].filter(Boolean).join(' ');
 
   const head = <header className="issue-contents-header">
-    <div className="issue-contents-masthead"><span className="issue-contents-kicker">Table of contents</span><span dir="auto">{magazineName} &middot; {index === 0 ? '01 / 02' : '02 / 02'}</span></div>
+    <div className={`issue-contents-masthead${barStartsRight(mastheadSide, index) ? ' is-right' : ''}`}><span className="issue-contents-kicker" dir="auto">Table of contents</span><span dir="auto">{magazineName} &middot; {index === 0 ? '01 / 02' : '02 / 02'}</span></div>
     <h1>{title || 'Contents'}{index === 1 && <span aria-hidden="true"> / 2</span>}</h1>
     {subtitle && <p>{subtitle}</p>}
   </header>;
@@ -489,7 +494,7 @@ function ContentsPage({ group, index, title, subtitle, direction, startNumber, m
   </section>;
 }
 
-export function ContentsSpread({ entries, title = 'Contents', subtitle = '', direction = 'ltr', startNumber = 1, magazineName = 'Magazoo!', design = DEFAULT_CONTENTS_DESIGN, onOverflow }: ContentsSpreadProps) {
+export function ContentsSpread({ entries, title = 'Contents', subtitle = '', direction = 'ltr', startNumber = 1, magazineName = 'Magazoo!', design = DEFAULT_CONTENTS_DESIGN, onOverflow, mastheadSide = 'left' }: ContentsSpreadProps) {
   // Hooks first, branch second: the two layouts are different components and
   // the rules of hooks do not care that only one of them ever renders.
   const [spill, setSpill] = useState<[boolean, boolean]>([false, false]);
@@ -497,7 +502,7 @@ export function ContentsSpread({ entries, title = 'Contents', subtitle = '', dir
   useEffect(() => { if (!mosaic) onOverflow?.(spill[0] || spill[1]); }, [mosaic, spill, onOverflow]);
   if (mosaic) return <MosaicSpread
     entries={entries} title={title} direction={direction} startNumber={startNumber}
-    magazineName={magazineName} design={design} onOverflow={onOverflow}
+    magazineName={magazineName} design={design} onOverflow={onOverflow} mastheadSide={mastheadSide}
   />;
   const split = Math.ceil(entries.length / 2);
   const groups = [entries.slice(0, split), entries.slice(split)];
@@ -506,7 +511,7 @@ export function ContentsSpread({ entries, title = 'Contents', subtitle = '', dir
   return <>{groups.map((group, index) => (
     <ContentsPage
       key={index} group={group} index={index} title={title} subtitle={subtitle} direction={direction}
-      startNumber={startNumber} magazineName={magazineName} design={design} onOverflow={report(index)}
+      startNumber={startNumber} magazineName={magazineName} design={design} onOverflow={report(index)} mastheadSide={mastheadSide}
     />
   ))}</>;
 }

@@ -18,15 +18,14 @@ afterEach(() => {
   host.remove();
 });
 
-it('cuts every moving animal out of the base instead of doubling the original artwork', () => {
+it('renders one animal-free lettering layer and eight independently moving characters', () => {
   act(() => root.render(<MagazooLoader label="Preparing pages" />));
-  expect(host.querySelectorAll('image')).toHaveLength(1);
-  expect(host.querySelector('image')?.getAttribute('href')).toContain('magazoo-mark.png');
+  expect(host.querySelectorAll('.magazoo-loader-base')).toHaveLength(1);
+  expect(host.querySelector('.magazoo-loader-base')?.getAttribute('href')).toContain('magazoo-letters.png');
   expect(host.querySelectorAll('.magazoo-loader-animal')).toHaveLength(8);
-  const cutouts = [...host.querySelectorAll('mask path')].map(path => path.getAttribute('d'));
-  const pieces = [...host.getElementsByTagName('clipPath')].map(clip => clip.firstElementChild?.getAttribute('d'));
-  expect(cutouts).toEqual(pieces);
-  expect(host.querySelector('.magazoo-loader-base')?.getAttribute('mask')).toContain('letters');
+  expect(host.querySelectorAll('.magazoo-animal-gait')).toHaveLength(8);
+  expect([...host.querySelectorAll('.magazoo-animal-gait')].every(frame => frame.getAttribute('href')?.includes('magazoo-animals.png'))).toBe(true);
+  expect(host.querySelector('mask,use')).toBeNull();
   expect(host.querySelector('.magazoo-loader-shine')).toBeNull();
   expect(host.querySelector('[role="progressbar"]')).toBeNull();
   expect(host.querySelector('[role="status"]')?.textContent).toContain('Preparing pages');

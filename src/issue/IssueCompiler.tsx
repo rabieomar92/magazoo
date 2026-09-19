@@ -78,10 +78,10 @@ export function IssueCompiler({ sources, plan, items, onComplete, onError, onPro
     const signature = JSON.stringify(counts);
     const settled = pass > 0 && signature === previousCounts.current;
     previousCounts.current = signature;
-    const starts = new Map(assignments.map(row => [row.id, row.startNumber]));
+    const starts = new Map(assignments.map(row => [row.id, row]));
     const numbered = sources.map(source => {
       const start = starts.get(source.id);
-      return start === undefined ? source : { ...source, doc: documentWithIssueNumber(source.doc, start) };
+      return start === undefined ? source : { ...source, doc: documentWithIssueNumber(source.doc, start.startNumber, start.mastheadSide) };
     });
     if (settled || pass + 1 >= MAX_PASSES) {
       handlers.current.onComplete({ numbered, documents: rendered, counts, assignments, plan: frozen.current.plan });

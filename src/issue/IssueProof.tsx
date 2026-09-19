@@ -33,9 +33,10 @@ const Article = memo(function Article({ id, doc }: { id: string; doc: Doc }) {
  * and `exportIssuePdf` prints these same elements, one `clonePages` call per
  * article, exactly as printing that article on its own would.
  */
-export function IssueProof({ plan, entries, documents, magazineName, design, contentsStart, pagesRef, onOverflow, scale }: {
+export function IssueProof({ plan, entries, documents, magazineName, design, contentsStart, contentsSide = 'left', pagesRef, onOverflow, scale }: {
   plan: IssuePlan; entries: readonly ContentsEntry[]; documents: readonly IssueSourceDocument[];
   magazineName: string; design?: ContentsDesign; contentsStart: number; scale: number;
+  contentsSide?: 'left' | 'right';
   pagesRef: RefObject<HTMLDivElement | null>; onOverflow: (overflow: boolean) => void;
 }) {
   const [box, setBox] = useState({ width: 0, height: 0 });
@@ -77,7 +78,7 @@ export function IssueProof({ plan, entries, documents, magazineName, design, con
       <div className="pages issue-proof-contents">
         <ContentsSpread entries={entries} title={plan.contentsTitle} subtitle={plan.contentsSubtitle}
           direction={plan.direction} startNumber={contentsStart} magazineName={magazineName}
-          design={design} onOverflow={onOverflow} />
+          design={design} mastheadSide={contentsSide} onOverflow={onOverflow} />
       </div>
       {plan.order.slice(split + 1).map(article)}
     </div>

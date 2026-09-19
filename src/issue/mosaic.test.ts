@@ -47,13 +47,35 @@ describe('contents column packing', () => {
     expect(placed).toBe(12);
   });
 
-  it('places a card taller than a column on its own rather than losing it', () => {
+  it('reports oversized cards as unplaced rather than silently clipping them', () => {
     const heights = [200, 1400, 200];
     const { pages, placed } = packColumns(heights, { columnHeight: COLUMN, gap: GAP });
-    expect(placed).toBe(3);
+    expect(placed).toBe(2);
     const columns = pages.flat().filter(column => column.length);
-    expect(columns.flat()).toEqual([0, 1, 2]);
-    expect(columns.find(column => column.includes(1))).toEqual([1]);
+    expect(columns.flat()).toEqual([0, 2]);
+    expect(columns.find(column => column.includes(1))).toBeUndefined();
+  });
+
+  it('pulls later text cards into holes while keeping picture cards in order', () => {
+    const heights = [650, 650, 650, 650, 230, 230, 230, 230];
+    const options = { columnHeight: COLUMN, gap: GAP };
+    expect(packColumns(heights, options).placed).toBeLessThan(8);
+    const packed = packColumns(heights, { ...options, textOnly: heights.map(height => height === 230) });
+    expect(packed.placed).toBe(8);
+    expect(packed.pages.flat(2)).toEqual([0, 4, 1, 5, 2, 6, 3, 7]);
+    for (const column of packed.pages.flat()) expect(used(heights, column)).toBeLessThanOrEqual(COLUMN);
+  });
+
+  it('never duplicates cards or exceeds capacity when backfilling mixed heights', () => {
+    for (let run = 0; run < 200; run++) {
+      const heights = Array.from({ length: 30 }, (_, i) => (run * 37 + i * 71) % 1200);
+      const result = packColumns(heights, { columnHeight: COLUMN, gap: GAP, textOnly: heights.map((_, i) => i % 3 !== 0) });
+      const indices = result.pages.flat(2);
+      expect(new Set(indices).size).toBe(result.placed);
+      for (const column of result.pages.flat()) expect(used(heights, column)).toBeLessThanOrEqual(COLUMN);
+      const pictures = indices.filter(i => i % 3 === 0);
+      expect(pictures).toEqual([...pictures].sort((a, b) => a - b));
+    }
   });
 
   it('evens out the last sheet rather than leaving a column empty beside a full one', () => {

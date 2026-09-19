@@ -4,6 +4,19 @@ import { assignIssuePages, CONTENTS_DECK_MAX, contentsEntries, defaultIssuePlan,
 
 const item = (id: string, templateId: IssueItem['doc']['templateId'] = 'paper-1'): IssueItem => ({ id, name: `${id}.json`, version: 1, updated: 0, doc: { ...emptyDoc(), templateId } });
 describe('issue numbering and preservation', () => {
+  it('starts left after the cover and alternates by interior sheets, not folios', () => {
+    const items = [item('cover', 'magazine-4'), item('a'), item('b'), item('back', 'backcover-1')];
+    for (const startNumber of [0, 1, 2, 37]) for (const countCovers of [false, true]) {
+      const plan = { ...defaultIssuePlan(items), startNumber, countCovers, direction: 'rtl' as const };
+      const counts = { cover: 1, a: 3, b: 2, back: 1 };
+      expect(assignIssuePages(plan, items, counts).map(row => row.mastheadSide)).toEqual([undefined, 'left', 'left', 'right', undefined]);
+      expect(assignIssuePages({ ...plan, order: ['cover', 'a', '__contents__', 'b', 'back'] }, items, counts).map(row => row.mastheadSide)).toEqual([undefined, 'left', 'right', 'right', undefined]);
+    }
+    const before = JSON.stringify(items[1].doc);
+    const numbered = documentWithIssueNumber(items[1].doc, 4, 'right');
+    expect(numbered.design.barSide).toBe('right');
+    expect(JSON.stringify(items[1].doc)).toBe(before);
+  });
   it('counts all physical sheets including gallery spreads and two generated contents pages', () => {
     const items = [item('back', 'backcover-1'), item('article'), item('gallery', 'gallery-1'), item('cover', 'magazine-4')];
     const plan = defaultIssuePlan(items);

@@ -1,14 +1,15 @@
 .issue-renderer { position:fixed; left:-12000px; top:0; width:900px; height:1200px; overflow:hidden; pointer-events:none; z-index:-1; }
 .issue-renderer .paper-scroll { width:900px; height:1200px; }
 .issue-renderer .pages { pointer-events:none; }
+.issue-contents-masthead.is-right { flex-direction:row-reverse; }
 
-.page.issue-contents-page { --page-w:210mm; --page-h:297mm; --margin:15mm; --paper-bg:#faf8f2; --ink:#213238; --sans:'Helvetica',Arial,sans-serif; display:flex; flex-direction:column; gap:calc(8mm * var(--contents-gap-scale,1)); padding:14mm 15mm 12mm; background:#faf8f2; color:#213238; font:calc(10pt * var(--contents-scale,1))/1.4 'Helvetica',Arial,sans-serif; text-align:start; direction:var(--text-dir,ltr); }
-.issue-contents-masthead { display:flex; justify-content:space-between; gap:calc(5mm * var(--contents-gap-scale,1)); padding-bottom:4mm; border-bottom:.3mm solid #a4aca8; font:calc(8pt * var(--contents-scale,1))/1.3 'Helvetica',Arial,sans-serif; color:#59706e; }
-.issue-contents-kicker { font-weight:700; letter-spacing:.16em; text-transform:uppercase; color:#8a968f; }
+.page.issue-contents-page { --page-w:210mm; --page-h:297mm; --margin:15mm; --paper-bg:var(--contents-paper,#faf8f2); --ink:var(--contents-ink,#213238); --sans:'Helvetica',Arial,sans-serif; display:flex; flex-direction:column; gap:calc(8mm * var(--contents-gap-scale,1)); padding:14mm 15mm 12mm; background:var(--contents-paper,#faf8f2); color:var(--contents-ink,#213238); font:calc(10pt * var(--contents-scale,1))/1.4 'Helvetica',Arial,sans-serif; text-align:start; direction:var(--text-dir,ltr); }
+.issue-contents-masthead { display:flex; flex:none; direction:ltr; background:var(--contents-bar,#faf8f2); justify-content:space-between; gap:calc(5mm * var(--contents-gap-scale,1)); padding:3mm 4mm; border-bottom:.3mm solid #a4aca8; font:calc(8pt * var(--contents-scale,1))/1.3 'Helvetica',Arial,sans-serif; color:var(--contents-bar-ink,#213238); }
+.issue-contents-kicker { font-weight:700; letter-spacing:.16em; text-transform:uppercase; color:inherit; }
 .issue-contents-header { flex:none; }
-.issue-contents-header h1 { font:600 calc(43pt * var(--contents-scale,1))/1.05 var(--contents-headline-font,'Playfair Display',Georgia,serif); margin:5mm 0 3mm; letter-spacing:calc(-.035em + var(--contents-tracking,0em)); color:#20383a; overflow-wrap:anywhere; }
-.issue-contents-header h1 > span { font:300 calc(22pt * var(--contents-scale,1))/1 'Helvetica',Arial,sans-serif; color:#8e9c96; letter-spacing:-.03em; }
-.issue-contents-header > p { font:calc(10pt * var(--contents-scale,1))/1.45 'Helvetica',Arial,sans-serif; margin:0; color:#697670; }
+.issue-contents-header h1 { font:600 calc(43pt * var(--contents-scale,1))/1.05 var(--contents-headline-font,'Playfair Display',Georgia,serif); margin:5mm 0 3mm; letter-spacing:calc(-.035em + var(--contents-tracking,0em)); color:var(--contents-ink,#213238); overflow-wrap:anywhere; }
+.issue-contents-header h1 > span { font:300 calc(22pt * var(--contents-scale,1))/1 'Helvetica',Arial,sans-serif; color:var(--contents-ink,#213238); letter-spacing:-.03em; }
+.issue-contents-header > p { font:calc(10pt * var(--contents-scale,1))/1.45 'Helvetica',Arial,sans-serif; margin:0; color:var(--contents-ink,#213238); }
 
 /* The body is the only part of the sheet allowed to grow or shrink: the
    header/footer stay a fixed height. Filling it is left to the density tier
@@ -43,7 +44,7 @@
 .issue-contents-feature-copy { flex:none; display:grid; grid-template-columns:19mm minmax(0,1fr); gap:calc(5mm * var(--contents-gap-scale,1)); border-top:.7mm solid var(--contents-accent); padding-top:4mm; margin-top:4mm; }
 .issue-contents-number { font:400 calc(29pt * var(--contents-scale,1))/1.03 var(--contents-headline-font,'Playfair Display',Georgia,serif); color:var(--contents-accent); font-variant-numeric:tabular-nums; }
 .issue-contents-feature h2 { font:600 calc(20pt * var(--contents-scale,1))/1.16 var(--contents-headline-font,'Playfair Display',Georgia,serif); letter-spacing:calc(-.015em + var(--contents-tracking,0em)); margin:0 0 2mm; }
-.issue-contents-feature p { font:italic calc(9.5pt * var(--contents-scale,1))/1.4 'Helvetica',Arial,sans-serif; margin:0; color:#65716e; }
+.issue-contents-feature p { font:italic calc(9.5pt * var(--contents-scale,1))/1.4 'Helvetica',Arial,sans-serif; margin:0; color:var(--contents-ink,#213238); }
 
 .issue-contents-list { flex:0 1 auto; min-height:0; overflow:hidden; display:grid; grid-template-columns:repeat(var(--contents-cols,2),minmax(0,1fr)); column-gap:calc(7mm * var(--contents-gap-scale,1)); row-gap:calc(5mm * var(--contents-gap-scale,1)); align-items:start; }
 .issue-contents-group { grid-column:1 / -1; display:grid; grid-template-columns:repeat(var(--contents-cols,2),minmax(0,1fr)); column-gap:calc(7mm * var(--contents-gap-scale,1)); row-gap:calc(5mm * var(--contents-gap-scale,1)); }
@@ -52,9 +53,9 @@
 .issue-contents-entry-copy { display:grid; grid-template-columns:12mm minmax(0,1fr); gap:calc(3mm * var(--contents-gap-scale,1)); }
 .issue-contents-entry .issue-contents-number { font-size:calc(19pt * var(--contents-scale,1)); }
 .issue-contents-entry h2 { font:600 calc(11pt * var(--contents-scale,1))/1.22 var(--contents-headline-font,'Playfair Display',Georgia,serif); letter-spacing:var(--contents-tracking,0em); margin:0 0 1.5mm; }
-.issue-contents-entry p { font:italic calc(8pt * var(--contents-scale,1))/1.38 'Helvetica',Arial,sans-serif; color:#697570; margin:0; }
+.issue-contents-entry p { font:italic calc(8pt * var(--contents-scale,1))/1.38 'Helvetica',Arial,sans-serif; color:var(--contents-ink,#213238); margin:0; }
 
-.issue-contents-footer { flex:none; display:flex; justify-content:space-between; gap:calc(6mm * var(--contents-gap-scale,1)); border-top:.25mm solid #adb9b0; padding-top:4mm; font:calc(7pt * var(--contents-scale,1))/1.3 'Helvetica',Arial,sans-serif; color:#596d67; }
+.issue-contents-footer { flex:none; display:flex; justify-content:space-between; gap:calc(6mm * var(--contents-gap-scale,1)); border-top:.25mm solid #adb9b0; padding-top:4mm; font:calc(7pt * var(--contents-scale,1))/1.3 'Helvetica',Arial,sans-serif; color:var(--contents-ink,#213238); }
 .issue-contents-second .issue-contents-footer { flex-direction:row-reverse; }
 
 .issue-contents-airy .issue-contents-shot.is-feature { height:90mm; }
@@ -115,14 +116,14 @@
 .issue-contents-block-head .issue-contents-number { font-size:calc(15pt * var(--contents-scale,1)); color:var(--contents-heading); }
 
 .issue-contents-block-solo h2 { font:600 calc(14pt * var(--contents-scale,1))/1.18 var(--contents-headline-font,'Playfair Display',Georgia,serif); letter-spacing:calc(-.01em + var(--contents-tracking,0em)); margin:3mm 0 1.5mm; display:-webkit-box; -webkit-box-orient:vertical; overflow:hidden; -webkit-line-clamp:2; }
-.issue-contents-block-solo p { font:italic calc(9pt * var(--contents-scale,1))/1.4 'Helvetica',Arial,sans-serif; color:#65716e; margin:0; display:-webkit-box; -webkit-box-orient:vertical; overflow:hidden; -webkit-line-clamp:3; }
+.issue-contents-block-solo p { font:italic calc(9pt * var(--contents-scale,1))/1.4 'Helvetica',Arial,sans-serif; color:var(--contents-ink,#213238); margin:0; display:-webkit-box; -webkit-box-orient:vertical; overflow:hidden; -webkit-line-clamp:3; }
 
 .issue-contents-block-body { flex:1 1 auto; min-height:0; display:flex; flex-direction:row; gap:calc(5mm * var(--contents-gap-scale,1)); overflow:hidden; }
 .issue-contents-rows { flex:1 1 auto; min-width:0; min-height:0; overflow:hidden; list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:calc(3.5mm * var(--contents-gap-scale,1)); }
 .issue-contents-rows > li { display:grid; grid-template-columns:10mm minmax(0,1fr); column-gap:calc(3mm * var(--contents-gap-scale,1)); align-items:start; border-top:.25mm solid #c7ceca; padding-top:2.6mm; }
 .issue-contents-rows .issue-contents-rownum { font:400 calc(15pt * var(--contents-scale,1))/1.1 var(--contents-headline-font,'Playfair Display',Georgia,serif); color:var(--contents-accent); font-variant-numeric:tabular-nums; }
 .issue-contents-rows h2 { font:600 calc(10.5pt * var(--contents-scale,1))/1.22 var(--contents-headline-font,'Playfair Display',Georgia,serif); letter-spacing:var(--contents-tracking,0em); margin:0 0 1mm; }
-.issue-contents-rows p { font:italic calc(8pt * var(--contents-scale,1))/1.35 'Helvetica',Arial,sans-serif; color:#697570; margin:0; display:-webkit-box; -webkit-box-orient:vertical; overflow:hidden; -webkit-line-clamp:2; }
+.issue-contents-rows p { font:italic calc(8pt * var(--contents-scale,1))/1.35 'Helvetica',Arial,sans-serif; color:var(--contents-ink,#213238); margin:0; display:-webkit-box; -webkit-box-orient:vertical; overflow:hidden; -webkit-line-clamp:2; }
 
 /* The rail: a narrow column of the block's own pictures, each at its own
    shape, stacked beside the list rather than stretched across the top of
@@ -176,20 +177,16 @@
   gap:calc(5mm * var(--contents-gap-scale,1)); padding:13mm 14mm 12mm;
 }
 .issue-contents-mosaic .issue-contents-masthead { padding-bottom:3mm; }
-.issue-contents-mosaic .issue-contents-kicker { font-size:calc(9pt * var(--contents-scale,1)); letter-spacing:.2em; color:#4c5f5c; }
+.issue-contents-mosaic .issue-contents-kicker { font-size:calc(9pt * var(--contents-scale,1)); letter-spacing:.2em; color:inherit; }
 .issue-contents-mosaic .issue-contents-body { position:relative; }
 
-/* The columns are full height, not content height. They look identical while
-   a column is full — cards stack from the top either way — but a column that
-   is only as tall as its cards has nothing to centre a short one inside. */
+/* Full-height columns give the measured packer a fixed capacity. */
 .issue-mosaic-columns { flex:1; min-height:0; display:grid; grid-template-columns:1fr 1fr; gap:var(--mosaic-col-gap); align-items:stretch; }
 /* `overflow:hidden` is a backstop, not the mechanism: the packer has already
    proved every card fits. If some future change ever broke that, a card would
    be clipped at the column edge rather than bleeding across the footer or the
    next column — and the studio would still be showing the overflow warning. */
 .issue-mosaic-col { min-width:0; display:flex; flex-direction:column; align-items:stretch; overflow:hidden; }
-/* Too little in this column to reach the foot of the page by spacing alone. */
-.issue-mosaic-col.is-settled { justify-content:center; }
 
 /* The hidden twin: one column's width, off to the side, where every card is
    laid out once so its real height can be read before any of them are dealt
@@ -201,7 +198,7 @@
 /* Print never needs the twins — they have already done their work by then. */
 @media print { .issue-mosaic-probe { display:none !important; } }
 
-.issue-mosaic-card { min-width:0; border-top:.35mm solid var(--contents-accent,#9a603c); padding-top:2.6mm; }
+.issue-mosaic-card { flex:none; min-width:0; border-top:.35mm solid var(--contents-accent,#9a603c); padding-top:2.6mm; }
 .issue-contents-ruleless .issue-mosaic-card { border-top:0; padding-top:0; }
 
 .issue-mosaic-photo { position:relative; width:100%; overflow:hidden; background:#dce4de; margin-bottom:2.8mm; }
@@ -217,13 +214,13 @@
   letter-spacing:.14em; text-transform:uppercase; color:var(--contents-heading,#1f6f8b);
 }
 .issue-mosaic-card h2 {
-  margin:0; color:#17282b; overflow-wrap:break-word;
+  margin:0; color:var(--contents-ink,#213238); overflow-wrap:break-word;
   font:600 calc(12.5pt * var(--contents-scale,1))/1.22 var(--contents-headline-font,'Playfair Display',Georgia,serif);
   letter-spacing:calc(-.008em + var(--contents-tracking,0em));
 }
 .issue-mosaic-card.has-photo h2 { font-size:calc(13.5pt * var(--contents-scale,1)); }
 .issue-mosaic-card p {
-  margin:1.4mm 0 0; color:#5d6f6b; overflow-wrap:break-word;
+  margin:1.4mm 0 0; color:var(--contents-ink,#213238); overflow-wrap:break-word;
   font:calc(8pt * var(--contents-scale,1))/1.45 'Helvetica',Arial,sans-serif;
 }
 .issue-mosaic-card .issue-contents-badge { display:inline-block; margin-top:1.4mm; }

@@ -77,7 +77,7 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
   // A new array identity is what tells the compiler to set the issue again.
   const sources = useMemo(() => { void compileToken; return data.items.map(({ id, name, doc }) => ({ id, name, doc })); }, [data.items, compileToken]);
   const ready = !!compiled;
-  const assignments = compiled?.assignments ?? [];
+  const assignments = useMemo(() => compiled?.assignments ?? [], [compiled]);
   const contentsDesign = useMemo(() => contentsDesignOf(plan), [plan]);
   /**
    * What the contents spread on screen is drawn from.
@@ -266,6 +266,9 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
               {contentsDesign.layout === 'feature' && <label className="field">List columns<select value={contentsDesign.columns} disabled={busy} onChange={event => updateDesign({ columns: Number(event.target.value) as 1 | 2 })}><option value={1}>1</option><option value={2}>2</option></select></label>}
               <label className="field">Headline font<select value={contentsDesign.titleFont} disabled={busy} onChange={event => updateDesign({ titleFont: event.target.value as 'serif' | 'sans' })}><option value="serif">Serif · Playfair</option><option value="sans">Sans · Avenir Next</option></select></label>
               <label className="field swatch">Accent<input type="color" value={contentsDesign.accent} disabled={busy} onChange={event => updateDesign({ accent: event.target.value })} /></label>
+              <label className="field swatch">Page colour<input type="color" value={contentsDesign.pageColor} disabled={busy} onChange={event => updateDesign({ pageColor: event.target.value })} /></label>
+              <label className="field swatch">Text colour<input type="color" value={contentsDesign.textColor} disabled={busy} onChange={event => updateDesign({ textColor: event.target.value })} /></label>
+              <label className="field swatch">Top bar colour<input type="color" value={contentsDesign.topBarColor} disabled={busy} onChange={event => updateDesign({ topBarColor: event.target.value })} /></label>
               <label className="field swatch">Headings<input type="color" value={contentsDesign.headingColor} disabled={busy} onChange={event => updateDesign({ headingColor: event.target.value })} /></label>
               <label className="field">Feature picture (mm)<input type="number" min={20} max={150} step={1} value={contentsDesign.featureHeight} disabled={busy} onChange={event => { const value = event.target.valueAsNumber; if (Number.isFinite(value)) updateDesign({ featureHeight: value }); }} /></label>
               {contentsDesign.layout === 'mosaic' && <label className="field">Pictures<select value={contentsDesign.pictures} disabled={busy} onChange={event => updateDesign({ pictures: event.target.value as ContentsPictures })}><option value="auto">Automatic — as many as fit</option><option value="all">On every entry that has one</option><option value="none">Text only</option></select></label>}
@@ -284,7 +287,7 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
               <button type="button" disabled={busy} onClick={() => updateDesign({ mosaicSalt: (contentsDesign.mosaicSalt + 1) % 10000 })}>Shuffle the tiles</button>
             </div>}
             <p className="field-hint">{contentsDesign.layout === 'mosaic'
-              ? 'The mosaic divides each sheet into cards that tile it exactly — every card a different size, none of them able to overflow or leave a gap. Cards large enough to carry a picture get one; the rest read as type. Shuffling re-rolls the arrangement; it stays put otherwise.'
+              ? 'Cards follow page order where possible. Later text-only cards can fill gaps beside taller picture cards; their printed page numbers stay unchanged. Pictures are fitted to the available room. Shuffling changes the picture choices.'
               : 'Density decides how much each page tries to hold before shrinking; on Auto it steps down only as far as it must to still fit two pages. The three sliders apply on top of whichever density ends up showing.'}</p>
           </section>
         </div>}
@@ -342,7 +345,7 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
         </div>
         <div className="stage-scroll" ref={stageRef}>
           {ready
-            ? <IssueProof plan={proofPlan!} entries={entries} documents={compiled!.numbered} magazineName={data.project.name} design={proofDesign} contentsStart={contentsStart} scale={scale} pagesRef={pagesRef} onOverflow={setContentsOverflow} />
+            ? <IssueProof plan={proofPlan!} entries={entries} documents={compiled!.numbered} magazineName={data.project.name} design={proofDesign} contentsStart={contentsStart} contentsSide={assignments.find(row => row.id === CONTENTS_ID)?.mastheadSide} scale={scale} pagesRef={pagesRef} onOverflow={setContentsOverflow} />
             : <div className="stage-progress">
                 {renderError
                   ? <><Wordmark className="stage-mark" /><h3>An article needs attention</h3><p role="alert">{renderError}</p><button className="primary" onClick={recompile}>Try again</button></>

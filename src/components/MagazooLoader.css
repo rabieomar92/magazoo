@@ -24,7 +24,7 @@
   position:relative;
   display:block;
   flex:0 0 auto;
-  width:clamp(82px,13vw,112px);
+  width:clamp(112px,15vw,156px);
   aspect-ratio:640/598;
   filter:drop-shadow(0 10px 15px rgba(42,35,124,.13));
   isolation:isolate;
@@ -37,10 +37,17 @@
   overflow:visible;
   user-select:none;
   pointer-events:none;
-  animation:magazoo-breathe 2.7s ease-in-out infinite;
 }
-.magazoo-loader-animal { animation:magazoo-wave 2.3s ease-in-out infinite; }
-.magazoo-loader-animal:nth-of-type(even) { animation-name:magazoo-pounce; animation-duration:2.7s; }
+.magazoo-loader-animal { animation-duration:var(--route-time); animation-delay:var(--route-delay); animation-timing-function:linear; animation-iteration-count:infinite; }
+.magazoo-animal-gait { animation:magazoo-gait .6s steps(4,end) infinite; }
+.route-upper { animation-name:magazoo-upper; }
+.route-arch { animation-name:magazoo-arch; }
+.route-panda { animation-name:magazoo-panda; }
+.route-climb { animation-name:magazoo-climb; }
+.route-zigzag { animation-name:magazoo-zigzag; }
+.route-lower { animation-name:magazoo-lower; }
+.route-round { animation-name:magazoo-round; }
+.route-exclaim { animation-name:magazoo-exclaim; }
 
 .magazoo-loader-copy { display:grid; gap:4px; min-width:0; width:min(290px,55vw); text-align:left; }
 .magazoo-loader-copy strong { font-size:14px; font-weight:720; line-height:1.3; letter-spacing:-.01em; }
@@ -83,9 +90,42 @@
 .magazoo-loader.is-inline .magazoo-loader-copy { display:block; width:auto; text-align:inherit; }
 .magazoo-loader.is-inline .magazoo-loader-copy strong { font:inherit; color:inherit; }
 
-@keyframes magazoo-breathe { 0%,100%{transform:translateY(0) scale(1)} 50%{transform:translateY(-1.2%) scale(1.008)} }
-@keyframes magazoo-wave { 0%,100%{transform:rotate(0)} 45%{transform:rotate(-1deg)} 70%{transform:rotate(.5deg)} }
-@keyframes magazoo-pounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-3px)} }
+@keyframes magazoo-gait { to { transform:translateX(-1024px); } }
+/* Return legs face the direction of travel. The letters never wobble. */
+@keyframes magazoo-upper {
+  0%,100% { transform:translate(0,0); } 45% { transform:translate(50px,0); }
+  45.001% { transform:translate(132px,0) scaleX(-1); } 95% { transform:translate(82px,0) scaleX(-1); } 95.001% { transform:translate(0,0); }
+}
+@keyframes magazoo-arch {
+  0%,100% { transform:translate(0,0); } 25% { transform:translate(22px,-7px); } 45% { transform:translate(40px,0); }
+  45.001% { transform:translate(114px,0) scaleX(-1); } 75% { transform:translate(92px,-7px) scaleX(-1); } 95% { transform:translate(74px,0) scaleX(-1); } 95.001% { transform:translate(0,0); }
+}
+@keyframes magazoo-panda {
+  0%,100% { transform:translate(0,0); } 45% { transform:translate(46px,-4px); }
+  45.001% { transform:translate(128px,-4px) scaleX(-1); } 95% { transform:translate(82px,0) scaleX(-1); } 95.001% { transform:translate(0,0); }
+}
+@keyframes magazoo-climb {
+  0%,100% { transform:translate(0,0) rotate(-80deg); } 45% { transform:translate(0,-83px) rotate(-80deg); }
+  55% { transform:translate(-63px,-82px); } 95% { transform:translate(-63px,0); }
+}
+@keyframes magazoo-zigzag {
+  0%,100% { transform:translate(0,0); } 28% { transform:translate(62px,0); }
+  48% { transform:translate(4px,170px) rotate(110deg); } 52% { transform:translate(70px,175px) rotate(-70deg); } 85% { transform:translate(85px,0) rotate(-70deg); }
+}
+@keyframes magazoo-lower {
+  0%,100% { transform:translate(0,0); } 25% { transform:translate(30px,-6px); } 45% { transform:translate(50px,4px); }
+  45.001% { transform:translate(118px,4px) scaleX(-1); } 75% { transform:translate(98px,-6px) scaleX(-1); } 95% { transform:translate(68px,0) scaleX(-1); } 95.001% { transform:translate(0,0); }
+}
+@keyframes magazoo-round {
+  0%,100% { transform:translate(0,0); } 30% { transform:translate(50px,14px); }
+  46% { transform:translate(82px,70px) rotate(70deg); } 46.001% { transform:translate(140px,65px) scaleX(-1) rotate(70deg); }
+  80% { transform:translate(105px,4px) scaleX(-1); } 95% { transform:translate(70px,0) scaleX(-1); } 95.001% { transform:translate(0,0); }
+}
+@keyframes magazoo-exclaim {
+  0%,100% { transform:translate(0,0) rotate(-90deg); } 42% { transform:translate(0,-168px) rotate(-90deg); }
+  50% { transform:translate(-1px,-230px); } 50.001% { transform:translate(65px,-230px) scaleX(-1); }
+  58% { transform:translate(65px,-230px) scaleX(-1); } 58.001% { transform:translate(0,-168px) rotate(-90deg); } 95% { transform:translate(0,-10px) rotate(-90deg); }
+}
 
 @media (max-width:520px) {
   .magazoo-loader.is-card { display:grid; justify-items:center; text-align:center; }

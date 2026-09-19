@@ -48,6 +48,9 @@ export interface ContentsDesign {
   layout: ContentsLayout;
   density: ContentsDensity;
   accent: string;
+  pageColor: string;
+  textColor: string;
+  topBarColor: string;
   /** Second accent, for the section headings in the sections layout. */
   headingColor: string;
   columns: 1 | 2;
@@ -82,6 +85,7 @@ export interface ContentsDesign {
 
 export const DEFAULT_CONTENTS_DESIGN: ContentsDesign = {
   layout: 'mosaic', density: 'auto', accent: '#9a603c', headingColor: '#1f6f8b', columns: 2,
+  pageColor: '#faf8f2', textColor: '#213238', topBarColor: '#faf8f2',
   showHeroes: true, pageLabels: false, featureHeight: 59, thumbHeight: 25, rules: true, paddedNumbers: true,
   titleFont: 'serif', textScale: 1, tracking: 0, gapScale: 1, mosaicSalt: 0, pictures: 'auto',
 };
@@ -92,8 +96,12 @@ const CONTENTS_LAYOUTS: ContentsLayout[] = ['mosaic', 'feature', 'sections'];
 const CONTENTS_DENSITIES: ContentsDensity[] = ['auto', 'airy', 'normal', 'dense', 'packed'];
 const clampNumber = (value: unknown, low: number, high: number, fallback: number) =>
   typeof value === 'number' && Number.isFinite(value) ? Math.min(high, Math.max(low, value)) : fallback;
-const colorOr = (value: unknown, fallback: string) =>
-  typeof value === 'string' && /^#[0-9a-f]{3,8}$/iu.test(value.trim()) ? value.trim() : fallback;
+const colorOr = (value: unknown, fallback: string) => {
+  if (typeof value !== 'string') return fallback;
+  const color = value.trim();
+  if (/^#[0-9a-f]{6}$/iu.test(color)) return color;
+  return /^#[0-9a-f]{3}$/iu.test(color) ? '#' + color.slice(1).split('').map(char => char + char).join('') : fallback;
+};
 
 /** Always hand the page a complete design, whatever a stored plan happens to
  * carry: an issue saved by an older build has no contents design at all. */
@@ -104,6 +112,9 @@ export function contentsDesignOf(plan: Pick<IssuePlan, 'contentsDesign'>): Conte
     layout: CONTENTS_LAYOUTS.includes(stored.layout as ContentsLayout) ? stored.layout as ContentsLayout : base.layout,
     density: CONTENTS_DENSITIES.includes(stored.density as ContentsDensity) ? stored.density as ContentsDensity : base.density,
     accent: colorOr(stored.accent, base.accent),
+    pageColor: colorOr(stored.pageColor, base.pageColor),
+    textColor: colorOr(stored.textColor, base.textColor),
+    topBarColor: colorOr(stored.topBarColor, base.topBarColor),
     headingColor: colorOr(stored.headingColor, base.headingColor),
     columns: stored.columns === 1 || stored.columns === 2 ? stored.columns : base.columns,
     showHeroes: typeof stored.showHeroes === 'boolean' ? stored.showHeroes : base.showHeroes,
@@ -121,7 +132,7 @@ export function contentsDesignOf(plan: Pick<IssuePlan, 'contentsDesign'>): Conte
   };
 }
 export interface IssueItem { id: string; name: string; version: number; updated: number; doc: Doc }
-export interface IssueAssignment { id: string; startNumber: number; pageCount: number; counted: boolean }
+export interface IssueAssignment { id: string; startNumber: number; pageCount: number; counted: boolean; mastheadSide?: 'left' | 'right' }
 export interface ContentsEntry {
   id: string; title: string; subtitle: string; page: number;
   hero?: Asset; badge?: string; section?: string; frame?: ImageFrame; pageLabel?: boolean;
@@ -198,11 +209,15 @@ export function assignIssuePages(plan: IssuePlan, items: readonly IssueItem[], c
   if (plan.order.length !== items.length + 1 || new Set(plan.order).size !== plan.order.length || !plan.order.includes(CONTENTS_ID) || plan.order.some(id => id !== CONTENTS_ID && !sources.has(id))) throw new Error('The arrangement must contain every article and one contents spread.');
   if (!Number.isSafeInteger(plan.startNumber) || plan.startNumber < 0 || plan.startNumber > 99999) throw new Error('Choose a starting page from 0 to 99999.');
   let cursor = plan.startNumber;
+  let interiorPages = 0;
   return plan.order.map(id => {
     const count = id === CONTENTS_ID ? 2 : counts[id];
     if (!Number.isSafeInteger(count) || count < 1) throw new Error(`The pages for ${sources.get(id)?.name ?? id} have not been measured.`);
     const counted = id === CONTENTS_ID || plan.countCovers || !isIssueCover(sources.get(id)!.doc);
-    const result = { id, startNumber: cursor, pageCount: count, counted };
+    const cover = id !== CONTENTS_ID && isIssueCover(sources.get(id)!.doc);
+    const result: IssueAssignment = { id, startNumber: cursor, pageCount: count, counted,
+      ...(!cover ? { mastheadSide: interiorPages % 2 === 0 ? 'left' : 'right' } : {}) };
+    if (!cover) interiorPages += count;
     if (counted) cursor += count;
     if (!Number.isSafeInteger(cursor) || cursor > 100000) throw new Error('This issue exceeds page 99999. Choose a smaller starting number.');
     return result;
@@ -286,8 +301,8 @@ export function contentsEntries(plan: IssuePlan, items: readonly IssueItem[], as
   });
 }
 
-export function documentWithIssueNumber(doc: Doc, startNumber: number): Doc {
-  return { ...doc, footer: { ...doc.footer, startNumber }, ...(doc.frontMatter ? { frontMatter: { ...doc.frontMatter, pageStart: startNumber } } : {}) };
+export function documentWithIssueNumber(doc: Doc, startNumber: number, mastheadSide?: 'left' | 'right'): Doc {
+  return { ...doc, ...(mastheadSide ? { design: { ...doc.design, barSide: mastheadSide } } : {}), footer: { ...doc.footer, startNumber }, ...(doc.frontMatter ? { frontMatter: { ...doc.frontMatter, pageStart: startNumber } } : {}) };
 }
 
 export function reorderIssue(order: readonly string[], activeId: string, targetId: string): string[] {
