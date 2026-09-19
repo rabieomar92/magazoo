@@ -34,6 +34,7 @@ test('finalize changes only numbering and preserves every stored content field',
   assert.equal(result.version, 1);
   const saved = JSON.parse(storage.read(a.token).body);
   assert.deepEqual(saved, { ...original, footer: { ...original.footer, startNumber: 3 },
+    design: { ...original.design, barSide: 'left' },
     frontMatter: { ...original.frontMatter, pageStart: 3 } });
   assert.deepEqual(storage.readIssue(project.id).finalized.documents,
     [{ id: a.id, version: 2, pageCount: 4, startNumber: 3 }]);
@@ -53,6 +54,35 @@ test('covers can be omitted from numbering while contents always occupies two pa
   storage.finalizeIssue(project.id, 1, { ...plan, countCovers: true }, documents.map((entry, i) =>
     ({ ...entry, version: 2, startNumber: i === 0 ? 1 : entry.startNumber + 1 })));
   assert.equal(storage.readIssue(project.id).finalized.contentsStartNumber, 2);
+  assert.equal(JSON.parse(storage.read(article.token).body).design.barSide, 'left');
+  assert.deepEqual(JSON.parse(storage.read(cover.token).body).design, original.design);
+});
+
+test('contents colours and card crops survive saving and reopening', t => {
+  const { storage, project, add } = memory(t);
+  const article = add('Article.json');
+  const plan = { ...makePlan(['__contents__', article.id]),
+    contentsDesign: { pageColor: '#182022', textColor: '#ffffff', topBarColor: '#800080', layout: 'mosaic', density: 'auto' },
+    contentsStyle: { [article.id]: { title: 'Edited heading', hero: false, assetId: null, frame: { scale: 1.5, offsetX: -10, offsetY: 20 } } } };
+  storage.saveIssue(project.id, 0, plan);
+  assert.deepEqual(storage.readIssue(project.id).plan, plan);
+  assert.throws(() => storage.saveIssue(project.id, 1, { ...plan, contentsDesign: { pageColor: 'url(evil)' } }), status(400));
+  assert.deepEqual(storage.readIssue(project.id).plan, plan);
+});
+
+test('finalization derives alternating sides from interior pages, ignoring client sides', t => {
+  const { storage, project, add } = memory(t);
+  const cover = add('Cover.json', { ...original, templateId: 'magazine-4' });
+  const a = add('A.json'), b = add('B.json');
+  const plan = { ...makePlan([cover.id, a.id, '__contents__', b.id]), startNumber: 2, countCovers: true };
+  storage.finalizeIssue(project.id, 0, plan, [
+    { id: cover.id, version: 1, pageCount: 1, startNumber: 2, mastheadSide: 'right' },
+    { id: a.id, version: 1, pageCount: 3, startNumber: 3, mastheadSide: 'right' },
+    { id: b.id, version: 1, pageCount: 1, startNumber: 8, mastheadSide: 'left' },
+  ]);
+  assert.deepEqual(JSON.parse(storage.read(cover.token).body).design, original.design);
+  assert.equal(JSON.parse(storage.read(a.token).body).design.barSide, 'left');
+  assert.equal(JSON.parse(storage.read(b.token).body).design.barSide, 'right');
 });
 
 test('invalid numbering, incomplete page counts and changed membership leave all files untouched', t => {

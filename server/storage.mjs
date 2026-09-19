@@ -63,7 +63,7 @@ export function openStorage(filename) {
         const numbering = validateIssueDocuments(documents, checked.plan, checked.snapshot.items);
         const sources = new Map(checked.snapshot.items.map(item => [item.id, item]));
         for (const { doc } of sources.values()) {
-          for (const key of ['footer', 'frontMatter']) {
+          for (const key of ['footer', 'frontMatter', 'design']) {
             if (doc[key] !== undefined && (doc[key] === null || typeof doc[key] !== 'object' || Array.isArray(doc[key]))) {
               issueError(400, 'A project file has invalid page settings. Open and save that file before finalizing the issue.');
             }
@@ -77,6 +77,7 @@ export function openStorage(filename) {
           const doc = source.doc;
           // Start with the stored JSON, not any client-supplied document content.
           doc.footer = { ...doc.footer, startNumber: entry.startNumber };
+          if (entry.mastheadSide) doc.design = { ...doc.design, barSide: entry.mastheadSide };
           if (doc.frontMatter && typeof doc.frontMatter === 'object' && !Array.isArray(doc.frontMatter)) {
             doc.frontMatter.pageStart = entry.startNumber;
           }
