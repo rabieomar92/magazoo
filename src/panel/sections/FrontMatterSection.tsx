@@ -35,9 +35,10 @@ export function FrontMatterContent() {
       </Section>)}
       <button className="add-btn" onClick={() => change(f => { f.entries.push({id:uid(),title:contents ? 'New article' : 'New role',text:'',page:contents ? '1' : undefined}); })}>+ Add {contents ? 'contents entry' : 'board group'}</button>
     </Section>}
-    <Section title={doc.templateId === 'frontmatter-board' ? 'About the publication' : 'Feature note'} editorTarget="fm-note">
-      <LabeledInput label="Heading" value={doc.templateId === 'frontmatter-board' ? content.aboutTitle : content.noteTitle} onChange={v => field(doc.templateId === 'frontmatter-board' ? 'aboutTitle' : 'noteTitle',v)} />
-      <LabeledTextarea rows={6} label="Text" value={doc.templateId === 'frontmatter-board' ? content.about : content.note} onChange={v => field(doc.templateId === 'frontmatter-board' ? 'about' : 'note',v)} />
+    <Section title={doc.templateId === 'frontmatter-board' ? 'About the publication' : dean ? 'In this issue sidebar' : 'Feature note'} editorTarget="fm-note">
+      {dean && <p className="hint">This appears with the magazine cover in the right column. Use it for a short editor-in-chief introduction to the issue.</p>}
+      <LabeledInput label={dean ? 'Sidebar heading' : 'Heading'} value={doc.templateId === 'frontmatter-board' ? content.aboutTitle : content.noteTitle} onChange={v => field(doc.templateId === 'frontmatter-board' ? 'aboutTitle' : 'noteTitle',v)} />
+      <LabeledTextarea rows={6} label={dean ? 'Issue summary' : 'Text'} value={doc.templateId === 'frontmatter-board' ? content.about : content.note} onChange={v => field(doc.templateId === 'frontmatter-board' ? 'about' : 'note',v)} />
     </Section>
   </>;
 }
@@ -53,7 +54,12 @@ export function FrontMatterImages() {
   const logoWrap = doc.frontMatter?.logoWrap ?? 'end';
   return <>
     {dean && <ImagePicker slot="hero" title="Dean’s portrait" blurb="An optional portrait beside the dean’s name. Upload your own photograph." />}
-    <ImagePicker slot="cover" title={dean ? 'Issue / cover image' : board ? 'Bleed hero image' : 'Feature image'} blurb={board ? 'The main editorial photograph runs to both page edges. Zoom and shift adjust its framing.' : 'Replace the sample science artwork with your own photograph. Zoom and shift adjust its framing.'} />
+    <ImagePicker slot="cover" title={dean ? 'Magazine front cover' : board ? 'Bleed hero image' : 'Feature image'} blurb={dean ? 'Shown beneath “In this issue” in the right column. Upload the actual cover for this magazine issue.' : board ? 'The main editorial photograph runs to both page edges. Zoom and shift adjust its framing.' : 'Replace the sample science artwork with your own photograph. Zoom and shift adjust its framing.'} />
+    {dean && <ImagePicker slot="frontmatter-signature" title="Dean’s signature" blurb="Optional handwritten signature placed after the final message paragraph, before the sign-off and dean’s name." fit="contain" thumbAspectRatio="3 / 1" />}
+    {dean && <Section title="Signature size" editorTarget="image-signature">
+      <LabeledNumber label="Signature width" unit="mm" min={15} max={55} step={1} value={doc.frontMatter?.signatureWidth ?? 34}
+        onChange={value=>update(d=>{d.frontMatter ??= emptyFrontMatter(); d.frontMatter.signatureWidth=Math.max(15,Math.min(55,value));})} />
+    </Section>}
     {contents && <ImagePicker slot="hero" title="Second feature image" blurb="Optional supporting photograph below the feature note." />}
     {board && <ImagePicker slot="frontmatter-logo" title="School of Physics logo" blurb="Upload the official School of Physics logo. It flows with the About text instead of being pinned to the page, so copy can reflow naturally through one, two or three columns." fit="contain" thumbAspectRatio="3 / 1" />}
     {board && <Section title="Logo in text flow" editorTarget="image-logo">
@@ -81,6 +87,7 @@ export function FrontMatterDesign() {
   const doc = useDoc(s => s.doc);
   const update = useDoc(s => s.update);
   const board = doc.templateId === 'frontmatter-board';
+  const dean = doc.templateId === 'frontmatter-dean';
   return <>
     <Section title="Page & typography" editorTarget="design-topbar">
       <p className="hint">{board ? 'The photograph reaches the top and both side trim edges. The masthead floats over it without creating a gap.' : 'A dedicated editorial grid. Longer copy creates continuation pages; line spacing is never stretched to fill a page.'}</p>
@@ -100,6 +107,13 @@ export function FrontMatterDesign() {
         onChange={columns => update(d => { d.design.frontMatterAboutColumns = columns; })}
       />}
       {board && <p className="hint">Choose fewer columns for longer lines and easier reading. The editorial roles keep their separate compact grid.</p>}
+      {dean && <>
+        <LabeledNumber label="Gap above category" unit="mm" min={0} max={40} step={0.5} value={doc.design.deanCategoryTopGap ?? 0}
+          onChange={value=>update(d=>{d.design.deanCategoryTopGap=Math.max(0,Math.min(40,value));})} />
+        <LabeledNumber label="Gap below title" unit="mm" min={0} max={35} step={0.5} value={doc.design.deanTitleBottomGap ?? (doc.meta.subtitle ? 4 : 8)}
+          onChange={value=>update(d=>{d.design.deanTitleBottomGap=Math.max(0,Math.min(35,value));})} />
+        <p className="hint">These controls preserve the category, headline and identity hierarchy while allowing vertical adjustment.</p>
+      </>}
       <LabeledNumber label="Top bar margin" unit="mm" min={0} max={25} value={doc.design.topBarOffset ?? 10} onChange={v => update(d => {d.design.topBarOffset = Math.max(0,Math.min(25,v));})} />
       <LabeledNumber label="Page margin" unit="mm" min={10} max={22} value={doc.design.margin} onChange={v => update(d => {d.design.margin = Math.max(10,Math.min(22,v));})} />
       <LabeledNumber label={board ? 'Bleed image height' : 'Image height'} unit="mm" min={25} max={board ? 180 : 90} value={doc.design.heroHeight} onChange={v => update(d => {d.design.heroHeight = Math.max(25,Math.min(board ? 180 : 90,v));})} />

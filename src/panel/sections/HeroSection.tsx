@@ -10,11 +10,12 @@ import { emptyFrontMatter } from '../../store/frontMatter';
 import { emptyBackCover } from '../../store/backCover';
 
 type Frame = ImageFrame & { assetId: string | null };
-export type ImageSlot = 'hero' | 'cover' | 'frontmatter-logo' | 'backcover-qr' | 'backcover-logo';
+export type ImageSlot = 'hero' | 'cover' | 'frontmatter-logo' | 'frontmatter-signature' | 'backcover-qr' | 'backcover-logo';
 const EMPTY_FRAME: Frame = { assetId: null, offsetX: 0, offsetY: 0, scale: 1 };
 
 const frameFor = (doc: Doc, slot: ImageSlot): Frame => {
   if (slot === 'frontmatter-logo') return (doc.frontMatter?.logo ?? EMPTY_FRAME) as Frame;
+  if (slot === 'frontmatter-signature') return (doc.frontMatter?.signature ?? EMPTY_FRAME) as Frame;
   if (slot === 'backcover-qr') return (doc.backCover?.qr ?? EMPTY_FRAME) as Frame;
   if (slot === 'backcover-logo') return (doc.backCover?.logo ?? EMPTY_FRAME) as Frame;
   return (doc[slot] ?? EMPTY_FRAME) as Frame;
@@ -43,9 +44,10 @@ export function ImagePicker({ slot, title, blurb, fit = 'cover', thumbAspectRati
   const setFrame = (d: Doc, f: Frame) => {
     if (slot === 'hero') d.hero = f;
     else if (slot === 'cover') d.cover = f;
-    else if (slot === 'frontmatter-logo') {
+    else if (slot === 'frontmatter-logo' || slot === 'frontmatter-signature') {
       d.frontMatter ??= emptyFrontMatter();
-      d.frontMatter.logo = f;
+      if (slot === 'frontmatter-logo') d.frontMatter.logo = f;
+      else d.frontMatter.signature = f;
     } else {
       d.backCover ??= emptyBackCover();
       d.backCover[slot === 'backcover-qr' ? 'qr' : 'logo'] = f;
@@ -87,7 +89,7 @@ export function ImagePicker({ slot, title, blurb, fit = 'cover', thumbAspectRati
     });
 
   return (
-    <Section title={title} editorTarget={slot === 'frontmatter-logo' ? 'image-logo' : `image-${slot}`}>
+    <Section title={title} editorTarget={slot === 'frontmatter-logo' ? 'image-logo' : slot === 'frontmatter-signature' ? 'image-signature' : `image-${slot}`}>
       {blurb && <p className="hint">{blurb}</p>}
       <input
         ref={fileRef}

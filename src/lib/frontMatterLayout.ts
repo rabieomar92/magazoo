@@ -3,6 +3,7 @@ import { openMarkers } from './richtext';
 export interface FrontMatterUnit {
   id: string;
   text: string;
+  kind?: 'signature';
   title?: string;
   page?: string;
   continued?: boolean;

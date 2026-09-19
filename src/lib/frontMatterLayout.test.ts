@@ -34,6 +34,12 @@ describe('front matter layout',()=>{
         doc.assets['school-logo'] = { src: 'data:image/png;base64,logo', naturalWidth: 600, naturalHeight: 180 };
         doc.frontMatter!.logo = { assetId: 'school-logo', offsetX: 4, offsetY: -2, scale: 1.1 };
         doc.design.showTopBar = false;
+      } else if (id === 'frontmatter-dean') {
+        doc.assets['dean-signature'] = { src: 'data:image/png;base64,signature', naturalWidth: 600, naturalHeight: 180 };
+        doc.frontMatter!.signature = { assetId: 'dean-signature', offsetX: 3, offsetY: -1, scale: 1.2 };
+        doc.frontMatter!.signatureWidth = 38;
+        doc.design.deanCategoryTopGap = 6;
+        doc.design.deanTitleBottomGap = 11;
       }
       expect(familyOf(id)).toBe('frontmatter');
       const reopened=migrate(JSON.parse(JSON.stringify(doc)));
@@ -42,6 +48,10 @@ describe('front matter layout',()=>{
       if (id === 'frontmatter-board') {
         expect(reopened.assets['school-logo']).toBeDefined();
         expect(reopened.design.showTopBar).toBe(false);
+      } else if (id === 'frontmatter-dean') {
+        expect(reopened.assets['dean-signature']).toBeDefined();
+        expect(reopened.design.deanCategoryTopGap).toBe(6);
+        expect(reopened.design.deanTitleBottomGap).toBe(11);
       }
       const draft=cloneDocForUpdate(doc);
       draft.frontMatter!.contact='Changed';
@@ -49,6 +59,9 @@ describe('front matter layout',()=>{
       if (id === 'frontmatter-board') {
         draft.frontMatter!.logo!.offsetX = 30;
         expect(doc.frontMatter!.logo!.offsetX).toBe(4);
+      } else if (id === 'frontmatter-dean') {
+        draft.frontMatter!.signature!.offsetX = 30;
+        expect(doc.frontMatter!.signature!.offsetX).toBe(3);
       }
       if(draft.frontMatter!.entries.length){draft.frontMatter!.entries[0].title='Changed';expect(doc.frontMatter!.entries[0].title).not.toBe('Changed');}
     }
