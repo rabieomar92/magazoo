@@ -18,13 +18,17 @@ afterEach(() => {
   host.remove();
 });
 
-it('uses the canonical mark for the base and independently moving animal layers', () => {
+it('cuts every moving animal out of the base instead of doubling the original artwork', () => {
   act(() => root.render(<MagazooLoader label="Preparing pages" />));
-  const images = [...host.querySelectorAll('img')];
-  expect(images).toHaveLength(7);
-  expect(new Set(images.map(image => image.getAttribute('src'))).size).toBe(1);
-  expect(images[0].getAttribute('src')).toContain('magazoo-mark.png');
-  expect(host.querySelectorAll('.magazoo-loader-animal')).toHaveLength(6);
+  expect(host.querySelectorAll('image')).toHaveLength(1);
+  expect(host.querySelector('image')?.getAttribute('href')).toContain('magazoo-mark.png');
+  expect(host.querySelectorAll('.magazoo-loader-animal')).toHaveLength(8);
+  const cutouts = [...host.querySelectorAll('mask path')].map(path => path.getAttribute('d'));
+  const pieces = [...host.getElementsByTagName('clipPath')].map(clip => clip.firstElementChild?.getAttribute('d'));
+  expect(cutouts).toEqual(pieces);
+  expect(host.querySelector('.magazoo-loader-base')?.getAttribute('mask')).toContain('letters');
+  expect(host.querySelector('.magazoo-loader-shine')).toBeNull();
+  expect(host.querySelector('[role="progressbar"]')).toBeNull();
   expect(host.querySelector('[role="status"]')?.textContent).toContain('Preparing pages');
 });
 

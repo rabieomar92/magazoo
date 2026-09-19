@@ -1,7 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react';
 import './MagazooLoader.css';
-
-const MARK_SRC = `${import.meta.env.BASE_URL}magazoo-mark.png`;
+import { AnimatedMagazooMark } from './AnimatedMagazooMark';
 
 export interface MagazooLoaderProps {
   label?: ReactNode;
@@ -16,9 +15,8 @@ export interface MagazooLoaderProps {
 /**
  * The single branded wait state used throughout Magazoo.
  *
- * The animal layers are clipped replicas of the canonical bundled mark, so
- * the animation never substitutes, redraws, or approximates the logo. The
- * full mark remains underneath to keep the artwork crisp between frames.
+ * Only the original wordmark and its animals animate. Actual progress is
+ * shown when available, without a decorative sweep or indeterminate track.
  */
 export function MagazooLoader({
   label = 'Loading Magazoo…', detail, className, variant = 'card', tone = 'light', value, max,
@@ -35,23 +33,18 @@ export function MagazooLoader({
       aria-busy="true"
     >
       <span className="magazoo-loader-art" aria-hidden="true">
-        <img className="magazoo-loader-base" src={MARK_SRC} alt="" />
-        {['monkey', 'cat', 'panda', 'koala', 'squirrel', 'kitten'].map(animal => (
-          <span className={`magazoo-loader-animal is-${animal}`} key={animal}>
-            <img src={MARK_SRC} alt="" />
-          </span>
-        ))}
-        <span className="magazoo-loader-shine" />
+        <AnimatedMagazooMark />
       </span>
       <span className="magazoo-loader-copy">
         <strong>{label}</strong>
         {detail && <small>{detail}</small>}
-        {variant !== 'inline' && <span
+        {determinate && variant !== 'inline' && <span
           className={`magazoo-loader-track${determinate ? ' is-determinate' : ''}`}
           role="progressbar"
           aria-valuemin={determinate ? 0 : undefined}
           aria-valuemax={determinate ? Number(max) : undefined}
-          aria-valuenow={determinate ? Number(value) : undefined}
+          aria-valuenow={ratio * Number(max)}
+          aria-label={typeof label === 'string' ? label : 'Progress'}
           style={style}
         ><i /></span>}
       </span>
