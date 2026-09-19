@@ -124,5 +124,24 @@ describe('dean message page', () => {
     expect(measured.querySelector('[data-editor-target="image-signature"]')).not.toBeNull();
     expect(measured.textContent).toContain(doc.frontMatter!.signoff);
     expect(measured.textContent).toContain(doc.meta.author);
+    const image = measured.querySelector('.signature-art')!;
+    expect(image.getAttribute('viewBox')).toBe('0 0 900 260');
+    expect(image.getAttribute('style')).toContain('aspect-ratio:900 / 260');
+    expect(image.getAttribute('style')).toContain('mix-blend-mode:multiply');
+  });
+  it('uses the same non-destructive crop and alignment for measurement and print', () => {
+    const doc = makeFrontMatter('frontmatter-dean');
+    doc.assets.sig = { src: 'data:image/png;base64,sample', naturalWidth: 1000, naturalHeight: 500 };
+    doc.frontMatter!.signature = { assetId: 'sig', scale: 3, offsetX: 40, offsetY: -50 };
+    doc.frontMatter!.signatureCrop = { x: .1, y: .2, width: .8, height: .6 };
+    doc.frontMatter!.signatureAlign = 'end';
+    doc.frontMatter!.signatureBlend = false;
+    const host = document.createElement('div');
+    host.innerHTML = renderToStaticMarkup(<FrontMatterPages doc={doc} vars={{}} onStatus={() => undefined} />);
+    const closing = host.querySelector('.fm-measure .fm-dean-signature--end')!;
+    expect(closing.querySelector('svg')?.getAttribute('viewBox')).toBe('100 100 800 300');
+    expect(closing.innerHTML).not.toContain('scale(3)');
+    expect(closing.innerHTML).not.toContain('multiply');
+    expect(host.querySelector('.fm-photo-placeholder')).toBeNull();
   });
 });

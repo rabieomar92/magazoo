@@ -82,6 +82,8 @@
 .fm-page--dean .fm-header h1 { margin-bottom: var(--fm-dean-title-gap,8mm); }
 .fm-page--dean .fm-subtitle,
 .fm-page--dean .fm-identity { margin-top: 0; }
+.fm-page--dean .fm-subtitle + .fm-identity { margin-top: 5mm; }
+.fm-page--dean .fm-identity > div { min-width: 0; overflow-wrap: anywhere; }
 .fm-page--dean .fm-dean-cover {
   height: auto;
   aspect-ratio: 210 / 297;
@@ -91,17 +93,24 @@
 .fm-dean-signature {
   display: block;
   break-inside: avoid;
-  padding-top: 2mm;
+  padding-top: var(--fm-signature-gap,2mm);
   font-family: var(--sans);
 }
 .fm-signature-image {
   position: relative;
   width: min(var(--fm-signature-width,34mm),100%);
-  height: calc(min(var(--fm-signature-width,34mm),100%) / 3);
   margin: 0 0 2mm;
   overflow: hidden;
+  /* Give multiply blending the actual paper as its local backdrop; the page
+     shell is a stacking context, so transparent ancestors are insufficient. */
+  background: var(--paper-bg,#fff);
+  isolation: isolate;
 }
 .fm-dean-signature .fm-signoff { margin-top: 0; gap: 1.5mm; }
+.fm-dean-signature--center { text-align: center; }
+.fm-dean-signature--center .fm-signature-image { margin-inline: auto; }
+.fm-dean-signature--end { text-align: end; }
+.fm-dean-signature--end .fm-signature-image { margin-inline-start: auto; }
 .fm-credit { font: 400 7pt/1.4 var(--sans); margin: 2mm 0 4mm; }
 .fm-page--contents .fm-middle { grid-template-columns: minmax(0,1fr) 48mm; }
 .fm-page--contents .fm-column { gap: 8mm; }

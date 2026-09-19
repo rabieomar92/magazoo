@@ -512,6 +512,12 @@ export interface FrontMatter {
   /** Optional handwritten signature, independent from all other image slots. */
   signature?: { assetId: string | null; offsetX: number; offsetY: number; scale: number };
   signatureWidth?: number;
+  /** Non-destructive source crop in fractions (0–1). The embedded original is retained. */
+  signatureCrop?: { x: number; y: number; width: number; height: number };
+  signatureAlign?: 'start' | 'center' | 'end';
+  signatureGap?: number;
+  /** Blend a white scanned background into the paper; false preserves source colours exactly. */
+  signatureBlend?: boolean;
   signoff?: string;
   pageStart: number;
 }
