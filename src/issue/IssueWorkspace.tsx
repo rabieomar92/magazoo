@@ -10,6 +10,7 @@ import { IssueOrder } from './IssueOrder';
 import { useIssueAutosave } from './useIssueAutosave';
 import './issue.css';
 import { Wordmark } from '../components/Wordmark';
+import { MagazooLoader } from '../components/MagazooLoader';
 
 const PAGE_WIDTH_PX = (210 * 96) / 25.4;
 const PAGE_HEIGHT_PX = (297 * 96) / 25.4;
@@ -36,7 +37,7 @@ export default function IssueWorkspace({ projectId, csrf, onClose }: { projectId
     <header className="studio-bar"><div className="studio-bar-lead"><Wordmark className="studio-brand" /><span className="studio-chip">Issue studio</span></div><button onClick={onClose}>Back to library</button></header>
     <div className="studio-boot">{error
       ? <><h1>Could not open this issue</h1><p role="alert">{error}</p><button className="primary" onClick={() => setReload(value => value + 1)}>Try again</button></>
-      : <><h1>Opening your project</h1><p>Loading its saved articles and issue arrangement…</p><div className="loading-track"><span /></div></>}</div>
+      : <MagazooLoader label="Opening your project" detail="Loading its saved articles and issue arrangement…" />}</div>
   </main>;
   return <IssueEditor key={`${projectId}-${reload}`} data={loaded} csrf={csrf} onClose={onClose} onReload={() => setReload(value => value + 1)} />;
 }
@@ -342,13 +343,16 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
         <div className="stage-scroll" ref={stageRef}>
           {ready
             ? <IssueProof plan={proofPlan!} entries={entries} documents={compiled!.numbered} magazineName={data.project.name} design={proofDesign} contentsStart={contentsStart} scale={scale} pagesRef={pagesRef} onOverflow={setContentsOverflow} />
-            : <div className="stage-progress" role="status">
-                <Wordmark className="stage-mark" />
-                <h3>{renderError ? 'An article needs attention' : progress.pass > 1 ? 'Numbering the pages' : 'Setting the issue'}</h3>
-                <p>{renderError || `${progress.pass > 1 ? 'Printing folios onto' : 'Measuring'} ${progress.name || 'article layouts'} with the same engine the article editor uses.`}</p>
-                <progress value={progress.completed} max={Math.max(1, progress.total)} />
-                <p className="stage-progress-count">Pass {progress.pass} of {progress.passes} · {progress.completed} of {progress.total} articles</p>
-                {renderError && <button className="primary" onClick={recompile}>Try again</button>}
+            : <div className="stage-progress">
+                {renderError
+                  ? <><Wordmark className="stage-mark" /><h3>An article needs attention</h3><p role="alert">{renderError}</p><button className="primary" onClick={recompile}>Try again</button></>
+                  : <MagazooLoader
+                      tone="dark"
+                      label={progress.pass > 1 ? 'Numbering the pages' : 'Setting the issue'}
+                      detail={`${progress.pass > 1 ? 'Printing folios onto' : 'Measuring'} ${progress.name || 'article layouts'} · Pass ${progress.pass} of ${progress.passes} · ${progress.completed} of ${progress.total} articles`}
+                      value={progress.completed}
+                      max={Math.max(1, progress.total)}
+                    />}
               </div>}
         </div>
       </section>
@@ -361,6 +365,8 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
         <button className="primary" disabled={blocked || isFinalized || save.status === 'error' || items.length === 0} onClick={() => void finalize()}>{isFinalized ? 'Finalised ✓' : busy ? 'Working…' : 'Finalise issue & page numbers'}</button>
       </div>
     </footer>
+
+    {busy && <div className="studio-busy"><MagazooLoader variant="banner" label="Magazoo is working…" detail="Please keep this window open." /></div>}
 
     {!ready && !renderError && <IssueCompiler key={compileToken} sources={sources} plan={plan} items={items} onComplete={onCompiled} onError={onCompileError} onProgress={onProgress} />}
   </main>;
