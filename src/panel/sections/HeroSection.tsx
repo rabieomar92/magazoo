@@ -8,6 +8,7 @@ import { FramedImage } from '../../components/FramedImage';
 import { LabeledNumber, LabeledRange, Section, SegmentField } from '../Field';
 import { emptyFrontMatter } from '../../store/frontMatter';
 import { emptyBackCover } from '../../store/backCover';
+import { MagazooLoader } from '../../components/MagazooLoader';
 
 type Frame = ImageFrame & { assetId: string | null };
 export type ImageSlot = 'hero' | 'cover' | 'frontmatter-logo' | 'frontmatter-signature' | 'backcover-qr' | 'backcover-logo';
@@ -109,7 +110,7 @@ export function ImagePicker({ slot, title, blurb, fit = 'cover', thumbAspectRati
           </div>
           <div className="hero-actions">
             <button type="button" className="add-btn" disabled={loading} onClick={() => fileRef.current?.click()}>
-              {loading ? 'Optimising image…' : 'Replace image'}
+              {loading ? <MagazooLoader variant="inline" label="Optimising image…" /> : 'Replace image'}
             </button>
             <button type="button" className="icon-btn icon-btn--danger" title="Remove image" onClick={removeImage}>
               ✕
@@ -130,7 +131,7 @@ export function ImagePicker({ slot, title, blurb, fit = 'cover', thumbAspectRati
         </>
       ) : (
         <button type="button" className="add-btn hero-upload" disabled={loading} onClick={() => fileRef.current?.click()}>
-          {loading ? 'Optimising image…' : '+ Upload image'}
+          {loading ? <MagazooLoader variant="inline" label="Optimising image…" /> : '+ Upload image'}
         </button>
       )}
 

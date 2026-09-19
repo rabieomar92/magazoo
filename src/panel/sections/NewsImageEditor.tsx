@@ -7,6 +7,7 @@ import { newsPhotoPosition, newsStoryWidth, pairsWithPrevious, type NewsColumnCo
 import { newsCustomPhotoHeight, newsPhotoFrameMetrics } from '../../lib/newsPhotoGeometry';
 import { useDoc } from '../../store/useDoc';
 import { LabeledInput, LabeledNumber, LabeledRange, LabeledTextarea, SegmentField } from '../Field';
+import { MagazooLoader } from '../../components/MagazooLoader';
 
 export function NewsImageEditor({ story }: { story: NewsStory }) {
   const doc = useDoc(state => state.doc);
@@ -94,7 +95,7 @@ export function NewsImageEditor({ story }: { story: NewsStory }) {
     </>}
     <div className="hero-actions">
       <button type="button" className="add-btn" disabled={loading} onClick={() => fileRef.current?.click()}>
-        {loading ? 'Loading image…' : asset ? 'Replace image' : '+ Upload image'}
+        {loading ? <MagazooLoader variant="inline" label="Loading image…" /> : asset ? 'Replace image' : '+ Upload image'}
       </button>
       {asset && <button type="button" className="icon-btn icon-btn--danger" title="Remove image" aria-label="Remove image"
         onClick={() => {

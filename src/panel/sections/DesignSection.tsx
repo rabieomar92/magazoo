@@ -15,6 +15,7 @@ import { FrontCoverDesignSection } from './FrontCoverDesignSection';
 import { HeadingTextEditor } from './HeadingTextEditor';
 import { GateDesignSection } from './GateDesignSection';
 import { SUBTITLE_GAP } from '../../lib/spacing';
+import { MagazooLoader } from '../../components/MagazooLoader';
 import {
   LabeledColor,
   LabeledNumber,
@@ -256,7 +257,7 @@ export function DesignSection() {
           </div>
           <div className="hero-actions">
             <button type="button" className="add-btn" disabled={backgroundLoading} onClick={() => backgroundFileRef.current?.click()}>
-              {backgroundLoading ? 'Optimising image…' : 'Replace first-page graphic'}
+              {backgroundLoading ? <MagazooLoader variant="inline" label="Optimising image…" /> : 'Replace first-page graphic'}
             </button>
             <button type="button" className="icon-btn icon-btn--danger" title="Remove background" onClick={removeBackground}>
               ✕
@@ -274,7 +275,7 @@ export function DesignSection() {
         </>
       ) : (
         <button type="button" className="add-btn hero-upload" disabled={backgroundLoading} onClick={() => backgroundFileRef.current?.click()}>
-          {backgroundLoading ? 'Optimising image…' : '+ Upload first-page graphic'}
+          {backgroundLoading ? <MagazooLoader variant="inline" label="Optimising image…" /> : '+ Upload first-page graphic'}
         </button>
       )}
       {backgroundError && <p className="hint hint--warn" role="alert">{backgroundError}</p>}

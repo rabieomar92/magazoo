@@ -11,6 +11,7 @@ import { assetIsReferenced, uid, type Doc, type PlacedImage } from '../../schema
 import { useDoc } from '../../store/useDoc';
 import { editorTargetId } from '../../lib/editorNavigation';
 import { LabeledNumber, LabeledRange, RowButtons, Section, SegmentField } from '../Field';
+import { MagazooLoader } from '../../components/MagazooLoader';
 
 const DEFAULT_FRAME = { scale: 1, offsetX: 0, offsetY: 0 };
 
@@ -350,7 +351,7 @@ export function ArticleImagesSection() {
                 <p className="hint">Bleed crops the artwork; the caption remains on the selected columns.</p>
               )}
               <button type="button" className="add-btn" disabled={loading} onClick={() => chooseFile(image.id)}>
-                {loading && pendingReplace.current === image.id ? 'Optimising image…' : 'Replace image'}
+                {loading && pendingReplace.current === image.id ? <MagazooLoader variant="inline" label="Optimising image…" /> : 'Replace image'}
               </button>
             </div>
             <RowButtons onRemove={() => remove(image.id)} />
@@ -359,7 +360,7 @@ export function ArticleImagesSection() {
       })}
 
       <button type="button" className="add-btn hero-upload" disabled={loading} onClick={() => chooseFile()}>
-        {loading && pendingReplace.current === null ? 'Optimising image…' : '+ Add page image'}
+        {loading && pendingReplace.current === null ? <MagazooLoader variant="inline" label="Optimising image…" /> : '+ Add page image'}
       </button>
       {error && <p className="hint hint--warn" role="alert">{error}</p>}
     </Section>

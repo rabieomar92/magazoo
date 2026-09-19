@@ -6,6 +6,7 @@ import { ImageLoadError, loadImage } from '../../lib/loadImage';
 import { LabeledColor, LabeledRange, Section } from '../Field';
 import { editorTargetId } from '../../lib/editorNavigation';
 import { splitCaption, joinCaption } from '../../lib/galleryCaption';
+import { MagazooLoader } from '../../components/MagazooLoader';
 
 const DEFAULT_FRAME = { scale: 1, offsetX: 0, offsetY: 0 };
 
@@ -199,7 +200,7 @@ export function GallerySection() {
               disabled={loadingSlot !== null}
               onClick={() => chooseImage(n)}
             >
-              {loadingSlot === n ? 'Optimising image…' : asset ? 'Replace image' : `Upload ${s.label}`}
+              {loadingSlot === n ? <MagazooLoader variant="inline" label="Optimising image…" /> : asset ? 'Replace image' : `Upload ${s.label}`}
             </button>
             {bi !== undefined && (
               <>

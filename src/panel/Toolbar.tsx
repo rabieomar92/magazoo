@@ -5,6 +5,7 @@ import { openProject, saveProject, saveProjectAs, useProjectFile } from '../stor
 import { useSaveStatus, type SaveState } from '../store/saveStatus';
 import { exportPreviewPdf } from '../lib/pdfExport';
 import { Wordmark } from '../components/Wordmark';
+import { MagazooLoader } from '../components/MagazooLoader';
 
 const SAVE_LABEL: Record<SaveState, string> = {
   idle: 'Ready',
@@ -134,8 +135,9 @@ export function Toolbar({ onPreviewToolsHost }: { onPreviewToolsHost: (host: HTM
             title="Export clean A4 pages to PDF"
             aria-label={exporting ? 'Preparing PDF' : 'Export PDF'}
           >
-            <span className="tool-btn-icon tool-btn-icon--pdf" aria-hidden="true" />
-            <span className="tool-btn-label">{exporting ? 'Preparing…' : 'Export PDF'}</span>
+            {exporting
+              ? <MagazooLoader variant="inline" label="Preparing…" />
+              : <><span className="tool-btn-icon tool-btn-icon--pdf" aria-hidden="true" /><span className="tool-btn-label">Export PDF</span></>}
           </button>
         </div>
       </div>
