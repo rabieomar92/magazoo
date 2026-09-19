@@ -5,6 +5,7 @@ import { ALL_FONTS, fontOptions } from '../../lib/fonts';
 import { LabeledInput, LabeledTextarea, LabeledNumber, LabeledColor, LabeledSelect, SegmentField, Section, RowButtons, Toggle } from '../Field';
 import { ImagePicker } from './HeroSection';
 import { BodySection } from './BodySection';
+import { SignatureSection } from './SignatureSection';
 
 export function FrontMatterContent() {
   const doc = useDoc(s => s.doc);
@@ -53,13 +54,9 @@ export function FrontMatterImages() {
   const logoPosition = Math.max(0,Math.min(aboutParagraphs.length,doc.frontMatter?.logoAfterParagraph ?? Math.max(0,aboutParagraphs.length-1)));
   const logoWrap = doc.frontMatter?.logoWrap ?? 'end';
   return <>
-    {dean && <ImagePicker slot="hero" title="Dean’s portrait" blurb="An optional portrait beside the dean’s name. Upload your own photograph." />}
-    <ImagePicker slot="cover" title={dean ? 'Magazine front cover' : board ? 'Bleed hero image' : 'Feature image'} blurb={dean ? 'Shown beneath “In this issue” in the right column. Upload the actual cover for this magazine issue.' : board ? 'The main editorial photograph runs to both page edges. Zoom and shift adjust its framing.' : 'Replace the sample science artwork with your own photograph. Zoom and shift adjust its framing.'} />
-    {dean && <ImagePicker slot="frontmatter-signature" title="Dean’s signature" blurb="Optional handwritten signature placed after the final message paragraph, before the sign-off and dean’s name." fit="contain" thumbAspectRatio="3 / 1" />}
-    {dean && <Section title="Signature size" editorTarget="image-signature">
-      <LabeledNumber label="Signature width" unit="mm" min={15} max={55} step={1} value={doc.frontMatter?.signatureWidth ?? 34}
-        onChange={value=>update(d=>{d.frontMatter ??= emptyFrontMatter(); d.frontMatter.signatureWidth=Math.max(15,Math.min(55,value));})} />
-    </Section>}
+    {dean && <ImagePicker slot="hero" title="Dean’s portrait" blurb="An optional portrait beside the dean’s name. Upload your own photograph." thumbAspectRatio="20 / 27" />}
+    <ImagePicker slot="cover" title={dean ? 'Magazine front cover' : board ? 'Bleed hero image' : 'Feature image'} fit={dean ? 'contain' : 'cover'} blurb={dean ? 'Shown beneath “In this issue” in the right column. At 1× the complete cover is visible.' : board ? 'The main editorial photograph runs to both page edges. Zoom and shift adjust its framing.' : 'Replace the sample science artwork with your own photograph. Zoom and shift adjust its framing.'} />
+    {dean && <SignatureSection />}
     {contents && <ImagePicker slot="hero" title="Second feature image" blurb="Optional supporting photograph below the feature note." />}
     {board && <ImagePicker slot="frontmatter-logo" title="School of Physics logo" blurb="Upload the official School of Physics logo. It flows with the About text instead of being pinned to the page, so copy can reflow naturally through one, two or three columns." fit="contain" thumbAspectRatio="3 / 1" />}
     {board && <Section title="Logo in text flow" editorTarget="image-logo">
@@ -116,7 +113,7 @@ export function FrontMatterDesign() {
       </>}
       <LabeledNumber label="Top bar margin" unit="mm" min={0} max={25} value={doc.design.topBarOffset ?? 10} onChange={v => update(d => {d.design.topBarOffset = Math.max(0,Math.min(25,v));})} />
       <LabeledNumber label="Page margin" unit="mm" min={10} max={22} value={doc.design.margin} onChange={v => update(d => {d.design.margin = Math.max(10,Math.min(22,v));})} />
-      <LabeledNumber label={board ? 'Bleed image height' : 'Image height'} unit="mm" min={25} max={board ? 180 : 90} value={doc.design.heroHeight} onChange={v => update(d => {d.design.heroHeight = Math.max(25,Math.min(board ? 180 : 90,v));})} />
+      {!dean && <LabeledNumber label={board ? 'Bleed image height' : 'Image height'} unit="mm" min={25} max={board ? 180 : 90} value={doc.design.heroHeight} onChange={v => update(d => {d.design.heroHeight = Math.max(25,Math.min(board ? 180 : 90,v));})} />}
       <SegmentField<'left' | 'right'>
         label="Masthead & footer side"
         value={doc.design.barSide ?? 'left'}

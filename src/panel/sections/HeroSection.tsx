@@ -1,6 +1,6 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import { useDoc } from '../../store/useDoc';
-import { assetIsReferenced, uid, type Doc } from '../../schema/document';
+import { assetIsReferenced, uid, type Doc, type Asset } from '../../schema/document';
 import { loadImage, ImageLoadError } from '../../lib/loadImage';
 import type { ImageFrame } from '../../lib/imageFrame';
 import type { ImageFit } from '../../lib/imageFrame';
@@ -28,10 +28,13 @@ interface ImagePickerProps {
   blurb?: string;
   fit?: ImageFit;
   thumbAspectRatio?: string;
+  framing?: boolean;
+  renderPreview?: (asset: Asset) => ReactNode;
+  children?: ReactNode;
 }
 
 /** One uploadable, framable image bound to a deliberately independent slot. */
-export function ImagePicker({ slot, title, blurb, fit = 'cover', thumbAspectRatio }: ImagePickerProps) {
+export function ImagePicker({ slot, title, blurb, fit = 'cover', thumbAspectRatio, framing = true, renderPreview, children }: ImagePickerProps) {
   const frame = useDoc((s) => frameFor(s.doc, slot));
   const asset = useDoc((s) => {
     const f = frameFor(s.doc, slot);
@@ -48,7 +51,10 @@ export function ImagePicker({ slot, title, blurb, fit = 'cover', thumbAspectRati
     else if (slot === 'frontmatter-logo' || slot === 'frontmatter-signature') {
       d.frontMatter ??= emptyFrontMatter();
       if (slot === 'frontmatter-logo') d.frontMatter.logo = f;
-      else d.frontMatter.signature = f;
+      else {
+        if (d.frontMatter.signature?.assetId !== f.assetId) delete d.frontMatter.signatureCrop;
+        d.frontMatter.signature = f;
+      }
     } else {
       d.backCover ??= emptyBackCover();
       d.backCover[slot === 'backcover-qr' ? 'qr' : 'logo'] = f;
@@ -59,8 +65,15 @@ export function ImagePicker({ slot, title, blurb, fit = 'cover', thumbAspectRati
     if (!file) return;
     setError(null);
     setLoading(true);
+    const expectedDoc = useDoc.getState().doc;
     try {
       const { src, naturalWidth, naturalHeight } = await loadImage(file);
+      // Late uploads must not change a different document or replacement.
+      const current = useDoc.getState().doc;
+      if (current !== expectedDoc) {
+        setError('The document changed while the image was loading. Please select the image again.');
+        return;
+      }
       update((d) => {
         const prev = frameFor(d, slot).assetId;
         const id = uid();
@@ -105,19 +118,20 @@ export function ImagePicker({ slot, title, blurb, fit = 'cover', thumbAspectRati
 
       {asset ? (
         <>
-          <div className="hero-thumb" style={{ aspectRatio: thumbAspectRatio ?? (slot === 'cover' ? '210 / 297' : slot === 'backcover-qr' ? '1 / 1' : '16 / 7') }}>
+          {renderPreview ? renderPreview(asset) : <div className="hero-thumb" style={{ aspectRatio: thumbAspectRatio ?? (slot === 'cover' ? '210 / 297' : slot === 'backcover-qr' ? '1 / 1' : '16 / 7') }}>
             <FramedImage asset={asset} frame={frame} fit={fit} />
-          </div>
+          </div>}
           <div className="hero-actions">
             <button type="button" className="add-btn" disabled={loading} onClick={() => fileRef.current?.click()}>
               {loading ? <MagazooLoader variant="inline" label="Optimising image…" /> : 'Replace image'}
             </button>
-            <button type="button" className="icon-btn icon-btn--danger" title="Remove image" onClick={removeImage}>
+            <button type="button" className="icon-btn icon-btn--danger" title="Remove image" disabled={loading} onClick={removeImage}>
               ✕
             </button>
           </div>
 
-          <LabeledRange label="Shift horizontally" value={frame.offsetX} min={-50} max={50} step={1} format={(v) => `${v}%`} onChange={setKey('offsetX')} />
+          {children}
+          {framing && <><LabeledRange label="Shift horizontally" value={frame.offsetX} min={-50} max={50} step={1} format={(v) => `${v}%`} onChange={setKey('offsetX')} />
           <LabeledRange label="Shift vertically" value={frame.offsetY} min={-50} max={50} step={1} format={(v) => `${v}%`} onChange={setKey('offsetY')} />
           <LabeledRange label="Zoom" value={frame.scale} min={0.5} max={3} step={0.05} format={(v) => `${v.toFixed(2)}×`} onChange={setKey('scale')} />
           <p className="hint">{fit === 'contain' ? '1× shows the complete image; zoom above 1× only when you want a tighter logo crop.' : 'Below 1× reveals more of the image; 1× fills the frame.'}</p>
@@ -128,6 +142,7 @@ export function ImagePicker({ slot, title, blurb, fit = 'cover', thumbAspectRati
           >
             Reset image framing
           </button>
+          </>}
         </>
       ) : (
         <button type="button" className="add-btn hero-upload" disabled={loading} onClick={() => fileRef.current?.click()}>

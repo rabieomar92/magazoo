@@ -27,6 +27,20 @@ describe('front matter layout',()=>{
   it('handles empty contents as one usable page',()=>{
     expect(packFrontMatter([],100,()=>0,10).columns).toEqual([[]]);
   });
+  it('keeps the closing paragraph with a signature that would otherwise be orphaned', () => {
+    const units = [{ id: 'a', text: 'opening', }, { id: 'b', text: 'closing' }, { id: 'sig', text: '', kind: 'signature' as const }];
+    const result = packFrontMatter(units, 100, u => u.kind === 'signature' ? 30 : 40, 10);
+    expect(result.columns.map(column => column.map(u => u.id))).toEqual([['a'], ['b', 'sig']]);
+    expect(result.overflow).toBe(false);
+  });
+  it('carries closing copy with a large signature without losing or duplicating words', () => {
+    const text = Array.from({ length: 9 }, (_, i) => `word${i}`).join(' ');
+    const result = packFrontMatter([{ id: 'p', text }, { id: 'sig', text: '', kind: 'signature' }], 100,
+      u => u.kind === 'signature' ? 55 : u.text.split(' ').length * 10, 5);
+    expect(result.columns.at(-1)!.map(u => u.id)).toEqual(['p', 'sig']);
+    expect(result.columns.flat().filter(u => !u.kind).map(u => u.text).join(' ')).toBe(text);
+    expect(result.overflow).toBe(false);
+  });
   it('preserves new content through save/reopen and isolates undo drafts',()=>{
     for(const id of ['frontmatter-dean','frontmatter-contents','frontmatter-board'] as const){
       const doc=makeFrontMatter(id);
@@ -38,6 +52,9 @@ describe('front matter layout',()=>{
         doc.assets['dean-signature'] = { src: 'data:image/png;base64,signature', naturalWidth: 600, naturalHeight: 180 };
         doc.frontMatter!.signature = { assetId: 'dean-signature', offsetX: 3, offsetY: -1, scale: 1.2 };
         doc.frontMatter!.signatureWidth = 38;
+        doc.frontMatter!.signatureCrop = { x: .1, y: .2, width: .8, height: .6 };
+        doc.frontMatter!.signatureAlign = 'end';
+        doc.frontMatter!.signatureGap = 5;
         doc.design.deanCategoryTopGap = 6;
         doc.design.deanTitleBottomGap = 11;
       }
@@ -62,6 +79,8 @@ describe('front matter layout',()=>{
       } else if (id === 'frontmatter-dean') {
         draft.frontMatter!.signature!.offsetX = 30;
         expect(doc.frontMatter!.signature!.offsetX).toBe(3);
+        draft.frontMatter!.signatureCrop!.x = .2;
+        expect(doc.frontMatter!.signatureCrop!.x).toBe(.1);
       }
       if(draft.frontMatter!.entries.length){draft.frontMatter!.entries[0].title='Changed';expect(doc.frontMatter!.entries[0].title).not.toBe('Changed');}
     }

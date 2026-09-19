@@ -1,0 +1,11 @@
+.signature-preview {
+  padding: 14px;
+  margin-bottom: 8px;
+  border: 1px solid var(--border, #dce0e8);
+  border-radius: 8px;
+  background: #fff;
+}
+.signature-preview-image { max-width: 100%; }
+.signature-preview-image.is-center { margin-inline: auto; }
+.signature-preview-image.is-end { margin-inline-start: auto; }
+.signature-actions { display: grid; gap: 6px; }
