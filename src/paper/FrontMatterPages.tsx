@@ -12,7 +12,16 @@ import { largestBoardScaleThatFits } from '../lib/frontMatterBoardFit';
 export interface FrontMatterStatus { pages: number; overflow: boolean }
 const target = (name: string, tab = 'content') => ({'data-editor-tab':tab,'data-editor-target':name});
 
-function Unit({unit,dean,initial=false}: {unit:FrontMatterUnit;dean:boolean;initial?:boolean}) {
+function Unit({unit,dean,initial=false,doc}: {unit:FrontMatterUnit;dean:boolean;initial?:boolean;doc:Doc}) {
+  if (unit.kind === 'signature') {
+    const content = doc.frontMatter ?? emptyFrontMatter();
+    const frame = content.signature;
+    const asset = frame?.assetId ? doc.assets[frame.assetId] : null;
+    return <article data-measure-id={unit.id} className="fm-unit fm-dean-signature">
+      {asset && <div className="fm-signature-image" data-editor-tab="images" data-editor-target="image-signature"><FramedImage asset={asset} frame={frame} fit="contain" /></div>}
+      <div className="fm-signoff" data-editor-tab="content" data-editor-target="meta-author"><span>{content.signoff}</span><strong>{doc.meta.author}</strong></div>
+    </article>;
+  }
   return <article data-measure-id={unit.id} className={`fm-unit${dean?' fm-paragraph':''}${unit.continued?' fm-continued':''}`}
     {...(!dean ? target(`fm-entry-${unit.id}`) : {})}
     onClick={dean ? () => requestBlockEditorFocus(unit.id) : undefined}
@@ -42,11 +51,14 @@ export function FrontMatterPages({doc,vars,onStatus}: {doc:Doc;vars:CSSPropertie
     '--fm-board-entry-gap': `${2.8 * boardScale}mm`,
     '--fm-logo-width': `${logoWidth}mm`,
     '--fm-logo-height': `${logoWidth / logoAspect}mm`,
+    '--fm-signature-width': `${Math.max(15,Math.min(55,content.signatureWidth ?? 34))}mm`,
+    '--fm-dean-category-gap': `${Math.max(0,Math.min(40,doc.design.deanCategoryTopGap ?? 0))}mm`,
+    '--fm-dean-title-gap': `${Math.max(0,Math.min(35,doc.design.deanTitleBottomGap ?? (doc.meta.subtitle ? 4 : 8)))}mm`,
   } as CSSProperties;
   const initial = dean && dropCapEnabled(doc.design,doc.templateId);
   const measureRef = useRef<HTMLDivElement>(null);
   const units = useMemo<FrontMatterUnit[]>(() => dean
-    ? doc.blocks.filter(b=>b.type==='paragraph').map(b=>({id:b.id,text:b.text,fontSize:b.fontSize,color:b.color,topPadding:b.topPadding,indent:b.indent}))
+    ? [...doc.blocks.filter(b=>b.type==='paragraph').map(b=>({id:b.id,text:b.text,fontSize:b.fontSize,color:b.color,topPadding:b.topPadding,indent:b.indent})), {id:'dean-signature',text:'',kind:'signature' as const}]
     : (doc.frontMatter?.entries ?? []).map(e=>({...e})), [dean,doc.blocks,doc.frontMatter]);
   const [layout,setLayout] = useState<{columns:FrontMatterUnit[][];overflow:boolean}>({columns:[[]],overflow:false});
   const [fontEpoch,setFontEpoch] = useState(0);
@@ -71,10 +83,11 @@ export function FrontMatterPages({doc,vars,onStatus}: {doc:Doc;vars:CSSPropertie
       const node = nodes.find(n=>n.dataset.measureId===unit.id);
       if (!node) return 0;
       const copy = node.cloneNode(true) as HTMLElement;
-      copy.querySelector('[data-fm-text]')!.innerHTML = runsToHtml(unit.text,initial && unit.id===units[0]?.id && !unit.continued);
+      const text = copy.querySelector<HTMLElement>('[data-fm-text]');
+      if (text) text.innerHTML = runsToHtml(unit.text,initial && unit.id===units[0]?.id && !unit.continued);
       if (unit.continued) {
         copy.style.paddingTop = '0';
-        (copy.querySelector('[data-fm-text]') as HTMLElement).style.textIndent = '0';
+        if (text) text.style.textIndent = '0';
         const heading = copy.querySelector('h2');
         if (heading) { const label = document.createElement('small'); label.textContent = ' · continued'; heading.append(label); }
       }
@@ -204,13 +217,18 @@ export function FrontMatterPages({doc,vars,onStatus}: {doc:Doc;vars:CSSPropertie
           {children}
         </div>
         {!(board&&pageIndex>0&&!measuring) && <aside className="fm-rail">
-          {!board && photo('cover', 'fm-feature')}
-          {!board && doc.meta.photoCredit && <p className="fm-credit" {...target('meta-photo-credit')}>{doc.meta.photoCredit}</p>}
-          <div {...target('fm-note')}><h2>{board ? content.aboutTitle : content.noteTitle}</h2>
-            {board ? boardAbout() : <div className="fm-note-text" dangerouslySetInnerHTML={{__html:runsToHtml(content.note)}} />}
-          </div>
+          {dean ? <div {...target('fm-note')}><h2>{content.noteTitle}</h2>
+            {photo('cover', 'fm-feature fm-dean-cover')}
+            {doc.meta.photoCredit && <p className="fm-credit" {...target('meta-photo-credit')}>{doc.meta.photoCredit}</p>}
+            <div className="fm-note-text" dangerouslySetInnerHTML={{__html:runsToHtml(content.note)}} />
+          </div> : <>
+            {!board && photo('cover', 'fm-feature')}
+            {!board && doc.meta.photoCredit && <p className="fm-credit" {...target('meta-photo-credit')}>{doc.meta.photoCredit}</p>}
+            <div {...target('fm-note')}><h2>{board ? content.aboutTitle : content.noteTitle}</h2>
+              {board ? boardAbout() : <div className="fm-note-text" dangerouslySetInnerHTML={{__html:runsToHtml(content.note)}} />}
+            </div>
+          </>}
           {board && content.contact && <p className="fm-board-contact" {...target('fm-contact')}>{content.contact}</p>}
-          {dean && <div className="fm-signoff" {...target('meta-author')}><span>{content.signoff}</span><strong>{doc.meta.author}</strong></div>}
           {!dean && !board && photo('hero','fm-feature fm-feature-secondary')}
         </aside>}
       </div>
@@ -220,9 +238,9 @@ export function FrontMatterPages({doc,vars,onStatus}: {doc:Doc;vars:CSSPropertie
 
   return <>
     {Array.from({length:Math.max(1,Math.ceil(layout.columns.length/2))},(_,i)=>sheet(i,
-      [0,1].map(c=><div className="fm-column" key={c}>{(layout.columns[i*2+c]??[]).map((unit,j)=><Unit key={`${unit.id}-${j}`} unit={unit} dean={dean} initial={initial && unit.id===units[0]?.id}/>)}</div>)))}
+      [0,1].map(c=><div className="fm-column" key={c}>{(layout.columns[i*2+c]??[]).map((unit,j)=><Unit key={`${unit.id}-${j}`} unit={unit} dean={dean} initial={initial && unit.id===units[0]?.id} doc={doc}/>)}</div>)))}
     <div className="fm-measure" ref={measureRef} aria-hidden="true">
-      {sheet(0,<><div className="fm-column">{units.map(unit=><div className="fm-measure-unit" key={unit.id}><Unit unit={unit} dean={dean} initial={initial && unit.id===units[0]?.id}/></div>)}</div><div className="fm-column"/></>,true)}
+      {sheet(0,<><div className="fm-column">{units.map(unit=><div className="fm-measure-unit" key={unit.id}><Unit unit={unit} dean={dean} initial={initial && unit.id===units[0]?.id} doc={doc}/></div>)}</div><div className="fm-column"/></>,true)}
     </div>
   </>;
 }

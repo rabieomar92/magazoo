@@ -418,6 +418,9 @@ export interface Design {
   /** Editorial Board only: number of newspaper-style columns used by the
    * publication/about copy. Missing keeps the original three-column design. */
   frontMatterAboutColumns?: 1 | 2 | 3;
+  /** Dean's Message only: bounded spacing below the top bar and headline. */
+  deanCategoryTopGap?: number;
+  deanTitleBottomGap?: number;
   /**
    * Which side the top bar's masthead/tag label begins on. Absent = 'left'
    * (v1 files, and every template's original look, are unaffected). Following
@@ -506,6 +509,9 @@ export interface FrontMatter {
   /** Block keeps text above/below. Start/end floats the mark inside its current
    * editorial column so following copy wraps beside it; sides are RTL-aware. */
   logoWrap?: 'block' | 'start' | 'end';
+  /** Optional handwritten signature, independent from all other image slots. */
+  signature?: { assetId: string | null; offsetX: number; offsetY: number; scale: number };
+  signatureWidth?: number;
   signoff?: string;
   pageStart: number;
 }
@@ -735,6 +741,7 @@ export function assetIsReferenced(doc: Doc, assetId: string): boolean {
   return doc.hero?.assetId === assetId ||
     doc.cover?.assetId === assetId ||
     doc.frontMatter?.logo?.assetId === assetId ||
+    doc.frontMatter?.signature?.assetId === assetId ||
     doc.backCover?.qr?.assetId === assetId ||
     doc.backCover?.logo?.assetId === assetId ||
     doc.design?.pageBackgroundAssetId === assetId ||

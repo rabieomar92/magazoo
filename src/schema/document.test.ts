@@ -12,6 +12,7 @@ describe('cleanOrphanedAssets', () => {
     const placedId = uid();
     const backQrId = uid();
     const backLogoId = uid();
+    const signatureId = uid();
 
     doc.hero.assetId = heroId;
     doc.cover = { assetId: coverId, offsetX: 0, offsetY: 0, scale: 1 };
@@ -32,6 +33,10 @@ describe('cleanOrphanedAssets', () => {
       widthCols: 2,
       anchor: { page: 1, column: 0, y: 20 },
     });
+    doc.frontMatter = {
+      entries: [], aboutTitle: '', about: '', noteTitle: '', note: '', contact: '',
+      pageStart: 1, signature: { assetId: signatureId, offsetX: 0, offsetY: 0, scale: 1 },
+    };
 
     doc.assets = {
       [heroId]: { src: 'data:image/svg+xml;hero', naturalWidth: 100, naturalHeight: 100 },
@@ -41,6 +46,7 @@ describe('cleanOrphanedAssets', () => {
       [placedId]: { src: 'data:image/svg+xml;placed', naturalWidth: 100, naturalHeight: 100 },
       [backQrId]: { src: 'data:image/svg+xml:back-qr', naturalWidth: 100, naturalHeight: 100 },
       [backLogoId]: { src: 'data:image/svg+xml:back-logo', naturalWidth: 100, naturalHeight: 100 },
+      [signatureId]: { src: 'data:image/svg+xml:signature', naturalWidth: 100, naturalHeight: 30 },
       [orphanId]: { src: 'data:image/svg+xml;orphan', naturalWidth: 100, naturalHeight: 100 },
     };
 
@@ -53,6 +59,7 @@ describe('cleanOrphanedAssets', () => {
     expect(doc.assets[placedId]).toBeDefined();
     expect(doc.assets[backQrId]).toBeDefined();
     expect(doc.assets[backLogoId]).toBeDefined();
+    expect(doc.assets[signatureId]).toBeDefined();
     expect(doc.assets[orphanId]).toBeUndefined();
   });
 });

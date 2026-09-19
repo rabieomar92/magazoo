@@ -133,11 +133,13 @@
 
 /* --- progress strip --------------------------------------------------- */
 .admin-loading {
-  position:fixed; top:0; left:0; right:0; z-index:1000; pointer-events:none;
-  background:var(--brand-wash); color:var(--brand-ink); font:600 11.5px/1.4 var(--ui);
-  text-align:center; padding-top:4px; box-shadow:0 1px 6px rgba(16,23,40,.08);
+  position:fixed; top:10px; left:50%; z-index:1000; pointer-events:none;
+  width:min(440px,calc(100% - 24px)); transform:translateX(-50%);
+  background:rgba(255,255,255,.94); color:var(--brand-ink); font:600 11.5px/1.4 var(--ui);
+  padding:7px 12px; border:1px solid var(--brand-line); border-radius:14px;
+  box-shadow:0 12px 34px -16px rgba(16,23,40,.38); backdrop-filter:blur(14px);
 }
-.admin-loading .loading-track { margin-top:3px; }
+.admin-loading .magazoo-loader-art { width:34px; }
 
 /* Used by the editor chrome, not the library — kept here because that is
    where the editor already looks for them. */

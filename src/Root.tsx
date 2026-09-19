@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useState } from 'react';
 import AdminPage from './admin/AdminPage';
 import { ErrorBoundary } from './ErrorBoundary';
 import { isAdminHash } from './routing';
+import { MagazooLoader } from './components/MagazooLoader';
 const App = lazy(() => import('./App'));
 
 export function Root(){
@@ -20,5 +21,5 @@ export function Root(){
     };
     window.addEventListener('hashchange',change);return()=>{live=false;window.removeEventListener('hashchange',change);};
   },[hash]);
-  return <ErrorBoundary><Suspense fallback={<div className="app-loading" role="status"><img className="app-loading-logo" src={`${import.meta.env.BASE_URL}magazoo-mark.png`} alt="Magazoo!" />Loading Magazoo editor…<div className="loading-track"><span /></div></div>}>{isAdminHash(hash)?<AdminPage/>:<App key={hash}/>}</Suspense></ErrorBoundary>;
+  return <ErrorBoundary><Suspense fallback={<MagazooLoader label="Loading Magazoo editor…" detail="Preparing your publication workspace." />}>{isAdminHash(hash)?<AdminPage/>:<App key={hash}/>}</Suspense></ErrorBoundary>;
 }

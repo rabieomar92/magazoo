@@ -5,6 +5,7 @@ export const emptyFrontMatter = (): FrontMatter => ({
   noteTitle: 'In this issue', note: '', contact: '',
   logo: { assetId: null, offsetX: 0, offsetY: 0, scale: 1 },
   logoWidth: 18, logoAlign: 'center', logoAfterParagraph: 2, logoWrap: 'end',
+  signature: { assetId: null, offsetX: 0, offsetY: 0, scale: 1 }, signatureWidth: 34,
   signoff: 'With best wishes,', pageStart: 1,
 });
 
@@ -42,6 +43,8 @@ export function makeFrontMatter(id: TemplateId): Doc {
   d.assets['frontmatter-art'] = { src: scienceArt, naturalWidth: 1400, naturalHeight: 900 };
   d.cover = { assetId: 'frontmatter-art', offsetX: 0, offsetY: 0, scale: 1 };
   if (id === 'frontmatter-dean') {
+    d.design.deanCategoryTopGap = 0;
+    d.design.deanTitleBottomGap = 4;
     d.meta.categoryLabel = 'From the dean';
     d.meta.title = 'A future shaped\nby curiosity';
     d.meta.subtitle = 'A message to our students, colleagues and friends.';

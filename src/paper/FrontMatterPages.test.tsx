@@ -98,3 +98,31 @@ describe('editorial board page', () => {
     ).toContain('class="tag-bar');
   });
 });
+
+describe('dean message page', () => {
+  it('places the issue cover below the sidebar heading and the signature after the message flow', () => {
+    const doc = makeFrontMatter('frontmatter-dean');
+    doc.assets['signature'] = { src: 'data:image/png;base64,c2lnbmF0dXJl', naturalWidth: 900, naturalHeight: 260 };
+    doc.frontMatter!.signature = { assetId: 'signature', offsetX: 0, offsetY: 0, scale: 1 };
+    doc.frontMatter!.signatureWidth = 39;
+    doc.design.deanCategoryTopGap = 7.5;
+    doc.design.deanTitleBottomGap = 12;
+    const host = document.createElement('div');
+    host.innerHTML = renderToStaticMarkup(<FrontMatterPages doc={doc} vars={{}} onStatus={() => undefined} />);
+
+    const rail = host.querySelector('.page .fm-rail')!;
+    const heading = rail.querySelector('h2')!;
+    const cover = rail.querySelector('.fm-dean-cover')!;
+    const summary = rail.querySelector('.fm-note-text')!;
+    expect(heading.textContent).toBe('Inside this issue');
+    expect(heading.compareDocumentPosition(cover) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(cover.compareDocumentPosition(summary) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(host.innerHTML).toContain('--fm-dean-category-gap:7.5mm');
+    expect(host.innerHTML).toContain('--fm-dean-title-gap:12mm');
+    expect(host.innerHTML).toContain('--fm-signature-width:39mm');
+    const measured = host.querySelector('.fm-measure .fm-dean-signature')!;
+    expect(measured.querySelector('[data-editor-target="image-signature"]')).not.toBeNull();
+    expect(measured.textContent).toContain(doc.frontMatter!.signoff);
+    expect(measured.textContent).toContain(doc.meta.author);
+  });
+});
