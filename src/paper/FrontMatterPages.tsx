@@ -8,6 +8,8 @@ import { requestBlockEditorFocus } from '../lib/editorNavigation';
 import { FramedImage } from '../components/FramedImage';
 import { TagBar } from './TagBar';
 import { largestBoardScaleThatFits } from '../lib/frontMatterBoardFit';
+import { SignatureImage } from '../components/SignatureImage';
+import { signatureGeometry } from '../lib/signature';
 
 export interface FrontMatterStatus { pages: number; overflow: boolean }
 const target = (name: string, tab = 'content') => ({'data-editor-tab':tab,'data-editor-target':name});
@@ -17,9 +19,10 @@ function Unit({unit,dean,initial=false,doc}: {unit:FrontMatterUnit;dean:boolean;
     const content = doc.frontMatter ?? emptyFrontMatter();
     const frame = content.signature;
     const asset = frame?.assetId ? doc.assets[frame.assetId] : null;
-    return <article data-measure-id={unit.id} className="fm-unit fm-dean-signature">
-      {asset && <div className="fm-signature-image" data-editor-tab="images" data-editor-target="image-signature"><FramedImage asset={asset} frame={frame} fit="contain" /></div>}
-      <div className="fm-signoff" data-editor-tab="content" data-editor-target="meta-author"><span>{content.signoff}</span><strong>{doc.meta.author}</strong></div>
+    const geometry = signatureGeometry(asset, content, doc.design.margin);
+    return <article data-measure-id={unit.id} className={`fm-unit fm-dean-signature fm-dean-signature--${geometry.align}`}>
+      {asset && <div className="fm-signature-image" data-editor-tab="images" data-editor-target="image-signature"><SignatureImage asset={asset} crop={content.signatureCrop} blend={content.signatureBlend !== false} /></div>}
+      <div className="fm-signoff" data-editor-tab="content" data-editor-target="meta-author">{content.signoff && <span>{content.signoff}</span>}{doc.meta.author && <strong>{doc.meta.author}</strong>}</div>
     </article>;
   }
   return <article data-measure-id={unit.id} className={`fm-unit${dean?' fm-paragraph':''}${unit.continued?' fm-continued':''}`}
@@ -42,6 +45,7 @@ export function FrontMatterPages({doc,vars,onStatus}: {doc:Doc;vars:CSSPropertie
   const logoWidth = Math.max(8,Math.min(40,content.logoWidth ?? 18));
   const logoAsset = content.logo?.assetId ? doc.assets[content.logo.assetId] : null;
   const logoAspect = logoAsset ? Math.max(.8,Math.min(8,logoAsset.naturalWidth/Math.max(1,logoAsset.naturalHeight))) : 3.2;
+  const signature = signatureGeometry(content.signature?.assetId ? doc.assets[content.signature.assetId] : null, content, doc.design.margin);
   const [boardScale,setBoardScale] = useState(1);
   const pageVars = {
     ...vars,
@@ -51,7 +55,8 @@ export function FrontMatterPages({doc,vars,onStatus}: {doc:Doc;vars:CSSPropertie
     '--fm-board-entry-gap': `${2.8 * boardScale}mm`,
     '--fm-logo-width': `${logoWidth}mm`,
     '--fm-logo-height': `${logoWidth / logoAspect}mm`,
-    '--fm-signature-width': `${Math.max(15,Math.min(55,content.signatureWidth ?? 34))}mm`,
+    '--fm-signature-width': `${signature.width}mm`,
+    '--fm-signature-gap': `${signature.gap}mm`,
     '--fm-dean-category-gap': `${Math.max(0,Math.min(40,doc.design.deanCategoryTopGap ?? 0))}mm`,
     '--fm-dean-title-gap': `${Math.max(0,Math.min(35,doc.design.deanTitleBottomGap ?? (doc.meta.subtitle ? 4 : 8)))}mm`,
   } as CSSProperties;
@@ -126,9 +131,9 @@ export function FrontMatterPages({doc,vars,onStatus}: {doc:Doc;vars:CSSPropertie
       setBoardScale(previous => previous === 1 ? previous : 1);
     }
     let packed = packAtScale(selectedBoardScale);
-    // Contents and board groups are modular editorial cards, not article
-    // paragraphs. Balance their final pair of columns without changing gaps.
-    if (!dean && !packed.overflow) {
+    // Balance the last pair, including the Dean's closing block, without
+    // stretching leading or paragraph gaps to manufacture a full page.
+    if (!packed.overflow) {
       const start = board ? 0 : Math.floor((packed.columns.length-1)/2)*2;
       const tail = packed.columns.slice(start).flat();
       let low = Math.max(1,...tail.map(measure)), high = height-2;
@@ -204,7 +209,7 @@ export function FrontMatterPages({doc,vars,onStatus}: {doc:Doc;vars:CSSPropertie
         <h1 {...target('meta-title')}>{doc.meta.title}</h1>
         {doc.meta.subtitle && <p className="fm-subtitle" {...target('meta-subtitle')}>{doc.meta.subtitle}</p>}
         {dean && <div className="fm-identity">
-          {photo('hero','fm-portrait','Your portrait')}
+          {photo('hero','fm-portrait')}
           <div><strong {...target('meta-author')}>{doc.meta.author}</strong><p {...target('meta-affiliation')}>{doc.meta.affiliation}</p></div>
         </div>}
       </header>}
@@ -218,7 +223,7 @@ export function FrontMatterPages({doc,vars,onStatus}: {doc:Doc;vars:CSSPropertie
         </div>
         {!(board&&pageIndex>0&&!measuring) && <aside className="fm-rail">
           {dean ? <div {...target('fm-note')}><h2>{content.noteTitle}</h2>
-            {photo('cover', 'fm-feature fm-dean-cover')}
+            {photo('cover', 'fm-feature fm-dean-cover', undefined, 'contain')}
             {doc.meta.photoCredit && <p className="fm-credit" {...target('meta-photo-credit')}>{doc.meta.photoCredit}</p>}
             <div className="fm-note-text" dangerouslySetInnerHTML={{__html:runsToHtml(content.note)}} />
           </div> : <>

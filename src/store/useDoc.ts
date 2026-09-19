@@ -28,6 +28,7 @@ export function cloneDocForUpdate(doc: Doc): Doc {
       entries: doc.frontMatter.entries.map(entry => ({ ...entry })),
       logo: doc.frontMatter.logo ? { ...doc.frontMatter.logo } : undefined,
       signature: doc.frontMatter.signature ? { ...doc.frontMatter.signature } : undefined,
+      signatureCrop: doc.frontMatter.signatureCrop ? { ...doc.frontMatter.signatureCrop } : undefined,
     } : undefined,
     backCover: doc.backCover ? {
       ...doc.backCover,
