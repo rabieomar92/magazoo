@@ -184,7 +184,10 @@ export function Panel() {
             <ReferencesSection />
           </>
         )}
-        {tab === 'design' && <><DirectionSection />{isBackCover ? <BackCoverDesign /> : isFrontMatter || isNews ? <FrontMatterDesign /> : <DesignSection />}</>}
+        <div className="panel-design-pane" hidden={tab !== 'design'}>
+          <p className="typography-relocated-note">Font and text styling controls are in the top toolbar. Page layout, backgrounds and object positioning stay here.</p>
+          <DirectionSection />{isBackCover ? <BackCoverDesign /> : isFrontMatter || isNews ? <FrontMatterDesign /> : <DesignSection />}
+        </div>
       </div>
       {pendingTemplate && <div className="template-warning-backdrop" role="presentation">
         <section className="template-warning" role="alertdialog" aria-modal="true" aria-labelledby="template-warning-title" aria-describedby="template-warning-copy">

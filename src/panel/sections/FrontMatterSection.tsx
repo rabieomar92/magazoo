@@ -1,3 +1,4 @@
+import { TypographyControl } from '../TypographyToolbar';
 import { useDoc } from '../../store/useDoc';
 import { uid, type FrontMatter } from '../../schema/document';
 import { emptyFrontMatter } from '../../store/frontMatter';
@@ -86,7 +87,7 @@ export function FrontMatterDesign() {
   const board = doc.templateId === 'frontmatter-board';
   const dean = doc.templateId === 'frontmatter-dean';
   return <>
-    <Section title="Page & typography" editorTarget="design-topbar">
+    <Section title="Page layout" editorTarget="design-topbar">
       <p className="hint">{board ? 'The photograph reaches the top and both side trim edges. The masthead floats over it without creating a gap.' : 'A dedicated editorial grid. Longer copy creates continuation pages; line spacing is never stretched to fill a page.'}</p>
       {board && <Toggle
         label="Show top bar"
@@ -121,21 +122,21 @@ export function FrontMatterDesign() {
         onChange={v => update(d => { d.design.barSide = v; })}
       />
       <p className="hint">The masthead and page number start on this side; the footer text sits opposite. Both alternate sides on later pages.</p>
-      <LabeledSelect label="Display font" value={doc.design.fontDisplay} options={fontOptions(ALL_FONTS)} onChange={v => update(d => {d.design.fontDisplay=v;})} />
-      <LabeledSelect label="Body font" value={doc.design.fontBody} options={fontOptions(ALL_FONTS)} onChange={v => update(d => {d.design.fontBody=v; d.design.fontSubtitle=v;})} />
+      <TypographyControl group="title" also="subtitle" order={10}><LabeledSelect label="Display font" value={doc.design.fontDisplay} options={fontOptions(ALL_FONTS)} onChange={v => update(d => {d.design.fontDisplay=v;})} /></TypographyControl>
+      <TypographyControl group="body" also="subtitle" order={10}><LabeledSelect label="Body font" value={doc.design.fontBody} options={fontOptions(ALL_FONTS)} onChange={v => update(d => {d.design.fontBody=v; d.design.fontSubtitle=v;})} /></TypographyControl>
       {(['title','subtitle','body'] as const).map(key => {
         const min = board ? (key === 'title' ? 12 : key === 'subtitle' ? 6 : 5.5) : (key === 'title' ? 20 : 8);
         const max = board ? (key === 'title' ? 32 : key === 'subtitle' ? 14 : 11) : (key === 'title' ? 48 : 16);
-        return <LabeledNumber key={key} label={`${key[0].toUpperCase()+key.slice(1)} size`} unit="pt" min={min} max={max} step={0.1} value={doc.design.sizes[key]} onChange={v => update(d=>{d.design.sizes[key]=Math.max(min,Math.min(max,v));})} />;
+        return <TypographyControl group={key} key={key} order={20}><LabeledNumber key={key} label={`${key[0].toUpperCase()+key.slice(1)} size`} unit="pt" min={min} max={max} step={0.1} value={doc.design.sizes[key]} onChange={v => update(d=>{d.design.sizes[key]=Math.max(min,Math.min(max,v));})} /></TypographyControl>;
       })}
     </Section>
     <Section title="Colour palette">
       <LabeledColor label="Paper" value={doc.design.paperBg ?? '#ffffff'} onChange={v => update(d=>{d.design.paperBg=v;})} />
-      <LabeledColor label="Text" value={doc.design.colors.ink} onChange={v => update(d=>{d.design.colors.ink=v;})} />
+      <TypographyControl group="theme" order={40}><LabeledColor label="Text" value={doc.design.colors.ink} onChange={v => update(d=>{d.design.colors.ink=v;})} /></TypographyControl>
       <LabeledColor label="Accent" value={doc.design.colors.accent} onChange={v => update(d=>{d.design.colors.accent=v;})} />
       <LabeledColor label="Top bar" value={doc.design.barColor ?? doc.design.colors.accent} onChange={v => update(d=>{d.design.barColor=v;})} />
       <LabeledColor label="Masthead background" value={doc.design.barTagColor ?? '#bfbfbf'} onChange={v => update(d=>{d.design.barTagColor=v;})} />
-      <LabeledColor label="Masthead text" value={doc.design.barTagInk ?? '#111418'} onChange={v => update(d=>{d.design.barTagInk=v;})} />
+      <TypographyControl group="masthead" order={40}><LabeledColor label="Masthead text" value={doc.design.barTagInk ?? '#111418'} onChange={v => update(d=>{d.design.barTagInk=v;})} /></TypographyControl>
     </Section>
   </>;
 }

@@ -1,3 +1,4 @@
+import { TypographyControl } from '../TypographyToolbar';
 import type { GateTextPlacement } from '../../schema/document';
 import { DEFAULT_TOP_BAR_OFFSET } from '../../schema/document';
 import { useDoc } from '../../store/useDoc';
@@ -38,13 +39,13 @@ export function GateDesignSection() {
   const rtl = design.textDirection === 'rtl';
   const natural = (design.gateTitleLayout ?? (rtl ? 'natural' : 'stacked')) === 'natural';
   return <div className="gate-editor" id="editor-target-gate-positions">
-    <p className="hint gate-editor-intro">Edit one block at a time. Each group keeps its text, typography and position together. You can also click text in the preview to open its settings.</p>
+    <p className="hint gate-editor-intro">Each group keeps its text and position together. Typography follows the focused text in the top toolbar. Click text in the preview to open its settings.</p>
     <details className="gate-editor-group">
       <summary>1 · Title page<span>Category, headline & position</span></summary>
       <div className="gate-control-stack">
         <GateTextEditor role="title">
-          <SegmentField label="Title line breaks" value={natural ? 'natural' : 'stacked'} options={[{ value: 'stacked', label: 'One word per line' }, { value: 'natural', label: 'Wrap to width' }]} onChange={gateTitleLayout => update(d => { d.design.gateTitleLayout = gateTitleLayout; })} />
-          {!natural && <Toggle label="Accent colour on last word" checked={design.gateAccentLastWord !== false} onChange={v => update(d => { d.design.gateAccentLastWord = v; })} />}
+          <TypographyControl group="title" order={50}><SegmentField label="Title line breaks" value={natural ? 'natural' : 'stacked'} options={[{ value: 'stacked', label: 'One word per line' }, { value: 'natural', label: 'Wrap to width' }]} onChange={gateTitleLayout => update(d => { d.design.gateTitleLayout = gateTitleLayout; })} /></TypographyControl>
+          {!natural && <TypographyControl group="title" order={50}><Toggle label="Accent colour on last word" checked={design.gateAccentLastWord !== false} onChange={v => update(d => { d.design.gateAccentLastWord = v; })} /></TypographyControl>}
         </GateTextEditor>
         <GateTextEditor role="kicker" />
         <GatePositionEditor kind="title" />
@@ -79,7 +80,7 @@ export function GateDesignSection() {
           <LabeledNumber label="Distance from top edge" unit="mm" value={design.topBarOffset ?? DEFAULT_TOP_BAR_OFFSET} min={0} max={40} onChange={v => update(d => { d.design.topBarOffset = clampGate(v, 0, 40); })} />
           <LabeledColor label="Bar line" value={design.barColor ?? '#111418'} onChange={v => update(d => { d.design.barColor = v; })} />
           <LabeledColor label="Masthead background" value={design.barTagColor ?? '#bfbfbf'} onChange={v => update(d => { d.design.barTagColor = v; })} />
-          <LabeledColor label="Masthead text colour" value={design.barTagInk ?? '#111418'} onChange={v => update(d => { d.design.barTagInk = v; })} />
+          <TypographyControl group="masthead" order={40}><LabeledColor label="Masthead text colour" value={design.barTagInk ?? '#111418'} onChange={v => update(d => { d.design.barTagInk = v; })} /></TypographyControl>
         </Section>
         <FooterSection />
       </div>

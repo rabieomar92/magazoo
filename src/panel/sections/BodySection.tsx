@@ -1,3 +1,4 @@
+import { TypographyControl } from '../TypographyToolbar';
 import {
   Fragment,
   useRef,
@@ -348,7 +349,7 @@ export function BodySection({ allowEquations = true }: { allowEquations?: boolea
                 </button>
               </div>
               {!isFrontCover && <div className="paragraph-indent">
-                <SegmentField<'default' | 'on' | 'off'>
+                <TypographyControl group={`block:${block.id}`} label={`${block.type === "paragraph" ? "Paragraph" : "Equation"} ${viewIndex + 1}`} order={50}><SegmentField<'default' | 'on' | 'off'>
                   label="Indent"
                   value={block.indent === true ? 'on' : block.indent === false ? 'off' : 'default'}
                   options={[
@@ -359,11 +360,11 @@ export function BodySection({ allowEquations = true }: { allowEquations?: boolea
                   onChange={(value) =>
                     setIndent(index, value === 'on' ? true : value === 'off' ? false : undefined)
                   }
-                />
+                /></TypographyControl>
               </div>}
               {isCardContent && (
                 <div className="paragraph-alignment">
-                  <SegmentField<'left' | 'center' | 'right' | 'justify'>
+                  <TypographyControl group={`block:${block.id}`} label={`${block.type === "paragraph" ? "Paragraph" : "Equation"} ${viewIndex + 1}`} order={50}><SegmentField<'left' | 'center' | 'right' | 'justify'>
                     label="Alignment"
                     value={block.align ?? templateBodyAlign}
                     options={[
@@ -373,11 +374,11 @@ export function BodySection({ allowEquations = true }: { allowEquations?: boolea
                       { value: 'justify', label: 'Justify' },
                     ]}
                     onChange={(value) => setParagraphAlign(index, value)}
-                  />
+                  /></TypographyControl>
                 </div>
               )}
               <div className="paragraph-style-grid">
-                <LabeledNumber
+                <TypographyControl group={`block:${block.id}`} label={`${block.type === "paragraph" ? "Paragraph" : "Equation"} ${viewIndex + 1}`} order={20}><LabeledNumber
                   label="Size"
                   unit="pt"
                   value={block.fontSize ?? templateBodySize}
@@ -385,8 +386,8 @@ export function BodySection({ allowEquations = true }: { allowEquations?: boolea
                   max={72}
                   step={0.5}
                   onChange={(fontSize) => setParagraphStyle(index, { fontSize })}
-                />
-                <LabeledNumber
+                /></TypographyControl>
+                <TypographyControl group={`block:${block.id}`} label={`${block.type === "paragraph" ? "Paragraph" : "Equation"} ${viewIndex + 1}`} order={50}><LabeledNumber
                   label="Top to text"
                   unit="px"
                   value={block.topPadding ?? 0}
@@ -394,16 +395,16 @@ export function BodySection({ allowEquations = true }: { allowEquations?: boolea
                   max={200}
                   step={1}
                   onChange={(topPadding) => setParagraphStyle(index, { topPadding })}
-                />
-                <LabeledColor
+                /></TypographyControl>
+                <TypographyControl group={`block:${block.id}`} label={`${block.type === "paragraph" ? "Paragraph" : "Equation"} ${viewIndex + 1}`} order={40}><LabeledColor
                   label="Color"
                   value={block.color ?? templateInk}
                   onChange={(color) => setParagraphStyle(index, { color })}
-                />
+                /></TypographyControl>
                 {(block.fontSize !== undefined ||
                   block.color !== undefined ||
                   block.topPadding !== undefined) && (
-                  <button
+                  <TypographyControl group={`block:${block.id}`} label={`Paragraph ${viewIndex + 1}`} order={90}><button
                     type="button"
                     className="style-reset-btn"
                     title="Use template typography"
@@ -411,7 +412,7 @@ export function BodySection({ allowEquations = true }: { allowEquations?: boolea
                     onClick={() => setParagraphStyle(index, {}, true)}
                   >
                     ↺
-                  </button>
+                  </button></TypographyControl>
                 )}
               </div>
             </div>
@@ -433,7 +434,7 @@ export function BodySection({ allowEquations = true }: { allowEquations?: boolea
                 placeholder="Equation caption (optional)…"
                 onChange={(event) => setEquationCaption(index, event.target.value)}
               />
-              <SegmentField<'left' | 'center' | 'right'>
+              <TypographyControl group={`block:${block.id}`} label={`Equation ${viewIndex + 1}`} order={50}><SegmentField<'left' | 'center' | 'right'>
                 label="Caption align"
                 value={block.align ?? 'center'}
                 options={[
@@ -442,7 +443,7 @@ export function BodySection({ allowEquations = true }: { allowEquations?: boolea
                   { value: 'right', label: 'Right' },
                 ]}
                 onChange={(value) => setEquationAlign(index, value)}
-              />
+              /></TypographyControl>
             </div>
           )}
 

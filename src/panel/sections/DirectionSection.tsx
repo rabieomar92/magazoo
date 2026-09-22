@@ -1,3 +1,4 @@
+import { TypographyControl } from '../TypographyToolbar';
 import { useDoc } from '../../store/useDoc';
 import { setTextDirection, dropCapEnabled } from '../../lib/textDirection';
 import { Section, SegmentField, Toggle } from '../Field';
@@ -12,6 +13,6 @@ export function DirectionSection() {
   return <Section title="Reading direction">
     <SegmentField<'ltr'|'rtl'> label="Text direction" value={direction} options={[{value:'ltr',label:'Left to right'},{value:'rtl',label:'Arabic · right to left'}]} onChange={v=>update(d=>setTextDirection(d.design,v))}/>
     <p className="hint">Applies to headings, text, captions and column order. Arabic letters stay joined. Masthead, footer and placed-image sides keep your chosen settings.</p>
-    {hasParagraphs && <Toggle label="First paragraph drop cap" checked={initial} onChange={v=>update(d=>{d.design.dropCap=v;})}/>}
+    {hasParagraphs && <TypographyControl group="body" order={50}><Toggle label="First paragraph drop cap" checked={initial} onChange={v=>update(d=>{d.design.dropCap=v;})}/></TypographyControl>}
   </Section>;
 }

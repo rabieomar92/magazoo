@@ -1,3 +1,4 @@
+import { TypographyControl } from '../TypographyToolbar';
 import {
   DEFAULT_TOP_BAR_OFFSET,
   defaultSubtitleGap,
@@ -61,15 +62,15 @@ function CoverTextEditor({ role, label }: { role: FrontCoverTextRole; label: str
           <LabeledNumber label={`${label} start inset`} unit="mm" value={style.inset ?? 0} min={0} max={40} step={.5} onChange={v => set('inset',v)} />
           <p className="hint">Drag this object vertically or set its spacing here. Following text makes room, preserving the hierarchy. Start inset mirrors for Arabic.</p>
         </>}
-        <LabeledNumber label={`${label} line height`} unit="×" value={style.lineHeight ?? 1.3} min={design.textDirection === 'rtl' ? 1.2 : .8} max={2.5} step={.05} onChange={v => set('lineHeight',v)} />
+        <TypographyControl group={role} label={label} order={50}><LabeledNumber label={`${label} line height`} unit="×" value={style.lineHeight ?? 1.3} min={design.textDirection === 'rtl' ? 1.2 : .8} max={2.5} step={.05} onChange={v => set('lineHeight',v)} /></TypographyControl>
         <Toggle label="Show object" checked={style.visible} onChange={(value) => set('visible', value)} />
-        <LabeledSelect
+        <TypographyControl group={role} label={label} order={10}><LabeledSelect
           label="Font"
           value={style.fontFamily}
           options={fontOptions(ALL_FONTS)}
           onChange={(value) => set('fontFamily', value)}
-        />
-        <LabeledNumber
+        /></TypographyControl>
+        <TypographyControl group={role} label={label} order={20}><LabeledNumber
           label="Size"
           unit="pt"
           value={style.fontSize}
@@ -77,20 +78,20 @@ function CoverTextEditor({ role, label }: { role: FrontCoverTextRole; label: str
           max={90}
           step={0.5}
           onChange={(value) => set('fontSize', value)}
-        />
-        <LabeledNumber
+        /></TypographyControl>
+        <TypographyControl group={role} label={label} order={30}><LabeledNumber
           label="Weight"
           value={style.fontWeight}
           min={100}
           max={900}
           step={100}
           onChange={(value) => set('fontWeight', value)}
-        />
-        <Toggle label="Bold" checked={style.fontWeight >= 700}
-          onChange={(value) => set('fontWeight', value ? 700 : 400)} />
-        <Toggle label="Italic" checked={style.fontStyle === 'italic'}
-          onChange={(value) => set('fontStyle', value ? 'italic' : 'normal')} />
-        <LabeledNumber
+        /></TypographyControl>
+        <TypographyControl group={role} label={label} order={30}><Toggle label="Bold" checked={style.fontWeight >= 700}
+          onChange={(value) => set('fontWeight', value ? 700 : 400)} /></TypographyControl>
+        <TypographyControl group={role} label={label} order={30}><Toggle label="Italic" checked={style.fontStyle === 'italic'}
+          onChange={(value) => set('fontStyle', value ? 'italic' : 'normal')} /></TypographyControl>
+        <TypographyControl group={role} label={label} order={50}><LabeledNumber
           label="Letter spacing"
           unit="em"
           value={style.letterSpacing}
@@ -98,14 +99,14 @@ function CoverTextEditor({ role, label }: { role: FrontCoverTextRole; label: str
           max={0.5}
           step={0.005}
           onChange={(value) => set('letterSpacing', value)}
-        />
-        <LabeledColor label="Color" value={style.color} onChange={(value) => set('color', value)} />
+        /></TypographyControl>
+        <TypographyControl group={role} label={label} order={40}><LabeledColor label="Color" value={style.color} onChange={(value) => set('color', value)} /></TypographyControl>
         {(['subtitle', 'author', 'strapline'] as FrontCoverTextRole[]).includes(role) && (
-          <button type="button" className="add-btn cover-style-reset" onClick={() => update((doc) => {
+          <TypographyControl group={role} label={label} order={90}><button type="button" className="add-btn cover-style-reset" onClick={() => update((doc) => {
             const headingRole = role === 'strapline' ? 'affiliation' : role === 'subtitle' ? 'subtitle' : 'author';
             delete doc.design[`${headingRole}Color`];
             if (doc.design.frontCover?.text?.[role]) delete doc.design.frontCover.text[role].color;
-          })}>Use theme color</button>
+          })}>Use theme color</button></TypographyControl>
         )}
         <button type="button" className="add-btn cover-style-reset" onClick={reset}>
           Reset this object
@@ -133,7 +134,7 @@ export function FrontCoverDesignSection() {
           These settings affect only Magazine Cover. Edit the words in Content and the cover
           photograph in Images.
         </p>
-        <SegmentField<'left' | 'center' | 'right'>
+        <TypographyControl group="title" also="subtitle author kicker storyTag" order={50}><SegmentField<'left' | 'center' | 'right'>
           label="Story alignment"
           value={cover.alignment ?? (design.textDirection === 'rtl' ? 'right' : 'left')}
           options={[
@@ -142,7 +143,7 @@ export function FrontCoverDesignSection() {
             { value: 'right', label: 'Right' },
           ]}
           onChange={(value) => setCover('alignment', value)}
-        />
+        /></TypographyControl>
         <LabeledNumber
           label="Safe margin"
           unit="mm"
@@ -227,8 +228,8 @@ export function FrontCoverDesignSection() {
           value={design.colors.accent}
           onChange={(value) => update((doc) => { doc.design.colors.accent = value; })}
         />
-        <LabeledColor label="Ink (text)" value={design.colors.ink}
-          onChange={(value) => update((doc) => { doc.design.colors.ink = value; })} />
+        <TypographyControl group="theme" order={40}><LabeledColor label="Ink (text)" value={design.colors.ink}
+          onChange={(value) => update((doc) => { doc.design.colors.ink = value; })} /></TypographyControl>
         <LabeledColor
           label="Category background"
           value={cover.kickerBackground ?? design.colors.accent}

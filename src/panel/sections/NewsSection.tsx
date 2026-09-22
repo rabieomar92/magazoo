@@ -1,3 +1,4 @@
+import { TypographyControl } from '../TypographyToolbar';
 import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { useDoc } from '../../store/useDoc';
 import { assetIsReferenced, uid, type Design, type NewsStory } from '../../schema/document';
@@ -290,30 +291,30 @@ export function NewsContent() {
 
             {!!issues.length && <ul className="news-story-checks">{issues.map((issue, i) => <li className={issue.blocking ? 'is-blocking' : ''} key={i}>{issue.message}</li>)}</ul>}
 
-            <details className="news-advanced">
+            <details className="news-advanced typography-source">
               <summary>Typography & paragraph style</summary>
-              <LabeledNumber label="Headline size" unit="pt" value={story.headlineSize ?? doc.design.sizes.title * (story.layout === 'lead' ? 1 : story.layout === 'aside' ? .62 : .8)} min={8} max={60} step={.5}
-                onChange={value => change(story.id, item => { item.headlineSize = value; })} />
-              <LabeledNumber label="Body size" unit="pt" value={story.bodySize ?? doc.design.sizes.body} min={7} max={20} step={.1}
-                onChange={value => change(story.id, item => { item.bodySize = value; })} />
-              <LabeledNumber label="Line spacing" value={story.lineHeight ?? 1.48} min={1.1} max={2} step={.05}
-                onChange={value => change(story.id, item => { item.lineHeight = value; })} />
-              <SegmentField label="Paragraphs" value={story.paragraphStyle ?? 'indent'}
+              <TypographyControl group={`news:${story.id}`} label={`Story ${index + 1}: ${story.title || "Untitled"}`} order={20}><LabeledNumber label="Headline size" unit="pt" value={story.headlineSize ?? doc.design.sizes.title * (story.layout === 'lead' ? 1 : story.layout === 'aside' ? .62 : .8)} min={8} max={60} step={.5}
+                onChange={value => change(story.id, item => { item.headlineSize = value; })} /></TypographyControl>
+              <TypographyControl group={`news:${story.id}`} label={`Story ${index + 1}: ${story.title || "Untitled"}`} order={20}><LabeledNumber label="Body size" unit="pt" value={story.bodySize ?? doc.design.sizes.body} min={7} max={20} step={.1}
+                onChange={value => change(story.id, item => { item.bodySize = value; })} /></TypographyControl>
+              <TypographyControl group={`news:${story.id}`} label={`Story ${index + 1}: ${story.title || "Untitled"}`} order={50}><LabeledNumber label="Line spacing" value={story.lineHeight ?? 1.48} min={1.1} max={2} step={.05}
+                onChange={value => change(story.id, item => { item.lineHeight = value; })} /></TypographyControl>
+              <TypographyControl group={`news:${story.id}`} label={`Story ${index + 1}: ${story.title || "Untitled"}`} order={30}><SegmentField label="Paragraphs" value={story.paragraphStyle ?? 'indent'}
                 options={[{ value: 'indent', label: 'Indent' }, { value: 'spaced', label: 'Space between' }]}
-                onChange={value => change(story.id, item => { item.paragraphStyle = value; })} />
-              <button type="button" className="news-duplicate-btn" onClick={() => change(story.id, item => {
+                onChange={value => change(story.id, item => { item.paragraphStyle = value; })} /></TypographyControl>
+              <TypographyControl group={`news:${story.id}`} label={`Story ${index + 1}: ${story.title || "Untitled"}`} order={90}><button type="button" className="news-duplicate-btn" onClick={() => change(story.id, item => {
                 delete item.headlineSize; delete item.bodySize; delete item.lineHeight; delete item.paragraphStyle;
-              })}>Reset typography to theme</button>
+              })}>Reset typography to theme</button></TypographyControl>
             </details>
 
-            <details className="news-advanced">
+            <details className="news-advanced typography-source">
               <summary>Paragraph spacing</summary>
               <p className="hint">Optional extra space before each paragraph.</p>
               <div className="news-paragraph-grid">
-                {newsParagraphs(story.text).map((_, paragraph) => <LabeledNumber key={paragraph}
+                {newsParagraphs(story.text).map((_, paragraph) => <TypographyControl key={paragraph} group={`news:${story.id}`} label={`Story ${index + 1}: ${story.title || "Untitled"}`} order={50}><LabeledNumber key={paragraph}
                   label={`Paragraph ${paragraph + 1}`} unit="px" value={story.paragraphTops?.[paragraph] ?? 0}
                   min={0} max={200} step={1}
-                  onChange={value => setParagraphTop(story.id, paragraph, value)} />)}
+                  onChange={value => setParagraphTop(story.id, paragraph, value)} /></TypographyControl>)}
               </div>
             </details>
           </div>

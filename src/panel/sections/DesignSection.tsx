@@ -1,3 +1,4 @@
+import { TypographyControl } from '../TypographyToolbar';
 import { useRef, useState } from 'react';
 import { useDoc } from '../../store/useDoc';
 import {
@@ -112,7 +113,7 @@ export function DesignSection() {
         ]}
         onChange={(v) => set('bodyCols', v)}
       />
-      <SegmentField<NonNullable<Design['bodyAlign']>>
+      <TypographyControl group="body" order={50}><SegmentField<NonNullable<Design['bodyAlign']>>
         label="Text alignment"
         value={design.bodyAlign ?? 'justify'}
         options={[
@@ -122,7 +123,7 @@ export function DesignSection() {
           { value: 'justify', label: 'Justify' },
         ]}
         onChange={(v) => set('bodyAlign', v)}
-      />
+      /></TypographyControl>
       <p className="hint">Columns fill in reading order; only the final column may finish short.</p>
       {/* Every template carries the switch. Only the families that actually
           print a highlights box also offer where to put it; the others say so
@@ -180,21 +181,20 @@ export function DesignSection() {
         </>
       )}
 
-      <p className="group-label">Font sizes (pt)</p>
-      {!isGate && <><LabeledNumber label="Title" unit="pt" value={design.sizes.title} min={16} max={48} step={0.5} onChange={setSize('title')} />
-      <LabeledNumber label="Subtitle" unit="pt" value={design.sizes.subtitle} min={8} max={18} step={0.5} onChange={setSize('subtitle')} /></>}
-      <LabeledNumber label="Body text" unit="pt" value={design.sizes.body} min={7} max={12} step={0.1} onChange={setSize('body')} />
-      {!isGate && <><LabeledNumber label="Category" unit="pt" value={design.sizes.categoryLabel} min={6} max={12} step={0.5} onChange={setSize('categoryLabel')} />
-      <LabeledNumber label="Author" unit="pt" value={design.sizes.author} min={7} max={12} step={0.5} onChange={setSize('author')} />
-      <LabeledNumber label="Affiliation" unit="pt" value={design.sizes.affiliation} min={7} max={12} step={0.5} onChange={setSize('affiliation')} /></>}
+      {!isGate && <><TypographyControl group="title" order={20}><LabeledNumber label="Title" unit="pt" value={design.sizes.title} min={16} max={48} step={0.5} onChange={setSize('title')} /></TypographyControl>
+      <TypographyControl group="subtitle" order={20}><LabeledNumber label="Subtitle" unit="pt" value={design.sizes.subtitle} min={8} max={18} step={0.5} onChange={setSize('subtitle')} /></TypographyControl></>}
+      <TypographyControl group="body" order={20}><LabeledNumber label="Body text" unit="pt" value={design.sizes.body} min={7} max={12} step={0.1} onChange={setSize('body')} /></TypographyControl>
+      {!isGate && <><TypographyControl group="category" order={20}><LabeledNumber label="Category" unit="pt" value={design.sizes.categoryLabel} min={6} max={12} step={0.5} onChange={setSize('categoryLabel')} /></TypographyControl>
+      <TypographyControl group="author" order={20}><LabeledNumber label="Author" unit="pt" value={design.sizes.author} min={7} max={12} step={0.5} onChange={setSize('author')} /></TypographyControl>
+      <TypographyControl group="affiliation" order={20}><LabeledNumber label="Affiliation" unit="pt" value={design.sizes.affiliation} min={7} max={12} step={0.5} onChange={setSize('affiliation')} /></TypographyControl></>}
 
-      <p className="group-label" id="editor-target-design-fonts">Fonts</p>
-      {!isGate && <LabeledSelect label="Display" value={design.fontDisplay} options={fontOptions(SERIF_FONTS)} onChange={(v) => set('fontDisplay', v)} />}
-      <LabeledSelect label="Body" value={design.fontBody} options={fontOptions(SANS_FONTS)} onChange={(v) => set('fontBody', v)} />
-      {!isGate && <><LabeledSelect label="Category" value={design.fontCategory ?? design.fontBody} options={fontOptions(ALL_FONTS)} onChange={(v) => set('fontCategory', v)} />
-      <LabeledSelect label="Subtitle" value={design.fontSubtitle ?? (family === 'gallery' ? design.fontBody : design.fontDisplay)} options={fontOptions(ALL_FONTS)} onChange={(v) => set('fontSubtitle', v)} />
-      <LabeledSelect label="Author" value={design.fontAuthor ?? design.fontBody} options={fontOptions(ALL_FONTS)} onChange={(v) => set('fontAuthor', v)} />
-      <LabeledSelect label="Affiliation" value={design.fontAffiliation ?? design.fontBody} options={fontOptions(ALL_FONTS)} onChange={(v) => set('fontAffiliation', v)} /></>}
+      <p className="typography-relocated-note" id="editor-target-design-fonts">Select text or choose a text group in the top toolbar to change typography.</p>
+      {!isGate && <TypographyControl group="title" order={10}><LabeledSelect label="Display" value={design.fontDisplay} options={fontOptions(SERIF_FONTS)} onChange={(v) => set('fontDisplay', v)} /></TypographyControl>}
+      <TypographyControl group="body" order={10}><LabeledSelect label="Body" value={design.fontBody} options={fontOptions(SANS_FONTS)} onChange={(v) => set('fontBody', v)} /></TypographyControl>
+      {!isGate && <><TypographyControl group="category" order={10}><LabeledSelect label="Category" value={design.fontCategory ?? design.fontBody} options={fontOptions(ALL_FONTS)} onChange={(v) => set('fontCategory', v)} /></TypographyControl>
+      <TypographyControl group="subtitle" order={10}><LabeledSelect label="Subtitle" value={design.fontSubtitle ?? (family === 'gallery' ? design.fontBody : design.fontDisplay)} options={fontOptions(ALL_FONTS)} onChange={(v) => set('fontSubtitle', v)} /></TypographyControl>
+      <TypographyControl group="author" order={10}><LabeledSelect label="Author" value={design.fontAuthor ?? design.fontBody} options={fontOptions(ALL_FONTS)} onChange={(v) => set('fontAuthor', v)} /></TypographyControl>
+      <TypographyControl group="affiliation" order={10}><LabeledSelect label="Affiliation" value={design.fontAffiliation ?? design.fontBody} options={fontOptions(ALL_FONTS)} onChange={(v) => set('fontAffiliation', v)} /></TypographyControl></>}
 
       <p className="group-label">Colors</p>
       {templateId === 'paper-3' && design.imageTheme !== false && <p className="hint">These are your saved manual colours. Turn off “Match colours to hero image” above to apply them.</p>}
@@ -202,8 +202,8 @@ export function DesignSection() {
       <LabeledColor label="Hero" value={design.colors.hero} onChange={setColor('hero')} />
       <LabeledColor label="Accent" value={design.colors.accent} onChange={setColor('accent')} />
       <LabeledColor label="Soft accent" value={design.colors.accentSoft} onChange={setColor('accentSoft')} />
-      <LabeledColor label="Ink (text)" value={design.colors.ink} onChange={setColor('ink')} />
-      {!isGate && <><p className="group-label">Text appearance</p>
+      <TypographyControl group="theme" order={40}><LabeledColor label="Ink (text)" value={design.colors.ink} onChange={setColor('ink')} /></TypographyControl>
+      {!isGate && <>
       <div className="cover-style-list">
         <HeadingTextEditor role="subtitle" label={family === 'gallery' ? 'Descriptions' : 'Subtitle / lede'} />
         {family !== 'gallery' && <>
@@ -212,7 +212,7 @@ export function DesignSection() {
         </>}
       </div>
       {(design.subtitleColor || design.authorColor || design.affiliationColor) && (
-        <button
+        <TypographyControl group="theme" order={90}><button
           type="button"
           className="add-btn"
           onClick={() => update((d) => {
@@ -222,7 +222,7 @@ export function DesignSection() {
           })}
         >
           Follow theme colors
-        </button>
+        </button></TypographyControl>
       )}
       <p className="hint">Text colors follow Ink unless customized. Titles keep the capitalization you type.</p>
       {family === 'gallery' && <p className="hint">Photo captions use light text by default. A custom description color also applies to photo captions.</p>}</>}
@@ -306,7 +306,7 @@ export function DesignSection() {
             <>
               <LabeledColor label="Bar line" value={design.barColor ?? '#111418'} onChange={(v) => set('barColor', v)} />
               <LabeledColor label="Tag box" value={design.barTagColor ?? '#bfbfbf'} onChange={(v) => set('barTagColor', v)} />
-              <LabeledColor label="Bar text ink" value={design.barTagInk ?? '#111418'} onChange={(v) => set('barTagInk', v)} />
+              <TypographyControl group="masthead" order={40}><LabeledColor label="Bar text ink" value={design.barTagInk ?? '#111418'} onChange={(v) => set('barTagInk', v)} /></TypographyControl>
             </>
           )}
         </div>
