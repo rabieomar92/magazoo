@@ -3,6 +3,7 @@ import { useDoc } from './store/useDoc';
 import { hydrate, startAutosave } from './store/persist';
 import { Toolbar } from './panel/Toolbar';
 import { Panel } from './panel/Panel';
+import { TypographyProvider, TypographyToolbar } from './panel/TypographyToolbar';
 import { PaperPreview } from './paper/PaperPreview';
 import { ErrorBoundary } from './ErrorBoundary';
 import { sampleDoc } from './sample';
@@ -158,8 +159,9 @@ export default function App() {
 
   return (
     <ErrorBoundary>
-      <div className="app">
+      <TypographyProvider><div className="app">
         <Toolbar onPreviewToolsHost={setToolbarPreviewHost} />
+        <TypographyToolbar />
         {loadFailed && (
           <div className="app-banner" role="alert">
             Failed to restore saved session. Changes will not be autosaved — use Save As… to
@@ -189,7 +191,7 @@ export default function App() {
           </div>
           <PaperPreview toolbarHost={toolbarPreviewHost} />
         </div>
-      </div>
+      </div></TypographyProvider>
     </ErrorBoundary>
   );
 }
