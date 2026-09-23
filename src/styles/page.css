@@ -1505,20 +1505,30 @@
   }
 }
 
-/* Shared by measurement, preview and native print. Bookends occupy inset
-   corner rails, never a text line box. Every line inherits normal leading.
-   The padded copy keeps marks inside the column and out of adjacent copy. */
+/* Shared by measurement, preview and native print. The anchors reserve only
+   horizontal room; the enlarged glyphs never contribute to a line's height.
+   Render-only word joiners attach them to the first and last words. */
 .decorative-quote { text-indent:0 !important; }
 .decorative-quote-copy {
-  display:block; position:relative; padding-inline:1.45em;
+  display:block;
   font-style:italic; font-weight:600; line-height:inherit;
   text-wrap:pretty;
 }
 .decorative-quote-mark {
-  position:absolute; display:block; width:.5em; height:.6em;
-  font-family:Georgia, 'Times New Roman', serif;
-  font-size:2.5em; font-style:normal; font-weight:700;
-  line-height:1; color:inherit; opacity:.65; pointer-events:none;
+  display:inline-block; position:relative;
+  width:1.35em; height:0; line-height:0; vertical-align:baseline;
+  font-size:1em; text-indent:0; pointer-events:none;
 }
-.decorative-quote-mark--open { inset-inline-start:0; top:-.04em; }
-.decorative-quote-mark--close { inset-inline-end:0; bottom:-.05em; }
+.decorative-quote-glyph {
+  /* Retain literal punctuation for copying, without making the paginator's
+     text Range count a decorative font's oversized ascender/descender box. */
+  font-size:0; line-height:0;
+}
+.decorative-quote-mark::before {
+  content:attr(data-quote);
+  position:absolute; inset-inline-start:0; top:-.5em;
+  font-family:Georgia, 'Times New Roman', serif;
+  font-size:2.4em; font-style:normal; font-weight:700;
+  line-height:1; color:inherit; opacity:.72;
+}
+.decorative-quote-mark--close::before { inset-inline-start:.06em; }
