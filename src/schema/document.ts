@@ -61,6 +61,8 @@ export type Block =
       /** Optional paragraph-level typography overrides. Absent values inherit
        * the active template's body size and ink colour. */
       fontSize?: number;
+      /** Editorial pull quote with large decorative bookends. */
+      decorativeQuote?: boolean;
       color?: string;
       /** Space inside this paragraph before its first rendered text line, in
        * CSS pixels. This is deliberately independent from line-height and the

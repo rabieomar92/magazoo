@@ -1,13 +1,14 @@
 import { Fragment, useLayoutEffect, useRef, type CSSProperties, type ReactNode, type RefObject } from 'react';
 import type { Doc } from '../schema/document';
 import type { Piece } from '../lib/paginate';
-import { parseRuns, renderTex, runsToHtml } from '../lib/richtext';
+import { parseRuns, renderTex } from '../lib/richtext';
 import { fitEquation } from '../lib/mathfit';
 import { HighlightsBody } from './Sidebar';
 import { MagSplitAside } from './MagSplitHead';
 import { exclusionGradient, mergeExclusions, type ColumnExclusion } from '../lib/columnFill';
 import { fullColumnsForLevelling, type FullColumnMetric } from '../lib/fullColumnLevel';
 import { requestBlockEditorFocus } from '../lib/editorNavigation';
+import { quoteFlowHtml } from '../lib/decorativeQuote';
 
 /** A standalone display equation with an optional caption. KaTeX can't wrap math,
  *  so a too-wide formula is scaled down to the column rather than running off the
@@ -222,6 +223,7 @@ function WrapRow({
  *  match. */
 function TextP({ pc, opener = false }: { pc: TextPiece; opener?: boolean }) {
   const classes = [
+    pc.decorativeQuote ? 'decorative-quote' : '',
     opener ? 'flow-opener' : '',
     pc.cont ? 'cont' : pc.indent === true ? 'indent-on' : pc.indent === false ? 'indent-off' : '',
   ].filter(Boolean);
@@ -236,10 +238,11 @@ function TextP({ pc, opener = false }: { pc: TextPiece; opener?: boolean }) {
     <p
       className={`${cls ?? ''}${pc.sourceId ? `${cls ? ' ' : ''}flow-source-paragraph` : ''}` || undefined}
       data-source-block-id={pc.sourceId}
+      role={pc.decorativeQuote ? 'blockquote' : undefined}
       title={pc.sourceId ? 'Click to edit this paragraph' : undefined}
       onClick={pc.sourceId ? () => requestBlockEditorFocus(pc.sourceId!) : undefined}
       style={Object.keys(style).length ? style : undefined}
-      dangerouslySetInnerHTML={{ __html: runsToHtml(pc.text, opener) }}
+      dangerouslySetInnerHTML={{ __html: quoteFlowHtml(pc.text, pc.decorativeQuote, opener) }}
     />
   );
 }

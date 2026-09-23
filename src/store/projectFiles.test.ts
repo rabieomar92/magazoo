@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { emptyDoc } from '../schema/document';
+import { emptyDoc, migrate } from '../schema/document';
 import { useDoc } from './useDoc';
 import { bindTarget, saveToTarget, useProjectFile, type ProjectFileHandle } from './projectFiles';
 afterEach(()=>{bindTarget(null,null);vi.unstubAllGlobals();});
@@ -9,6 +9,21 @@ function fileHandle(){
   return{handle,writes,externalChange:()=>modified++};
 }
 describe('document save targets',()=>{
+  it.each(['file','online'] as const)('preserves individual paragraph sizes when saving and reopening %s documents',async kind=>{
+    const doc=emptyDoc();
+    doc.blocks=[{id:'p1',type:'paragraph',text:'First',fontSize:14,decorativeQuote:true},{id:'p2',type:'paragraph',text:'Second',fontSize:18},{id:'p3',type:'paragraph',text:'Uses the body default'}];
+    const bodySize=doc.design.sizes.body;
+    useDoc.getState().load(doc);
+    const {handle,writes}=fileHandle();
+    const request=vi.fn().mockResolvedValue({status:200,ok:true,json:async()=>({version:2})});
+    if(kind==='online')vi.stubGlobal('fetch',request);
+    bindTarget(kind==='file'?{kind:'file',handle,modified:1}:{kind:'online',token:'test',version:1,name:'paragraphs.json'},null);
+    await saveToTarget(doc);
+    const json=kind==='file'?await writes[0].text():request.mock.calls[0][1].body;
+    const reopened=migrate(JSON.parse(json));
+    expect(reopened.blocks).toEqual(doc.blocks);
+    expect(reopened.design.sizes.body).toBe(bodySize);
+  });
   it('keeps unsaved drafts unbound without starting downloads',async()=>{
     bindTarget(null,null);await saveToTarget(emptyDoc());expect(useProjectFile.getState().status).toBe('draft');
   });

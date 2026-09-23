@@ -143,7 +143,7 @@
 
 /* Used by the editor chrome, not the library — kept here because that is
    where the editor already looks for them. */
-.project-save-status { display:block; font:11px/1.35 var(--ui); color:#64748b; max-width:235px; overflow-wrap:anywhere; }
+.project-save-status { display:block; font:11px/1.35 var(--ui); color:#64748b; max-width:150px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; overflow-wrap:normal; }
 .project-save-status.is-error { color:#b91c1c; }
 .cover-text-object { touch-action:pan-x; }
 .pages .cover-text-object { cursor:ns-resize; }

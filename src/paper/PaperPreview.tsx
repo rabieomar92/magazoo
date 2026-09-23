@@ -1,6 +1,7 @@
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { useDoc } from '../store/useDoc';
+import { quoteFlowText } from '../lib/decorativeQuote';
 import { DEFAULT_TOP_BAR_OFFSET, familyOf } from '../schema/document';
 import { cssVars, grid, PAGE_W, PAGE_H, readableInk } from '../lib/geometry';
 import { dropCapEnabled } from '../lib/textDirection';
@@ -247,7 +248,8 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
             {
               kind: 'text',
               sourceId: b.id,
-              text: b.text,
+              text: quoteFlowText(b.text, b.decorativeQuote),
+              decorativeQuote: b.decorativeQuote,
               indent: b.indent,
               cont: Boolean(b.continuationOf),
               fontSize: b.fontSize,

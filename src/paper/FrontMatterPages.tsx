@@ -10,6 +10,7 @@ import { TagBar } from './TagBar';
 import { largestBoardScaleThatFits } from '../lib/frontMatterBoardFit';
 import { SignatureImage } from '../components/SignatureImage';
 import { signatureGeometry } from '../lib/signature';
+import { quoteFlowText, quoteFlowHtml } from '../lib/decorativeQuote';
 
 export interface FrontMatterStatus { pages: number; overflow: boolean }
 const target = (name: string, tab = 'content') => ({'data-editor-tab':tab,'data-editor-target':name});
@@ -32,7 +33,7 @@ function Unit({unit,dean,initial=false,doc}: {unit:FrontMatterUnit;dean:boolean;
     {unit.page && <span className="fm-page-number">{unit.page}</span>}
     <div className="fm-entry-copy">
       {unit.title && <h2>{unit.title}{unit.continued && <small> · continued</small>}</h2>}
-      <div data-fm-text style={{textIndent:dean && unit.indent && !unit.continued ? '1.2em' : undefined}} dangerouslySetInnerHTML={{__html:runsToHtml(unit.text,initial && !unit.continued)}} />
+      <div data-fm-text className={unit.decorativeQuote ? 'decorative-quote' : undefined} role={unit.decorativeQuote ? 'blockquote' : undefined} style={{textIndent:dean && unit.indent && !unit.continued ? '1.2em' : undefined}} dangerouslySetInnerHTML={{__html:quoteFlowHtml(unit.text,unit.decorativeQuote,initial && !unit.continued)}} />
     </div>
   </article>;
 }
@@ -63,7 +64,7 @@ export function FrontMatterPages({doc,vars,onStatus}: {doc:Doc;vars:CSSPropertie
   const initial = dean && dropCapEnabled(doc.design,doc.templateId);
   const measureRef = useRef<HTMLDivElement>(null);
   const units = useMemo<FrontMatterUnit[]>(() => dean
-    ? [...doc.blocks.filter(b=>b.type==='paragraph').map(b=>({id:b.id,text:b.text,fontSize:b.fontSize,color:b.color,topPadding:b.topPadding,indent:b.indent})), {id:'dean-signature',text:'',kind:'signature' as const}]
+    ? [...doc.blocks.filter(b=>b.type==='paragraph').map(b=>({id:b.id,text:quoteFlowText(b.text,b.decorativeQuote),decorativeQuote:b.decorativeQuote,fontSize:b.fontSize,color:b.color,topPadding:b.topPadding,indent:b.indent})), {id:'dean-signature',text:'',kind:'signature' as const}]
     : (doc.frontMatter?.entries ?? []).map(e=>({...e})), [dean,doc.blocks,doc.frontMatter]);
   const [layout,setLayout] = useState<{columns:FrontMatterUnit[][];overflow:boolean}>({columns:[[]],overflow:false});
   const [fontEpoch,setFontEpoch] = useState(0);
@@ -89,7 +90,7 @@ export function FrontMatterPages({doc,vars,onStatus}: {doc:Doc;vars:CSSPropertie
       if (!node) return 0;
       const copy = node.cloneNode(true) as HTMLElement;
       const text = copy.querySelector<HTMLElement>('[data-fm-text]');
-      if (text) text.innerHTML = runsToHtml(unit.text,initial && unit.id===units[0]?.id && !unit.continued);
+      if (text) text.innerHTML = quoteFlowHtml(unit.text,unit.decorativeQuote,initial && unit.id===units[0]?.id && !unit.continued);
       if (unit.continued) {
         copy.style.paddingTop = '0';
         if (text) text.style.textIndent = '0';
