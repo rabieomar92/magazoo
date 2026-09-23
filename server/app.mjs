@@ -94,6 +94,10 @@ export function createApp({storage,origin,passwordHash,staticDir,authOptions={}}
         fail(405,'Method not allowed.');
       }
       const project=path.match(/^\/api\/projects\/([\w-]+)$/);
+      if(project && req.method==='PATCH'){
+        const data=await body(req,4096);
+        return send(200,storage.renameProject(project[1],projectName(data?.name),projectName(data?.previousName)));
+      }
       if(project && req.method==='DELETE'){const data=await body(req,4096);if(!storage.removeProject(project[1],data.confirmation))fail(400,'Type the exact project name to confirm deletion.');return send(200,{ok:true});}
       const items=path.match(/^\/api\/projects\/([\w-]+)\/documents$/);
       if(items && req.method==='POST'){const data=await body(req);return send(201,storage.createDocument(items[1],projectName(data.name,true),validateDoc(data.doc)));}

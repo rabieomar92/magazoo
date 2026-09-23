@@ -91,6 +91,15 @@ export function openStorage(filename) {
       });
     },
     createProject(name){const id=randomUUID();db.prepare('INSERT INTO projects VALUES (?,?,?)').run(id,name,Date.now());return{id,name};},
+    renameProject(id,name,previousName){
+      return transaction(true,()=>{
+        const current=db.prepare('SELECT name FROM projects WHERE id=?').get(id);
+        if(!current)issueError(404,'Project not found.');
+        if(current.name!==previousName)issueError(409,'This project was renamed in another session. Refresh the library and try again.');
+        db.prepare('UPDATE projects SET name=? WHERE id=?').run(name,id);
+        return{id,name};
+      });
+    },
     createDocument(projectId,name,body){const id=randomUUID(),secret=token();db.prepare('INSERT INTO documents VALUES (?,?,?,?,?,1,?)').run(id,projectId,name,secret,body,Date.now());return{id,name,token:secret,version:1};},
     read(secret){return db.prepare('SELECT id,name,body,version FROM documents WHERE token=?').get(secret);},
     update(secret,version,body){return db.prepare('UPDATE documents SET body=?,version=version+1,updated=? WHERE token=? AND version=?').run(body,Date.now(),secret,version).changes>0;},
