@@ -123,11 +123,25 @@ describe('dean message page', () => {
     const measured = host.querySelector('.fm-measure .fm-dean-signature')!;
     expect(measured.querySelector('[data-editor-target="image-signature"]')).not.toBeNull();
     expect(measured.textContent).toContain(doc.frontMatter!.signoff);
-    expect(measured.textContent).toContain(doc.meta.author);
+    expect(measured.textContent).not.toContain(doc.meta.author);
+    expect(host.querySelector('.page .fm-identity strong')?.textContent).toBe(doc.meta.author);
+    expect(host.querySelectorAll('.fm-measure [data-editor-target="meta-author"] strong')).toHaveLength(0);
     const image = measured.querySelector('.signature-art')!;
     expect(image.getAttribute('viewBox')).toBe('0 0 900 260');
     expect(image.getAttribute('style')).toContain('aspect-ratio:900 / 260');
     expect(image.getAttribute('style')).toContain('mix-blend-mode:multiply');
+  });
+  it('does not leave an empty name or sign-off line beneath a signature', () => {
+    const doc = makeFrontMatter('frontmatter-dean');
+    doc.frontMatter!.signoff = '';
+    const before = JSON.stringify(doc);
+    const host = document.createElement('div');
+    host.innerHTML = renderToStaticMarkup(<FrontMatterPages doc={doc} vars={{}} onStatus={() => undefined} />);
+    const closing = host.querySelector('.fm-measure .fm-dean-signature')!;
+    expect(closing.querySelector('.fm-signoff')).toBeNull();
+    expect(closing.textContent).toBe('');
+    expect(host.querySelector('.page .fm-identity strong')?.textContent).toBe(doc.meta.author);
+    expect(JSON.stringify(doc)).toBe(before);
   });
   it('uses the same non-destructive crop and alignment for measurement and print', () => {
     const doc = makeFrontMatter('frontmatter-dean');

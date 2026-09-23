@@ -23,7 +23,7 @@ function Unit({unit,dean,initial=false,doc}: {unit:FrontMatterUnit;dean:boolean;
     const geometry = signatureGeometry(asset, content, doc.design.margin);
     return <article data-measure-id={unit.id} className={`fm-unit fm-dean-signature fm-dean-signature--${geometry.align}`}>
       {asset && <div className="fm-signature-image" data-editor-tab="images" data-editor-target="image-signature"><SignatureImage asset={asset} crop={content.signatureCrop} blend={content.signatureBlend !== false} /></div>}
-      <div className="fm-signoff" data-editor-tab="content" data-editor-target="meta-author">{content.signoff && <span>{content.signoff}</span>}{doc.meta.author && <strong>{doc.meta.author}</strong>}</div>
+      {content.signoff && <div className="fm-signoff" data-editor-tab="content" data-editor-target="meta-author"><span>{content.signoff}</span></div>}
     </article>;
   }
   return <article data-measure-id={unit.id} className={`fm-unit${dean?' fm-paragraph':''}${unit.continued?' fm-continued':''}`}
