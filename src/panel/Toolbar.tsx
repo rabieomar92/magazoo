@@ -22,6 +22,7 @@ export function Toolbar({ onPreviewToolsHost }: { onPreviewToolsHost: (host: HTM
   const canRedo = useStore(useDoc.temporal, (s) => s.futureStates.length > 0);
   const saveState = useSaveStatus((s) => s.status);
   const project=useProjectFile();
+  const projectStatus = { draft: 'Draft', pending: 'Unsaved changes', saving: 'Saving…', saved: 'Saved', error: 'Save failed', conflict: 'Save conflict' }[project.status];
   const title = useDoc((s) => s.doc.meta.title);
   const [exporting, setExporting] = useState(false);
 
@@ -72,7 +73,7 @@ export function Toolbar({ onPreviewToolsHost }: { onPreviewToolsHost: (host: HTM
     <header className="toolbar">
       <div className="toolbar-identity" title={project.message}>
         <Wordmark className="toolbar-brand" />
-        <span className={`project-save-status${project.status==='error'||project.status==='conflict' ? ' is-error':''}`} role="status">{project.message}</span>
+        <span className={`project-save-status${project.status==='error'||project.status==='conflict' ? ' is-error':''}`} role="status" aria-label={project.message}>{projectStatus}</span>
         {saveState === 'error' && <span className="toolbar-save-error">Autosave failed</span>}
       </div>
       <span className="visually-hidden" role="status" aria-live="polite">

@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { emptyDoc, migrate, type Doc } from '../schema/document';
 import '../styles/admin.css';
 import AdminLibrary from './AdminLibrary';
+import RenameProjectDialog from './RenameProjectDialog';
 import { Wordmark } from '../components/Wordmark';
 import { MagazooLoader } from '../components/MagazooLoader';
 const IssueWorkspace = lazy(() => import('../issue/IssueWorkspace'));
@@ -35,6 +36,7 @@ export default function AdminPage(){
   const importInput=useRef<HTMLInputElement>(null);
   const[itemName,setItemName]=useState('');const[projectId,setProjectId]=useState('');const[upload,setUpload]=useState<Doc|null>(null);
   const[deleting,setDeleting]=useState<{name:string;path:string;project:boolean}|null>(null);
+  const[renaming,setRenaming]=useState<Project|null>(null);
   const refresh=async(key=csrf)=>{const list=await api('projects',key);setProjects(list);setProjectId(current=>list.some((p:Project)=>p.id===current)?current:list[0]?.id??'');};
   useEffect(()=>{let live=true;void api('auth/session','').then(async data=>{if(live){setCsrf(data.csrf);await refresh(data.csrf);}}).catch(()=>{}).finally(()=>{if(live)setChecked(true);});return()=>{live=false;};},[]);
   const run=async(fn:()=>Promise<void>)=>{setError('');setNotice('');setBusy(true);try{await fn();}catch(e){setError(e instanceof Error?e.message:'Request failed.');}finally{setBusy(false);}};
@@ -56,10 +58,15 @@ export default function AdminPage(){
           <form className="admin-card" onSubmit={e=>{e.preventDefault();void run(async()=>{const doc=upload??emptyDoc();if(!upload)doc.meta.title=itemName.replace(/\.json$/i,'');await api(`projects/${projectId}/documents`,csrf,'POST',{name:itemName,doc});setItemName('');setUpload(null);if(importInput.current)importInput.current.value='';await refresh();setNotice('Document created. Its private editing link is ready below.');});}}><h2>Add a JSON document</h2><label>Project<select required value={projectId} onChange={e=>setProjectId(e.target.value)}><option value="">Choose a project</option>{projects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></label><label>File name<input required value={itemName} maxLength={115} onChange={e=>setItemName(e.target.value)} placeholder="research-highlights.json" /></label><label>Import an existing JSON (optional)<input ref={importInput} type="file" accept=".json,application/json" onChange={e=>{const f=e.target.files?.[0];setUpload(null);if(!f)return;void run(async()=>{if(f.size>64*1024*1024)throw new Error('File exceeds 64 MB.');setUpload(migrate(JSON.parse(await f.text())));if(!itemName)setItemName(f.name);});}} /></label><button className="primary" disabled={busy||!projectId||!itemName.trim()}>Create document & link</button></form></div>
         <div className="admin-library-title"><h2>Project library <span>{projects.length}</span></h2><button disabled={busy} onClick={()=>void run(()=>refresh())}>Refresh</button></div>
         <p className="admin-sharing-note">Anyone with a private link can read and edit that one document. Treat links like passwords. Edits save automatically; conflicting versions are never silently overwritten.</p>
-        <AdminLibrary projects={projects} busy={busy} onDelete={setDeleting} onCompile={setCompilingProject} link={sharedLink} onCopy={item=>void run(async()=>{await navigator.clipboard.writeText(sharedLink(item.token));setNotice(`Private editing link copied for ${item.name}.`);})} />
+        <AdminLibrary projects={projects} busy={busy} onDelete={setDeleting} onRename={setRenaming} onCompile={setCompilingProject} link={sharedLink} onCopy={item=>void run(async()=>{await navigator.clipboard.writeText(sharedLink(item.token));setNotice(`Private editing link copied for ${item.name}.`);})} />
       </>}
       <footer className="admin-footnote">Keep regular server backups. Deleting a project also revokes every document link inside it.</footer>
     </div>
     {deleting&&<DeleteDialog target={deleting} close={()=>setDeleting(null)} remove={()=>run(async()=>{await api(deleting.path,csrf,'DELETE',{confirmation:deleting.name});setDeleting(null);await refresh();setNotice('Deleted. Affected editing links have been revoked.');})} />}
+    {renaming&&<RenameProjectDialog name={renaming.name} close={()=>setRenaming(null)} rename={async name=>{
+      await api(`projects/${renaming.id}`,csrf,'PATCH',{name,previousName:renaming.name});
+      setRenaming(null);
+      await run(async()=>{await refresh();setNotice('Project renamed. Existing editing links are unchanged.');});
+    }} />}
   </main>;
 }

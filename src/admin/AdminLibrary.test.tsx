@@ -11,6 +11,13 @@ beforeEach(() => { vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true); host = docum
 afterEach(() => { act(() => root.unmount()); host.remove(); vi.unstubAllGlobals(); });
 const render = (data = projects) => act(() => root.render(<AdminLibrary {...props} projects={data} />));
 const click = (text: string) => act(() => (Array.from(host.querySelectorAll('button')).find(b => b.textContent === text)!).click());
+it('offers rename for populated and empty projects, with the correct project identity', () => {
+  const onRename = vi.fn();
+  act(() => root.render(<AdminLibrary {...props} projects={projects} onRename={onRename} />));
+  click('Rename'); expect(onRename).toHaveBeenLastCalledWith(projects[0]);
+  act(() => root.render(<AdminLibrary {...props} projects={[projects[1]]} onRename={onRename} />));
+  click('Rename'); expect(onRename).toHaveBeenLastCalledWith(projects[1]);
+});
 it('bounds results and navigates pages, including empty projects', () => {
   render(); expect(host.querySelectorAll('li')).toHaveLength(10);
   click('Next'); expect(host.textContent).toContain('Page 2 of 3');

@@ -5,7 +5,7 @@ import { FOCUS_BLOCK_EDITOR_EVENT, FOCUS_EDITOR_TARGET_EVENT, type EditorTargetD
 import './typography-toolbar.css';
 
 const LABELS: Record<string, string> = {
-  theme: 'Theme text', body: 'Body text', title: 'Title', subtitle: 'Subtitle / description',
+  theme: 'Theme defaults', body: 'Body defaults (all paragraphs)', title: 'Title', subtitle: 'Subtitle / description',
   category: 'Category / kicker', author: 'Author', affiliation: 'Affiliation', masthead: 'Masthead',
   footer: 'Page footer', quote: 'Pull quote', attribution: 'Quote attribution', photoCredit: 'Photo credit',
   strapline: 'Strapline', kicker: 'Category / kicker', storyTag: 'Story tag', teaserTitle: 'Teaser title', teaserBody: 'Teaser description', footerBrand: 'Footer publication',
@@ -110,19 +110,16 @@ export function TypographyControl({ group, label, also = '', order = 50, childre
   useEffect(() => register?.(id, { group, label: name }), [register, id, group, name]);
   if (!context) return <>{children}</>;
   const active = context.active;
-  const inheritedBody = group === 'body' && (active?.startsWith('block:') || active?.startsWith('news:'));
-  const sharedFallback = group === 'body' && active !== null && !context.groups.some(item => item.group === active);
+  const localSelection = !!(active?.startsWith('block:') || active?.startsWith('news:'));
+  const sharedFallback = !localSelection && group === 'body' && active !== null && !context.groups.some(item => item.group === active);
   const pairedSocial = active === 'socialUrl' && group === 'socialLabel';
-  // A cover teaser editor contains both its headline and description, while
-  // the publication-name field is shared by the masthead and footer brand.
-  const coverShared = context.templateId === 'magazine-4' && (
-    (active?.startsWith('block:') && (group === 'teaserTitle' || group === 'teaserBody')) ||
-    (active === 'masthead' && group === 'footerBrand')
-  );
-  const visible = active !== null && (active === group || group === 'theme' || inheritedBody || sharedFallback || pairedSocial || coverShared || also.split(' ').includes(active));
-  const scope = active !== group && group === 'theme' ? 'Theme default' : inheritedBody ? 'Body default' : coverShared || pairedSocial ? name : null;
-  const displayOrder = inheritedBody && order !== 10 ? order + 100 : order;
-  return context.host ? createPortal(<div className="typography-control" data-typography-group={group} hidden={!visible} style={{ order: displayOrder }}>
+  // The publication-name field is shared by the masthead and footer brand.
+  const coverShared = context.templateId === 'magazine-4' && active === 'masthead' && group === 'footerBrand';
+  // A selected paragraph/story must never expose the document-wide size or
+  // colour beside its own overrides. Global controls remain in explicit groups.
+  const visible = active !== null && (active === group || (!localSelection && group === 'theme') || sharedFallback || pairedSocial || coverShared || also.split(' ').includes(active));
+  const scope = active !== group && group === 'theme' ? 'Theme default' : coverShared || pairedSocial ? name : null;
+  return context.host ? createPortal(<div className="typography-control" data-typography-group={group} hidden={!visible} style={{ order }}>
     {scope && <span className="typography-control-scope">{scope}</span>}
     {children}
   </div>, context.host) : null;
@@ -130,6 +127,20 @@ export function TypographyControl({ group, label, also = '', order = 50, childre
 
 export function TypographyToolbar() {
   const context = useContext(TypographyContext);
+  const [overflow, setOverflow] = useState({ left: false, right: false });
+  const host = context?.host;
+  const active = context?.active;
+  const groups = context?.groups;
+  useEffect(() => {
+    if (!host) return;
+    const measure = () => setOverflow({ left: host.scrollLeft > 1, right: host.scrollLeft + host.clientWidth < host.scrollWidth - 1 });
+    measure();
+    host.addEventListener('scroll', measure, { passive: true });
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure);
+    observer?.observe(host);
+    return () => { host.removeEventListener('scroll', measure); observer?.disconnect(); };
+  }, [host, active, groups]);
+  useEffect(() => { if (host) host.scrollLeft = 0; }, [host, active]);
   if (!context) return null;
   const known = context.groups.some(group => group.group === context.active);
   return <section className="typography-toolbar" aria-label="Text typography">
@@ -143,7 +154,11 @@ export function TypographyToolbar() {
       </select>
       <small className="typography-scope-note">Theme and body defaults affect all matching text.</small>
     </label>
-    <div className="typography-controls" ref={context.setHost} role="group" aria-label="Formatting controls — scroll horizontally for more" tabIndex={0} />
+    <div className="typography-controls" ref={context.setHost} role="group" aria-label="Formatting controls" tabIndex={0} />
+    {(overflow.left || overflow.right) && <div className="typography-overflow-nav" aria-label="More formatting controls">
+      <button type="button" aria-label="Previous formatting controls" title="Previous controls" disabled={!overflow.left} onClick={() => host?.scrollBy({ left: -280, behavior: 'smooth' })}>‹</button>
+      <button type="button" aria-label="More formatting controls" title="More controls" disabled={!overflow.right} onClick={() => host?.scrollBy({ left: 280, behavior: 'smooth' })}>›</button>
+    </div>}
     {context.active === null && <p className="typography-hint">Select or focus text to see its existing formatting controls.</p>}
   </section>;
 }

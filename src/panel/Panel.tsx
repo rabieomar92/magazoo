@@ -15,6 +15,7 @@ import { FrontMatterContent, FrontMatterImages, FrontMatterDesign } from './sect
 import { NewsContent, NewsImages } from './sections/NewsSection';
 import { BackCoverContent, BackCoverImages, BackCoverDesign } from './sections/BackCoverSection';
 import { DirectionSection } from './sections/DirectionSection';
+import './editor-refinements.css';
 import {
   blockEditorId,
   editorTargetId,

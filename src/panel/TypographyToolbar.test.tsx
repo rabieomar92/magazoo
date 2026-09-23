@@ -7,6 +7,7 @@ import { useDoc } from '../store/useDoc';
 import { presetFor, TEMPLATE_META } from '../store/presets';
 import { requestBlockEditorFocus, requestEditorTargetFocus } from '../lib/editorNavigation';
 import { applyMark } from '../lib/activeEditor';
+import { migrate } from '../schema/document';
 
 let host: HTMLDivElement;
 let root: ReturnType<typeof createRoot>;
@@ -32,6 +33,21 @@ function group(value: string) {
 }
 
 describe('typography relocation', () => {
+  it('toggles decorative quotes only on the selected paragraph without rewriting its text', () => {
+    render('paper-3');
+    const original=structuredClone(useDoc.getState().doc);
+    const first=original.blocks.find(block=>block.type==='paragraph')!;
+    act(()=>requestBlockEditorFocus(first.id));
+    const buttons=()=>[...host.querySelectorAll<HTMLButtonElement>('.typography-control:not([hidden]) button')];
+    act(()=>buttons().find(button=>button.textContent==='❝ Quote ❞')!.click());
+    expect(useDoc.getState().doc.blocks.find(block=>block.id===first.id)).toEqual({...first,decorativeQuote:true});
+    expect(useDoc.getState().doc.blocks.filter(block=>block.id!==first.id)).toEqual(original.blocks.filter(block=>block.id!==first.id));
+    expect(migrate(JSON.parse(JSON.stringify(useDoc.getState().doc))).blocks.find(block=>block.id===first.id)).toMatchObject({decorativeQuote:true});
+    act(()=>buttons().find(button=>button.textContent==='Text')!.click());
+    expect(useDoc.getState().doc.blocks).toEqual(original.blocks);
+    act(()=>useDoc.temporal.getState().undo());
+    expect(useDoc.getState().doc.blocks.find(block=>block.id===first.id)).toMatchObject({decorativeQuote:true});
+  });
   it.each(TEMPLATE_META.map(meta => [meta.id]))('relocates existing font selectors for %s without editing the document', template => {
     render(template);
     const topFonts = [...host.querySelectorAll<HTMLSelectElement>('.typography-toolbar select')].filter(select => [...select.options].some(option => option.value === 'Helvetica'));
@@ -72,7 +88,7 @@ describe('typography relocation', () => {
     act(() => { textarea.focus(); textarea.setSelectionRange(0, 4); });
     expect(active()).toBe(`block:${id}`);
     const before = textarea.value;
-    const font = host.querySelector<HTMLSelectElement>('[data-typography-group=body] select')!;
+    const font = host.querySelector<HTMLInputElement>(`[data-typography-group="block:${id}"] input[type=number]`)!;
     act(() => font.focus());
     expect(textarea.selectionStart).toBe(0); expect(textarea.selectionEnd).toBe(4);
     act(() => applyMark('b'));
@@ -103,14 +119,44 @@ describe('typography relocation', () => {
     expect(visible().some(el => el.dataset.typographyGroup === `block:${id}`)).toBe(true);
   });
 
-  it('shows both existing cover teaser styles alongside the selected teaser overrides', () => {
+  it('keeps shared cover teaser styles separate from the selected teaser overrides', () => {
     render('magazine-4');
     const id = useDoc.getState().doc.blocks.find(block => block.type === 'paragraph')!.id;
     act(() => requestBlockEditorFocus(id));
     const groups = visible().map(el => el.dataset.typographyGroup);
-    expect(groups).toContain('teaserTitle');
-    expect(groups).toContain('teaserBody');
+    expect(groups).not.toContain('teaserTitle');
+    expect(groups).not.toContain('teaserBody');
     expect(groups).toContain(`block:${id}`);
+    group('teaserTitle');
+    expect(visible().some(el => el.dataset.typographyGroup === 'teaserTitle')).toBe(true);
+  });
+
+  it.each(['paper-1', 'paper-3', 'frontmatter-dean', 'gallery-1'] as const)('keeps paragraph sizes independent through save/reload and undo in %s', template => {
+    render(template);
+    const original = structuredClone(useDoc.getState().doc);
+    const paragraphs = original.blocks.filter(block => block.type === 'paragraph');
+    const setSize = (id: string, value: string) => {
+      act(() => requestBlockEditorFocus(id));
+      expect(visible().every(el => !['body', 'theme'].includes(el.dataset.typographyGroup!))).toBe(true);
+      const input = host.querySelector<HTMLInputElement>(`[data-typography-group="block:${id}"] input[type=number]`)!;
+      act(() => {
+        Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(input, value);
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+      });
+    };
+    setSize(paragraphs[0].id, '14');
+    setSize(paragraphs[1].id, '18');
+    const doc = useDoc.getState().doc;
+    expect(doc.design).toEqual(original.design);
+    expect(doc.blocks.find(block => block.id === paragraphs[0].id)).toMatchObject({ fontSize: 14 });
+    expect(doc.blocks.find(block => block.id === paragraphs[1].id)).toMatchObject({ fontSize: 18 });
+    for (const paragraph of paragraphs.slice(2)) expect(doc.blocks.find(block => block.id === paragraph.id)).toEqual(paragraph);
+    const reopened = migrate(JSON.parse(JSON.stringify(doc)));
+    expect(reopened.blocks.find(block => block.id === paragraphs[0].id)).toMatchObject({ fontSize: 14 });
+    expect(reopened.blocks.find(block => block.id === paragraphs[1].id)).toMatchObject({ fontSize: 18 });
+    act(() => useDoc.temporal.getState().undo());
+    expect(useDoc.getState().doc.blocks.find(block => block.id === paragraphs[1].id)).toEqual(paragraphs[1]);
+    expect(useDoc.getState().doc.blocks.find(block => block.id === paragraphs[0].id)).toMatchObject({ fontSize: 14 });
   });
 
   it.each([['news-briefs', 'news-photo-example'], ['gallery-1', 'gallery-image-example']] as const)('hides typography for image navigation in %s', (template, target) => {

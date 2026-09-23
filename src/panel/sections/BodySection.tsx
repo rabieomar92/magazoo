@@ -378,6 +378,15 @@ export function BodySection({ allowEquations = true }: { allowEquations?: boolea
                 </div>
               )}
               <div className="paragraph-style-grid">
+                {!isCardContent && <TypographyControl group={`block:${block.id}`} label={`Paragraph ${viewIndex + 1}`} order={30}>
+                  <SegmentField<'normal' | 'quote'> label="Paragraph style" value={block.decorativeQuote ? 'quote' : 'normal'} options={[{value:'normal',label:'Text'},{value:'quote',label:'❝ Quote ❞'}]} onChange={value=>update(doc=>{
+                    const paragraph=doc.blocks.find(candidate=>candidate.id===block.id);
+                    if(paragraph?.type==='paragraph') {
+                      if(value==='quote') paragraph.decorativeQuote=true;
+                      else delete paragraph.decorativeQuote;
+                    }
+                  })}/>
+                </TypographyControl>}
                 <TypographyControl group={`block:${block.id}`} label={`${block.type === "paragraph" ? "Paragraph" : "Equation"} ${viewIndex + 1}`} order={20}><LabeledNumber
                   label="Size"
                   unit="pt"

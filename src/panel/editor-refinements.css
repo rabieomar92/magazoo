@@ -1,0 +1,40 @@
+/* Editor chrome only; publication/print styles are deliberately untouched. */
+.app .toolbar-identity { min-width:0; flex:0 1 auto; }
+.app .toolbar-save-error { white-space:nowrap; }
+.app .panel { background:#fff; border-right-color:#e2e8f0; }
+.app .panel-tabs { margin:10px 12px 0; padding:3px; gap:3px; border:0; border-radius:9px; background:#f1f5f9; }
+.app .panel-tab { min-height:34px; margin:0; padding:5px 8px; border:0; border-radius:6px; color:#64748b; font-size:11px; font-weight:600; }
+.app .panel-tab:hover { color:#334155; background:#e8edf4; }
+.app .panel-tab.is-active { color:#4338ca; background:#fff; box-shadow:0 1px 3px #0f172a12; }
+.app .panel-tab .badge { background:#e2e8f0; color:#475569; }
+.app .template-switch-compact { padding:12px; border-bottom:1px solid #eef2f6; }
+.app .template-switch-field { font-size:11px; font-weight:500; }
+.app .template-switch-field select { height:34px; border-color:#e2e8f0; background:#fff; font-weight:500; }
+.app .panel-scroll { padding:0 14px 24px; background:#fff; scrollbar-width:thin; scrollbar-color:#cbd5e1 transparent; }
+.app .panel-scroll::-webkit-scrollbar-thumb { background:#cbd5e1; border-color:#fff; }
+.app .panel .section { margin:0; padding:16px 0; border:0; border-bottom:1px solid #edf2f7; border-radius:0; box-shadow:none; }
+.app .panel .section-title { margin:0 0 12px; color:#334155; font-size:12px; font-weight:650; letter-spacing:0; text-transform:none; }
+.app .panel .field { margin-bottom:12px; }
+.app .panel .field-label { color:#64748b; font-size:11px; font-weight:500; line-height:1.5; }
+.app .panel .field-input { border-color:#e2e8f0; background:#fff; border-radius:7px; box-shadow:none; }
+.app .panel .field-input:hover { border-color:#cbd5e1; }
+.app .panel .field-input:focus { border-color:#a5b4fc; box-shadow:0 0 0 3px #6366f110; }
+.app .panel .block-card { margin:0 0 12px; padding:10px; gap:8px; border:1px solid #e2e8f0; border-radius:9px; background:#fff; }
+.app .panel .block-card:focus-within { border-color:#a5b4fc; box-shadow:0 0 0 2px #6366f10a; }
+.app .panel .block-card-head { flex-wrap:nowrap; gap:8px; padding:0 0 4px; }
+.app .panel .block-drag-handle { color:#475569; font-size:11px; font-weight:600; padding:2px 0; }
+.app .panel .block-drag-icon { color:#94a3b8; font-size:15px; }
+.app .panel .row-buttons { gap:3px; }
+.app .panel .row-buttons .icon-btn { width:27px; height:27px; border-color:transparent; border-radius:5px; background:transparent; color:#64748b; }
+.app .panel .row-buttons .icon-btn:hover:not(:disabled) { background:#f1f5f9; color:#334155; }
+.app .panel .row-buttons .icon-btn--danger:hover { color:#b91c1c; background:#fef2f2; }
+.app .panel .block-card .field-textarea--grow { border-color:transparent; border-radius:5px; background:#f8fafc; padding:9px 10px; font-size:13px; line-height:1.65; }
+.app .panel .block-card .field-textarea--grow:focus { background:#fff; border-color:#c7d2fe; }
+.app .panel .paragraph-insert-row { margin:0 4px 12px; height:20px; }
+.app .panel .paragraph-insert-row > span { background:#edf2f7; }
+.app .panel .paragraph-insert-btn { color:#64748b; opacity:1; font-size:10px; }
+.app .panel .add-row { gap:8px; }
+.app .panel .add-btn { min-height:34px; padding:7px 10px; border-color:#dce3ee; border-radius:7px; background:#f8fafc; color:#475569; font-size:12px; font-weight:600; }
+.app .panel .add-btn:hover { background:#eef2ff; border-color:#c7d2fe; color:#4338ca; }
+.app .panel .hint { color:#64748b; font-size:11px; line-height:1.6; }
+.app .panel .group-label { color:#475569; font-size:11px; font-weight:600; letter-spacing:0; }
