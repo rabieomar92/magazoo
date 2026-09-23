@@ -121,7 +121,8 @@ export function TypographyControl({ group, label, also = '', order = 50, childre
   );
   const visible = active !== null && (active === group || group === 'theme' || inheritedBody || sharedFallback || pairedSocial || coverShared || also.split(' ').includes(active));
   const scope = active !== group && group === 'theme' ? 'Theme default' : inheritedBody ? 'Body default' : coverShared || pairedSocial ? name : null;
-  return context.host ? createPortal(<div className="typography-control" data-typography-group={group} hidden={!visible} style={{ order }}>
+  const displayOrder = inheritedBody && order !== 10 ? order + 100 : order;
+  return context.host ? createPortal(<div className="typography-control" data-typography-group={group} hidden={!visible} style={{ order: displayOrder }}>
     {scope && <span className="typography-control-scope">{scope}</span>}
     {children}
   </div>, context.host) : null;
@@ -132,7 +133,7 @@ export function TypographyToolbar() {
   if (!context) return null;
   const known = context.groups.some(group => group.group === context.active);
   return <section className="typography-toolbar" aria-label="Text typography">
-    <label className="typography-context field">
+    <label className="typography-context field" title="Choose text controls. Scroll the formatting row horizontally for more options. Theme and body defaults affect all matching text.">
       <span className="field-label">Text controls</span>
       <select className="field-input select-control" aria-label="Typography group" value={context.active ?? ''}
         onChange={event => context.select(event.target.value || null)}>
@@ -142,7 +143,7 @@ export function TypographyToolbar() {
       </select>
       <small className="typography-scope-note">Theme and body defaults affect all matching text.</small>
     </label>
-    <div className="typography-controls" ref={context.setHost} />
+    <div className="typography-controls" ref={context.setHost} role="group" aria-label="Formatting controls — scroll horizontally for more" tabIndex={0} />
     {context.active === null && <p className="typography-hint">Select or focus text to see its existing formatting controls.</p>}
   </section>;
 }

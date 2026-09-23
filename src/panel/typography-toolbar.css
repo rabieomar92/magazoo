@@ -1,27 +1,53 @@
 /* Editor chrome only: no selectors target the preview or printed pages. */
-.typography-toolbar { flex:none; display:flex; align-items:flex-start; gap:14px; padding:9px 18px; background:var(--surface,#fff); border-bottom:1px solid var(--line,#dfe3ea); min-width:0; max-height:26vh; overflow:auto; }
-.typography-context { flex:0 0 165px; margin:0; position:sticky; left:0; }
-.typography-controls { flex:1; min-width:0; display:flex; align-items:flex-start; flex-wrap:wrap; gap:8px 16px; }
-.typography-control { flex:0 1 auto; min-width:105px; max-width:280px; }
+.typography-toolbar {
+  flex:none; display:flex; align-items:center; gap:10px;
+  box-sizing:border-box; height:64px; min-width:0; padding:4px 12px;
+  background:var(--surface,#fff); border-bottom:1px solid var(--line,#dfe3ea);
+}
+.typography-toolbar .typography-context {
+  flex:0 0 154px; min-width:0; margin:0; padding-right:10px;
+  border-right:1px solid var(--line,#dfe3ea);
+}
+/* Never wrap formatting into extra rows. Native horizontal scrolling keeps
+   every original control reachable without taking space from the page. */
+.typography-controls {
+  flex:1; min-width:0; height:56px; display:flex; align-items:center;
+  flex-wrap:nowrap; gap:12px; overflow-x:auto; overflow-y:hidden;
+  scrollbar-width:thin; scrollbar-color:#b8b4cb transparent;
+  overscroll-behavior-x:contain;
+}
+.typography-control { flex:0 0 auto; display:flex; align-items:center; gap:5px; height:44px; }
 .typography-control[hidden] { display:none; }
-.typography-control > .field { margin:0; }
-.typography-control .field--inline { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
-.typography-control .field-input--num { width:74px; }
-.typography-control .select-control { max-width:210px; }
-.typography-control .field-label { font-size:11px; }
-.typography-control-scope { display:block; color:var(--muted,#667085); font-size:10px; margin-bottom:3px; }
-.typography-scope-note { display:block; color:var(--muted,#667085); font-size:10px; line-height:1.4; margin-top:4px; }
-.typography-control .hint { max-width:240px; margin:3px 0; }
-.typography-control .cover-style-fields { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
-.typography-hint { margin:10px 0; color:var(--muted,#667085); font-size:12px; }
+.typography-toolbar .field {
+  display:flex; flex-direction:column; align-items:flex-start;
+  flex-wrap:nowrap; gap:3px; margin:0;
+}
+.typography-toolbar .field-label { flex:none; font-size:10px; line-height:12px; white-space:nowrap; }
+.typography-toolbar .field-input {
+  box-sizing:border-box; height:28px; min-height:28px; padding:3px 6px; font-size:12px;
+}
+.typography-toolbar .field-input--num { width:60px; }
+.typography-toolbar .field--inline select.field-input.select-control { width:144px; min-width:0; }
+.typography-context .select-control { width:100%; min-width:0; }
+.typography-control .color-input { gap:4px; height:28px; }
+.typography-control .color-input input[type='color'] { width:28px; height:28px; padding:2px; }
+.typography-control .field-input--hex { width:72px; }
+.typography-control .segment { flex-wrap:nowrap; height:28px; }
+.typography-control .segment-btn { min-height:28px; padding:3px 8px; white-space:nowrap; font-size:11px; }
+.typography-control .toggle input[type='checkbox'] { margin:6px 0; }
+.typography-control-scope { max-width:46px; color:var(--muted,#667085); font-size:9px; line-height:11px; }
+.typography-scope-note { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+.typography-control .hint { max-width:200px; margin:0; font-size:10px; line-height:12px; }
+.typography-control .cover-style-fields { display:flex; flex-wrap:nowrap; align-items:center; gap:8px; }
+.typography-hint { flex:0 1 auto; margin:0; color:var(--muted,#667085); font-size:11px; }
+.typography-controls:empty { flex:0; }
 .panel-design-pane[hidden] { display:none; }
 .panel .typography-relocated-note { font-size:11px; color:var(--muted,#667085); margin:8px 0; }
 .panel :is(.cover-style-group, .typography-source):not(:has(input,textarea,select,button)) { display:none; }
 .panel :is(.paragraph-indent, .paragraph-alignment, .paragraph-style-grid):not(:has(input,textarea,select,button)) { display:none; }
 .panel .group-label { padding-top:12px; margin-top:18px; border-top:1px solid var(--line-soft,#edf0f4); }
 @media(max-width:700px) {
-  .typography-toolbar { gap:8px; padding:8px; max-height:30vh; }
-  .typography-context { flex-basis:120px; }
-  .typography-control { max-width:220px; }
+  .typography-toolbar { gap:8px; padding-inline:8px; }
+  .typography-toolbar .typography-context { flex-basis:112px; padding-right:8px; }
 }
 @media print { .typography-toolbar { display:none !important; } }
