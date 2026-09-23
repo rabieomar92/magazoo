@@ -22,6 +22,10 @@ describe('decorative paragraph quotes', () => {
     document.head.append(style);
     document.body.append(paragraph);
     try {
+      const glyphRule = Array.from(style.sheet!.cssRules).find(rule =>
+        (rule as CSSStyleRule).selectorText === '.decorative-quote-mark::before',
+      ) as CSSStyleRule;
+      expect(glyphRule.style.top).toBe('-0.35em');
       const copy = paragraph.querySelector('.decorative-quote-copy')!;
       for (const mark of copy.querySelectorAll('.decorative-quote-mark')) {
         expect(getComputedStyle(mark).display).toBe('inline-block');
