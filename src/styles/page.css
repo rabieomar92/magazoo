@@ -1526,7 +1526,10 @@
 }
 .decorative-quote-mark::before {
   content:attr(data-quote);
-  position:absolute; inset-inline-start:0; top:-.5em;
+  /* Optical alignment: the visible bottom of the raised serif mark sits
+     near the middle of its text line, clear of the preceding line. The
+     offset scales with the glyph, without moving the zero-height anchor. */
+  position:absolute; inset-inline-start:0; top:-.35em;
   font-family:Georgia, 'Times New Roman', serif;
   font-size:2.4em; font-style:normal; font-weight:700;
   line-height:1; color:inherit; opacity:.72;

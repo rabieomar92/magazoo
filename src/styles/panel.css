@@ -584,7 +584,7 @@
 }
 
 .field-input:focus {
-  background: var(--surface);
+  background-color: var(--surface);
   border-color: var(--accent);
   box-shadow: var(--ring);
 }
@@ -1408,7 +1408,7 @@
 }
 
 .field-input:hover { border-color: #d9d5ed; }
-.field-input:focus { background: #fff; }
+.field-input:focus { background-color: #fff; }
 
 /* One native-select treatment for every editor dropdown. Suppressing the
    platform arrow prevents Windows and Chromium from placing it at different
