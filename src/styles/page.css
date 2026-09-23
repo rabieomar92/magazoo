@@ -1505,13 +1505,20 @@
   }
 }
 
-/* Shared by measurement, preview and native print. Inline bookends travel
-   with the first/last word instead of repeating on continuation fragments. */
+/* Shared by measurement, preview and native print. Bookends occupy inset
+   corner rails, never a text line box. Every line inherits normal leading.
+   The padded copy keeps marks inside the column and out of adjacent copy. */
 .decorative-quote { text-indent:0 !important; }
-.decorative-quote-copy { font-style:italic; font-weight:600; }
-.decorative-quote-mark {
-  font-family:Georgia, 'Times New Roman', serif;
-  font-size:2.8em; font-style:normal; font-weight:700;
-  line-height:.75; vertical-align:-.22em;
-  color:inherit;
+.decorative-quote-copy {
+  display:block; position:relative; padding-inline:1.45em;
+  font-style:italic; font-weight:600; line-height:inherit;
+  text-wrap:pretty;
 }
+.decorative-quote-mark {
+  position:absolute; display:block; width:.5em; height:.6em;
+  font-family:Georgia, 'Times New Roman', serif;
+  font-size:2.5em; font-style:normal; font-weight:700;
+  line-height:1; color:inherit; opacity:.65; pointer-events:none;
+}
+.decorative-quote-mark--open { inset-inline-start:0; top:-.04em; }
+.decorative-quote-mark--close { inset-inline-end:0; bottom:-.05em; }
