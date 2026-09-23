@@ -19,6 +19,7 @@
 import { runsToHtml, openMarkers, renderTex } from './richtext';
 import { fitEquation } from './mathfit';
 import { fillColumns } from './columnFill';
+import { quoteFlowHtml } from './decorativeQuote';
 
 export const overflows = (el: HTMLElement) =>
   el.scrollWidth > el.clientWidth + 1 || el.scrollHeight > el.clientHeight + 1;
@@ -45,6 +46,7 @@ export type FlowItem =
       indent?: boolean;
       cont?: boolean;
       fontSize?: number;
+      decorativeQuote?: boolean;
       color?: string;
       topPadding?: number;
     }
@@ -85,6 +87,7 @@ type PaintItem =
       cont?: boolean;
       indent?: boolean;
       fontSize?: number;
+      decorativeQuote?: boolean;
       color?: string;
       topPadding?: number;
     }
@@ -125,6 +128,7 @@ export type Piece =
       indent?: boolean;
       colBreak?: boolean;
       fontSize?: number;
+      decorativeQuote?: boolean;
       color?: string;
       topPadding?: number;
       /** Rectangular vertical bands occupied by independently positioned page
@@ -153,6 +157,7 @@ export type Piece =
             cont?: boolean;
             indent?: boolean;
             fontSize?: number;
+            decorativeQuote?: boolean;
             color?: string;
             topPadding?: number;
           }[];
@@ -199,6 +204,7 @@ const toPieces = (items: PaintItem[]): Piece[] =>
             cont: it.cont,
             indent: it.indent,
             fontSize: it.fontSize,
+            decorativeQuote: it.decorativeQuote,
             color: it.color,
             topPadding: it.topPadding,
           },
@@ -335,7 +341,8 @@ function paint(el: HTMLElement, items: PaintItem[]) {
       if (classes.length) p.className = classes.join(' ');
       // innerHTML (not textContent) so **bold**/*italic*/__underline__ render as
       // real inline styling — bold is wider, so the break must measure it.
-      p.innerHTML = runsToHtml(it.text, itemIndex === 0);
+      if (it.decorativeQuote) p.classList.add('decorative-quote');
+      p.innerHTML = quoteFlowHtml(it.text, it.decorativeQuote, itemIndex === 0);
       if (it.fontSize !== undefined) p.style.fontSize = `${it.fontSize}pt`;
       if (it.color) p.style.color = it.color;
       if (!it.cont && it.topPadding !== undefined) p.style.paddingTop = `${it.topPadding}px`;

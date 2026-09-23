@@ -8,6 +8,7 @@ export interface FrontMatterUnit {
   page?: string;
   continued?: boolean;
   fontSize?: number;
+  decorativeQuote?: boolean;
   color?: string;
   topPadding?: number;
   indent?: boolean;

@@ -30,6 +30,7 @@
  * this pass; Flow.tsx balances the text bands around those rows separately.
  */
 import { runsToHtml, openMarkers } from './richtext';
+import { quoteFlowHtml } from './decorativeQuote';
 import type { Piece } from './paginate';
 import type { Doc } from '../schema/document';
 
@@ -110,7 +111,8 @@ function paintText(el: HTMLElement, items: TextPiece[], opener = false) {
     if (it.fontSize !== undefined) p.style.fontSize = `${it.fontSize}pt`;
     if (it.color) p.style.color = it.color;
     if (!it.cont && it.topPadding !== undefined) p.style.paddingTop = `${it.topPadding}px`;
-    p.innerHTML = runsToHtml(it.text, isOpener);
+    if (it.decorativeQuote) p.classList.add('decorative-quote');
+    p.innerHTML = quoteFlowHtml(it.text, it.decorativeQuote, isOpener);
     el.appendChild(p);
   }
 }
@@ -149,7 +151,8 @@ function paintStamped(el: HTMLElement, items: TextPiece[]) {
     if (it.fontSize !== undefined) p.style.fontSize = `${it.fontSize}pt`;
     if (it.color) p.style.color = it.color;
     if (!it.cont && it.topPadding !== undefined) p.style.paddingTop = `${it.topPadding}px`;
-    p.innerHTML = runsToHtml(it.text, itemIndex === 0);
+    if (it.decorativeQuote) p.classList.add('decorative-quote');
+    p.innerHTML = quoteFlowHtml(it.text, it.decorativeQuote, itemIndex === 0);
     el.appendChild(p);
   }
 }
@@ -547,7 +550,8 @@ function paintInlineFlow(el: HTMLElement, items: InlinePiece[], doc: Doc, opener
       if (it.fontSize !== undefined) p.style.fontSize = `${it.fontSize}pt`;
       if (it.color) p.style.color = it.color;
       if (!it.cont && it.topPadding !== undefined) p.style.paddingTop = `${it.topPadding}px`;
-      p.innerHTML = runsToHtml(it.text, isOpener);
+      if (it.decorativeQuote) p.classList.add('decorative-quote');
+      p.innerHTML = quoteFlowHtml(it.text, it.decorativeQuote, isOpener);
       el.appendChild(p);
       continue;
     }
@@ -896,13 +900,14 @@ export function columnizeAllAroundImages(
           columns: filled.columns.map((column) => ({
             segments: column.segments.map((segment) => ({
               ...segment,
-              pieces: segment.pieces.map(({ kind, sourceId, text, cont, indent, fontSize, color, topPadding }) => ({
+              pieces: segment.pieces.map(({ kind, sourceId, text, cont, indent, fontSize, color, topPadding, decorativeQuote }) => ({
                 kind,
                 sourceId,
                 text,
                 cont,
                 indent,
                 fontSize,
+                decorativeQuote,
                 color,
                 topPadding,
               })),
@@ -929,13 +934,14 @@ export function columnizeAllAroundImages(
         columns: filled.columns.map((column) => ({
           segments: column.segments.map((segment) => ({
             ...segment,
-            pieces: segment.pieces.map(({ kind, sourceId, text, cont, indent, fontSize, color, topPadding }) => ({
+            pieces: segment.pieces.map(({ kind, sourceId, text, cont, indent, fontSize, color, topPadding, decorativeQuote }) => ({
               kind,
               sourceId,
               text,
               cont,
               indent,
               fontSize,
+              decorativeQuote,
               color,
               topPadding,
             })),
