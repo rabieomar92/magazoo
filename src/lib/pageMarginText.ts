@@ -8,13 +8,12 @@ function bounded(value: number | undefined, fallback: number, min: number, max: 
   return typeof value === 'number' && Number.isFinite(value) ? Math.max(min, Math.min(max, value)) : fallback;
 }
 
-/** Defaults are read-time only: old documents remain visually unchanged. */
+/** Normalize optional styling without changing the saved document. */
 export function marginTextSettings(doc: Doc) {
   const raw = doc.marginText;
   return {
     enabled: raw?.enabled === true,
     mode: raw?.mode === 'all' ? 'all' as const : 'per-page' as const,
-    side: raw?.side === 'right' ? 'right' as const : 'left' as const,
     edgeOffset: bounded(raw?.edgeOffset, 6, 2, 30),
     bottomOffset: bounded(raw?.bottomOffset, 20, 0, MAX_MARGIN_TEXT_BOTTOM_OFFSET),
     fontFamily: ALL_FONTS.includes(raw?.fontFamily ?? '') ? raw!.fontFamily! : 'Helvetica',
