@@ -23,6 +23,7 @@ export function cloneDocForUpdate(doc: Doc): Doc {
       paragraphTops: story.paragraphTops ? [...story.paragraphTops] : undefined,
     })) } : undefined,
     footer: doc.footer ? { ...doc.footer } : undefined,
+    marginText: doc.marginText ? { ...doc.marginText, pages: { ...doc.marginText.pages } } : undefined,
     frontMatter: doc.frontMatter ? {
       ...doc.frontMatter,
       entries: doc.frontMatter.entries.map(entry => ({ ...entry })),

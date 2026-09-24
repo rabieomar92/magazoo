@@ -635,7 +635,24 @@ export interface NewsStory {
   breakBefore?: boolean;
 }
 
+/** Optional vertical credit/copyright text, indexed by physical page position. */
+export interface PageMarginTextSettings {
+  enabled?: boolean;
+  mode?: 'per-page' | 'all';
+  text?: string;
+  /** One-based page positions, independent of printed folio numbers. */
+  pages?: Record<string, string>;
+  side?: 'left' | 'right';
+  edgeOffset?: number;
+  bottomOffset?: number;
+  fontFamily?: string;
+  fontSize?: number;
+  /** Missing colour follows the page palette. */
+  color?: string;
+}
+
 export interface Doc {
+  marginText?: PageMarginTextSettings;
   news?: { stories: NewsStory[] };
   /** Running folio. Missing settings use the masthead and start at page 1. */
   footer?: {
