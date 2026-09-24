@@ -2,6 +2,7 @@ import { Fragment, type CSSProperties, type ReactNode } from 'react';
 import type { Doc, Block } from '../schema/document';
 import { parseRuns, renderTex } from '../lib/richtext';
 import { galleryFrameGeometry } from '../lib/galleryFrame';
+import { galleryImageTarget } from '../lib/gallerySlots';
 import { TagBar } from './TagBar';
 import { PageArtwork } from '../components/PageArtwork';
 import { requestBlockEditorFocus } from '../lib/editorNavigation';
@@ -46,7 +47,7 @@ function TileText({
   );
 }
 
-function ImageCell({ doc, block, area }: { doc: Doc; block?: Block; area: string }) {
+function ImageCell({ doc, block, area, slot }: { doc: Doc; block?: Block; area: string; slot: number }) {
   const asset = block && block.type === 'figure' ? doc.assets[block.assetId] : undefined;
   const caption = block && block.type === 'figure' ? block.caption : '';
   const fr = block && block.type === 'figure' ? block.frame : undefined;
@@ -64,8 +65,8 @@ function ImageCell({ doc, block, area }: { doc: Doc; block?: Block; area: string
     <figure
       className="g-img"
       style={{ gridArea: area }}
-      data-editor-tab={block?.type === 'figure' ? 'images' : undefined}
-      data-editor-target={block?.type === 'figure' ? `gallery-image-${block.id}` : undefined}
+      data-editor-tab="images"
+      data-editor-target={galleryImageTarget(block, slot)}
     >
       {asset ? <img src={asset.src} alt="" style={imgStyle} /> : <span className="g-img-empty" />}
       {caption.trim() && <figcaption><TileText text={caption} className="g-cap" /></figcaption>}
@@ -77,7 +78,7 @@ function ImageCell({ doc, block, area }: { doc: Doc; block?: Block; area: string
  *  canvas. The right sheet shifts that canvas left by exactly one cell; zoom and
  *  pan are already baked into its bounded geometry, so the seam cannot diverge
  *  or reveal an empty edge. */
-function FoldCell({ doc, block, area, half }: { doc: Doc; block?: Block; area: string; half: 'left' | 'right' }) {
+function FoldCell({ doc, block, area, half, slot }: { doc: Doc; block?: Block; area: string; half: 'left' | 'right'; slot: number }) {
   const asset = block && block.type === 'figure' ? doc.assets[block.assetId] : undefined;
   const caption = block && block.type === 'figure' ? block.caption : '';
   const fr = block && block.type === 'figure' ? block.frame : undefined;
@@ -98,8 +99,8 @@ function FoldCell({ doc, block, area, half }: { doc: Doc; block?: Block; area: s
     <figure
       className={`g-img g-fold${asset ? '' : ' is-empty'}`}
       style={{ gridArea: area }}
-      data-editor-tab={block?.type === 'figure' ? 'images' : undefined}
-      data-editor-target={block?.type === 'figure' ? `gallery-image-${block.id}` : undefined}
+      data-editor-tab="images"
+      data-editor-target={galleryImageTarget(block, slot)}
     >
       {asset && <img src={asset.src} alt="" style={imgStyle} />}
       {/* Caption only on the left half (page 1) so it isn't printed twice. */}
@@ -169,18 +170,18 @@ export function GalleryPage({ doc, vars }: { doc: Doc; vars: CSSProperties }) {
       <div className="page gallery gallery--p1" style={vars}>
         <PageArtwork doc={doc} />
         <TagBar doc={doc} pageIndex={0} fullBleed />
-        <ImageCell doc={doc} block={figures[0]} area="img-1" />
-        <FoldCell doc={doc} block={figures[1]} area="img-2" half="left" />
-        <ImageCell doc={doc} block={figures[2]} area="img-3" />
+        <ImageCell doc={doc} block={figures[0]} slot={0} area="img-1" />
+        <FoldCell doc={doc} block={figures[1]} slot={1} area="img-2" half="left" />
+        <ImageCell doc={doc} block={figures[2]} slot={2} area="img-3" />
         <CardCell block={cards[0]} area="card-1" />
         <CardCell block={cards[1]} area="card-2" />
       </div>
 
       <div className="page gallery gallery--p2" style={vars}>
         <TagBar doc={doc} pageIndex={1} fullBleed />
-        <FoldCell doc={doc} block={figures[1]} area="img-2" half="right" />
-        <ImageCell doc={doc} block={figures[3]} area="img-4" />
-        <ImageCell doc={doc} block={figures[4]} area="img-5" />
+        <FoldCell doc={doc} block={figures[1]} slot={1} area="img-2" half="right" />
+        <ImageCell doc={doc} block={figures[3]} slot={3} area="img-4" />
+        <ImageCell doc={doc} block={figures[4]} slot={4} area="img-5" />
         <CardCell block={cards[2]} area="card-3" />
         <CardCell block={cards[3]} area="card-4" />
         <CardCell block={cards[4]} area="card-5" />
@@ -204,20 +205,20 @@ function GalleryTwo({ doc, vars }: { doc: Doc; vars: CSSProperties }) {
       <div className="page gallery gallery--p1 gallery2--p1" style={vars}>
         <PageArtwork doc={doc} />
         <TagBar doc={doc} pageIndex={0} fullBleed />
-        <FoldCell doc={doc} block={figures[0]} area="fold" half="left" />
-        <ImageCell doc={doc} block={figures[1]} area="img-1" />
-        <ImageCell doc={doc} block={figures[2]} area="img-2" />
-        <ImageCell doc={doc} block={figures[3]} area="img-3" />
+        <FoldCell doc={doc} block={figures[0]} slot={0} area="fold" half="left" />
+        <ImageCell doc={doc} block={figures[1]} slot={1} area="img-1" />
+        <ImageCell doc={doc} block={figures[2]} slot={2} area="img-2" />
+        <ImageCell doc={doc} block={figures[3]} slot={3} area="img-3" />
         <CardCell block={cards[0]} area="card-1" />
         <CardCell block={cards[1]} area="card-2" />
       </div>
 
       <div className="page gallery gallery--p2 gallery2--p2" style={vars}>
         <TagBar doc={doc} pageIndex={1} fullBleed />
-        <FoldCell doc={doc} block={figures[0]} area="fold" half="right" />
-        <ImageCell doc={doc} block={figures[4]} area="img-4" />
-        <ImageCell doc={doc} block={figures[5]} area="img-5" />
-        <ImageCell doc={doc} block={figures[6]} area="img-6" />
+        <FoldCell doc={doc} block={figures[0]} slot={0} area="fold" half="right" />
+        <ImageCell doc={doc} block={figures[4]} slot={4} area="img-4" />
+        <ImageCell doc={doc} block={figures[5]} slot={5} area="img-5" />
+        <ImageCell doc={doc} block={figures[6]} slot={6} area="img-6" />
         <CardCell block={cards[2]} area="card-3" />
         <CardCell block={cards[3]} area="card-4" />
       </div>
@@ -241,21 +242,21 @@ function GalleryThree({ doc, vars }: { doc: Doc; vars: CSSProperties }) {
       <div className="page gallery gallery--p1 gallery3--p1" style={vars}>
         <PageArtwork doc={doc} />
         <TagBar doc={doc} pageIndex={0} fullBleed />
-        <ImageCell doc={doc} block={figures[1]} area="img-1" />
-        <ImageCell doc={doc} block={figures[2]} area="img-2" />
-        <FoldCell doc={doc} block={figures[0]} area="fold" half="left" />
-        <ImageCell doc={doc} block={figures[3]} area="img-3" />
-        <ImageCell doc={doc} block={figures[4]} area="img-4" />
+        <ImageCell doc={doc} block={figures[1]} slot={1} area="img-1" />
+        <ImageCell doc={doc} block={figures[2]} slot={2} area="img-2" />
+        <FoldCell doc={doc} block={figures[0]} slot={0} area="fold" half="left" />
+        <ImageCell doc={doc} block={figures[3]} slot={3} area="img-3" />
+        <ImageCell doc={doc} block={figures[4]} slot={4} area="img-4" />
         <CardCell block={cards[0]} area="card-1" />
         <CardCell block={cards[1]} area="card-2" />
       </div>
 
       <div className="page gallery gallery--p2 gallery3--p2" style={vars}>
         <TagBar doc={doc} pageIndex={1} fullBleed />
-        <ImageCell doc={doc} block={figures[5]} area="img-5" />
-        <ImageCell doc={doc} block={figures[6]} area="img-6" />
-        <FoldCell doc={doc} block={figures[0]} area="fold" half="right" />
-        <ImageCell doc={doc} block={figures[7]} area="img-7" />
+        <ImageCell doc={doc} block={figures[5]} slot={5} area="img-5" />
+        <ImageCell doc={doc} block={figures[6]} slot={6} area="img-6" />
+        <FoldCell doc={doc} block={figures[0]} slot={0} area="fold" half="right" />
+        <ImageCell doc={doc} block={figures[7]} slot={7} area="img-7" />
         <CardCell block={cards[2]} area="card-3" />
         <CardCell block={cards[3]} area="card-4" />
       </div>
@@ -278,21 +279,21 @@ function GalleryFour({ doc, vars }: { doc: Doc; vars: CSSProperties }) {
       <div className="page gallery gallery--p1 gallery4--p1" style={vars}>
         <PageArtwork doc={doc} />
         <TagBar doc={doc} pageIndex={0} fullBleed />
-        <FoldCell doc={doc} block={figures[0]} area="fold" half="left" />
+        <FoldCell doc={doc} block={figures[0]} slot={0} area="fold" half="left" />
         <CardCell block={cards[0]} area="card-1" />
         <CardCell block={cards[1]} area="card-2" />
-        <ImageCell doc={doc} block={figures[1]} area="img-1" />
-        <ImageCell doc={doc} block={figures[2]} area="img-2" />
+        <ImageCell doc={doc} block={figures[1]} slot={1} area="img-1" />
+        <ImageCell doc={doc} block={figures[2]} slot={2} area="img-2" />
         <CardCell block={cards[2]} area="card-3" />
       </div>
 
       <div className="page gallery gallery--p2 gallery4--p2" style={vars}>
         <TagBar doc={doc} pageIndex={1} fullBleed />
-        <FoldCell doc={doc} block={figures[0]} area="fold" half="right" />
+        <FoldCell doc={doc} block={figures[0]} slot={0} area="fold" half="right" />
         <CardCell block={cards[3]} area="card-4" />
         <CardCell block={cards[4]} area="card-5" />
-        <ImageCell doc={doc} block={figures[3]} area="img-3" />
-        <ImageCell doc={doc} block={figures[4]} area="img-4" />
+        <ImageCell doc={doc} block={figures[3]} slot={3} area="img-3" />
+        <ImageCell doc={doc} block={figures[4]} slot={4} area="img-4" />
         <CardCell block={cards[5]} area="card-6" />
       </div>
     </>
