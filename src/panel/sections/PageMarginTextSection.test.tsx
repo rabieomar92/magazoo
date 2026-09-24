@@ -31,6 +31,12 @@ beforeEach(() => {
 afterEach(() => { act(() => root.unmount()); host.remove(); useDoc.getState().load(emptyDoc()); vi.unstubAllGlobals(); });
 
 describe('page margin text controls', () => {
+  it('explains automatic masthead-side placement instead of offering a fixed page edge', () => {
+    act(() => field<HTMLInputElement>('Show vertical margin text').click());
+    expect(host.textContent).toContain('Automatically follows the masthead side on each page');
+    expect([...host.querySelectorAll('.field-label')].some(label => label.textContent === 'Page edge')).toBe(false);
+  });
+
   it('accepts positions beyond 80 mm up to the full page height, including the bottom edge', () => {
     act(() => field<HTMLInputElement>('Show vertical margin text').click());
     const input = field<HTMLInputElement>('Distance from bottom edge');

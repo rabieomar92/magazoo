@@ -44,12 +44,11 @@ export function PageMarginTextSection() {
             : { ...d.marginText, pages: { ...d.marginText?.pages, [String(page)]: v } };
         })} />
       <p className="hint">Page 1 is the first sheet of this document, regardless of its printed page number. Leave text blank to show nothing. Switching modes or turning this off keeps your saved text.</p>
-      <LabeledSelect label="Page edge" value={settings.side} options={[{ value: 'left', label: 'Left' }, { value: 'right', label: 'Right' }]}
-        onChange={v => set('side', v as 'left' | 'right')} />
+      <p className="hint">Automatically follows the masthead side on each page, alternating left and right. This also applies when compiling an issue.</p>
       <LabeledNumber label="Distance from side edge" unit="mm" value={settings.edgeOffset} min={2} max={30} step={0.5} onChange={v => set('edgeOffset', v)} />
       <LabeledNumber label="Distance from bottom edge" unit="mm" value={settings.bottomOffset} min={0} max={MAX_MARGIN_TEXT_BOTTOM_OFFSET} step={0.5} onChange={v => set('bottomOffset', v)} />
       <p className="hint">Move vertically across the full page (0–{MAX_MARGIN_TEXT_BOTTOM_OFFSET} mm). At the top edge, the text stops moving so the complete credit stays on the sheet.</p>
-      <p className="hint">Position and styling apply to all margin text in this document. Keep it inside a clear margin; it does not move body text or photos.</p>
+      <p className="hint">Spacing and styling apply to all margin text in this document. Keep it inside a clear margin; it does not move body text or photos.</p>
       <TypographyControl group="marginText" order={10}><LabeledSelect label="Margin text font" value={settings.fontFamily} options={fontOptions(ALL_FONTS)} onChange={v => set('fontFamily', v)} /></TypographyControl>
       <TypographyControl group="marginText" order={20}><LabeledNumber label="Margin text size" unit="pt" value={settings.fontSize} min={5} max={12} step={0.5} onChange={v => set('fontSize', v)} /></TypographyControl>
       <TypographyControl group="marginText" order={30}><Toggle label="Automatic text colour" checked={!settings.color} onChange={v => set('color', v ? undefined : '#777777')} /></TypographyControl>
