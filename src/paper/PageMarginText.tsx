@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react';
 import type { Doc } from '../schema/document';
 import { fontStack } from '../lib/fonts';
+import { barStartsRight } from '../lib/barSide';
 import { marginTextSettings, pageMarginText } from '../lib/pageMarginText';
 import { requestEditorTargetFocus } from '../lib/editorNavigation';
 
@@ -10,10 +11,12 @@ export function PageMarginText({ doc, index }: { doc: Doc; index: number }) {
   const text = pageMarginText(doc, index);
   if (!text) return null;
   const settings = marginTextSettings(doc);
+  // Use the same physical-page rule as TagBar, including issue-assigned starts.
+  const right = barStartsRight(doc.design.barSide, index);
   const railStyle: CSSProperties = {
     position: 'absolute', zIndex: 21, margin: 0, padding: 0,
-    left: settings.side === 'left' ? `${settings.edgeOffset}mm` : 'auto',
-    right: settings.side === 'right' ? `${settings.edgeOffset}mm` : 'auto',
+    left: right ? 'auto' : `${settings.edgeOffset}mm`,
+    right: right ? `${settings.edgeOffset}mm` : 'auto',
     top: 0, bottom: 0, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
     alignItems: 'flex-start', pointerEvents: 'none',
   };

@@ -642,6 +642,7 @@ export interface PageMarginTextSettings {
   text?: string;
   /** One-based page positions, independent of printed folio numbers. */
   pages?: Record<string, string>;
+  /** Legacy saved setting; ignored. Margin text now follows the masthead side. */
   side?: 'left' | 'right';
   edgeOffset?: number;
   bottomOffset?: number;
