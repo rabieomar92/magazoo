@@ -10,12 +10,15 @@ export function PageMarginText({ doc, index }: { doc: Doc; index: number }) {
   const text = pageMarginText(doc, index);
   if (!text) return null;
   const settings = marginTextSettings(doc);
-  const style: CSSProperties = {
+  const railStyle: CSSProperties = {
     position: 'absolute', zIndex: 21, margin: 0, padding: 0,
     left: settings.side === 'left' ? `${settings.edgeOffset}mm` : 'auto',
     right: settings.side === 'right' ? `${settings.edgeOffset}mm` : 'auto',
-    top: 'auto', bottom: `${settings.bottomOffset}mm`,
-    maxHeight: `calc(100% - ${settings.bottomOffset + 16}mm)`,
+    top: 0, bottom: 0, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
+    alignItems: 'flex-start', pointerEvents: 'none',
+  };
+  const style: CSSProperties = {
+    margin: 0, padding: 0, flex: '0 0 auto', maxHeight: '100%', pointerEvents: 'auto',
     writingMode: 'vertical-rl', textOrientation: 'mixed', transform: 'rotate(180deg)',
     whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
     fontFamily: fontStack(settings.fontFamily), fontSize: `${settings.fontSize}pt`,
@@ -23,8 +26,13 @@ export function PageMarginText({ doc, index }: { doc: Doc; index: number }) {
     textAlign: 'start', textTransform: 'none',
     color: settings.color ?? 'color-mix(in srgb, var(--paper-ink, #111) 65%, var(--paper-bg, #fff))',
   };
-  return <div className="page-margin-text" style={style} dir="auto"
-    data-editor-tab="design" data-editor-target={`page-margin-text-${index + 1}`}
-    onClick={() => requestEditorTargetFocus('design', `page-margin-text-${index + 1}`)}
-    title="Edit page margin text">{text}</div>;
+  return <div className="page-margin-rail" style={railStyle}>
+    <div className="page-margin-text" style={style} dir="auto"
+      data-editor-tab="design" data-editor-target={`page-margin-text-${index + 1}`}
+      onClick={() => requestEditorTargetFocus('design', `page-margin-text-${index + 1}`)}
+      title="Edit page margin text">{text}</div>
+    {/* Only the spacer shrinks at the top boundary, never the credit itself.
+        CSS handles font changes and print without screen-space measurement. */}
+    <div aria-hidden="true" className="page-margin-offset" style={{ height: `${settings.bottomOffset}mm`, flex: '0 1 auto', minHeight: 0 }} />
+  </div>;
 }

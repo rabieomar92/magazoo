@@ -33,7 +33,8 @@ describe('physical page margin text', () => {
     expect(host.querySelector('.measure-root .page-margin-text')).toBeNull();
     expect(host.querySelector('.page-folio')).toBeNull();
     const credit = host.querySelector<HTMLElement>('.page-margin-text')!;
-    expect(credit.style.position).toBe('absolute');
+    expect(credit.parentElement!.style.position).toBe('absolute');
+    expect(credit.style.flexShrink).toBe('0');
     expect(credit.style.writingMode).toBe('vertical-rl');
     expect(credit.style.transform).toBe('rotate(180deg)');
     expect(credit.dataset.editorTarget).toBe('page-margin-text-1');
@@ -64,9 +65,9 @@ describe('physical page margin text', () => {
     } finally { window.removeEventListener(FOCUS_EDITOR_TARGET_EVENT, focus); }
   });
 
-  it('keeps real credit text and physical placement in export and compiled snapshots', async () => {
+  it.each([25, 297])('keeps real credit text and a %s mm position in export and compiled snapshots', async bottomOffset => {
     const doc = presetFor('gallery-1');
-    doc.marginText = { enabled: true, side: 'right', edgeOffset: 5, bottomOffset: 25, color: '#123456', pages: { 1: '© <Alice>', 2: '© Bob' } };
+    doc.marginText = { enabled: true, side: 'right', edgeOffset: 5, bottomOffset, color: '#123456', pages: { 1: '© <Alice>', 2: '© Bob' } };
     await act(async () => { root.render(<Sheets doc={doc} />); });
     const pages = host.querySelector<HTMLElement>('.pages')!;
     const print = document.implementation.createHTMLDocument('Print check');
@@ -77,8 +78,8 @@ describe('physical page margin text', () => {
     const credit = snapshots[0].querySelector<HTMLElement>('.page-margin-text')!;
     expect(credit.textContent).toBe('© <Alice>');
     expect(credit.querySelector('alice')).toBeNull();
-    expect(credit.style.right).toBe('5mm');
-    expect(credit.style.bottom).toBe('25mm');
+    expect(credit.parentElement!.style.right).toBe('5mm');
+    expect(snapshots[0].querySelector<HTMLElement>('.page-margin-offset')!.style.height).toBe(`${bottomOffset}mm`);
     expect(credit.style.writingMode).toBe('vertical-rl');
     expect(credit.style.fontSize).toBe('6.5pt');
   });
