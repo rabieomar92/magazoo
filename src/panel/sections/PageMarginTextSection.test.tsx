@@ -10,7 +10,7 @@ import { requestEditorTargetFocus } from '../../lib/editorNavigation';
 let host: HTMLDivElement;
 let root: Root;
 function field<T extends HTMLInputElement | HTMLSelectElement>(label: string) {
-  return [...host.querySelectorAll('label')].find(el => el.querySelector('.field-label')?.textContent === label)!.querySelector<T>('input,select')!;
+  return [...host.querySelectorAll('label')].find(el => el.querySelector('.field-label')?.textContent?.replace(/\s*\([^)]*\)\s*$/, '').trim() === label)!.querySelector<T>('input,select')!;
 }
 function enter(label: string, value: string) {
   act(() => {
@@ -31,6 +31,17 @@ beforeEach(() => {
 afterEach(() => { act(() => root.unmount()); host.remove(); useDoc.getState().load(emptyDoc()); vi.unstubAllGlobals(); });
 
 describe('page margin text controls', () => {
+  it('accepts positions beyond 80 mm up to the full page height, including the bottom edge', () => {
+    act(() => field<HTMLInputElement>('Show vertical margin text').click());
+    const input = field<HTMLInputElement>('Distance from bottom edge');
+    expect(input.min).toBe('0');
+    expect(input.max).toBe('297');
+    for (const value of [180, 250, 297, 0]) {
+      enter('Distance from bottom edge', String(value));
+      expect(useDoc.getState().doc.marginText?.bottomOffset).toBe(value);
+    }
+  });
+
   it('starts disabled, edits independent pages, and switches modes without data loss', () => {
     expect(field<HTMLInputElement>('Show vertical margin text').checked).toBe(false);
     act(() => field<HTMLInputElement>('Show vertical margin text').click());
