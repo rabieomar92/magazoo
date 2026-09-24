@@ -29,10 +29,18 @@ describe('page margin text', () => {
   it('bounds imported styling and rejects unsafe colour values', () => {
     const doc = emptyDoc();
     doc.marginText = { fontSize: Infinity, edgeOffset: -100, bottomOffset: 900, fontFamily: 'bogus', color: 'url(https://example.test)' };
-    expect(marginTextSettings(doc)).toMatchObject({ fontSize: 6.5, edgeOffset: 2, bottomOffset: 80, fontFamily: 'Helvetica', color: undefined });
+    expect(marginTextSettings(doc)).toMatchObject({ fontSize: 6.5, edgeOffset: 2, bottomOffset: 297, fontFamily: 'Helvetica', color: undefined });
     doc.marginText.fontSize = 30;
     doc.marginText.color = '#abc';
     expect(marginTextSettings(doc)).toMatchObject({ fontSize: 12, color: '#abc' });
+  });
+
+  it.each([0, 80, 150, 250, 297])('allows a %s mm bottom offset across the full A4 height', value => {
+    const doc = emptyDoc();
+    doc.marginText = { enabled: true, bottomOffset: value, pages: { 1: 'Credit' } };
+    const reopened = migrate(JSON.parse(JSON.stringify(doc)));
+    expect(marginTextSettings(reopened).bottomOffset).toBe(value);
+    expect(pageMarginText(reopened, 0)).toBe('Credit');
   });
 
   it('preserves settings through save/reopen, template changes and undo', () => {
