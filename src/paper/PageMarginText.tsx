@@ -19,7 +19,9 @@ export function PageMarginText({ doc, index }: { doc: Doc; index: number }) {
   };
   const style: CSSProperties = {
     margin: 0, padding: 0, flex: '0 0 auto', maxHeight: '100%', pointerEvents: 'auto',
-    writingMode: 'vertical-rl', textOrientation: 'mixed', transform: 'rotate(180deg)',
+    // Rotate symbols such as © with the letters, rather than keeping them
+    // upright before the whole credit is turned to read bottom-to-top.
+    writingMode: 'vertical-rl', textOrientation: 'sideways', transform: 'rotate(180deg)',
     whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
     fontFamily: fontStack(settings.fontFamily), fontSize: `${settings.fontSize}pt`,
     fontWeight: 400, fontStyle: 'normal', lineHeight: 1.2, letterSpacing: '0.02em',
