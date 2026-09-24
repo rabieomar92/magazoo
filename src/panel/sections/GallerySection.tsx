@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { useDoc } from '../../store/useDoc';
 import { assetIsReferenced, uid } from '../../schema/document';
 import { galleryFrameGeometry } from '../../lib/galleryFrame';
+import { ensureGalleryFigure, galleryImageTarget } from '../../lib/gallerySlots';
 import { ImageLoadError, loadImage } from '../../lib/loadImage';
 import { LabeledColor, LabeledRange, Section } from '../Field';
 import { editorTargetId } from '../../lib/editorNavigation';
@@ -98,27 +99,22 @@ export function GallerySection() {
     const slot = pendingSlot.current;
     pendingSlot.current = null;
     if (!file || slot === null) return;
+    const uploadDoc = useDoc.getState().doc;
     setImageError(null);
     setLoadingSlot(slot);
     try {
       const loaded = await loadImage(file);
+      if (useDoc.getState().doc !== uploadDoc) {
+        setImageError('The document changed while loading the image. Please upload it again to the chosen slot.');
+        return;
+      }
       update((d) => {
         const aid = uid();
         d.assets[aid] = loaded;
-        const bi = d.blocks.reduce<number[]>(
-          (a, b, i) => (b.type === 'figure' ? [...a, i] : a),
-          [],
-        )[slot];
-        if (bi === undefined) {
-          // No figure for this slot yet — create one so the layout fills.
-          d.blocks.push({ id: uid(), type: 'figure', assetId: aid, caption: '', span: 1 });
-        } else {
-          const b = d.blocks[bi];
-          if (b.type !== 'figure') return;
-          const old = b.assetId;
-          b.assetId = aid;
-          if (!assetIsReferenced(d, old)) delete d.assets[old];
-        }
+        const block = ensureGalleryFigure(d, slot);
+        const old = block.assetId;
+        block.assetId = aid;
+        if (old && !assetIsReferenced(d, old)) delete d.assets[old];
       });
     } catch (error) {
       setImageError(error instanceof ImageLoadError ? error.message : 'Failed to load image.');
@@ -154,6 +150,7 @@ export function GallerySection() {
       />
       <LabeledColor label="Paper background" value={paperBg} onChange={setPaperBg} />
       <p className="gallery-slot-hint">Text flips to black on light sheets, white on dark.</p>
+      <p className="gallery-slot-hint">Upload to any image slot in any order. Other empty slots can stay empty.</p>
       {imageError && <p className="hint hint--warn" role="alert">{imageError}</p>}
       {SLOTS.map((s, n) => {
         const bi = figIndex[n];
@@ -163,12 +160,13 @@ export function GallerySection() {
         const { title, desc } = splitCaption(caption);
         const frame = (block && block.type === 'figure' && block.frame) || DEFAULT_FRAME;
         const frameGeometry = galleryFrameGeometry(frame);
-        const canFrame = bi !== undefined;
+        const canEditCaption = bi !== undefined && (!!asset || !!caption);
+        const canFrame = bi !== undefined && !!asset;
         const isFold = n === FOLD_SLOT;
         return (
           <div
             className="gallery-slot"
-            id={block?.id ? editorTargetId(`gallery-image-${block.id}`) : undefined}
+            id={editorTargetId(galleryImageTarget(block, n))}
             key={s.label}
           >
             <div className="gallery-slot-head">
@@ -202,7 +200,7 @@ export function GallerySection() {
             >
               {loadingSlot === n ? <MagazooLoader variant="inline" label="Optimising image…" /> : asset ? 'Replace image' : `Upload ${s.label}`}
             </button>
-            {bi !== undefined && (
+            {canEditCaption && (
               <>
                 <input
                   className="field-input"

@@ -5,7 +5,7 @@
   background:var(--surface,#fff); border-bottom:1px solid var(--line,#dfe3ea);
 }
 .typography-toolbar .typography-context {
-  flex:0 0 154px; min-width:0; margin:0; padding-right:10px;
+  flex:0 0 224px; min-width:0; margin:0; padding-right:10px;
   border-right:1px solid var(--line,#dfe3ea);
 }
 /* Never wrap formatting into extra rows. Native horizontal scrolling keeps
@@ -32,7 +32,13 @@
   box-sizing:border-box; height:28px; min-height:28px; padding:3px 6px; font-size:12px;
 }
 .typography-toolbar .field-input--num { width:60px; }
-.typography-toolbar .field--inline select.field-input.select-control { width:144px; min-width:0; }
+.typography-toolbar select.field-input.select-control {
+  /* Keep text out of the chevron's fixed area. The compact input padding
+     otherwise overrides the shared select padding, painting text over it. */
+  min-width:0; max-width:100%; padding-inline:8px 32px;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.typography-toolbar .field--inline select.field-input.select-control { width:208px; min-width:0; }
 .typography-context .select-control { width:100%; min-width:0; }
 .typography-control .color-input { gap:4px; height:28px; }
 .typography-control .color-input input[type='color'] { width:28px; height:28px; padding:2px; }
@@ -54,5 +60,6 @@
 @media(max-width:700px) {
   .typography-toolbar { gap:8px; padding-inline:8px; }
   .typography-toolbar .typography-context { flex-basis:112px; padding-right:8px; }
+  .typography-toolbar .field--inline select.field-input.select-control { width:176px; }
 }
 @media print { .typography-toolbar { display:none !important; } }
