@@ -7,7 +7,7 @@ import './typography-toolbar.css';
 const LABELS: Record<string, string> = {
   theme: 'Theme defaults', body: 'Body defaults (all paragraphs)', title: 'Title', subtitle: 'Subtitle / description',
   category: 'Category / kicker', author: 'Author', affiliation: 'Affiliation', masthead: 'Masthead',
-  footer: 'Page footer', quote: 'Pull quote', attribution: 'Quote attribution', photoCredit: 'Photo credit',
+  footer: 'Page footer', marginText: 'Page margin text', quote: 'Pull quote', attribution: 'Quote attribution', photoCredit: 'Photo credit',
   strapline: 'Strapline', kicker: 'Category / kicker', storyTag: 'Story tag', teaserTitle: 'Teaser title', teaserBody: 'Teaser description', footerBrand: 'Footer publication',
   brand: 'Brand name', tagline: 'Tagline', website: 'Website', qrLabel: 'QR description',
   socialLabel: 'Social-media labels', socialUrl: 'Social-media links', footerText: 'Footer text', imprint: 'Issue mark',
@@ -47,6 +47,7 @@ export function TypographyProvider({ children }: { children: ReactNode }) {
       if (target.startsWith('front-cover-style-')) return target.slice('front-cover-style-'.length);
       if (target.startsWith('backcover-style-')) return target.slice('backcover-style-'.length);
       if (target.startsWith('footer-')) return 'footer';
+      if (target.startsWith('page-margin-text-')) return 'marginText';
       if (target.startsWith('backcover-')) {
         const role = target.slice('backcover-'.length);
         if (role.startsWith('social')) return 'socialUrl';
@@ -110,7 +111,7 @@ export function TypographyControl({ group, label, also = '', order = 50, childre
   useEffect(() => register?.(id, { group, label: name }), [register, id, group, name]);
   if (!context) return <>{children}</>;
   const active = context.active;
-  const localSelection = !!(active?.startsWith('block:') || active?.startsWith('news:'));
+  const localSelection = !!(active?.startsWith('block:') || active?.startsWith('news:') || active === 'marginText');
   const sharedFallback = !localSelection && group === 'body' && active !== null && !context.groups.some(item => item.group === active);
   const pairedSocial = active === 'socialUrl' && group === 'socialLabel';
   // The publication-name field is shared by the masthead and footer brand.

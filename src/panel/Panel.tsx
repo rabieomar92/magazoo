@@ -4,6 +4,7 @@ import { familyOf, type TemplateFamily, type TemplateId } from '../schema/docume
 import { TEMPLATE_META } from '../store/presets';
 import { MetaSection } from './sections/MetaSection';
 import { FooterSection } from './sections/FooterSection';
+import { PageMarginTextSection } from './sections/PageMarginTextSection';
 import { HeroSection } from './sections/HeroSection';
 import { GallerySection } from './sections/GallerySection';
 import { BodySection } from './sections/BodySection';
@@ -188,6 +189,7 @@ export function Panel() {
         <div className="panel-design-pane" hidden={tab !== 'design'}>
           <p className="typography-relocated-note">Font and text styling controls are in the top toolbar. Page layout, backgrounds and object positioning stay here.</p>
           <DirectionSection />{isBackCover ? <BackCoverDesign /> : isFrontMatter || isNews ? <FrontMatterDesign /> : <DesignSection />}
+          <PageMarginTextSection />
         </div>
       </div>
       {pendingTemplate && <div className="template-warning-backdrop" role="presentation">
