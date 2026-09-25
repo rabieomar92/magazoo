@@ -3,6 +3,7 @@ import type { Doc, Block } from '../schema/document';
 import { parseRuns, renderTex } from '../lib/richtext';
 import { galleryFrameGeometry } from '../lib/galleryFrame';
 import { galleryImageTarget, GALLERY_TWO_SLOTS } from '../lib/gallerySlots';
+import { galleryTextPosition } from '../lib/galleryTextPosition';
 import { TagBar } from './TagBar';
 import { PageArtwork } from '../components/PageArtwork';
 import { requestBlockEditorFocus } from '../lib/editorNavigation';
@@ -111,7 +112,15 @@ function FoldCell({ doc, block, area, half, slot }: { doc: Doc; block?: Block; a
   );
 }
 
-function CardCell({ block, area }: { block?: Block; area: string }) {
+function CardCell({ block, area, positionable = false }: { block?: Block; area: string; positionable?: boolean }) {
+  const position = galleryTextPosition(block?.type === 'paragraph' ? block.cardVerticalPosition : undefined);
+  const cardStyle = {
+    gridArea: area,
+    ...(positionable ? {
+      '--gallery-card-before': position / 100,
+      '--gallery-card-after': (100 - position) / 100,
+    } : {}),
+  } as CSSProperties;
   const text = block && block.type === 'paragraph' ? block.text : '';
   const textStyle: CSSProperties | undefined =
     block && block.type === 'paragraph'
@@ -135,8 +144,8 @@ function CardCell({ block, area }: { block?: Block; area: string }) {
       : '';
   return (
     <div
-      className={`g-card${indentClass}`}
-      style={{ gridArea: area }}
+      className={`g-card${positionable ? ' g-card--positioned' : ''}${indentClass}`}
+      style={cardStyle}
       data-source-block-id={block?.type === 'paragraph' ? block.id : undefined}
       onClick={block?.type === 'paragraph' ? () => requestBlockEditorFocus(block.id) : undefined}
     >
@@ -210,8 +219,8 @@ function GalleryTwo({ doc, vars }: { doc: Doc; vars: CSSProperties }) {
         <FoldCell doc={doc} block={figures[slots.fold]} slot={slots.fold} area="fold" half="left" />
         <ImageCell doc={doc} block={figures[slots.leftTall]} slot={slots.leftTall} area="img-1" />
         <ImageCell doc={doc} block={figures[slots.leftBottom]} slot={slots.leftBottom} area="img-3" />
-        <CardCell block={cards[0]} area="card-1" />
-        <CardCell block={cards[1]} area="card-2" />
+        <CardCell block={cards[0]} area="card-1" positionable />
+        <CardCell block={cards[1]} area="card-2" positionable />
       </div>
 
       <div className="page gallery gallery--p2 gallery2--p2" style={vars}>
@@ -219,8 +228,8 @@ function GalleryTwo({ doc, vars }: { doc: Doc; vars: CSSProperties }) {
         <FoldCell doc={doc} block={figures[slots.fold]} slot={slots.fold} area="fold" half="right" />
         <ImageCell doc={doc} block={figures[slots.rightTall]} slot={slots.rightTall} area="img-4" />
         <ImageCell doc={doc} block={figures[slots.rightBottom]} slot={slots.rightBottom} area="img-6" />
-        <CardCell block={cards[2]} area="card-3" />
-        <CardCell block={cards[3]} area="card-4" />
+        <CardCell block={cards[2]} area="card-3" positionable />
+        <CardCell block={cards[3]} area="card-4" positionable />
       </div>
     </>
   );

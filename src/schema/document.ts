@@ -71,6 +71,9 @@ export type Block =
       /** Gallery text-card alignment. Article/editorial engines intentionally
        *  ignore it and keep using their template-level column alignment. */
       align?: 'left' | 'center' | 'right' | 'justify';
+      /** Gallery 2 only: position within the text card's free vertical space.
+       *  0 = top, 50 = middle (default), 100 = bottom. */
+      cardVerticalPosition?: number;
       /** Legacy v1 caret-image continuation. migrate() rejoins this text when
        * moving old article figures into Doc.images. */
       continuationOf?: string;

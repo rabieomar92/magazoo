@@ -87,6 +87,27 @@
   padding: 1mm 0;
   text-align: var(--body-align, left);
 }
+
+/* Divide only the unused card height. Unlike offsets/transforms, these spacers
+   cannot move a paragraph into a neighbouring photo or change the grid tracks.
+   They collapse when the copy fills the card, keeping its first line visible. */
+.g-card--positioned {
+  justify-content: flex-start;
+}
+.g-card--positioned::before,
+.g-card--positioned::after {
+  content: '';
+  flex-basis: 0;
+}
+.g-card--positioned::before {
+  flex-grow: var(--gallery-card-before, .5);
+}
+.g-card--positioned::after {
+  flex-grow: var(--gallery-card-after, .5);
+}
+.g-card--positioned > .g-card-body {
+  flex-shrink: 0;
+}
 .g-title {
   margin: 0 0 1mm;
   font-family: var(--serif);
