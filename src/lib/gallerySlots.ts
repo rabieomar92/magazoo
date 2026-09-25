@@ -1,5 +1,9 @@
 import { uid, type Block, type Doc } from '../schema/document';
 
+// Gallery 2 keeps its original figure ordinals so existing lower photos and
+// the centre fold never move. The former middle tiles (2, 5) stay saved only.
+export const GALLERY_TWO_SLOTS = { fold: 0, leftTall: 1, leftPrevious: 2, leftBottom: 3, rightTall: 4, rightPrevious: 5, rightBottom: 6 } as const;
+
 /** Keep the existing block-based targets; empty tiles have stable slot targets. */
 export function galleryImageTarget(block: Block | undefined, slot: number): string {
   return block?.type === 'figure' ? `gallery-image-${block.id}` : `gallery-image-slot-${slot}`;
