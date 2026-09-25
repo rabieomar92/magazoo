@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { useDoc } from '../../store/useDoc';
 import { assetIsReferenced, uid } from '../../schema/document';
 import { galleryFrameGeometry } from '../../lib/galleryFrame';
-import { ensureGalleryFigure, galleryImageTarget } from '../../lib/gallerySlots';
+import { ensureGalleryFigure, galleryImageTarget, GALLERY_TWO_SLOTS } from '../../lib/gallerySlots';
 import { ImageLoadError, loadImage } from '../../lib/loadImage';
 import { LabeledColor, LabeledRange, Section } from '../Field';
 import { editorTargetId } from '../../lib/editorNavigation';
@@ -11,10 +11,9 @@ import { MagazooLoader } from '../../components/MagazooLoader';
 
 const DEFAULT_FRAME = { scale: 1, offsetX: 0, offsetY: 0 };
 
-/** Per-template image slots, in the order figures fill them, plus which slot is
- *  the fold image (spans both pages — its framing is locked so the two halves
- *  stay joined). Slot i edits the i-th figure block. */
-type Layout = { fold: number; slots: { label: string; hint: string }[] };
+/** Per-template image slots and the shared fold. An explicit slot preserves
+ *  original figure ordinals when a layout combines older image positions. */
+type Layout = { fold: number; slots: { label: string; hint: string; slot?: number }[] };
 const LAYOUTS: Record<string, Layout> = {
   'gallery-1': {
     fold: 1,
@@ -27,15 +26,13 @@ const LAYOUTS: Record<string, Layout> = {
     ],
   },
   'gallery-2': {
-    fold: 0,
+    fold: GALLERY_TWO_SLOTS.fold,
     slots: [
-      { label: 'Image 1', hint: 'Fold · vertical, spans page 1 → page 2' },
-      { label: 'Image 2', hint: 'Page 1 · top-left' },
-      { label: 'Image 3', hint: 'Page 1 · mid-left' },
-      { label: 'Image 4', hint: 'Page 1 · bottom-left' },
-      { label: 'Image 5', hint: 'Page 2 · top-right' },
-      { label: 'Image 6', hint: 'Page 2 · mid-right' },
-      { label: 'Image 7', hint: 'Page 2 · bottom-right' },
+      { label: 'Image 1', hint: 'Fold · vertical, spans page 1 → page 2', slot: GALLERY_TWO_SLOTS.fold },
+      { label: 'Image 2', hint: 'Page 1 · tall upper-left', slot: GALLERY_TWO_SLOTS.leftTall },
+      { label: 'Image 3', hint: 'Page 1 · bottom-left', slot: GALLERY_TWO_SLOTS.leftBottom },
+      { label: 'Image 4', hint: 'Page 2 · tall upper-right', slot: GALLERY_TWO_SLOTS.rightTall },
+      { label: 'Image 5', hint: 'Page 2 · bottom-right', slot: GALLERY_TWO_SLOTS.rightBottom },
     ],
   },
   'gallery-3': {
@@ -89,6 +86,14 @@ export function GallerySection() {
     if (b.type === 'figure') acc.push(i);
     return acc;
   }, []);
+
+  const previousPhotos = templateId === 'gallery-2' ? [
+    { slot: GALLERY_TWO_SLOTS.leftPrevious, target: GALLERY_TWO_SLOTS.leftTall, side: 'left' },
+    { slot: GALLERY_TWO_SLOTS.rightPrevious, target: GALLERY_TWO_SLOTS.rightTall, side: 'right' },
+  ].filter(({ slot }) => {
+    const block = blocks[figIndex[slot]];
+    return block?.type === 'figure' && (!!block.assetId || !!block.caption.trim());
+  }) : [];
 
   const chooseImage = (slot: number) => {
     pendingSlot.current = slot;
@@ -152,7 +157,8 @@ export function GallerySection() {
       <p className="gallery-slot-hint">Text flips to black on light sheets, white on dark.</p>
       <p className="gallery-slot-hint">Upload to any image slot in any order. Other empty slots can stay empty.</p>
       {imageError && <p className="hint hint--warn" role="alert">{imageError}</p>}
-      {SLOTS.map((s, n) => {
+      {SLOTS.map((s, index) => {
+        const n = s.slot ?? index;
         const bi = figIndex[n];
         const block = bi === undefined ? undefined : blocks[bi];
         const asset = block && block.type === 'figure' ? assets[block.assetId] : undefined;
@@ -245,6 +251,28 @@ export function GallerySection() {
           </div>
         );
       })}
+      {previousPhotos.length > 0 && <details className="gallery-previous-photos">
+        <summary>Previous side photos ({previousPhotos.length})</summary>
+        <p className="gallery-slot-hint">These photos are still saved, but are not printed in Gallery 2. Swap one into the tall slot to use it; the current tall photo is kept here instead.</p>
+        {previousPhotos.map(({ slot, target, side }) => {
+          const block = blocks[figIndex[slot]];
+          if (block?.type !== 'figure') return null;
+          const asset = assets[block.assetId];
+          return <div className="gallery-slot" key={slot}>
+            <span className="gallery-slot-label">Previous {side} middle photo</span>
+            <div className="figure-thumb gallery-slot-thumb">{asset ? <img src={asset.src} alt={`Previous ${side} middle photo`} /> : <span className="figure-missing">No image</span>}</div>
+            {block.caption && <p className="gallery-slot-hint">{block.caption}</p>}
+            <button type="button" className="add-btn" disabled={!asset || loadingSlot !== null} onClick={() => update(d => {
+              const previous = ensureGalleryFigure(d, slot);
+              const current = ensureGalleryFigure(d, target);
+              const previousIndex = d.blocks.indexOf(previous);
+              const currentIndex = d.blocks.indexOf(current);
+              d.blocks[currentIndex] = { ...previous, id: current.id };
+              d.blocks[previousIndex] = { ...current, id: previous.id };
+            })}>Use in {side} tall photo</button>
+          </div>;
+        })}
+      </details>}
     </Section>
   );
 }

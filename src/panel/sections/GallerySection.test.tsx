@@ -46,8 +46,8 @@ afterEach(() => { act(() => root.unmount()); host.remove(); vi.unstubAllGlobals(
 
 describe('independent gallery image slots', () => {
   it.each([
-    ['gallery-1', 5, 1], ['gallery-2', 7, 0], ['gallery-3', 8, 0], ['gallery-4', 5, 0],
-  ] as const)('uploads the last tile first in %s and preserves skipped slots through save and undo', async (template, count, fold) => {
+    ['gallery-1', 5, 1, 4], ['gallery-2', 5, 0, 6], ['gallery-3', 8, 0, 7], ['gallery-4', 5, 0, 4],
+  ] as const)('uploads the last tile first in %s and preserves skipped slots through save and undo', async (template, count, fold, lastSlot) => {
     const original = render(template);
     const originalCards = structuredClone(cards());
     const targets = [...host.querySelectorAll<HTMLElement>('.gallery .g-img')].map(tile => tile.dataset.editorTarget!);
@@ -57,8 +57,8 @@ describe('independent gallery image slots', () => {
     expect(host.querySelectorAll('.gallery .g-img img')).toHaveLength(0);
 
     await upload(count - 1, 'data:image/png;base64,last');
-    const last = structuredClone(figures()[count - 1]);
-    expect(figures()).toHaveLength(count);
+    const last = structuredClone(figures()[lastSlot]);
+    expect(figures()).toHaveLength(lastSlot + 1);
     expect(figures().slice(0, -1).every(figure => figure.assetId === '')).toBe(true);
     const slotPanels = [...host.querySelectorAll('.gallery-slot')];
     for (const emptySlot of slotPanels.slice(0, -1)) {
@@ -74,13 +74,57 @@ describe('independent gallery image slots', () => {
     act(() => useDoc.temporal.getState().undo());
     expect(useDoc.getState().doc).toEqual(original);
     act(() => useDoc.temporal.getState().redo());
-    expect(figures()[count - 1]).toEqual(last);
+    expect(figures()[lastSlot]).toEqual(last);
 
     await upload(fold, 'data:image/png;base64,fold');
     expect(host.querySelectorAll('.gallery .g-fold img')).toHaveLength(2);
-    expect(figures()[count - 1]).toEqual(last);
+    expect(figures()[lastSlot]).toEqual(last);
     expect(cards()).toEqual(originalCards);
     expect(figures().filter(figure => !!figure.assetId)).toHaveLength(2);
+  });
+
+  it('Gallery 2 keeps the fold and bottom photos in place and preserves previous middle photos', () => {
+    const doc = presetFor('gallery-2');
+    const slots = doc.blocks.filter(block => block.type === 'figure');
+    for (const n of [2, 5]) {
+      doc.assets[`previous-${n}`] = { src: `data:image/png;base64,previous${n}`, naturalWidth: 800, naturalHeight: 1200 };
+      slots[n].assetId = `previous-${n}`;
+      slots[n].caption = `Previous caption ${n}`;
+      slots[n].frame = { scale: 1.5, offsetX: 12, offsetY: -8 };
+    }
+    const before = structuredClone(doc);
+    act(() => { useDoc.getState().load(doc); root.render(<><GallerySection /><Preview /></>); });
+    const images = [...host.querySelectorAll<HTMLElement>('.gallery .g-img')];
+    expect(images.map(image => image.dataset.editorTarget)).toEqual([0, 1, 3, 0, 4, 6].map(n => `gallery-image-${slots[n].id}`));
+    expect(host.querySelector('.gallery-previous-photos')?.textContent).toContain('Previous side photos (2)');
+    expect(useDoc.getState().doc).toEqual(before);
+    const swap = [...host.querySelectorAll('button')].find(button => button.textContent === 'Use in left tall photo')!;
+    act(() => swap.click());
+    expect(figures()[1]).toEqual({ ...slots[2], id: slots[1].id });
+    expect(figures()[2]).toEqual({ ...slots[1], id: slots[2].id });
+    expect(figures()[3]).toEqual(slots[3]);
+    expect(figures()[4]).toEqual(slots[4]);
+    expect(figures()[6]).toEqual(slots[6]);
+    expect(useDoc.getState().doc.assets).toEqual(before.assets);
+    expect(migrate(JSON.parse(JSON.stringify(useDoc.getState().doc))).blocks).toEqual(useDoc.getState().doc.blocks);
+    act(() => useDoc.temporal.getState().undo());
+    expect(useDoc.getState().doc).toEqual(before);
+    act(() => [...host.querySelectorAll('button')].find(button => button.textContent === 'Use in right tall photo')!.click());
+    expect(figures()[4]).toEqual({ ...slots[5], id: slots[4].id });
+    expect(figures()[5]).toEqual({ ...slots[4], id: slots[5].id });
+    expect(figures()[6]).toEqual(slots[6]);
+    expect(useDoc.getState().doc.assets).toEqual(before.assets);
+    act(() => useDoc.temporal.getState().undo());
+    expect(useDoc.getState().doc).toEqual(before);
+  });
+
+  it('new Gallery 2 documents contain five photos and no displaced sample photos', () => {
+    const doc = presetFor('gallery-2');
+    act(() => { useDoc.getState().load(doc); root.render(<><GallerySection /><Preview /></>); });
+    expect(figures().filter(figure => figure.assetId)).toHaveLength(5);
+    expect(host.querySelectorAll('.gallery-slot')).toHaveLength(5);
+    expect(host.querySelectorAll('.gallery .g-img')).toHaveLength(6); // Centre photo is painted on both pages.
+    expect(host.querySelector('.gallery-previous-photos')).toBeNull();
   });
 
   it('replaces a chosen photo without losing captions, framing, or shared assets', async () => {
