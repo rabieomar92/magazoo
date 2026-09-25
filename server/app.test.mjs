@@ -35,7 +35,8 @@ test('project rename is admin-only, validates names and preserves documents and 
 });
 async function fixture(t){
   const storage=openStorage(':memory:');
-  const server=createApp({storage,origin:'http://127.0.0.1',passwordHash:hashPassword('correct horse battery staple')});
+  const errors=[];
+  const server=createApp({storage,origin:'http://127.0.0.1',passwordHash:hashPassword('correct horse battery staple'),reportError:event=>errors.push(event)});
   server.listen(0,'127.0.0.1');await once(server,'listening');
   t.after(()=>new Promise(resolve=>server.close(()=>{storage.close();resolve();})));
   const endpoint=`http://127.0.0.1:${server.address().port}/api/`;
@@ -43,8 +44,80 @@ async function fixture(t){
   const logged=await request('auth/login',{method:'POST',data:{password:'correct horse battery staple'}});
   const cookie=logged.headers.getSetCookie()[0].split(';')[0];const {csrf}=await logged.json();
   const admin=(path,options={})=>request(path,{...options,headers:{Cookie:cookie,'X-CSRF-Token':csrf,...options.headers}});
-  return{storage,request,admin,cookie,csrf};
+  return{storage,request,admin,cookie,csrf,errors};
 }
+
+test('unexpected issue failures have a correlated safe diagnostic, with no private data in the response or log', async t => {
+  const { storage, admin, errors } = await fixture(t);
+  t.mock.method(storage, 'readIssue', () => {
+    throw Object.assign(new TypeError('secret article copy / private-link-token / password-value'),
+      { issueStage: 'documents', projectId: 'test-project' });
+  });
+  const response = await admin('projects/test-project/issue?private=secret-query');
+  assert.equal(response.status, 500);
+  const result = await response.json();
+  assert.ok(result.reference);
+  assert.equal(errors.length, 1);
+  assert.equal(errors[0].reference, result.reference);
+  assert.equal(errors[0].operation, 'issue-load');
+  assert.equal(errors[0].stage, 'documents');
+  assert.match(result.error, /Reference:/);
+  const exposed = JSON.stringify([result, errors]);
+  for (const secret of ['secret article copy', 'private-link-token', 'password-value', 'secret-query', 'magazoo_admin']) {
+    assert.ok(!exposed.includes(secret));
+  }
+});
+
+test('a partially deployed server produces an actionable response instead of a generic crash', async t => {
+  const { storage, admin, errors } = await fixture(t);
+  storage.readIssue = undefined;
+  const response = await admin('projects/test-project/issue');
+  assert.equal(response.status, 503);
+  assert.match((await response.json()).error, /Deploy the complete server folder/);
+  assert.equal(errors[0].code, 'ISSUE_SERVICE_OUTDATED');
+});
+
+test('an unreadable saved article is identified without returning its content or changing any source', async t => {
+  const { storage, admin, errors } = await fixture(t);
+  const project = storage.createProject('Issue with a damaged file');
+  const good = storage.createDocument(project.id, 'good.json', JSON.stringify(doc));
+  const bad = storage.createDocument(project.id, 'broken.json', '{private damaged content');
+  const before = storage.read(good.token);
+  const damaged = storage.read(bad.token);
+  const response = await admin(`projects/${project.id}/issue`);
+  assert.equal(response.status, 422);
+  const result = await response.json();
+  assert.match(result.error, /broken\.json/);
+  assert.equal(errors[0].code, 'ISSUE_DOCUMENT_UNREADABLE');
+  assert.equal(errors[0].documentId, bad.id);
+  assert.ok(!JSON.stringify([result, errors]).includes('private damaged content'));
+  assert.deepEqual(storage.read(good.token), before);
+  assert.deepEqual(storage.read(bad.token), damaged);
+});
+
+test('response serialization errors return valid error JSON, never a truncated successful response', async t => {
+  const { storage, admin, errors } = await fixture(t);
+  const circular = {}; circular.self = circular;
+  t.mock.method(storage, 'readIssue', () => circular);
+  const response = await admin('projects/test-project/issue');
+  assert.equal(response.status, 500);
+  const result = await response.json();
+  assert.equal(result.reference, errors[0].reference);
+});
+
+test('database errors distinguish a busy database from an outdated schema without leaking raw errors', async t => {
+  const { storage, admin } = await fixture(t);
+  const read = t.mock.method(storage, 'readIssue', () => { throw Object.assign(new Error('database is locked'), { errcode: 5 }); });
+  const busy = await admin('projects/test-project/issue');
+  assert.equal(busy.status, 503);
+  assert.match((await busy.json()).error, /database is busy/);
+  read.mock.mockImplementation(() => { throw new Error('no such column: private_column_name'); });
+  const schema = await admin('projects/test-project/issue');
+  assert.equal(schema.status, 500);
+  const message = (await schema.json()).error;
+  assert.match(message, /schema does not match/);
+  assert.ok(!message.includes('private_column_name'));
+});
 test('password login creates a session; admin session and CSRF are required',async t=>{
   const{request,admin,cookie}=await fixture(t);
   assert.equal((await request('projects')).status,401);

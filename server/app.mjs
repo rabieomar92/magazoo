@@ -1,6 +1,7 @@
 import { createServer } from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
 import { resolve, extname, sep } from 'node:path';
+import { randomUUID } from 'node:crypto';
 import { createAuth } from './passwordAuth.mjs';
 
 const fail=(status,message)=>{throw Object.assign(new Error(message),{status});};
@@ -22,7 +23,7 @@ export function validateDoc(doc){
   return JSON.stringify(doc);
 }
 const cookies=req=>Object.fromEntries((req.headers.cookie??'').split(';').map(v=>{const i=v.indexOf('=');return[v.slice(0,i).trim(),v.slice(i+1).trim()];}));
-export function createApp({storage,origin,passwordHash,staticDir,authOptions={}}){
+export function createApp({storage,origin,passwordHash,staticDir,authOptions={},reportError=event=>console.error(JSON.stringify(event))}){
   const url=new URL(origin);
   const local=['localhost','127.0.0.1','[::1]'].includes(url.hostname);
   if(url.protocol!=='https:' && !local)throw new Error('Online projects require an HTTPS origin.');
@@ -35,7 +36,9 @@ export function createApp({storage,origin,passwordHash,staticDir,authOptions={}}
     res.setHeader('X-Frame-Options','DENY');res.setHeader('Cache-Control','no-store');
     res.setHeader('Permissions-Policy','camera=(), microphone=(), geolocation=()');
     if(secure)res.setHeader('Strict-Transport-Security','max-age=31536000');
-    const send=(status,data)=>{res.writeHead(status,{'Content-Type':'application/json; charset=utf-8'});res.end(JSON.stringify(data));};
+    // Serialization must succeed before committing a successful HTTP response.
+    const send=(status,data)=>{const json=JSON.stringify(data);res.writeHead(status,{'Content-Type':'application/json; charset=utf-8'});res.end(json);};
+    let operation='request';
     try {
       const pathname=new URL(req.url,origin).pathname;
       if(rootPath && !pathname.startsWith(`${rootPath}/`))return send(404,{error:'Not found'});
@@ -82,6 +85,9 @@ export function createApp({storage,origin,passwordHash,staticDir,authOptions={}}
       if(path==='/api/projects' && req.method==='POST'){const data=await body(req,4096);return send(201,storage.createProject(projectName(data.name)));}
       const issue=path.match(/^\/api\/projects\/([\w-]+)\/issue(\/finalize)?$/);
       if(issue){
+        operation=req.method==='GET'?'issue-load':issue[2]?'issue-finalize':'issue-save';
+        const required=req.method==='GET'?'readIssue':issue[2]?'finalizeIssue':'saveIssue';
+        if(typeof storage[required]!=='function')throw Object.assign(new Error('The issue service files are out of date. Deploy the complete server folder and restart the application. Saved documents have not been changed.'),{status:503,code:'ISSUE_SERVICE_OUTDATED'});
         if(!issue[2] && req.method==='GET')return send(200,storage.readIssue(issue[1]));
         if(!issue[2] && req.method==='PUT'){
           const data=await body(req,2*1024*1024);
@@ -105,10 +111,28 @@ export function createApp({storage,origin,passwordHash,staticDir,authOptions={}}
       if(item && req.method==='DELETE'){const data=await body(req,4096);if(!storage.removeDocument(item[1],data.confirmation))fail(400,'Type the exact file name to confirm deletion.');return send(200,{ok:true});}
       fail(404,'Not found.');
     } catch(error){
-      if(res.headersSent){res.end();return;}
       const conflict=String(error.message).includes('UNIQUE constraint');
-      const status=error.status??(conflict?409:500);
-      send(status,{error:status===500?'Unable to complete the request. Check server configuration.':conflict?'That name is already used. Choose a different name.':error.message});
+      const busy=[5,6].includes(error.errcode);
+      const schema=/no such (?:table|column):/i.test(String(error.message));
+      const status=error.status??(conflict?409:busy?503:500);
+      const diagnostic=status>=500 || ['ISSUE_DOCUMENT_UNREADABLE','ISSUE_PLAN_UNREADABLE'].includes(error.code);
+      const reference=diagnostic?randomUUID():undefined;
+      if(diagnostic){
+        // Log identifiers and failure location, never passwords, cookies,
+        // authorization headers, query strings, article text or raw messages.
+        const location=String(error.stack??'').split('\n').find(line=>/^\s+at .*\.(?:mjs|js):\d+:\d+\)?$/.test(line))?.trim();
+        const event={event:'request_failed',reference,operation,status,
+          category:schema?'STORAGE_SCHEMA_MISMATCH':busy?'STORAGE_BUSY':'REQUEST_FAILURE',
+          code:error.code??(schema?'ISSUE_SCHEMA_MISMATCH':busy?'STORAGE_BUSY':'UNEXPECTED_SERVER_ERROR'),
+          type:error.name,sqliteCode:error.errcode,stage:error.issueStage,projectId:error.projectId,documentId:error.documentId,location};
+        try{reportError(event);}catch{/* A logging failure must not prevent a safe response. */}
+      }
+      if(res.headersSent){res.end();return;}
+      const message=busy?'The project database is busy. Wait a moment and try again; no documents were changed.'
+        :schema?'The issue database schema does not match the server. Deploy the complete server folder and restart the application. Keep the existing data directory.'
+        :status===500?'The server could not load or save this request. Check the server log using the reference below.'
+        :conflict?'That name is already used. Choose a different name.':error.message;
+      send(status,{error:reference?`${message} Reference: ${reference}`:message,...(reference?{reference}:{})});
     }
   });
   server.on('close',()=>auth.close());

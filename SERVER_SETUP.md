@@ -70,6 +70,31 @@ existing SQLite data directory, environment settings and backups**; do not
 replace them with local test data. Take a normal database backup before
 deploying an update.
 
+## Issue Studio cannot open a saved issue
+
+Deploy the complete updated `server/` directory and restart the Node application;
+uploading only `dist/` does not update the issue service. Take a normal backup
+of the live SQLite data first. Keep the live `.magazoo-data/` (or configured
+`MAGAZOO_DATA_DIR`) and environment settings; never replace them with local data.
+
+The server safely adds the optional finalization column to older issue tables.
+Incomplete finalization metadata is ignored when reading, so intact articles
+and their saved arrangement can load again and be finalized afresh. The old
+record is not deleted or rewritten just by opening the issue. An unreadable
+article or arrangement is **not** silently skipped, reset or overwritten: the
+error identifies the affected file or arrangement for recovery from a backup.
+
+Unexpected errors now show a reference ID. Match it to the `request_failed`
+entry in the hosting runtime log. That entry identifies the operation, storage
+stage, error category and code without logging article content, passwords,
+cookies or private editing links. `ISSUE_SERVICE_OUTDATED` means the deployed
+server files are incomplete; `STORAGE_SCHEMA_MISMATCH` means its database schema
+does not match the running server; `STORAGE_BUSY` means the database is locked.
+`issue_finalization_ignored` reports incomplete derived finalization metadata,
+not deleted articles.
+
+This update can be applied without changing the frontend or recreating projects.
+
 ## Sharing and deletion
 
 Each JSON document gets a random, non-guessable editing token. Anyone holding that link can edit that document, so treat links like passwords. Saves use versions and reject stale writes. Deleting a project or document requires typing its exact name and immediately revokes its links.

@@ -26,6 +26,71 @@ function memory(t) {
   return { storage, project, add };
 }
 
+function persisted(t) {
+  const dir = mkdtempSync(join(tmpdir(), 'magazoo-issue-load-'));
+  const filename = join(dir, 'projects.sqlite');
+  const storage = openStorage(filename);
+  const observer = new DatabaseSync(filename);
+  t.after(() => { observer.close(); storage.close(); rmSync(dir, { recursive: true, force: true }); });
+  const project = storage.createProject('Existing issue');
+  const item = storage.createDocument(project.id, 'article.json', JSON.stringify(original));
+  const plan = makePlan(['__contents__', item.id]);
+  storage.saveIssue(project.id, 0, plan);
+  return { storage, observer, project, item, plan };
+}
+
+test('old or incomplete finalization metadata never prevents reading intact articles and arrangements', t => {
+  const { storage, observer, project, item, plan } = persisted(t);
+  const before = storage.read(item.token);
+  t.mock.method(console, 'warn', () => {});
+  for (const raw of ['{}', 'true', '{"documents":null}', '{"documents":{}}', '{"documents":[null]}', '{"documents":[]}', '{broken']) {
+    observer.prepare('UPDATE project_issues SET finalized=? WHERE projectId=?').run(raw, project.id);
+    const loaded = storage.readIssue(project.id);
+    assert.deepEqual(loaded.plan, plan);
+    assert.deepEqual(loaded.items[0].doc, original);
+    assert.equal(loaded.finalized, null);
+    assert.equal(loaded.version, 1);
+    assert.deepEqual(storage.read(item.token), before);
+    assert.equal(observer.prepare('SELECT finalized FROM project_issues WHERE projectId=?').get(project.id).finalized, raw,
+      'reading never deletes or rewrites the stored record');
+  }
+});
+
+test('unreadable authored data fails explicitly instead of silently resetting or skipping it', t => {
+  const { storage, observer, project, item, plan } = persisted(t);
+  observer.prepare('UPDATE documents SET body=? WHERE id=?').run('{private broken text', item.id);
+  assert.throws(() => storage.readIssue(project.id), error => error.status === 422 && error.code === 'ISSUE_DOCUMENT_UNREADABLE' &&
+    error.message.includes('article.json') && !error.message.includes('private broken text'));
+  observer.prepare('UPDATE documents SET body=? WHERE id=?').run(JSON.stringify(original), item.id);
+  observer.prepare('UPDATE project_issues SET plan=? WHERE projectId=?').run('{private arrangement', project.id);
+  assert.throws(() => storage.readIssue(project.id), error => error.status === 422 && error.code === 'ISSUE_PLAN_UNREADABLE');
+  assert.equal(observer.prepare('SELECT plan FROM project_issues WHERE projectId=?').get(project.id).plan, '{private arrangement');
+  observer.prepare('UPDATE project_issues SET plan=? WHERE projectId=?').run(JSON.stringify(plan), project.id);
+  assert.deepEqual(storage.readIssue(project.id).items[0].doc, original, 'a failed read releases its transaction');
+});
+
+test('upgrading an issue table without finalization preserves its saved plan, versions and articles', t => {
+  const dir = mkdtempSync(join(tmpdir(), 'magazoo-issue-upgrade-'));
+  const filename = join(dir, 'projects.sqlite');
+  let storage = openStorage(filename);
+  t.after(() => { storage.close(); rmSync(dir, { recursive: true, force: true }); });
+  const project = storage.createProject('Saved issue');
+  const item = storage.createDocument(project.id, 'article.json', JSON.stringify(original));
+  const plan = makePlan(['__contents__', item.id]);
+  storage.saveIssue(project.id, 0, plan);
+  const before = storage.read(item.token);
+  storage.close();
+  const legacy = new DatabaseSync(filename);
+  legacy.exec('ALTER TABLE project_issues DROP COLUMN finalized');
+  legacy.close();
+  storage = openStorage(filename);
+  const loaded = storage.readIssue(project.id);
+  assert.deepEqual(loaded.plan, plan);
+  assert.equal(loaded.version, 1);
+  assert.equal(loaded.finalized, null);
+  assert.deepEqual(storage.read(item.token), before);
+});
+
 test('finalize changes only numbering and preserves every stored content field', t => {
   const { storage, project, add } = memory(t);
   const a = add('Article.json');

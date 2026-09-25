@@ -3,6 +3,36 @@ import { randomBytes, randomUUID } from 'node:crypto';
 import { issueError, validateIssueDocuments, validateIssuePlan, validateIssueVersion } from './issue.mjs';
 
 export const token = () => randomBytes(32).toString('base64url');
+const object = value => value !== null && typeof value === 'object' && !Array.isArray(value);
+function storedObject(text, code, message, context) {
+  try {
+    const value = JSON.parse(text);
+    if (!object(value)) throw new Error('Expected an object');
+    return value;
+  } catch {
+    // Do not attach a JSON.parse error: its message can contain private copy.
+    throw Object.assign(new Error(message), { status: 422, code, ...context });
+  }
+}
+function readFinalization(text, projectId) {
+  if (!text) return null;
+  let value;
+  try { value = JSON.parse(text); } catch { /* Derived metadata can be rebuilt. */ }
+  if (value === null) return null;
+  const valid = object(value) && Number.isSafeInteger(value.at) && value.at >= 0 &&
+    Number.isSafeInteger(value.contentsStartNumber) && value.contentsStartNumber >= 0 &&
+    Array.isArray(value.documents) && value.documents.every(entry => object(entry) &&
+      typeof entry.id === 'string' && Number.isSafeInteger(entry.version) && entry.version >= 1 &&
+      Number.isSafeInteger(entry.pageCount) && entry.pageCount >= 1 &&
+      Number.isSafeInteger(entry.startNumber) && entry.startNumber >= 0) &&
+    new Set(value.documents.map(entry => entry.id)).size === value.documents.length;
+  if (valid) return value;
+  // Finalization is a cache, not authored content. Leave the original database
+  // record untouched; require a fresh finalization instead of crashing opening.
+  console.warn(JSON.stringify({ event: 'issue_finalization_ignored', projectId,
+    code: 'ISSUE_FINALIZATION_INCOMPLETE' }));
+  return null;
+}
 export function openStorage(filename) {
   const db=new DatabaseSync(filename);
   db.exec(`PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON;
@@ -12,6 +42,10 @@ export function openStorage(filename) {
       UNIQUE(projectId,name));
     CREATE TABLE IF NOT EXISTS project_issues (projectId TEXT PRIMARY KEY REFERENCES projects(id) ON DELETE CASCADE,
       plan TEXT NOT NULL,version INTEGER NOT NULL DEFAULT 1,finalized TEXT,updated INTEGER NOT NULL);`);
+  // Older issue tables may predate finalization. Add only the optional column;
+  // never recreate a table or reset an existing arrangement or document.
+  const issueColumns = db.prepare('PRAGMA table_info(project_issues)').all();
+  if (!issueColumns.some(column => column.name === 'finalized')) db.exec('ALTER TABLE project_issues ADD COLUMN finalized TEXT');
   const listProjects=db.prepare('SELECT id,name,created FROM projects ORDER BY created DESC');
   const listDocuments=db.prepare('SELECT projectId,id,name,token,version,updated FROM documents ORDER BY name');
   const list=()=>{
@@ -26,14 +60,23 @@ export function openStorage(filename) {
     catch (error) { db.exec('ROLLBACK'); throw error; }
   };
   const issueSnapshot = projectId => {
-    const project = db.prepare('SELECT id,name FROM projects WHERE id=?').get(projectId);
+    const read = (issueStage, action) => {
+      try { return action(); }
+      catch (error) { Object.assign(error, { issueStage, projectId }); throw error; }
+    };
+    const project = read('project', () => db.prepare('SELECT id,name FROM projects WHERE id=?').get(projectId));
     if (!project) issueError(404, 'Project not found.');
-    const saved = db.prepare('SELECT plan,version,finalized FROM project_issues WHERE projectId=?').get(projectId);
-    const items = db.prepare('SELECT id,name,version,updated,body FROM documents WHERE projectId=? ORDER BY name').all(projectId)
-      .map(({ body, ...item }) => ({ ...item, doc: JSON.parse(body) }));
-    const finalized = saved?.finalized ? JSON.parse(saved.finalized) : null;
+    const saved = read('arrangement', () => db.prepare('SELECT plan,version,finalized FROM project_issues WHERE projectId=?').get(projectId));
+    const rows = read('documents', () => db.prepare('SELECT id,name,version,updated,body FROM documents WHERE projectId=? ORDER BY name').all(projectId));
+    const items = rows.map(({ body, ...item }) => ({ ...item, doc: storedObject(body, 'ISSUE_DOCUMENT_UNREADABLE',
+      `The saved document "${item.name}" could not be read. Restore this file from a known-good copy before compiling. No documents were changed.`,
+      { issueStage: 'document-json', projectId, documentId: item.id }) }));
+    const plan = saved ? storedObject(saved.plan, 'ISSUE_PLAN_UNREADABLE',
+      'The saved issue arrangement could not be read. Restore its saved arrangement from a backup; do not delete the articles. No documents were changed.',
+      { issueStage: 'arrangement-json', projectId }) : null;
+    const finalized = readFinalization(saved?.finalized, projectId);
     const versions = new Map(finalized?.documents.map(item => [item.id, item.version]));
-    return { project, version: saved?.version ?? 0, plan: saved ? JSON.parse(saved.plan) : null,
+    return { project, version: saved?.version ?? 0, plan,
       items, finalized, sourcesChanged: finalized !== null &&
         (items.length !== versions.size || items.some(item => versions.get(item.id) !== item.version)) };
   };
