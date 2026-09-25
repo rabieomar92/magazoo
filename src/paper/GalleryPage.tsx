@@ -2,7 +2,7 @@ import { Fragment, type CSSProperties, type ReactNode } from 'react';
 import type { Doc, Block } from '../schema/document';
 import { parseRuns, renderTex } from '../lib/richtext';
 import { galleryFrameGeometry } from '../lib/galleryFrame';
-import { galleryImageTarget } from '../lib/gallerySlots';
+import { galleryImageTarget, GALLERY_TWO_SLOTS } from '../lib/gallerySlots';
 import { TagBar } from './TagBar';
 import { PageArtwork } from '../components/PageArtwork';
 import { requestBlockEditorFocus } from '../lib/editorNavigation';
@@ -193,32 +193,32 @@ export function GalleryPage({ doc, vars }: { doc: Doc; vars: CSSProperties }) {
 /**
  * gallery-2: the fold image runs vertically down the centre of the spread —
  * fig[0]'s left half sits in page 1's right column, its right half in page 2's
- * left column (same FoldCell mechanism, same fold-edge bleed). Three tiles flank
- * it on each page with a pair of text cards. fig[1..6] fill the flanks in order.
+ * left column (same FoldCell mechanism, same fold-edge bleed). One tall upper
+ * photo and one lower photo flank each side, with the existing text cards.
+ * Preserve the original figure ordinals when combining the upper tile pairs.
  */
 function GalleryTwo({ doc, vars }: { doc: Doc; vars: CSSProperties }) {
   const figures = doc.blocks.filter((b) => b.type === 'figure');
   const cards = doc.blocks.filter((b) => b.type === 'paragraph');
+  const slots = GALLERY_TWO_SLOTS;
 
   return (
     <>
       <div className="page gallery gallery--p1 gallery2--p1" style={vars}>
         <PageArtwork doc={doc} />
         <TagBar doc={doc} pageIndex={0} fullBleed />
-        <FoldCell doc={doc} block={figures[0]} slot={0} area="fold" half="left" />
-        <ImageCell doc={doc} block={figures[1]} slot={1} area="img-1" />
-        <ImageCell doc={doc} block={figures[2]} slot={2} area="img-2" />
-        <ImageCell doc={doc} block={figures[3]} slot={3} area="img-3" />
+        <FoldCell doc={doc} block={figures[slots.fold]} slot={slots.fold} area="fold" half="left" />
+        <ImageCell doc={doc} block={figures[slots.leftTall]} slot={slots.leftTall} area="img-1" />
+        <ImageCell doc={doc} block={figures[slots.leftBottom]} slot={slots.leftBottom} area="img-3" />
         <CardCell block={cards[0]} area="card-1" />
         <CardCell block={cards[1]} area="card-2" />
       </div>
 
       <div className="page gallery gallery--p2 gallery2--p2" style={vars}>
         <TagBar doc={doc} pageIndex={1} fullBleed />
-        <FoldCell doc={doc} block={figures[0]} slot={0} area="fold" half="right" />
-        <ImageCell doc={doc} block={figures[4]} slot={4} area="img-4" />
-        <ImageCell doc={doc} block={figures[5]} slot={5} area="img-5" />
-        <ImageCell doc={doc} block={figures[6]} slot={6} area="img-6" />
+        <FoldCell doc={doc} block={figures[slots.fold]} slot={slots.fold} area="fold" half="right" />
+        <ImageCell doc={doc} block={figures[slots.rightTall]} slot={slots.rightTall} area="img-4" />
+        <ImageCell doc={doc} block={figures[slots.rightBottom]} slot={slots.rightBottom} area="img-6" />
         <CardCell block={cards[2]} area="card-3" />
         <CardCell block={cards[3]} area="card-4" />
       </div>

@@ -127,16 +127,15 @@ export function makeGallery1(): Doc {
 // ---- gallery-2 placeholder photos -----------------------------------------
 const G2_FOLD = foldPhotoV('#0b1220', '#2563eb');
 const G2_A = photo('#0f766e', '#2dd4bf', '<circle r="120" fill="none" stroke="#fff" stroke-width="12" opacity="0.85"/><circle r="34"/>');
-const G2_B = photo('#7c2d12', '#f59e0b', '<rect x="-150" y="-100" width="300" height="200" rx="16" opacity="0.85"/>');
 const G2_C = photo('#1e3a8a', '#38bdf8', '<path d="M-200 120 L0 -180 L200 120 Z" opacity="0.8"/>');
 const G2_D = photo('#4c1d95', '#a855f7', '<circle cx="-100" r="66"/><circle cx="100" r="66"/><path d="M-100 0 H100" stroke="#fff" stroke-width="10"/>');
-const G2_E = photo('#134e4a', '#22d3ee', '<rect x="-160" y="-8" width="320" height="16" opacity="0.7"/><circle r="60"/>');
 const G2_F = photo('#831843', '#fb7185', '<circle r="130" fill="none" stroke="#fff" stroke-width="10" opacity="0.8"/><path d="M-90 -90 L90 90" stroke="#fff" stroke-width="10"/>');
 
 /**
  * gallery-2 — a second photo spread. The fold image runs VERTICALLY down the
  * centre of the open spread (right column of page 1 → left column of page 2),
- * flanked by three tiles per page and a pair of text cards. Seven photos in all.
+ * flanked by one tall upper photo, one lower photo and two text cards per page.
+ * Five photos in all; old middle-slot ordinals remain reserved for saved files.
  * Ships a dark sheet to show off the auto-contrast text.
  */
 export function makeGallery2(): Doc {
@@ -159,26 +158,24 @@ export function makeGallery2(): Doc {
     margin: 12,
   };
 
-  const ids = [uid(), uid(), uid(), uid(), uid(), uid(), uid()];
+  const ids = [uid(), uid(), uid(), uid(), uid()];
   d.assets = {
     [ids[0]]: { src: G2_FOLD, naturalWidth: 1200, naturalHeight: 2400 },
     [ids[1]]: { src: G2_A, naturalWidth: 1200, naturalHeight: 900 },
-    [ids[2]]: { src: G2_B, naturalWidth: 1200, naturalHeight: 900 },
-    [ids[3]]: { src: G2_C, naturalWidth: 1200, naturalHeight: 900 },
-    [ids[4]]: { src: G2_D, naturalWidth: 1200, naturalHeight: 900 },
-    [ids[5]]: { src: G2_E, naturalWidth: 1200, naturalHeight: 900 },
-    [ids[6]]: { src: G2_F, naturalWidth: 1200, naturalHeight: 900 },
+    [ids[2]]: { src: G2_C, naturalWidth: 1200, naturalHeight: 900 },
+    [ids[3]]: { src: G2_D, naturalWidth: 1200, naturalHeight: 900 },
+    [ids[4]]: { src: G2_F, naturalWidth: 1200, naturalHeight: 900 },
   };
 
   d.blocks = [
-    // fig[0] is the vertical fold; the rest fill the flanking tiles in order.
+    // Keep the old 2/5 ordinals empty so lower photos never shift on save/load.
     fig(ids[0], '**Down the centre**\nA single frame split by the fold, joining both pages.'),
     fig(ids[1], '**Ring resonator**\nLight circling a micro-cavity thousands of times.'),
-    fig(ids[2], '**The sample**\nA thin film mounted for spectroscopy.'),
-    fig(ids[3], '**Beam path**\nMirrors folding the optical table into inches.'),
-    fig(ids[4], '**Collaboration**\nStudent and mentor at the alignment stage.'),
-    fig(ids[5], '**Interference**\nFringes counted to nanometre precision.'),
-    fig(ids[6], '**First light**\nThe moment the detector registers a signal.'),
+    fig('', ''),
+    fig(ids[2], '**Beam path**\nMirrors folding the optical table into inches.'),
+    fig(ids[3], '**Collaboration**\nStudent and mentor at the alignment stage.'),
+    fig('', ''),
+    fig(ids[4], '**First light**\nThe moment the detector registers a signal.'),
     // Cards (4):
     card('**Photonics on a chip**\nGuiding light through engineered structures smaller than a hair.'),
     card('**Why it matters**\nFaster sensors, quantum links, and greener computing.'),
