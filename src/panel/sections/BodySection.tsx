@@ -8,11 +8,12 @@ import {
 } from 'react';
 import { useDoc } from '../../store/useDoc';
 import { familyOf, uid, type Block } from '../../schema/document';
-import { LabeledColor, LabeledNumber, RowButtons, Section, SegmentField } from '../Field';
+import { LabeledColor, LabeledNumber, LabeledRange, RowButtons, Section, SegmentField } from '../Field';
 import { TOKEN, wrapSelection, type Mark } from '../../lib/richtext';
 import { setActiveEditor } from '../../lib/activeEditor';
 import { normalizeInlineContinuations, removeArticleBlock } from '../../lib/inlineFigure';
 import { blockEditorId } from '../../lib/editorNavigation';
+import { galleryTextPosition } from '../../lib/galleryTextPosition';
 
 const KEY_TO_MARK: Record<string, Mark> = { b: 'b', i: 'i', u: 'u' };
 type DropTarget = { index: number; edge: 'before' | 'after' };
@@ -30,6 +31,7 @@ export function BodySection({ allowEquations = true }: { allowEquations?: boolea
   const blocks = useDoc((state) => state.doc.blocks);
   const update = useDoc((state) => state.update);
   const isGallery = useDoc((state) => familyOf(state.doc.templateId) === 'gallery');
+  const isGalleryTwo = useDoc((state) => state.doc.templateId === 'gallery-2');
   const isFrontCover = useDoc((state) => state.doc.templateId === 'magazine-4');
   const isCardContent = isGallery || isFrontCover;
   const templateBodySize = useDoc((state) => state.doc.design.sizes.body);
@@ -156,6 +158,15 @@ export function BodySection({ allowEquations = true }: { allowEquations?: boolea
       if (patch.topPadding !== undefined) {
         block.topPadding = Math.min(200, Math.max(0, patch.topPadding));
       }
+    });
+
+  const setCardVerticalPosition = (id: string, value: number) =>
+    update((doc) => {
+      const block = doc.blocks.find(candidate => candidate.id === id);
+      if (doc.templateId !== 'gallery-2' || block?.type !== 'paragraph') return;
+      const position = galleryTextPosition(value);
+      if (position === 50) delete block.cardVerticalPosition;
+      else block.cardVerticalPosition = position;
     });
 
   const setTex = (index: number, tex: string) =>
@@ -348,6 +359,30 @@ export function BodySection({ allowEquations = true }: { allowEquations?: boolea
                   <span aria-hidden="true">↕</span>
                 </button>
               </div>
+              {isGalleryTwo && (
+                <div className="gallery-card-position" role="group" aria-label={`Paragraph ${viewIndex + 1} vertical position`}>
+                  <SegmentField<number>
+                    label="Vertical alignment"
+                    value={galleryTextPosition(block.cardVerticalPosition)}
+                    options={[
+                      { value: 0, label: 'Top' },
+                      { value: 50, label: 'Middle' },
+                      { value: 100, label: 'Bottom' },
+                    ]}
+                    onChange={value => setCardVerticalPosition(block.id, value)}
+                  />
+                  <LabeledRange
+                    label="Fine position"
+                    value={galleryTextPosition(block.cardVerticalPosition)}
+                    min={0}
+                    max={100}
+                    step={1}
+                    format={value => `${value}%`}
+                    onChange={value => setCardVerticalPosition(block.id, value)}
+                  />
+                  <p className="gallery-card-position-hint">Within this text card · 0% top, 100% bottom.</p>
+                </div>
+              )}
               {!isFrontCover && <div className="paragraph-indent">
                 <TypographyControl group={`block:${block.id}`} label={`${block.type === "paragraph" ? "Paragraph" : "Equation"} ${viewIndex + 1}`} order={50}><SegmentField<'default' | 'on' | 'off'>
                   label="Indent"
