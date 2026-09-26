@@ -7,6 +7,9 @@ import { useDoc } from '../../store/useDoc';
 import { presetFor } from '../../store/presets';
 import { migrate, type TemplateId } from '../../schema/document';
 import { loadImage } from '../../lib/loadImage';
+import { TypographyProvider, TypographyToolbar } from '../TypographyToolbar';
+import { clonePages } from '../../lib/pdfExport';
+import { snapshotIssuePages } from '../../issue/snapshotIssuePages';
 
 vi.mock('../../lib/loadImage', async original => ({ ...await original<typeof import('../../lib/loadImage')>(), loadImage: vi.fn() }));
 
@@ -45,6 +48,64 @@ beforeEach(() => {
 afterEach(() => { act(() => root.unmount()); host.remove(); vi.unstubAllGlobals(); });
 
 describe('independent gallery image slots', () => {
+  it.each(['gallery-1', 'gallery-2', 'gallery-3', 'gallery-4'] as const)('edits only the selected image description alignment in %s', template => {
+    const original = presetFor(template);
+    act(() => {
+      useDoc.getState().load(original);
+      root.render(<TypographyProvider><TypographyToolbar /><GallerySection /><Preview /></TypographyProvider>);
+    });
+    expect(useDoc.getState().doc).toEqual(original);
+    const first = figures()[0];
+    const group = `gallery-caption:${first.id}`;
+    const panel = host.querySelector<HTMLElement>('.gallery-slot')!;
+    act(() => panel.querySelector('textarea')!.focus());
+    expect(host.querySelector<HTMLSelectElement>('[aria-label="Typography group"]')!.value).toBe(group);
+    const horizontal = [...host.querySelectorAll<HTMLElement>('.typography-control')].find(control => control.dataset.typographyGroup === group)!;
+    expect(horizontal.hidden).toBe(false);
+    expect(horizontal.querySelectorAll('button')).toHaveLength(4);
+    act(() => [...horizontal.querySelectorAll('button')].find(button => button.textContent === 'Justify')!.click());
+    act(() => [...panel.querySelectorAll('.gallery-card-position button')].find(button => button.textContent === 'Top')!.dispatchEvent(new MouseEvent('click', { bubbles: true })));
+    expect(figures()[0]).toEqual({ ...first, captionAlign: 'justify', captionVerticalPosition: 0 });
+    expect(useDoc.getState().doc.blocks.filter(block => block.id !== first.id)).toEqual(original.blocks.filter(block => block.id !== first.id));
+    const caption = host.querySelector<HTMLElement>(`[data-editor-target="gallery-caption-${first.id}"]`)!;
+    expect(caption.style.textAlign).toBe('justify');
+    expect(caption.style.getPropertyValue('--gallery-card-before')).toBe('0');
+    expect(host.querySelectorAll(`[data-editor-target="gallery-caption-${first.id}"]`)).toHaveLength(1);
+    const saved = JSON.stringify(useDoc.getState().doc);
+    act(() => useDoc.temporal.getState().undo());
+    expect(figures()[0].captionVerticalPosition).toBeUndefined();
+    act(() => useDoc.temporal.getState().redo());
+    expect(figures()[0].captionVerticalPosition).toBe(0);
+    act(() => useDoc.getState().load(migrate(JSON.parse(saved))));
+    expect(figures()[0].captionAlign).toBe('justify');
+    expect(figures()[0].captionVerticalPosition).toBe(0);
+    const printDoc = document.implementation.createHTMLDocument('Print');
+    clonePages(host, printDoc);
+    const issuePages = snapshotIssuePages(host);
+    const printCaption = [...printDoc.querySelectorAll<HTMLElement>('.g-caption-positioned')].find(copy => copy.textContent === caption.textContent)!;
+    const issueCaption = [...issuePages[0].querySelectorAll<HTMLElement>('.g-caption-positioned')].find(copy => copy.textContent === caption.textContent)!;
+    for (const exported of [printCaption, issueCaption]) {
+      expect(exported.style.textAlign).toBe('justify');
+      expect(exported.style.getPropertyValue('--gallery-card-before')).toBe('0');
+    }
+  });
+
+  it.each(['gallery-1', 'gallery-2', 'gallery-3', 'gallery-4'] as const)('defaults captions to the bottom and supports independent fine positions in %s', template => {
+    act(() => { useDoc.getState().load(presetFor(template)); root.render(<><GallerySection /><Preview /></>); });
+    const original = structuredClone(figures());
+    const captions = [...host.querySelectorAll<HTMLElement>('.g-caption-positioned')];
+    expect(captions.every(caption => caption.style.getPropertyValue('--gallery-card-before') === '1')).toBe(true);
+    const slider = host.querySelector<HTMLInputElement>('.gallery-slot .gallery-card-position input[type=range]')!;
+    act(() => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(slider, '37');
+      slider.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    expect(figures()[0].captionVerticalPosition).toBe(37);
+    expect(figures().slice(1)).toEqual(original.slice(1));
+    act(() => [...host.querySelectorAll<HTMLButtonElement>('.gallery-slot .gallery-card-position button')].find(button => button.textContent === 'Bottom')!.click());
+    expect(figures()).toEqual(original);
+  });
+
   it.each([
     ['gallery-1', 5, 1, 4], ['gallery-2', 5, 0, 6], ['gallery-3', 8, 0, 7], ['gallery-4', 5, 0, 4],
   ] as const)('uploads the last tile first in %s and preserves skipped slots through save and undo', async (template, count, fold, lastSlot) => {

@@ -41,6 +41,7 @@ export function TypographyProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const resolve = (target: string): string | null | undefined => {
       const doc = useDoc.getState().doc;
+      if (target.startsWith('gallery-caption-')) return `gallery-caption:${target.slice('gallery-caption-'.length)}`;
       if (/^(image-|gallery-image-|news-photo-|design-background|signature)/.test(target)) return null;
       const story = doc.news?.stories.find(story => target === `news-${story.id}` || target.endsWith(`-${story.id}`));
       if (story && target.startsWith('news-')) return `news:${story.id}`;
@@ -71,9 +72,12 @@ export function TypographyProvider({ children }: { children: ReactNode }) {
     };
     const focus = (event: FocusEvent) => {
       if (!(event.target instanceof Element) || event.target.closest('.typography-toolbar')) return;
-      // Image arrangement remains in Images; only its authored caption uses
-      // the existing description typography. No click/selection is intercepted.
-      if (event.target.closest('.gallery-slot') && event.target.matches('textarea,input:not([type])')) { select('subtitle'); return; }
+      // Image arrangement stays in Images; each authored caption owns its
+      // alignment while still exposing the existing shared description fonts.
+      const galleryCaption = event.target.closest<HTMLElement>('[data-gallery-caption-id]');
+      if (galleryCaption && event.target.matches('textarea,input:not([type])')) {
+        select(`gallery-caption:${galleryCaption.dataset.galleryCaptionId}`); return;
+      }
       if (event.target.closest('[id^="editor-target-backcover-social-"]') && event.target.matches('input')) {
         const label = event.target.closest('label')?.querySelector('.field-label')?.textContent ?? '';
         select(label.startsWith('Label') ? 'socialLabel' : 'socialUrl'); return;
@@ -111,15 +115,16 @@ export function TypographyControl({ group, label, also = '', order = 50, childre
   useEffect(() => register?.(id, { group, label: name }), [register, id, group, name]);
   if (!context) return <>{children}</>;
   const active = context.active;
-  const localSelection = !!(active?.startsWith('block:') || active?.startsWith('news:') || active === 'marginText');
+  const localSelection = !!(active?.startsWith('block:') || active?.startsWith('news:') || active?.startsWith('gallery-caption:') || active === 'marginText');
+  const captionShared = active?.startsWith('gallery-caption:') && group === 'subtitle';
   const sharedFallback = !localSelection && group === 'body' && active !== null && !context.groups.some(item => item.group === active);
   const pairedSocial = active === 'socialUrl' && group === 'socialLabel';
   // The publication-name field is shared by the masthead and footer brand.
   const coverShared = context.templateId === 'magazine-4' && active === 'masthead' && group === 'footerBrand';
   // A selected paragraph/story must never expose the document-wide size or
   // colour beside its own overrides. Global controls remain in explicit groups.
-  const visible = active !== null && (active === group || (!localSelection && group === 'theme') || sharedFallback || pairedSocial || coverShared || also.split(' ').includes(active));
-  const scope = active !== group && group === 'theme' ? 'Theme default' : coverShared || pairedSocial ? name : null;
+  const visible = active !== null && (active === group || (!localSelection && group === 'theme') || sharedFallback || pairedSocial || coverShared || captionShared || also.split(' ').includes(active));
+  const scope = captionShared ? 'Description defaults' : active !== group && group === 'theme' ? 'Theme default' : coverShared || pairedSocial ? name : null;
   return context.host ? createPortal(<div className="typography-control" data-typography-group={group} hidden={!visible} style={{ order }}>
     {scope && <span className="typography-control-scope">{scope}</span>}
     {children}

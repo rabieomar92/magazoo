@@ -8,7 +8,8 @@ import {
 } from 'react';
 import { useDoc } from '../../store/useDoc';
 import { familyOf, uid, type Block } from '../../schema/document';
-import { LabeledColor, LabeledNumber, LabeledRange, RowButtons, Section, SegmentField } from '../Field';
+import { LabeledColor, LabeledNumber, RowButtons, Section, SegmentField } from '../Field';
+import { GalleryVerticalPosition } from '../GalleryVerticalPosition';
 import { TOKEN, wrapSelection, type Mark } from '../../lib/richtext';
 import { setActiveEditor } from '../../lib/activeEditor';
 import { normalizeInlineContinuations, removeArticleBlock } from '../../lib/inlineFigure';
@@ -31,7 +32,6 @@ export function BodySection({ allowEquations = true }: { allowEquations?: boolea
   const blocks = useDoc((state) => state.doc.blocks);
   const update = useDoc((state) => state.update);
   const isGallery = useDoc((state) => familyOf(state.doc.templateId) === 'gallery');
-  const isGalleryTwo = useDoc((state) => state.doc.templateId === 'gallery-2');
   const isFrontCover = useDoc((state) => state.doc.templateId === 'magazine-4');
   const isCardContent = isGallery || isFrontCover;
   const templateBodySize = useDoc((state) => state.doc.design.sizes.body);
@@ -163,7 +163,7 @@ export function BodySection({ allowEquations = true }: { allowEquations?: boolea
   const setCardVerticalPosition = (id: string, value: number) =>
     update((doc) => {
       const block = doc.blocks.find(candidate => candidate.id === id);
-      if (doc.templateId !== 'gallery-2' || block?.type !== 'paragraph') return;
+      if (familyOf(doc.templateId) !== 'gallery' || block?.type !== 'paragraph') return;
       const position = galleryTextPosition(value);
       if (position === 50) delete block.cardVerticalPosition;
       else block.cardVerticalPosition = position;
@@ -246,6 +246,7 @@ export function BodySection({ allowEquations = true }: { allowEquations?: boolea
           ) : null}
         </p>
       </details>
+      {isGallery && <p className="gallery-slot-hint">First line = title. Use Enter or <code>{'\\n'}</code> for a new line; <code>{'\\\\n'}</code> prints a literal \n.</p>}
 
       {view.map(({ block, index }, viewIndex) => (
         <Fragment key={block.id}>
@@ -359,29 +360,10 @@ export function BodySection({ allowEquations = true }: { allowEquations?: boolea
                   <span aria-hidden="true">↕</span>
                 </button>
               </div>
-              {isGalleryTwo && (
-                <div className="gallery-card-position" role="group" aria-label={`Paragraph ${viewIndex + 1} vertical position`}>
-                  <SegmentField<number>
-                    label="Vertical alignment"
-                    value={galleryTextPosition(block.cardVerticalPosition)}
-                    options={[
-                      { value: 0, label: 'Top' },
-                      { value: 50, label: 'Middle' },
-                      { value: 100, label: 'Bottom' },
-                    ]}
-                    onChange={value => setCardVerticalPosition(block.id, value)}
-                  />
-                  <LabeledRange
-                    label="Fine position"
-                    value={galleryTextPosition(block.cardVerticalPosition)}
-                    min={0}
-                    max={100}
-                    step={1}
-                    format={value => `${value}%`}
-                    onChange={value => setCardVerticalPosition(block.id, value)}
-                  />
-                  <p className="gallery-card-position-hint">Within this text card · 0% top, 100% bottom.</p>
-                </div>
+              {isGallery && (
+                <GalleryVerticalPosition value={block.cardVerticalPosition}
+                  label={`Paragraph ${viewIndex + 1} vertical position`}
+                  onChange={value => setCardVerticalPosition(block.id, value)} />
               )}
               {!isFrontCover && <div className="paragraph-indent">
                 <TypographyControl group={`block:${block.id}`} label={`${block.type === "paragraph" ? "Paragraph" : "Equation"} ${viewIndex + 1}`} order={50}><SegmentField<'default' | 'on' | 'off'>

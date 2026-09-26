@@ -6,19 +6,20 @@ import { TypographyProvider, TypographyToolbar } from '../TypographyToolbar';
 import { GalleryPage } from '../../paper/GalleryPage';
 import { useDoc } from '../../store/useDoc';
 import { presetFor } from '../../store/presets';
-import { migrate, type TemplateId } from '../../schema/document';
+import { familyOf, migrate, type TemplateId } from '../../schema/document';
 import { galleryTextPosition } from '../../lib/galleryTextPosition';
 import { clonePages } from '../../lib/pdfExport';
 import { snapshotIssuePages } from '../../issue/snapshotIssuePages';
 
 let host: HTMLDivElement;
 let root: Root;
+const galleries = ['gallery-1', 'gallery-2', 'gallery-3', 'gallery-4'] as const;
 const cards = () => useDoc.getState().doc.blocks.filter(block => block.type === 'paragraph');
 const controls = () => [...host.querySelectorAll<HTMLElement>('.gallery-card-position')];
 const renderedCards = () => [...host.querySelectorAll<HTMLElement>('.g-card')];
 function Preview() {
   const doc = useDoc(state => state.doc);
-  return <GalleryPage doc={doc} vars={{}} />;
+  return familyOf(doc.templateId) === 'gallery' ? <GalleryPage doc={doc} vars={{}} /> : null;
 }
 function render(template: TemplateId = 'gallery-2') {
   const doc = presetFor(template);
@@ -43,10 +44,10 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe('Gallery 2 paragraph vertical position', () => {
-  it('keeps existing cards centred without mutating the document on render', () => {
-    const original = render();
-    expect(controls()).toHaveLength(4);
+describe('gallery paragraph vertical position', () => {
+  it.each(galleries)('keeps existing cards centred without mutating %s on render', template => {
+    const original = render(template);
+    expect(controls()).toHaveLength(cards().length);
     expect(useDoc.getState().doc).toEqual(original);
     for (const card of renderedCards()) {
       expect(card.style.getPropertyValue('--gallery-card-before')).toBe('0.5');
@@ -54,8 +55,8 @@ describe('Gallery 2 paragraph vertical position', () => {
     }
   });
 
-  it('moves only the chosen paragraph and persists through save, reopen, undo and redo', () => {
-    const original = render();
+  it.each(galleries)('moves only the chosen paragraph and persists through save, reopen, undo and redo in %s', template => {
+    const original = render(template);
     const chosenId = cards()[2].id;
     choose(2, 'Bottom');
     expect(cards()[2].cardVerticalPosition).toBe(100);
@@ -77,8 +78,8 @@ describe('Gallery 2 paragraph vertical position', () => {
     expect(useDoc.getState().doc.blocks).toEqual(original.blocks);
   });
 
-  it('supports intermediate positions across the full range without changing typography', () => {
-    render();
+  it.each(galleries)('supports intermediate positions across the full range without changing typography in %s', template => {
+    render(template);
     const before = structuredClone(cards()[0]);
     const slider = controls()[0].querySelector<HTMLInputElement>('input[type=range]')!;
     expect(slider.min).toBe('0');
@@ -93,8 +94,8 @@ describe('Gallery 2 paragraph vertical position', () => {
     expect(controls()[0].querySelectorAll('[aria-pressed=true]')).toHaveLength(0);
   });
 
-  it('keeps the setting with its paragraph when reordered', () => {
-    render();
+  it.each(galleries)('keeps the setting with its paragraph when reordered in %s', template => {
+    render(template);
     choose(0, 'Top');
     const first = structuredClone(cards()[0]);
     act(() => host.querySelector<HTMLButtonElement>('.block-card button[title="Move down"]')!.click());
@@ -103,8 +104,8 @@ describe('Gallery 2 paragraph vertical position', () => {
     expect(renderedCards()[1].style.getPropertyValue('--gallery-card-before')).toBe('0');
   });
 
-  it('preserves both page settings in compiled issue and print clones', () => {
-    render();
+  it.each(galleries)('preserves both page settings in compiled issue and print clones for %s', template => {
+    render(template);
     choose(0, 'Top');
     choose(2, 'Bottom');
     const printDoc = document.implementation.createHTMLDocument('Print');
@@ -114,11 +115,11 @@ describe('Gallery 2 paragraph vertical position', () => {
     for (const pages of [[...printDoc.querySelectorAll('.page')], issuePages]) {
       const positions = pages.flatMap(page => [...page.querySelectorAll<HTMLElement>('.g-card--positioned')]
         .map(card => [card.style.getPropertyValue('--gallery-card-before'), card.style.getPropertyValue('--gallery-card-after')]));
-      expect(positions).toEqual([['0', '1'], ['0.5', '0.5'], ['1', '0'], ['0.5', '0.5']]);
+      expect(positions).toEqual(cards().map((_, index) => index === 0 ? ['0', '1'] : index === 2 ? ['1', '0'] : ['0.5', '0.5']));
     }
   });
 
-  it.each(['gallery-1', 'gallery-3', 'gallery-4', 'paper-1'] as const)('does not offer or apply Gallery 2 positioning in %s', template => {
+  it.each(['paper-1', 'magazine-4'] as const)('does not offer or apply gallery positioning in %s', template => {
     render();
     choose(0, 'Bottom');
     act(() => useDoc.getState().switchTemplate(template));
@@ -126,6 +127,14 @@ describe('Gallery 2 paragraph vertical position', () => {
     expect(host.querySelector('.g-card--positioned')).toBeNull();
     expect(cards()[0].cardVerticalPosition).toBe(100);
     act(() => useDoc.getState().switchTemplate('gallery-2'));
+    expect(controls()).toHaveLength(4);
+    expect(renderedCards()[0].style.getPropertyValue('--gallery-card-before')).toBe('1');
+  });
+
+  it.each(galleries)('retains the same independent position when switching to %s', template => {
+    render();
+    choose(0, 'Bottom');
+    act(() => useDoc.getState().switchTemplate(template));
     expect(controls()).toHaveLength(4);
     expect(renderedCards()[0].style.getPropertyValue('--gallery-card-before')).toBe('1');
   });

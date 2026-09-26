@@ -4,7 +4,10 @@ import { assetIsReferenced, uid } from '../../schema/document';
 import { galleryFrameGeometry } from '../../lib/galleryFrame';
 import { ensureGalleryFigure, galleryImageTarget, GALLERY_TWO_SLOTS } from '../../lib/gallerySlots';
 import { ImageLoadError, loadImage } from '../../lib/loadImage';
-import { LabeledColor, LabeledRange, Section } from '../Field';
+import { LabeledColor, LabeledRange, Section, SegmentField } from '../Field';
+import { TypographyControl } from '../TypographyToolbar';
+import { GalleryVerticalPosition } from '../GalleryVerticalPosition';
+import { galleryTextPosition } from '../../lib/galleryTextPosition';
 import { editorTargetId } from '../../lib/editorNavigation';
 import { splitCaption, joinCaption } from '../../lib/galleryCaption';
 import { MagazooLoader } from '../../components/MagazooLoader';
@@ -65,6 +68,7 @@ export function GallerySection() {
   const blocks = useDoc((s) => s.doc.blocks);
   const assets = useDoc((s) => s.doc.assets);
   const paperBg = useDoc((s) => s.doc.design.paperBg ?? '#ffffff');
+  const bodyAlign = useDoc((s) => s.doc.design.bodyAlign ?? 'left');
   const templateId = useDoc((s) => s.doc.templateId ?? 'gallery-1');
   const update = useDoc((s) => s.update);
   const [imageError, setImageError] = useState<string | null>(null);
@@ -156,6 +160,7 @@ export function GallerySection() {
       <LabeledColor label="Paper background" value={paperBg} onChange={setPaperBg} />
       <p className="gallery-slot-hint">Text flips to black on light sheets, white on dark.</p>
       <p className="gallery-slot-hint">Upload to any image slot in any order. Other empty slots can stay empty.</p>
+      <p className="gallery-slot-hint">Use Enter or <code>{'\\n'}</code> for a new line in descriptions. Focus a title or description for its text-alignment controls in the top toolbar.</p>
       {imageError && <p className="hint hint--warn" role="alert">{imageError}</p>}
       {SLOTS.map((s, index) => {
         const n = s.slot ?? index;
@@ -207,12 +212,13 @@ export function GallerySection() {
               {loadingSlot === n ? <MagazooLoader variant="inline" label="Optimising image…" /> : asset ? 'Replace image' : `Upload ${s.label}`}
             </button>
             {canEditCaption && (
-              <>
+              <div className="figure-edit" id={editorTargetId(`gallery-caption-${block!.id}`)} data-gallery-caption-id={block!.id}>
                 <input
                   className="field-input"
                   dir="auto"
                   value={title}
                   placeholder="Title (bold)…"
+                  aria-label={`${s.label} title`}
                   onChange={(e) => setCaption(bi, joinCaption(e.target.value, desc))}
                 />
                 <textarea
@@ -221,9 +227,31 @@ export function GallerySection() {
                   value={desc}
                   rows={2}
                   placeholder="Description…"
+                  aria-label={`${s.label} description`}
                   onChange={(e) => setCaption(bi, joinCaption(title, e.target.value))}
                 />
-              </>
+                <TypographyControl group={`gallery-caption:${block!.id}`} label={`${s.label} description`} order={5}>
+                  <SegmentField<'left' | 'center' | 'right' | 'justify'> label="Alignment"
+                    value={block?.type === 'figure' ? block.captionAlign ?? bodyAlign : bodyAlign}
+                    options={[
+                      { value: 'left', label: 'Left' }, { value: 'center', label: 'Center' },
+                      { value: 'right', label: 'Right' }, { value: 'justify', label: 'Justify' },
+                    ]}
+                    onChange={value => update(doc => {
+                      const figure = doc.blocks.find(candidate => candidate.id === block!.id);
+                      if (figure?.type === 'figure') figure.captionAlign = value;
+                    })} />
+                </TypographyControl>
+                <GalleryVerticalPosition caption label={`${s.label} description vertical position`}
+                  value={block?.type === 'figure' ? block.captionVerticalPosition : undefined}
+                  onChange={value => update(doc => {
+                    const figure = doc.blocks.find(candidate => candidate.id === block!.id);
+                    if (figure?.type !== 'figure') return;
+                    const position = galleryTextPosition(value, 100);
+                    if (position === 100) delete figure.captionVerticalPosition;
+                    else figure.captionVerticalPosition = position;
+                  })} />
+              </div>
             )}
             {canFrame && (
               <>
