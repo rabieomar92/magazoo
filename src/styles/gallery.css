@@ -59,14 +59,22 @@
   position: absolute;
   left: 0;
   right: 0;
+  top: 0;
   bottom: 0;
-  padding: 2.5mm 3mm;
-  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+  pointer-events: none;
   color: #fff;
   /* Captions ride the author's Body alignment, same as the cards. */
   text-align: var(--body-align, left);
   print-color-adjust: exact;
   -webkit-print-color-adjust: exact;
+}
+.g-img .g-cap {
+  flex-shrink: 0;
+  padding: 2.5mm 3mm;
+  background: rgba(0, 0, 0, 0.6);
+  pointer-events: auto;
 }
 .g-img figcaption .g-title {
   color: #fff;
@@ -95,14 +103,18 @@
   justify-content: flex-start;
 }
 .g-card--positioned::before,
-.g-card--positioned::after {
+.g-card--positioned::after,
+.g-caption-positioned::before,
+.g-caption-positioned::after {
   content: '';
   flex-basis: 0;
 }
-.g-card--positioned::before {
+.g-card--positioned::before,
+.g-caption-positioned::before {
   flex-grow: var(--gallery-card-before, .5);
 }
-.g-card--positioned::after {
+.g-card--positioned::after,
+.g-caption-positioned::after {
   flex-grow: var(--gallery-card-after, .5);
 }
 .g-card--positioned > .g-card-body {

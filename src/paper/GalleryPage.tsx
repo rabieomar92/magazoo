@@ -4,6 +4,7 @@ import { parseRuns, renderTex } from '../lib/richtext';
 import { galleryFrameGeometry } from '../lib/galleryFrame';
 import { galleryImageTarget, GALLERY_TWO_SLOTS } from '../lib/gallerySlots';
 import { galleryTextPosition } from '../lib/galleryTextPosition';
+import { galleryTileText } from '../lib/galleryText';
 import { TagBar } from './TagBar';
 import { PageArtwork } from '../components/PageArtwork';
 import { requestBlockEditorFocus } from '../lib/editorNavigation';
@@ -13,7 +14,9 @@ function renderRuns(text: string): ReactNode {
   return parseRuns(text).map((r, j) => {
     if (r.math)
       return <span key={j} className="tex" dangerouslySetInnerHTML={{ __html: renderTex(r.text) }} />;
-    let node: ReactNode = r.text;
+    let node: ReactNode = r.text.split('\n').map((line, index) => (
+      <Fragment key={index}>{index > 0 && <br />}{line}</Fragment>
+    ));
     if (r.b) node = <strong>{node}</strong>;
     if (r.i) node = <em>{node}</em>;
     if (r.u) node = <u>{node}</u>;
@@ -21,25 +24,20 @@ function renderRuns(text: string): ReactNode {
   });
 }
 
-/** Split a tile's text on the first newline: line 1 title, the rest description. */
-function titled(text: string): { title: string; desc: string } {
-  const nl = text.indexOf('\n');
-  if (nl === -1) return { title: text.trim(), desc: '' };
-  return { title: text.slice(0, nl).trim(), desc: text.slice(nl + 1).trim() };
-}
-
 function TileText({
   text,
   className,
   style,
   containerStyle,
+  caption = false,
 }: {
   text: string;
   className: string;
   style?: CSSProperties;
   containerStyle?: CSSProperties;
+  caption?: boolean;
 }) {
-  const { title, desc } = titled(text);
+  const { title, desc } = galleryTileText(text, caption);
   return (
     <div className={className} style={containerStyle}>
       {title && <p className="g-title" style={style}>{renderRuns(title)}</p>}
@@ -48,9 +46,22 @@ function TileText({
   );
 }
 
+function ImageCaption({ block }: { block?: Block }) {
+  if (block?.type !== 'figure' || !block.caption.trim()) return null;
+  const position = galleryTextPosition(block.captionVerticalPosition, 100);
+  const style = {
+    '--gallery-card-before': position / 100,
+    '--gallery-card-after': (100 - position) / 100,
+    textAlign: block.captionAlign,
+  } as CSSProperties;
+  return <figcaption className="g-caption-positioned" style={style}
+    data-editor-tab="images" data-editor-target={`gallery-caption-${block.id}`}>
+    <TileText text={block.caption} className="g-cap" caption />
+  </figcaption>;
+}
+
 function ImageCell({ doc, block, area, slot }: { doc: Doc; block?: Block; area: string; slot: number }) {
   const asset = block && block.type === 'figure' ? doc.assets[block.assetId] : undefined;
-  const caption = block && block.type === 'figure' ? block.caption : '';
   const fr = block && block.type === 'figure' ? block.frame : undefined;
   const geometry = galleryFrameGeometry(fr);
   const imgStyle: CSSProperties = {
@@ -70,7 +81,7 @@ function ImageCell({ doc, block, area, slot }: { doc: Doc; block?: Block; area: 
       data-editor-target={galleryImageTarget(block, slot)}
     >
       {asset ? <img src={asset.src} alt="" style={imgStyle} /> : <span className="g-img-empty" />}
-      {caption.trim() && <figcaption><TileText text={caption} className="g-cap" /></figcaption>}
+      <ImageCaption block={block} />
     </figure>
   );
 }
@@ -81,7 +92,6 @@ function ImageCell({ doc, block, area, slot }: { doc: Doc; block?: Block; area: 
  *  or reveal an empty edge. */
 function FoldCell({ doc, block, area, half, slot }: { doc: Doc; block?: Block; area: string; half: 'left' | 'right'; slot: number }) {
   const asset = block && block.type === 'figure' ? doc.assets[block.assetId] : undefined;
-  const caption = block && block.type === 'figure' ? block.caption : '';
   const fr = block && block.type === 'figure' ? block.frame : undefined;
   const geometry = galleryFrameGeometry(fr, 2);
   // In Arabic spreads the first sheet is on the right. Exchange the photo
@@ -105,21 +115,17 @@ function FoldCell({ doc, block, area, half, slot }: { doc: Doc; block?: Block; a
     >
       {asset && <img src={asset.src} alt="" style={imgStyle} />}
       {/* Caption only on the left half (page 1) so it isn't printed twice. */}
-      {half === 'left' && caption.trim() && (
-        <figcaption><TileText text={caption} className="g-cap" /></figcaption>
-      )}
+      {half === 'left' && <ImageCaption block={block} />}
     </figure>
   );
 }
 
-function CardCell({ block, area, positionable = false }: { block?: Block; area: string; positionable?: boolean }) {
+function CardCell({ block, area }: { block?: Block; area: string }) {
   const position = galleryTextPosition(block?.type === 'paragraph' ? block.cardVerticalPosition : undefined);
   const cardStyle = {
     gridArea: area,
-    ...(positionable ? {
-      '--gallery-card-before': position / 100,
-      '--gallery-card-after': (100 - position) / 100,
-    } : {}),
+    '--gallery-card-before': position / 100,
+    '--gallery-card-after': (100 - position) / 100,
   } as CSSProperties;
   const text = block && block.type === 'paragraph' ? block.text : '';
   const textStyle: CSSProperties | undefined =
@@ -144,7 +150,7 @@ function CardCell({ block, area, positionable = false }: { block?: Block; area: 
       : '';
   return (
     <div
-      className={`g-card${positionable ? ' g-card--positioned' : ''}${indentClass}`}
+      className={`g-card g-card--positioned${indentClass}`}
       style={cardStyle}
       data-source-block-id={block?.type === 'paragraph' ? block.id : undefined}
       onClick={block?.type === 'paragraph' ? () => requestBlockEditorFocus(block.id) : undefined}
@@ -219,8 +225,8 @@ function GalleryTwo({ doc, vars }: { doc: Doc; vars: CSSProperties }) {
         <FoldCell doc={doc} block={figures[slots.fold]} slot={slots.fold} area="fold" half="left" />
         <ImageCell doc={doc} block={figures[slots.leftTall]} slot={slots.leftTall} area="img-1" />
         <ImageCell doc={doc} block={figures[slots.leftBottom]} slot={slots.leftBottom} area="img-3" />
-        <CardCell block={cards[0]} area="card-1" positionable />
-        <CardCell block={cards[1]} area="card-2" positionable />
+        <CardCell block={cards[0]} area="card-1" />
+        <CardCell block={cards[1]} area="card-2" />
       </div>
 
       <div className="page gallery gallery--p2 gallery2--p2" style={vars}>
@@ -228,8 +234,8 @@ function GalleryTwo({ doc, vars }: { doc: Doc; vars: CSSProperties }) {
         <FoldCell doc={doc} block={figures[slots.fold]} slot={slots.fold} area="fold" half="right" />
         <ImageCell doc={doc} block={figures[slots.rightTall]} slot={slots.rightTall} area="img-4" />
         <ImageCell doc={doc} block={figures[slots.rightBottom]} slot={slots.rightBottom} area="img-6" />
-        <CardCell block={cards[2]} area="card-3" positionable />
-        <CardCell block={cards[3]} area="card-4" positionable />
+        <CardCell block={cards[2]} area="card-3" />
+        <CardCell block={cards[3]} area="card-4" />
       </div>
     </>
   );

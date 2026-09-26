@@ -71,7 +71,7 @@ export type Block =
       /** Gallery text-card alignment. Article/editorial engines intentionally
        *  ignore it and keep using their template-level column alignment. */
       align?: 'left' | 'center' | 'right' | 'justify';
-      /** Gallery 2 only: position within the text card's free vertical space.
+      /** Galleries: position within the text card's free vertical space.
        *  0 = top, 50 = middle (default), 100 = bottom. */
       cardVerticalPosition?: number;
       /** Legacy v1 caret-image continuation. migrate() rejoins this text when
@@ -106,6 +106,11 @@ export type Block =
       span: 1 | 2 | 3 | 4 | 'body' | 'bleed';
       /** Caption text alignment. Absent = left (back-compat with v1 files). */
       align?: 'left' | 'center' | 'right';
+      /** Gallery caption override. Absent = the gallery's body alignment. */
+      captionAlign?: 'left' | 'center' | 'right' | 'justify';
+      /** Gallery caption position inside its photo: 0 top, 50 middle, 100 bottom.
+       *  Absent keeps the existing bottom caption strip. */
+      captionVerticalPosition?: number;
       /**
        * Horizontal position of the image within its row when `span` is a
        * partial width (2 | 3 | 4) narrower than the row it's actually laid
