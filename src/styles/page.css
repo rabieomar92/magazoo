@@ -225,11 +225,15 @@
   color: var(--ink);
   background: var(--paper-bg, #fff);
   white-space: pre-wrap;
+  /* A freely enlarged frame may meet the trim. Keep the complete caption
+     inside the page, overlapping the photo only when space below runs out. */
+  transform: translateY(min(0mm, calc(var(--placed-caption-space, 9999mm) - 100%)));
 }
 
 /* A caption cannot live below artwork that reaches the bottom trim. Keep it
    inside the selected column footprint on a translucent paper-colour panel. */
 .placed-image--caption-overlay > figcaption {
+  transform: none;
   position: absolute;
   left: var(--placed-caption-left, 0);
   bottom: 0;
@@ -1441,6 +1445,30 @@
 .view-btn-ico {
   font-size: 10px;
   letter-spacing: -2px;
+}
+
+.paper-scroll--readonly {
+  min-height: 0;
+  touch-action: pan-x pan-y;
+}
+
+.paper-scroll--readonly .pages [data-editor-target],
+.paper-scroll--readonly .pages [data-source-block-id],
+.paper-scroll--readonly .placed-image,
+.paper-scroll--readonly .placed-highlights,
+.paper-scroll--readonly .cover-text-object {
+  cursor: default;
+  touch-action: pan-x pan-y;
+}
+
+.paper-scroll--readonly .pages [data-editor-target]:hover,
+.paper-scroll--readonly .pages [data-source-block-id]:hover {
+  outline: none;
+}
+
+.paper-scroll--readonly:focus-visible {
+  outline: 2px solid #4f46e5;
+  outline-offset: -2px;
 }
 
 .measure-root {

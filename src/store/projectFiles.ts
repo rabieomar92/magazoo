@@ -21,13 +21,18 @@ export const useProjectFile = create<{
 }>(() => ({ target:null, status:'draft', message:'Draft — choose Save As to save a file', savedDoc:null }));
 let pending: Promise<void> = Promise.resolve();
 let generation = 0;
+const savedMessage = (target: SaveTarget) => `Saved · ${target.kind === 'file' ? target.handle.name : target.name}`;
 
 export function bindTarget(target:SaveTarget|null, savedDoc:Doc|null) {
   generation++;
-  useProjectFile.setState({ target, savedDoc, status:target ? 'saved':'draft', message:target ? `Saved · ${target.kind === 'file' ? target.handle.name : target.name}` : 'Draft — choose Save As to save a file' });
+  useProjectFile.setState({ target, savedDoc, status:target ? savedDoc ? 'saved':'pending':'draft', message:target ? savedDoc ? savedMessage(target) : 'Changes waiting to save…' : 'Draft — choose Save As to save a file' });
 }
 export function markProjectDirty() {
   const state = useProjectFile.getState();
+  if (state.target && state.savedDoc === useDoc.getState().doc) {
+    useProjectFile.setState({status:'saved',message:savedMessage(state.target)});
+    return;
+  }
   if (state.status === 'conflict' || state.status === 'error') return;
   useProjectFile.setState({ status:state.target ? 'pending':'draft', message:state.target ? 'Changes waiting to save…' : 'Draft — choose Save As to save a file' });
 }
@@ -39,7 +44,9 @@ export class SaveConflict extends Error {}
 export function saveToTarget(doc = useDoc.getState().doc, explicit = false): Promise<void> {
   const snapshot = useProjectFile.getState();
   const epoch = generation;
-  if (!snapshot.target || snapshot.savedDoc === doc) return Promise.resolve();
+  // Even a currently saved snapshot must wait behind an in-flight write: the
+  // user may have undone back to it while older bytes are still being saved.
+  if (!snapshot.target) return Promise.resolve();
   const task = pending.catch(() => {}).then(async () => {
     if (generation !== epoch) return;
     const state = useProjectFile.getState();
@@ -47,7 +54,11 @@ export function saveToTarget(doc = useDoc.getState().doc, explicit = false): Pro
     // document only after earlier queued writes have finished so a highlight
     // drag (or any other quick edit) cannot be replaced by an older snapshot.
     let docToSave = explicit ? doc : useDoc.getState().doc;
-    if ((!explicit && (state.status === 'error' || state.status === 'conflict')) || state.savedDoc === docToSave) return;
+    if (state.savedDoc === docToSave && docToSave === useDoc.getState().doc) {
+      useProjectFile.setState({status:'saved',message:savedMessage(state.target!)});
+      return;
+    }
+    if (!explicit && (state.status === 'error' || state.status === 'conflict')) return;
     const target = state.target!;
     useProjectFile.setState({ status:'saving', message:'Saving…' });
     try {
@@ -79,6 +90,7 @@ export function saveToTarget(doc = useDoc.getState().doc, explicit = false): Pro
         const leaseId=editLeaseId(target.token);
         const response = await fetch(`${import.meta.env.BASE_URL}api/documents/shared`, {
           method:'PUT', headers:{'Content-Type':'application/json','Authorization':`Bearer ${target.token}`,'If-Match':String(target.version),'X-Edit-Lease':leaseId}, body:json,
+          signal:AbortSignal.timeout(30000),
         });
         if(response.status===423){
           if(generation===epoch&&useEditLease.getState().token===target.token&&useEditLease.getState().leaseId===leaseId)loseEditLease();
@@ -86,7 +98,9 @@ export function saveToTarget(doc = useDoc.getState().doc, explicit = false): Pro
         }
         if (response.status === 409) throw new SaveConflict('Someone else saved a newer version. Your edits are kept here. Save a copy before reopening the link; no changes were overwritten.');
         if (!response.ok) throw new Error(response.status === 404 ? 'This shared document was removed or its link is no longer valid. Save a local copy.' : 'Online save failed. Your edits are kept in this browser. Check the connection and click Save to retry.');
-        target.version = (await response.json()).version;
+        const result = await response.json();
+        if (!Number.isSafeInteger(result.version) || result.version <= target.version) throw new Error('The server did not confirm the saved version. Your edits are kept here; reconnect before trying again.');
+        target.version = result.version;
       }
       if (generation === epoch) useProjectFile.setState({ target:{...target}, savedDoc:docToSave,
         status:useDoc.getState().doc === docToSave ? 'saved':'pending', message:useDoc.getState().doc === docToSave ? `Saved · ${target.kind === 'file' ? target.handle.name : target.name}`:'Changes waiting to save…' });

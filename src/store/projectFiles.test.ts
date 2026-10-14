@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { emptyDoc, migrate } from '../schema/document';
 import { useDoc } from './useDoc';
-import { bindTarget, saveToTarget, useProjectFile, type ProjectFileHandle } from './projectFiles';
+import { bindTarget, markProjectDirty, saveProject, saveToTarget, useProjectFile, type ProjectFileHandle } from './projectFiles';
 import { useEditLease } from './editLease';
 beforeEach(()=>useEditLease.setState({status:'active',token:'a'.repeat(43),leaseId:'lease-test',deadline:Date.now()+180000}));
 afterEach(()=>{bindTarget(null,null);vi.unstubAllGlobals();});
@@ -11,6 +11,61 @@ function fileHandle(){
   return{handle,writes,externalChange:()=>modified++};
 }
 describe('document save targets',()=>{
+  it('repairs a stale Unsaved changes label when Save finds the document already saved', async()=>{
+    const doc=emptyDoc();useDoc.getState().load(doc);
+    const fetch=vi.fn();vi.stubGlobal('fetch',fetch);
+    bindTarget({kind:'online',token:'a'.repeat(43),version:3,name:'Test.json'},doc);
+    useProjectFile.setState({status:'pending',message:'Changes waiting to save…'});
+    await saveProject();
+    expect(useProjectFile.getState().status).toBe('saved');
+    expect(fetch).not.toHaveBeenCalled();
+    markProjectDirty();expect(useProjectFile.getState().status).toBe('saved');
+  });
+  it('shows a recovered unsaved document as pending, never saved',()=>{
+    bindTarget({kind:'online',token:'a'.repeat(43),version:3,name:'Test.json'},null);
+    expect(useProjectFile.getState().status).toBe('pending');
+  });
+  it('manual Save writes a pending edit and confirms the saved version',async()=>{
+    const before=emptyDoc();useDoc.getState().load(before);
+    bindTarget({kind:'online',token:'a'.repeat(43),version:3,name:'Test.json'},before);
+    useDoc.getState().update(d=>{d.meta.title='Manual Save proof';});markProjectDirty();
+    const fetch=vi.fn().mockResolvedValue({ok:true,status:200,json:async()=>({version:4})});vi.stubGlobal('fetch',fetch);
+    await saveProject();
+    expect(JSON.parse(fetch.mock.calls[0][1].body).meta.title).toBe('Manual Save proof');
+    expect(fetch.mock.calls[0][1].headers['X-Edit-Lease']).toBe('lease-test');
+    expect(fetch.mock.calls[0][1].signal).toBeInstanceOf(AbortSignal);
+    expect(useProjectFile.getState().status).toBe('saved');
+    expect(useProjectFile.getState().savedDoc).toBe(useDoc.getState().doc);
+  });
+  it('retries a failed manual Save without losing the pending edit',async()=>{
+    const doc=emptyDoc();doc.meta.title='Keep me';useDoc.getState().load(doc);
+    bindTarget({kind:'online',token:'a'.repeat(43),version:1,name:'Test.json'},null);
+    const fetch=vi.fn().mockRejectedValueOnce(new Error('Offline')).mockResolvedValue({ok:true,status:200,json:async()=>({version:2})});vi.stubGlobal('fetch',fetch);vi.stubGlobal('alert',vi.fn());
+    await saveProject();expect(useProjectFile.getState().status).toBe('error');
+    await saveProject();expect(useProjectFile.getState().status).toBe('saved');expect(fetch).toHaveBeenCalledTimes(2);
+    expect(useProjectFile.getState().savedDoc?.meta.title).toBe('Keep me');
+  });
+  it('does not mark an unconfirmed online response as saved',async()=>{
+    const doc=emptyDoc();useDoc.getState().load(doc);
+    bindTarget({kind:'online',token:'a'.repeat(43),version:1,name:'Test.json'},null);
+    vi.stubGlobal('fetch',vi.fn().mockResolvedValue({ok:true,status:200,json:async()=>({})}));
+    await expect(saveToTarget(doc,true)).rejects.toThrow('did not confirm');
+    expect(useProjectFile.getState().savedDoc).toBeNull();expect(useProjectFile.getState().status).toBe('error');
+  });
+  it('saves an undo back to the previous saved document after an older write finishes',async()=>{
+    const original=emptyDoc();original.meta.title='Original';useDoc.getState().load(original);
+    bindTarget({kind:'online',token:'a'.repeat(43),version:1,name:'Test.json'},original);
+    let release!:()=>void;const waiting=new Promise<void>(resolve=>{release=resolve});
+    let started!:()=>void;const seen=new Promise<void>(resolve=>{started=resolve});
+    const fetch=vi.fn().mockImplementationOnce(async()=>{started();await waiting;return{ok:true,status:200,json:async()=>({version:2})}}).mockResolvedValue({ok:true,status:200,json:async()=>({version:3})});vi.stubGlobal('fetch',fetch);
+    useDoc.getState().update(d=>{d.meta.title='Changed';});const first=saveToTarget();await seen;
+    useDoc.temporal.getState().undo();expect(useDoc.getState().doc).toBe(original);
+    markProjectDirty();const second=saveProject();release();await Promise.all([first,second]);
+    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(JSON.parse(fetch.mock.calls[1][1].body).meta.title).toBe('Original');
+    expect(fetch.mock.calls[1][1].headers['If-Match']).toBe('2');
+    expect(useProjectFile.getState().status).toBe('saved');
+  });
   it('does not issue a save when this tab has no active editing access',async()=>{
     const fetch=vi.fn();vi.stubGlobal('fetch',fetch);useEditLease.setState({status:'blocked'});
     const doc=emptyDoc();useDoc.getState().load(doc);bindTarget({kind:'online',token:'a'.repeat(43),version:1,name:'test.json'},null);

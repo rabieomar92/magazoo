@@ -5,12 +5,22 @@ import { useDoc } from './useDoc';
 import { bindTarget, useProjectFile } from './projectFiles';
 import { useEditLease } from './editLease';
 import { loadSession } from './db';
+import { startAutosave } from './persist';
 vi.mock('./db',()=>({loadSession:vi.fn(),saveDoc:vi.fn()}));
 const token='a'.repeat(43);
 const latest=()=>({name:'Test.json',doc:emptyDoc(),version:2,validForMs:180000});
 beforeEach(()=>{vi.mocked(loadSession).mockResolvedValue(undefined);bindTarget(null,null);useDoc.getState().load(emptyDoc());useEditLease.setState({status:'local',token:undefined,leaseId:undefined,deadline:0});});
 afterEach(()=>vi.unstubAllGlobals());
 describe('shared document loading and recovery',()=>{
+  it('reopening with an existing autosave subscription does not falsely mark the server copy dirty',async()=>{
+    const stop=startAutosave(60000);
+    try {
+      vi.stubGlobal('fetch',vi.fn().mockResolvedValue({ok:true,json:async()=>latest()}));
+      await loadSharedProject(token);
+      expect(useProjectFile.getState().savedDoc).toBe(useDoc.getState().doc);
+      expect(useProjectFile.getState().status).toBe('saved');
+    } finally { stop(); }
+  });
   it('loads the atomically acquired latest version before allowing saves',async()=>{
     vi.stubGlobal('fetch',vi.fn().mockResolvedValue({ok:true,json:async()=>latest()}));
     await loadSharedProject(token);

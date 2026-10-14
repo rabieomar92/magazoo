@@ -8,10 +8,6 @@
   /* Height of everything below the band. The two region boxes and their hidden
      measuring twins subtract from this same number, so the break is measured
      against the box the text really lands in. */
-  --p2-start: max(
-    calc(var(--topbar-offset, 10mm) + var(--bar-h) + var(--gutter)),
-    var(--first-page-top, 0mm)
-  );
   --p2-body-h: calc(var(--page-h) - var(--bottom-margin, var(--margin)) - var(--p2-start));
 }
 
@@ -24,10 +20,13 @@
 /* ---- Header / hero split ------------------------------------------------- */
 
 .p2-cols {
+  position: absolute;
+  top: var(--p2-start);
+  left: var(--margin);
+  right: var(--margin);
   display: flex;
   align-items: stretch;
   gap: var(--gutter);
-  margin-top: calc(var(--p2-start) - var(--topbar-offset, 10mm) - var(--bar-h));
   height: var(--p2-body-h);
 }
 
@@ -50,6 +49,9 @@
 }
 
 .p2-right {
+  /* Extend only the photo side upwards; retain its original bottom edge. */
+  margin-top: calc(-1 * var(--p2-hero-lift, 0mm));
+  height: calc(var(--p2-body-h) + var(--p2-hero-lift, 0mm));
   width: var(--p2-hero-w);
   flex: none;
 }
@@ -156,7 +158,7 @@
   width: var(--p2-right-w);
   column-count: var(--p2-cols-right);
   --fcols: var(--p2-cols-right);
-  height: calc(var(--p2-body-h) - var(--p2-heroblock-h) - var(--gutter));
+  height: calc(var(--p2-body-h) + var(--p2-hero-lift, 0mm) - var(--p2-heroblock-h) - var(--gutter));
   overflow: hidden;
 }
 
