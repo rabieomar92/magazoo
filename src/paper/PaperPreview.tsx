@@ -25,7 +25,7 @@ import {
 import { wrapAll } from '../lib/textWrap';
 import { applyMark, insertMath } from '../lib/activeEditor';
 import { MAG2_STRIP } from '../lib/magSplit';
-import { paper2Grid, paper2Fit } from '../lib/paper2';
+import { paper2Grid, paper2Fit, paper2VerticalVars } from '../lib/paper2';
 import { defaultPlacedHighlights } from '../lib/placedHighlights';
 import { placedImageContour } from '../lib/placedImage';
 import { populatedPhysicalPages } from '../lib/physicalFlowPages';
@@ -50,6 +50,7 @@ import { NewsPages } from './NewsPages';
 import { BackCoverPage } from './BackCoverPage';
 import { useImageTheme } from './useImageTheme';
 import { PageFooters } from './PageFooters';
+import { PreviewReadOnly } from './PreviewReadOnly';
 import { footerBottomMargin } from '../lib/pageFooter';
 
 type PreviewPagination = Pagination & { layoutRevision: number };
@@ -938,6 +939,7 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
 
   const vars = {
     ...baseVars,
+    ...paper2VerticalVars(doc.design),
     '--header-h': `${headerPx}px`,
     '--footer-h': '0mm',
     '--mag-head-h': `${magHeadPx}px`,
@@ -1370,12 +1372,16 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
   );
 
   return (
-    <div
-        className={`paper-scroll${doc.design.textDirection === 'rtl' ? ' paper-scroll--rtl' : ''}`}
+    <PreviewReadOnly.Provider value={readOnly}><div
+        className={`paper-scroll${readOnly ? ' paper-scroll--readonly' : ''}${doc.design.textDirection === 'rtl' ? ' paper-scroll--rtl' : ''}`}
         data-preview-pending={pending ? 'true' : undefined}
         data-preview-overflow={isStructured && frontMatterStatus.overflow ? 'true' : undefined}
         data-preview-fit-message={fit.text}
-        inert={readOnly || undefined}
+        role={readOnly ? 'region' : undefined}
+        aria-label={readOnly ? 'Read-only document preview' : undefined}
+        tabIndex={readOnly ? 0 : undefined}
+        onPointerDownCapture={readOnly ? event => event.stopPropagation() : undefined}
+        onClickCapture={readOnly ? event => event.stopPropagation() : undefined}
       ref={scrollRef}
     >
       {/* Escape hatch — raw CSS from the design panel, scoped by author intent. */}
@@ -1568,6 +1574,6 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
             are all set imperatively per call, right before it's measured. */}
         <div ref={colProbeRef} />
       </div>
-    </div>
+    </div></PreviewReadOnly.Provider>
   );
 });

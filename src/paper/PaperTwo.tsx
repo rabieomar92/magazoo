@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react';
 import type { Doc } from '../schema/document';
 import type { Piece } from '../lib/paginate';
-import { paper2Grid } from '../lib/paper2';
+import { paper2Grid, paper2VerticalVars } from '../lib/paper2';
 import { Sidebar } from './Sidebar';
 import { TagBar } from './TagBar';
 import { Flow } from './Flow';
@@ -31,7 +31,7 @@ export function PaperTwoPage({
   const { rail } = paper2Grid(design);
 
   return (
-    <div className="page page--p2" style={vars}>
+    <div className="page page--p2" style={{ ...vars, ...paper2VerticalVars(design) }}>
       <PageArtwork doc={doc} />
       <TagBar doc={doc} pageIndex={0} />
 

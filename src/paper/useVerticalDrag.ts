@@ -1,5 +1,6 @@
 import { useRef, useState, type PointerEvent as ReactPointerEvent, type MouseEvent } from 'react';
 import { PAGE_W } from '../lib/geometry';
+import { usePreviewReadOnly } from './PreviewReadOnly';
 
 /** How far the pointer travels before a press becomes a drag. Below this a
  *  press is still a click, so tapping a cover block keeps opening its
@@ -47,6 +48,7 @@ interface DragState {
  * written once on release, so a drag is a single undo step.
  */
 export function useVerticalDrag({ start, clamp, commit }: VerticalDragOptions) {
+  const readOnly = usePreviewReadOnly();
   const state = useRef<DragState | null>(null);
   const suppressClick = useRef(false);
   const [dragging, setDragging] = useState(false);
@@ -57,7 +59,7 @@ export function useVerticalDrag({ start, clamp, commit }: VerticalDragOptions) {
   };
 
   const onPointerDown = (event: ReactPointerEvent<HTMLElement>) => {
-    if (event.button !== 0) return;
+    if (readOnly || event.button !== 0) return;
     const element = event.currentTarget;
     const page = element.closest<HTMLElement>('.page');
     const pxPerMm = page ? page.getBoundingClientRect().width / PAGE_W : 0;
@@ -101,7 +103,7 @@ export function useVerticalDrag({ start, clamp, commit }: VerticalDragOptions) {
     event.currentTarget.dataset.dragMoved = 'true';
     const element = event.currentTarget;
     setTimeout(() => { delete element.dataset.dragMoved; }, 200);
-    commit(current.value, event.currentTarget);
+    if (!readOnly) commit(current.value, event.currentTarget);
   };
 
   /** A drag ends in a click. Swallow that one click so releasing the pointer

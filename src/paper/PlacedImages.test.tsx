@@ -9,6 +9,7 @@ import { grid } from '../lib/geometry';
 import { placedImageGeometry } from '../lib/placedImage';
 import { useDoc } from '../store/useDoc';
 import { PlacedImages } from './PlacedImages';
+import { PreviewReadOnly } from './PreviewReadOnly';
 
 const pointerEvent = (type: string, x: number, y: number) => {
   const event = new MouseEvent(type, { bubbles: true, button: 0, clientX: x, clientY: y });
@@ -151,7 +152,7 @@ describe('PlacedImages', () => {
     const host=document.createElement('div');host.className='page';document.body.append(host);
     const root=createRoot(host);
     const before=JSON.stringify(useDoc.getState().doc);
-    act(()=>root.render(<PlacedImages doc={other} pageIndex={0} pageHeight={276} readOnly/>));
+    act(()=>root.render(<PreviewReadOnly.Provider value={true}><PlacedImages doc={other} pageIndex={0} pageHeight={276}/></PreviewReadOnly.Provider>));
     expect(host.querySelector('.placed-highlights')).not.toBeNull();
     expect(JSON.stringify(useDoc.getState().doc)).toBe(before);
     act(()=>root.render(<PlacedImages doc={other} pageIndex={0} pageHeight={276} readOnly includeHighlights={false}/>));

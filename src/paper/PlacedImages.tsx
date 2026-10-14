@@ -13,6 +13,7 @@ import { articleGridDesign, isReferenceArticle } from '../lib/articleLayouts';
 import { useDoc } from '../store/useDoc';
 import { HighlightsBody } from './Sidebar';
 import { FramedImage } from '../components/FramedImage';
+import { usePreviewReadOnly } from './PreviewReadOnly';
 
 interface DragState {
   pointerId: number;
@@ -84,6 +85,7 @@ function PlacedImageItem({
     element.style.setProperty('--placed-image-h', `${next.visualHeight}mm`);
     element.style.setProperty('--placed-caption-left', `${next.captionLeft}mm`);
     element.style.setProperty('--placed-caption-width', `${next.width}mm`);
+    element.style.setProperty('--placed-caption-space', `${Math.max(0, pageHeight - next.visualTop - next.visualHeight)}mm`);
   };
 
   const commitAnchor = (column: number, y: number) =>
@@ -155,6 +157,7 @@ function PlacedImageItem({
     '--placed-image-h': `${geometry.visualHeight}mm`,
     '--placed-caption-left': `${geometry.captionLeft}mm`,
     '--placed-caption-width': `${geometry.width}mm`,
+    '--placed-caption-space': `${Math.max(0, pageHeight - geometry.visualTop - geometry.visualHeight)}mm`,
     ...(image.wrapShape === 'contour'
       ? { '--placed-contour-clip': placedImageContourClip(image) }
       : {}),
@@ -175,7 +178,7 @@ function PlacedImageItem({
       data-editor-tab="images"
       data-editor-target={`article-image-${image.id}`}
       aria-label={`Placed image, ${geometry.widthCols} columns wide`}
-      title="Drag to position · horizontal movement snaps to columns"
+      title={readOnly ? undefined : 'Drag to position · horizontal movement snaps to columns'}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={finishDrag}
@@ -322,7 +325,7 @@ function PlacedHighlightsItem({ doc, design, pageHeight, readOnly }: { doc: Doc;
       style={{ left: `${geometry.left}mm`, top: `${geometry.top}mm`, width: `${geometry.width}mm` }}
       dir={doc.design.textDirection ?? 'ltr'}
       aria-label={`Highlights box, ${geometry.widthCols} columns wide`}
-      title="Drag to position · horizontal movement snaps to columns"
+      title={readOnly ? undefined : 'Drag to position · horizontal movement snaps to columns'}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={finishDrag}
@@ -336,6 +339,8 @@ function PlacedHighlightsItem({ doc, design, pageHeight, readOnly }: { doc: Doc;
 
 /** Absolute image overlay for one physical sheet. */
 export function PlacedImages({ doc, pageIndex, pageHeight = PAGE_H, readOnly = false, includeHighlights = true }: { doc: Doc; pageIndex: number; pageHeight?: number; readOnly?: boolean; includeHighlights?: boolean }) {
+  const inheritedReadOnly = usePreviewReadOnly();
+  readOnly = readOnly || inheritedReadOnly;
   const design = isReferenceArticle(doc.templateId) ? articleGridDesign(doc.design) : doc.design;
   const images = (doc.images ?? []).filter((image) => image.anchor.page === pageIndex + 1);
   const showHighlights =

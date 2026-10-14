@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { grid } from '../../lib/geometry';
+import { grid, PAGE_H } from '../../lib/geometry';
 import { isReferenceArticle, articleGridDesign, articlePageHeight, articleGeometry, type ReferenceArticleId } from '../../lib/articleLayouts';
 import { loadImage, ImageLoadError } from '../../lib/loadImage';
 import {
@@ -60,6 +60,7 @@ export function ArticleImagesSection() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const maxWidth = Math.min(4, grid(design).totalCols);
+  const pageHeight = isReferenceArticle(sourceDoc.templateId) ? articlePageHeight(design) : PAGE_H;
   const widthOptions = Array.from({ length: maxWidth }, (_, index) => ({
     value: (index + 1) as PlacedImage['widthCols'],
     label: `${index + 1} col`,
@@ -154,6 +155,12 @@ export function ArticleImagesSection() {
         const asset = assets[image.assetId];
         const selectedWidth = Math.min(image.widthCols, maxWidth) as PlacedImage['widthCols'];
         const contour = placedImageContour({ ...image, widthCols: selectedWidth });
+        const height = asset ? imageGeometry(image, asset, sourceDoc).height : image.heightMm ?? 1;
+        const changeHeight = (heightMm: number) => change(image.id, (current, doc) => {
+          current.heightMm = heightMm;
+          const currentAsset = doc.assets[current.assetId];
+          if (currentAsset) current.anchor.y = imageGeometry(current, currentAsset, doc).top;
+        });
         return (
           <div
             className="list-item list-item--stack"
@@ -187,6 +194,37 @@ export function ArticleImagesSection() {
                   })
                 }
               />
+              <LabeledNumber
+                label="Image height"
+                unit="mm"
+                value={Math.round(height * 10) / 10}
+                min={1}
+                max={pageHeight}
+                step={0.1}
+                onChange={changeHeight}
+              />
+              <LabeledRange
+                label="Adjust image height"
+                value={height}
+                min={1}
+                max={pageHeight}
+                step={0.5}
+                format={(value) => `${value.toFixed(1)} mm`}
+                onChange={changeHeight}
+              />
+              <button
+                type="button"
+                className="add-btn"
+                disabled={image.heightMm === undefined}
+                onClick={() => change(image.id, (current, doc) => {
+                  delete current.heightMm;
+                  const currentAsset = doc.assets[current.assetId];
+                  if (currentAsset) current.anchor.y = imageGeometry(current, currentAsset, doc).top;
+                })}
+              >
+                Use original proportions
+              </button>
+              <p className="hint">Height changes the frame without stretching the photo. Use zoom and image shift to adjust the crop. Vertical bleed still extends the frame to the selected page edge.</p>
               <LabeledNumber
                 label="Page"
                 value={image.anchor.page}

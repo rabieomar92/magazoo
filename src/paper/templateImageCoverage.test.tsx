@@ -23,6 +23,7 @@ function docWithPageImage(page = 1): Doc {
     assetId: 'placed',
     caption: 'Caption',
     widthCols: 2,
+    heightMm: 93.5,
     anchor: { page, column: 0, y: 20 },
     frame: { scale: 1.4, offsetX: 18, offsetY: -12 },
   });
@@ -150,6 +151,7 @@ describe('placed-image template coverage', () => {
       const html = renderToStaticMarkup(sheet);
       expect(html).toContain('class="placed-image');
       expect(html).toContain('data-frame-scale="1.4"');
+      expect(html).toContain('--placed-image-h:93.5mm');
     }
   });
 

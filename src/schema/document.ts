@@ -179,6 +179,8 @@ export interface PlacedImage {
   caption: string;
   /** Width is deliberately discrete: an image occupies whole grid columns. */
   widthCols: 1 | 2 | 3 | 4;
+  /** Independent frame height in layout mm. Absent keeps the source proportions. */
+  heightMm?: number;
   /** Top-left anchor. Page is one-based; column is zero-based from the left. */
   anchor: { page: number; column: number; y: number };
   /** Caption text alignment. Absent = left for old/imported images. */
