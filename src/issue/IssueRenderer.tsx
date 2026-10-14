@@ -69,7 +69,7 @@ export function IssueRenderer({ documents, onComplete, onError, onProgress }: Is
       if (preview?.dataset.previewOverflow === 'true' || source.querySelector('[data-image-avoidance="unresolved"]')) {
         throw new Error(`${current.name}: ${preview?.dataset.previewFitMessage || 'Some content does not fit on its page.'} Open this document and adjust the layout before compiling.`);
       }
-      const pages = snapshotIssuePages(source);
+      const pages = snapshotIssuePages(source, current.doc.design.textStyles);
       if (!pages.length) throw new Error(`${current.name} did not produce any pages. Please open it and check its layout.`);
       completed.current[index] = { id: current.id, name: current.name, pages, pageCount: pages.length };
       callbacks.current.onProgress?.(index + 1, documents.length, current.name);

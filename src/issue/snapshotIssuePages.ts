@@ -1,7 +1,15 @@
 import { clonePages } from '../lib/pdfExport';
+import type { Design, TextStyle } from '../schema/document';
+import { textStyleSelector } from '../lib/textStyles';
+
+const STYLE_PROPERTIES: Record<keyof TextStyle, string> = {
+  fontFamily: 'font-family', fontSize: 'font-size', fontWeight: 'font-weight',
+  italic: 'font-style', underline: 'text-decoration-line', color: 'color',
+  align: 'text-align', lineHeight: 'line-height',
+};
 
 /** Preserve each article's inherited design in a mixed-template publication. */
-export function snapshotIssuePages(source: HTMLElement): HTMLElement[] {
+export function snapshotIssuePages(source: HTMLElement, textStyles?: Design['textStyles']): HTMLElement[] {
   const staging = document.implementation.createHTMLDocument('Issue pages');
   // These snapshots are shown on screen beside — and measured against — the
   // editor's own preview, so they keep the preview's live column geometry.
@@ -15,6 +23,36 @@ export function snapshotIssuePages(source: HTMLElement): HTMLElement[] {
   copies.forEach((copy, index) => {
     const original = originals[index];
     const computed = getComputedStyle(original);
+    // Tracking rules are scoped to the live article and may disappear when
+    // the compiler advances. Preserve their used values before detaching IDs.
+    const originalText = original.querySelectorAll<HTMLElement>('*');
+    const copiedText = copy.querySelectorAll<HTMLElement>('*');
+    copiedText.forEach((element, i) => {
+      const spacing = getComputedStyle(originalText[i]).letterSpacing;
+      if (spacing && spacing !== 'normal') element.style.setProperty('letter-spacing', spacing);
+    });
+    // Component rules are scoped to a live preview that is unmounted between
+    // articles. Freeze only explicitly overridden properties on matching nodes,
+    // before removing editor targets. Existing inherited styling stays intact.
+    const copiesByNode = new Map(Array.from(originalText, (node, i) => [node, copiedText[i]]));
+    for (const [key, style] of Object.entries(textStyles ?? {})) {
+      const selector = textStyleSelector(key);
+      if (!selector || !style || typeof style !== 'object') continue;
+      for (const node of original.querySelectorAll<HTMLElement>(selector)) {
+        const target = copiesByNode.get(node);
+        if (!target) continue;
+        const used = getComputedStyle(node);
+        for (const [property, css] of Object.entries(STYLE_PROPERTIES)) {
+          if (style[property as keyof TextStyle] === undefined) continue;
+          let value = used.getPropertyValue(css);
+          if (property === 'lineHeight') {
+            const ratio = parseFloat(value) / parseFloat(used.fontSize);
+            if (Number.isFinite(ratio) && ratio > 0) value = String(ratio);
+          }
+          if (value) target.style.setProperty(css, value, 'important');
+        }
+      }
+    }
     // Capture inherited variables before the source article is unmounted.
     for (let i = 0; i < computed.length; i++) {
       const property = computed.item(i);

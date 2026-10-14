@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { migrate } from '../schema/document';
 import { exportIssuePdf, issuePageGroups } from '../lib/pdfExport';
+import { PDF_PAGE_SIZES, type PdfPageSize } from '../lib/pdfPageSize';
 import { issueApi } from './api';
 import { contentsDesignOf, contentsEntries, defaultIssuePlan, reconcileIssuePlan, CONTENTS_ID, type ContentsDensity, type ContentsDesign, type ContentsEntryStyle, type ContentsLayout, type ContentsPictures, type IssueItem, type IssuePlan, type IssueResponse } from './model';
 import { IssueCompiler, type CompiledIssue, type CompileProgress } from './IssueCompiler';
@@ -62,6 +63,7 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
   const [error, setError] = useState('');
   const [progress, setProgress] = useState<CompileProgress>({ completed: 0, total: data.items.length, name: '', pass: 1, passes: 2 });
   const [busy, setBusy] = useState(false);
+  const [pdfSize, setPdfSize] = useState<PdfPageSize>('a4');
   const [contentsOverflow, setContentsOverflow] = useState(true);
   const [finalizedPlan, setFinalizedPlan] = useState('');
   const [notice, setNotice] = useState('');
@@ -204,7 +206,7 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
       await new Promise<void>(resolve => window.setTimeout(resolve, 100));
     }
     if (!root) throw new Error('The compiled issue is still being laid out. Try exporting again in a moment.');
-    await exportIssuePdf(data.project.name, root);
+    await exportIssuePdf(data.project.name, root, pdfSize);
   });
 
   const blocked = busy || !ready || contentsOverflow || proofStale;
@@ -321,6 +323,10 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
           </section>
           <section className="card">
             <h2>Finalise &amp; export</h2>
+            <label className="field">PDF page size<select value={pdfSize} disabled={busy} onChange={event => setPdfSize(event.target.value as PdfPageSize)}>
+              {Object.entries(PDF_PAGE_SIZES).map(([key, size]) => <option key={key} value={key}>{size.label} · {size.width} × {size.height} mm</option>)}
+            </select></label>
+            <p className="field-hint">B5 fits every compiled page proportionally, including covers and contents. Page order and line breaks stay unchanged; nothing is cropped and no extra bleed is added. Use the matching paper size, no margins, and 100% scale in the print dialog.</p>
             <p className="field-hint">Finalising writes each article’s starting page number back into the saved document, so a single-article export carries the same folio as the issue.</p>
             {contentsOverflow && ready && <p className="inline-alert" role="alert">The contents text does not fit its two pages. Shorten the heading or introduction, drop a subtitle, or uncheck some entries.</p>}
           </section>
@@ -364,7 +370,7 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
     <footer className="studio-actions">
       <div><strong>{isFinalized ? 'Issue finalised' : proofStale && ready ? 'Arrangement changed' : 'Ready when you are'}</strong><span>{busy ? 'Working… please wait.' : proofStale && ready ? 'Recompile so the page numbers match the order you have set.' : 'Finalising updates page numbers in the project’s saved articles.'}</span></div>
       <div>
-        <button disabled={blocked} onClick={() => void exportIssue()}>{busy ? 'Please wait…' : 'Export issue PDF'}</button>
+        <button disabled={blocked} onClick={() => void exportIssue()}>{busy ? 'Please wait…' : `Export ${pdfSize.toUpperCase()} issue PDF`}</button>
         <button className="primary" disabled={blocked || isFinalized || save.status === 'error' || items.length === 0} onClick={() => void finalize()}>{isFinalized ? 'Finalised ✓' : busy ? 'Working…' : 'Finalise issue & page numbers'}</button>
       </div>
     </footer>
