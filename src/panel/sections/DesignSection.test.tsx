@@ -53,4 +53,17 @@ describe('DesignSection font choices', () => {
 
     act(() => root.unmount());
   });
+
+  it.each(['paper-4','paper-5','paper-6','paper-7','paper-8'] as const)('%s exposes every shared callout placement and image-theme control', template=> {
+    const host=document.createElement('div');const root=createRoot(host);
+    act(()=>{useDoc.setState({doc:presetFor(template)});root.render(<DesignSection/>);});
+    const selector=[...host.querySelectorAll('select')].find(s=>s.closest('label')?.textContent?.startsWith('Highlights position'))!;
+    expect([...selector.options].map(o=>o.value)).toEqual(['page1','page1-flow','all','below','free']);
+    act(()=>{selector.value='free';selector.dispatchEvent(new Event('change',{bubbles:true}));});
+    expect(useDoc.getState().doc.design.highlightsPlacement).toBe('free');
+    expect(host.textContent).toContain('Match colours to hero image');
+    expect(host.textContent).toContain('Photograph rises from the foot of the page');
+    expect(host.textContent).toContain('First-page background graphic');
+    act(()=>root.unmount());
+  });
 });

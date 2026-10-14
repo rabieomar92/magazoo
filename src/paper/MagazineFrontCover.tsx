@@ -12,6 +12,7 @@ import { clampSpacing, COVER_STORY_GAP } from '../lib/spacing';
 import { useDoc } from '../store/useDoc';
 import { useVerticalDrag } from './useVerticalDrag';
 import { CoverTextObject } from './CoverTextObject';
+import { TagBar } from './TagBar';
 
 type Paragraph = Extract<Block, { type: 'paragraph' }>;
 
@@ -98,6 +99,7 @@ export function MagazineFrontCover({ doc, vars }: { doc: Doc; vars: CSSPropertie
       <PageArtwork doc={doc} />
       {photo && <FramedImage className="front-cover-photo" asset={photo} frame={cover} />}
       <div className="front-cover-scrim" />
+      <TagBar doc={doc} pageIndex={0} detail={meta.volume} />
       <div className="front-cover-inner">
         <header className="front-cover-brand">
           <div className="front-cover-brand-copy">

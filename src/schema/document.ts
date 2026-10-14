@@ -11,6 +11,11 @@ export type TemplateId =
   | 'paper-1'
   | 'paper-2'
   | 'paper-3'
+  | 'paper-4'
+  | 'paper-5'
+  | 'paper-6'
+  | 'paper-7'
+  | 'paper-8'
   | 'magazine-1'
   | 'magazine-2'
   | 'magazine-3'
@@ -342,7 +347,32 @@ export interface BackCoverDesign {
   text?: Partial<Record<BackCoverTextRole, BackCoverTextStyle>>;
 }
 
+/** Optional component typography. Missing properties preserve the template's
+ * original style; stable object keys allow independent paragraph/caption edits. */
+export interface TextStyle {
+  fontFamily?: string;
+  fontSize?: number;
+  fontWeight?: number;
+  italic?: boolean;
+  underline?: boolean;
+  color?: string;
+  align?: 'left' | 'center' | 'right' | 'justify';
+  lineHeight?: number;
+}
+
 export interface Design {
+  textStyles?: Record<string, TextStyle>;
+  /** Reference article compositions retain the magazine's 210 × 276 mm trim,
+   * or can explicitly extend their text area to A4. Other templates ignore it. */
+  articlePageSize?: 'reference' | 'a4';
+  articleLeading?: number;
+  articleCaptionFont?: string;
+  articleCaptionSize?: number;
+  articleCaptionColor?: string;
+  articleCaptionAlign?: 'left' | 'center' | 'right' | 'justify';
+  /** Letter spacing in em, by text role or stable selected-object key.
+   * Missing keys keep the template's original spacing. */
+  textTracking?: Record<string, number>;
   /** Optional first-paragraph decorative initial; Arabic remains joined. */
   dropCap?: boolean;
   /** Paper 3: derive the solid page colour and readable ink from the hero. */
@@ -422,8 +452,8 @@ export interface Design {
   barColor?: string;
   barTagColor?: string;
   barTagInk?: string;
-  /** Editorial Board only: hide its masthead/top-bar layer. Missing means
-   * visible so projects saved before this control keep their original page. */
+  /** Show/hide the running top bar on every template. Missing retains the
+   * original default (off on dedicated front/back covers, on elsewhere). */
   showTopBar?: boolean;
   /** Editorial Board only: number of newspaper-style columns used by the
    * publication/about copy. Missing keeps the original three-column design. */

@@ -1,5 +1,6 @@
 import { useDoc } from '../../store/useDoc';
 import { grid } from '../../lib/geometry';
+import { articleGridDesign, articlePageHeight, isReferenceArticle } from '../../lib/articleLayouts';
 import { defaultPlacedHighlights, placedHighlightsGeometry } from '../../lib/placedHighlights';
 import { familyOf, type PlacedHighlights } from '../../schema/document';
 import { LabeledInput, LabeledNumber, RowButtons, Section, SegmentField, Toggle } from '../Field';
@@ -8,12 +9,15 @@ export function HighlightsSection() {
   const highlights = useDoc((s) => s.doc.highlights);
   const label = useDoc((s) => s.doc.meta.highlightsLabel);
   const design = useDoc((s) => s.doc.design);
+  const isReference = useDoc(s => isReferenceArticle(s.doc.templateId));
+  const geometryDesign = isReference ? articleGridDesign(design) : design;
+  const pageHeight = isReference ? articlePageHeight(design) : undefined;
   const placement = useDoc((s) => s.doc.highlightBox);
   const isGallery = useDoc((s) => familyOf(s.doc.templateId) === 'gallery');
   const update = useDoc((s) => s.update);
   const free = design.highlightsPlacement === 'free';
-  const box = placement ?? defaultPlacedHighlights(design);
-  const maxWidth = Math.min(4, grid(design).totalCols);
+  const box = placement ?? defaultPlacedHighlights(geometryDesign, pageHeight);
+  const maxWidth = Math.min(4, grid(geometryDesign).totalCols);
   const widthOptions = Array.from({ length: maxWidth }, (_, index) => ({
     value: (index + 1) as PlacedHighlights['widthCols'],
     label: `${index + 1} col`,
@@ -44,13 +48,13 @@ export function HighlightsSection() {
       d.design.highlightsPlacement = enabled ? 'free' : 'page1';
       if (enabled) {
         d.design.sidebar = true;
-        d.highlightBox ??= defaultPlacedHighlights(d.design);
+        d.highlightBox ??= defaultPlacedHighlights(geometryDesign, pageHeight);
       }
     });
 
   const changeBox = (fn: (box: PlacedHighlights) => void) =>
     update((d) => {
-      d.highlightBox ??= defaultPlacedHighlights(d.design);
+      d.highlightBox ??= defaultPlacedHighlights(geometryDesign, pageHeight);
       fn(d.highlightBox);
     });
 
@@ -80,7 +84,7 @@ export function HighlightsSection() {
                 onChange={(widthCols) =>
                   changeBox((current) => {
                     current.widthCols = widthCols;
-                    const next = placedHighlightsGeometry(current, design);
+                    const next = placedHighlightsGeometry(current, geometryDesign, 0, pageHeight);
                     current.anchor.column = next.column;
                     current.anchor.y = next.top;
                   })

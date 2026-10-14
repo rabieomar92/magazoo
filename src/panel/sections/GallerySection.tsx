@@ -8,9 +8,10 @@ import { LabeledColor, LabeledRange, Section, SegmentField } from '../Field';
 import { TypographyControl } from '../TypographyToolbar';
 import { GalleryVerticalPosition } from '../GalleryVerticalPosition';
 import { galleryTextPosition } from '../../lib/galleryTextPosition';
-import { editorTargetId } from '../../lib/editorNavigation';
+import { editorTargetId, requestEditorTargetFocus } from '../../lib/editorNavigation';
 import { splitCaption, joinCaption } from '../../lib/galleryCaption';
 import { MagazooLoader } from '../../components/MagazooLoader';
+import { WritingGuide } from '../WritingGuide';
 
 const DEFAULT_FRAME = { scale: 1, offsetX: 0, offsetY: 0 };
 
@@ -230,7 +231,8 @@ export function GallerySection() {
                   aria-label={`${s.label} description`}
                   onChange={(e) => setCaption(bi, joinCaption(title, e.target.value))}
                 />
-                <TypographyControl group={`gallery-caption:${block!.id}`} label={`${s.label} description`} order={5}>
+                <WritingGuide text={desc} editorId={editorTargetId(`gallery-caption-${block!.id}`)} label={`${s.label} description`} onFormat={()=>requestEditorTargetFocus('images',`gallery-caption-${block!.id}`)}/>
+                <TypographyControl group={`gallery-caption:${block!.id}`} label={`${s.label} description`} order={5} property="align">
                   <SegmentField<'left' | 'center' | 'right' | 'justify'> label="Alignment"
                     value={block?.type === 'figure' ? block.captionAlign ?? bodyAlign : bodyAlign}
                     options={[

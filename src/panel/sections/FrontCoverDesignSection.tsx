@@ -62,15 +62,15 @@ function CoverTextEditor({ role, label }: { role: FrontCoverTextRole; label: str
           <LabeledNumber label={`${label} start inset`} unit="mm" value={style.inset ?? 0} min={0} max={40} step={.5} onChange={v => set('inset',v)} />
           <p className="hint">Drag this object vertically or set its spacing here. Following text makes room, preserving the hierarchy. Start inset mirrors for Arabic.</p>
         </>}
-        <TypographyControl group={role} label={label} order={50}><LabeledNumber label={`${label} line height`} unit="×" value={style.lineHeight ?? 1.3} min={design.textDirection === 'rtl' ? 1.2 : .8} max={2.5} step={.05} onChange={v => set('lineHeight',v)} /></TypographyControl>
+        <TypographyControl group={role} label={label} order={50} property="lineHeight"><LabeledNumber label={`${label} line height`} unit="×" value={style.lineHeight ?? 1.3} min={design.textDirection === 'rtl' ? 1.2 : .8} max={2.5} step={.05} onChange={v => set('lineHeight',v)} /></TypographyControl>
         <Toggle label="Show object" checked={style.visible} onChange={(value) => set('visible', value)} />
-        <TypographyControl group={role} label={label} order={10}><LabeledSelect
+        <TypographyControl group={role} label={label} order={10} property="fontFamily"><LabeledSelect
           label="Font"
           value={style.fontFamily}
           options={fontOptions(ALL_FONTS)}
           onChange={(value) => set('fontFamily', value)}
         /></TypographyControl>
-        <TypographyControl group={role} label={label} order={20}><LabeledNumber
+        <TypographyControl group={role} label={label} order={20} property="fontSize"><LabeledNumber
           label="Size"
           unit="pt"
           value={style.fontSize}
@@ -79,7 +79,7 @@ function CoverTextEditor({ role, label }: { role: FrontCoverTextRole; label: str
           step={0.5}
           onChange={(value) => set('fontSize', value)}
         /></TypographyControl>
-        <TypographyControl group={role} label={label} order={30}><LabeledNumber
+        <TypographyControl group={role} label={label} order={30} property="fontWeight"><LabeledNumber
           label="Weight"
           value={style.fontWeight}
           min={100}
@@ -87,11 +87,11 @@ function CoverTextEditor({ role, label }: { role: FrontCoverTextRole; label: str
           step={100}
           onChange={(value) => set('fontWeight', value)}
         /></TypographyControl>
-        <TypographyControl group={role} label={label} order={30}><Toggle label="Bold" checked={style.fontWeight >= 700}
+        <TypographyControl group={role} label={label} order={30} property="fontWeight"><Toggle label="Bold" checked={style.fontWeight >= 700}
           onChange={(value) => set('fontWeight', value ? 700 : 400)} /></TypographyControl>
-        <TypographyControl group={role} label={label} order={30}><Toggle label="Italic" checked={style.fontStyle === 'italic'}
+        <TypographyControl group={role} label={label} order={30} property="italic"><Toggle label="Italic" checked={style.fontStyle === 'italic'}
           onChange={(value) => set('fontStyle', value ? 'italic' : 'normal')} /></TypographyControl>
-        <TypographyControl group={role} label={label} order={50}><LabeledNumber
+        <TypographyControl group={role} label={label} order={50} property="tracking"><LabeledNumber
           label="Letter spacing"
           unit="em"
           value={style.letterSpacing}
@@ -100,7 +100,7 @@ function CoverTextEditor({ role, label }: { role: FrontCoverTextRole; label: str
           step={0.005}
           onChange={(value) => set('letterSpacing', value)}
         /></TypographyControl>
-        <TypographyControl group={role} label={label} order={40}><LabeledColor label="Color" value={style.color} onChange={(value) => set('color', value)} /></TypographyControl>
+        <TypographyControl group={role} label={label} order={40} property="color"><LabeledColor label="Color" value={style.color} onChange={(value) => set('color', value)} /></TypographyControl>
         {(['subtitle', 'author', 'strapline'] as FrontCoverTextRole[]).includes(role) && (
           <TypographyControl group={role} label={label} order={90}><button type="button" className="add-btn cover-style-reset" onClick={() => update((doc) => {
             const headingRole = role === 'strapline' ? 'affiliation' : role === 'subtitle' ? 'subtitle' : 'author';
@@ -228,7 +228,7 @@ export function FrontCoverDesignSection() {
           value={design.colors.accent}
           onChange={(value) => update((doc) => { doc.design.colors.accent = value; })}
         />
-        <TypographyControl group="theme" order={40}><LabeledColor label="Ink (text)" value={design.colors.ink}
+        <TypographyControl group="theme" order={40} property="color"><LabeledColor label="Ink (text)" value={design.colors.ink}
           onChange={(value) => update((doc) => { doc.design.colors.ink = value; })} /></TypographyControl>
         <LabeledColor
           label="Category background"

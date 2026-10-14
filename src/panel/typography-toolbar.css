@@ -23,6 +23,13 @@
 .typography-overflow-nav button:disabled { opacity:.3; cursor:default; }
 .typography-control { flex:0 0 auto; display:flex; align-items:center; gap:5px; height:44px; }
 .typography-control[hidden] { display:none; }
+.typography-control .text-style-reset { width:auto; height:28px; padding:3px 8px; font-size:11px; white-space:nowrap; }
+.typography-control[data-complete-property] .tool-btn { min-width:28px; height:28px; padding:3px 7px; }
+.typography-control[data-complete-property] .tool-btn[aria-pressed="true"] { background:#ede9fe; color:#4338ca; border-color:#a5b4fc; }
+.typography-toolbar .typography-control[data-complete-property="fontWeight"] select.field-input.select-control { width:132px; }
+.typography-toolbar .typography-control[data-complete-property="align"] select.field-input.select-control { width:156px; }
+.tracking-reset { align-self:flex-end; border:1px solid #e2e8f0; background:#fff; border-radius:5px; width:26px; height:28px; color:#475569; cursor:pointer; }
+.tracking-reset:disabled { opacity:.35; cursor:default; }
 .typography-toolbar .field {
   display:flex; flex-direction:column; align-items:flex-start;
   flex-wrap:nowrap; gap:3px; margin:0;

@@ -187,7 +187,7 @@ export function HeroSection() {
         <>
           <ImagePicker slot="hero" title="Hero Image" blurb={hasCover ? 'Page 2 · photo above the article' : undefined} />
           <Section title="Hero layout" editorTarget="hero-layout">
-            {templateId === 'paper-2' && (
+            {(templateId === 'paper-2' || templateId === 'paper-8') && (
               <SegmentField<'left' | 'right'>
                 label="Image side"
                 value={heroSide}

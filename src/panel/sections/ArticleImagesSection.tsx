@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { grid } from '../../lib/geometry';
+import { isReferenceArticle, articleGridDesign, articlePageHeight, articleGeometry, type ReferenceArticleId } from '../../lib/articleLayouts';
 import { loadImage, ImageLoadError } from '../../lib/loadImage';
 import {
   MAX_COMBINED_CONTOUR_INSET,
@@ -12,8 +13,12 @@ import { useDoc } from '../../store/useDoc';
 import { editorTargetId } from '../../lib/editorNavigation';
 import { LabeledNumber, LabeledRange, RowButtons, Section, SegmentField } from '../Field';
 import { MagazooLoader } from '../../components/MagazooLoader';
+import { TypographyControl } from '../TypographyToolbar';
 
 const DEFAULT_FRAME = { scale: 1, offsetX: 0, offsetY: 0 };
+const imageDesign = (doc: Doc) => isReferenceArticle(doc.templateId) ? articleGridDesign(doc.design) : doc.design;
+const imageGeometry = (image: PlacedImage, asset: Doc['assets'][string], doc: Doc) =>
+  placedImageGeometry(image, asset, imageDesign(doc), isReferenceArticle(doc.templateId) ? articlePageHeight(doc.design) : undefined);
 
 const contourSliceLabel = (index: number, count: number) => {
   if (count === 1) return 'Image column';
@@ -47,7 +52,8 @@ function setContourInset(
 export function ArticleImagesSection() {
   const images = useDoc((state) => state.doc.images ?? []);
   const assets = useDoc((state) => state.doc.assets);
-  const design = useDoc((state) => state.doc.design);
+  const sourceDoc = useDoc((state) => state.doc);
+  const design = imageDesign(sourceDoc);
   const update = useDoc((state) => state.update);
   const fileRef = useRef<HTMLInputElement>(null);
   const pendingReplace = useRef<string | null>(null);
@@ -81,12 +87,12 @@ export function ArticleImagesSection() {
         if (existing) {
           const oldAssetId = existing.assetId;
           existing.assetId = assetId;
-          const geometry = placedImageGeometry(existing, loaded, doc.design);
+          const geometry = imageGeometry(existing, loaded, doc);
           existing.anchor.column = geometry.column;
           existing.anchor.y = geometry.top;
           if (!assetIsReferenced(doc, oldAssetId)) delete doc.assets[oldAssetId];
         } else {
-          const widthCols = Math.min(2, grid(doc.design).totalCols) as PlacedImage['widthCols'];
+          const widthCols = Math.min(2, grid(imageDesign(doc)).totalCols) as PlacedImage['widthCols'];
           const image: PlacedImage = {
             id: uid(),
             assetId,
@@ -95,7 +101,12 @@ export function ArticleImagesSection() {
             anchor: { page: 1, column: 0, y: doc.design.margin + doc.images.length * 12 },
             align: 'left',
           };
-          image.anchor.y = placedImageGeometry(image, loaded, doc.design).top;
+          if (isReferenceArticle(doc.templateId)) {
+            // Start independent art in the copy area, not over the lead photo.
+            const g = articleGeometry(doc.templateId as ReferenceArticleId, doc.design);
+            image.anchor.y = g.bodyTop;
+          }
+          image.anchor.y = imageGeometry(image, loaded, doc).top;
           doc.images.push(image);
         }
       });
@@ -158,6 +169,7 @@ export function ArticleImagesSection() {
                 dir="auto"
                 value={image.caption}
                 placeholder="Image caption…"
+                id={`editor-target-article-caption-${image.id}`}
                 onChange={(event) => change(image.id, (current) => { current.caption = event.target.value; })}
               />
               <SegmentField<PlacedImage['widthCols']>
@@ -169,7 +181,7 @@ export function ArticleImagesSection() {
                     current.widthCols = widthCols;
                     const currentAsset = doc.assets[current.assetId];
                     if (!currentAsset) return;
-                    const geometry = placedImageGeometry(current, currentAsset, doc.design);
+                    const geometry = imageGeometry(current, currentAsset, doc);
                     current.anchor.column = geometry.column;
                     current.anchor.y = geometry.top;
                   })
@@ -186,6 +198,7 @@ export function ArticleImagesSection() {
                   })
                 }
               />
+              <TypographyControl group={`image-caption:${image.id}`} label={`Image ${images.indexOf(image) + 1} caption`} property="align">
               <SegmentField<'left' | 'center' | 'right'>
                 label="Caption align"
                 value={image.align ?? 'left'}
@@ -196,6 +209,7 @@ export function ArticleImagesSection() {
                 ]}
                 onChange={(align) => change(image.id, (current) => { current.align = align; })}
               />
+              </TypographyControl>
               <SegmentField<'box' | 'contour'>
                 label="Text wrap shape"
                 value={image.wrapShape ?? 'box'}

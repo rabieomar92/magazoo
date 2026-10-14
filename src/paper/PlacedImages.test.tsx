@@ -2,6 +2,9 @@ import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { emptyDoc } from '../schema/document';
+import { presetFor } from '../store/presets';
+import { articleGridDesign } from '../lib/articleLayouts';
+import { placedHighlightsGeometry } from '../lib/placedHighlights';
 import { grid } from '../lib/geometry';
 import { placedImageGeometry } from '../lib/placedImage';
 import { useDoc } from '../store/useDoc';
@@ -116,5 +119,43 @@ describe('PlacedImages', () => {
 
     act(() => root.unmount());
     host.remove();
+  });
+
+  it.each(['paper-4','paper-5','paper-6','paper-7','paper-8'] as const)('%s drags the shared box, saves it and undoes it independently', template=> {
+    const doc=presetFor(template);doc.design.highlightsPlacement='free';
+    doc.highlightBox={widthCols:2,anchor:{page:1,column:0,y:30}};
+    useDoc.getState().load(doc);
+    const host=document.createElement('div');host.className='page';document.body.append(host);
+    host.getBoundingClientRect=()=>({left:0,top:0,right:420,bottom:552,width:420,height:552,x:0,y:0,toJSON:()=>({})});
+    const root=createRoot(host);
+    act(()=>root.render(<PlacedImages doc={useDoc.getState().doc} pageIndex={0} pageHeight={276}/>));
+    const box=host.querySelector<HTMLElement>('.placed-highlights')!;
+    box.getBoundingClientRect=()=>({left:28,top:60,right:206,bottom:140,width:178,height:80,x:28,y:60,toJSON:()=>({})});
+    act(()=>{box.dispatchEvent(pointerEvent('pointerdown',40,70));box.dispatchEvent(pointerEvent('pointermove',1000,1000));});
+    expect(useDoc.getState().doc.highlightBox).toEqual(doc.highlightBox);
+    act(()=>box.dispatchEvent(pointerEvent('pointerup',1000,1000)));
+    const moved=useDoc.getState().doc.highlightBox!;
+    expect(moved.anchor).toEqual({page:1,column:2,y:236});
+    expect(placedHighlightsGeometry(moved,articleGridDesign(doc.design),40,276).width).toBe(89);
+    act(()=>useDoc.temporal.getState().undo());
+    expect(useDoc.getState().doc.highlightBox).toEqual(doc.highlightBox);
+    act(()=>useDoc.temporal.getState().redo());
+    expect(useDoc.getState().doc.highlightBox).toEqual(moved);
+    act(()=>root.unmount());host.remove();
+  });
+
+  it('never writes a read-only or measuring document into the open editor',()=> {
+    const editor=emptyDoc();editor.meta.title='User’s open draft';
+    useDoc.getState().load(editor);
+    const other=presetFor('paper-4');other.design.highlightsPlacement='free';delete other.highlightBox;
+    const host=document.createElement('div');host.className='page';document.body.append(host);
+    const root=createRoot(host);
+    const before=JSON.stringify(useDoc.getState().doc);
+    act(()=>root.render(<PlacedImages doc={other} pageIndex={0} pageHeight={276} readOnly/>));
+    expect(host.querySelector('.placed-highlights')).not.toBeNull();
+    expect(JSON.stringify(useDoc.getState().doc)).toBe(before);
+    act(()=>root.render(<PlacedImages doc={other} pageIndex={0} pageHeight={276} readOnly includeHighlights={false}/>));
+    expect(host.querySelector('.placed-highlights')).toBeNull();
+    act(()=>root.unmount());host.remove();
   });
 });

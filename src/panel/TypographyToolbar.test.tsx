@@ -33,6 +33,72 @@ function group(value: string) {
 }
 
 describe('typography relocation', () => {
+  it.each(TEMPLATE_META.map(meta=>[meta.id]))('adds missing font controls and a reversible top-bar option in %s',template=>{
+    render(template);
+    const before=structuredClone(useDoc.getState().doc);
+    const toggle=[...host.querySelectorAll<HTMLLabelElement>('label')].find(label=>label.querySelector('.field-label')?.textContent==='Show top bar')!.querySelector<HTMLInputElement>('input')!;
+    act(()=>toggle.click());
+    expect(useDoc.getState().doc.design.showTopBar).toBe(toggle.checked);
+    expect(useDoc.getState().doc.meta).toEqual(before.meta);
+    act(()=>useDoc.temporal.getState().undo());
+    expect(useDoc.getState().doc.design.showTopBar).toBe(before.design.showTopBar);
+    for(const key of ['masthead','footer','caption','highlights']) {
+      group(key);
+      const properties=visible().map(node=>node.dataset.completeProperty ?? node.dataset.styleProperty);
+      for(const property of ['fontFamily','fontSize','fontWeight','italic','underline','color','lineHeight','align'])expect(properties,`${template} ${key} ${property}`).toContain(property);
+    }
+  });
+  it('saves added styles only on the selected paragraph, with undo, redo and reset',()=>{
+    render('paper-1');
+    const before=structuredClone(useDoc.getState().doc);
+    const id=before.blocks.find(b=>b.type==='paragraph')!.id;
+    act(()=>requestBlockEditorFocus(id));
+    act(()=>host.querySelector<HTMLButtonElement>('[data-complete-property="fontWeight"] button')!.click());
+    act(()=>host.querySelector<HTMLButtonElement>('[data-complete-property="italic"] button')!.click());
+    act(()=>host.querySelector<HTMLButtonElement>('[data-complete-property="underline"] button')!.click());
+    const doc=useDoc.getState().doc;
+    expect(doc.design.textStyles).toEqual({[`block:${id}`]:{fontWeight:700,italic:true,underline:true}});
+    expect(doc.blocks).toEqual(before.blocks);
+    expect(doc.design.fontBody).toBe(before.design.fontBody);
+    expect(migrate(JSON.parse(JSON.stringify(doc))).design.textStyles).toEqual(doc.design.textStyles);
+    act(()=>useDoc.temporal.getState().undo());
+    expect(useDoc.getState().doc.design.textStyles?.[`block:${id}`].underline).toBeUndefined();
+    act(()=>useDoc.temporal.getState().redo());
+    expect(useDoc.getState().doc.design.textStyles?.[`block:${id}`].underline).toBe(true);
+    act(()=>visible().flatMap(el=>[...el.querySelectorAll<HTMLButtonElement>('button')]).find(b=>b.textContent==='Reset added styling')!.click());
+    expect(useDoc.getState().doc.design.textStyles?.[`block:${id}`]).toBeUndefined();
+  });
+  it('edits caption tracking independently, restores it after reload, and supports undo/reset', () => {
+    render('magazine-2');
+    const before = structuredClone(useDoc.getState().doc);
+    act(() => requestEditorTargetFocus('content', 'meta-location'));
+    expect(active()).toBe('storyTag');
+    const input = host.querySelector<HTMLInputElement>('[data-typography-group="storyTag"] input[type=number]')!;
+    act(() => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(input, '0.025');
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    expect(useDoc.getState().doc.design.textTracking).toEqual({ storyTag: .025 });
+    expect(useDoc.getState().doc.blocks).toEqual(before.blocks);
+    expect(migrate(JSON.parse(JSON.stringify(useDoc.getState().doc))).design.textTracking).toEqual({ storyTag: .025 });
+    act(() => useDoc.temporal.getState().undo());
+    expect(useDoc.getState().doc.design.textTracking).toBeUndefined();
+    act(() => useDoc.temporal.getState().redo());
+    act(() => host.querySelector<HTMLButtonElement>('[data-typography-group="storyTag"] button')!.click());
+    expect(useDoc.getState().doc.design.textTracking?.storyTag).toBeUndefined();
+  });
+  it.each(['paper-1','paper-3','frontmatter-dean','gallery-2'] as const)('keeps selected paragraph tracking separate in %s', template => {
+    render(template);
+    const id = useDoc.getState().doc.blocks.find(block => block.type === 'paragraph')!.id;
+    act(() => requestBlockEditorFocus(id));
+    const inputs = visible().flatMap(el => [...el.querySelectorAll<HTMLInputElement>('input[placeholder="Auto"]')]);
+    expect(inputs).toHaveLength(1);
+    act(() => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(inputs[0], '-0.02');
+      inputs[0].dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    expect(useDoc.getState().doc.design.textTracking).toEqual({ [`block:${id}`]: -.02 });
+  });
   it('toggles decorative quotes only on the selected paragraph without rewriting its text', () => {
     render('paper-3');
     const original=structuredClone(useDoc.getState().doc);
@@ -99,8 +165,18 @@ describe('typography relocation', () => {
     render('news-briefs');
     const story = useDoc.getState().doc.news!.stories[0];
     act(() => requestEditorTargetFocus('content', `news-title-${story.id}`));
-    expect(active()).toBe(`news:${story.id}`);
-    expect(visible().map(el => el.textContent).join(' ')).toContain('Line spacing');
+    expect(active()).toBe(`news:${story.id}:title`);
+    expect(visible().map(el => el.textContent).join(' ')).toContain('Headline size');
+    act(() => host.querySelector<HTMLButtonElement>('[data-complete-property="fontWeight"] button')!.click());
+    expect(useDoc.getState().doc.design.textStyles).toEqual({ [`news:${story.id}:title`]: {fontWeight:700} });
+    act(() => requestEditorTargetFocus('content', `news-text-${story.id}`));
+    expect(active()).toBe(`news:${story.id}:body`);
+    expect(visible().map(el => el.textContent).join(' ')).toContain('Body size');
+    expect(visible().map(el => el.textContent).join(' ')).not.toContain('Headline size');
+    act(() => requestEditorTargetFocus('images', `news-caption-${story.id}`));
+    expect(active()).toBe(`news:${story.id}:caption`);
+    act(() => requestEditorTargetFocus('images', `news-credit-${story.id}`));
+    expect(active()).toBe(`news:${story.id}:credit`);
     act(() => useDoc.setState({ doc: presetFor('magazine-4') }));
     act(() => requestEditorTargetFocus('design', 'front-cover-style-title'));
     expect(active()).toBe('title');

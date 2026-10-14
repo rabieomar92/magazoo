@@ -4,6 +4,7 @@ import { useDoc } from '../store/useDoc';
 import { openProject, saveProject, saveProjectAs, useProjectFile } from '../store/projectFiles';
 import { useSaveStatus, type SaveState } from '../store/saveStatus';
 import { exportPreviewPdf } from '../lib/pdfExport';
+import { PDF_PAGE_SIZES, type PdfPageSize } from '../lib/pdfPageSize';
 import { Wordmark } from '../components/Wordmark';
 import { MagazooLoader } from '../components/MagazooLoader';
 
@@ -25,6 +26,7 @@ export function Toolbar({ onPreviewToolsHost }: { onPreviewToolsHost: (host: HTM
   const projectStatus = { draft: 'Draft', pending: 'Unsaved changes', saving: 'Saving…', saved: 'Saved', error: 'Save failed', conflict: 'Save conflict' }[project.status];
   const title = useDoc((s) => s.doc.meta.title);
   const [exporting, setExporting] = useState(false);
+  const [pdfSize, setPdfSize] = useState<PdfPageSize>('a4');
 
   const exportPdf = async () => {
     if (exporting) return;
@@ -37,9 +39,9 @@ export function Toolbar({ onPreviewToolsHost }: { onPreviewToolsHost: (host: HTM
         await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
       }
       if (document.querySelector('.pages > .page[data-layout-overflow="true"]')) {
-        throw new Error('One or more blocks exceed the printable frame. Check the red-outlined page and resolve its news or front-matter warning before exporting.');
+        throw new Error('One or more blocks exceed the printable frame. Check the red-outlined page and resolve its layout warning before exporting.');
       }
-      await exportPreviewPdf(title);
+      await exportPreviewPdf(title, undefined, pdfSize);
     } catch (error) {
       console.error('PDF export failed:', error);
       alert(error instanceof Error ? error.message : 'Could not prepare the PDF.');
@@ -128,12 +130,17 @@ export function Toolbar({ onPreviewToolsHost }: { onPreviewToolsHost: (host: HTM
             <span className="tool-btn-icon" aria-hidden="true">↓</span>
             <span className="tool-btn-label">Save As…</span>
           </button>
+          <select className="tool-btn pdf-size-select" aria-label="PDF page size" value={pdfSize} disabled={exporting}
+            title="B5 fits the complete layout proportionally; no cropping or extra bleed."
+            onChange={event => setPdfSize(event.target.value as PdfPageSize)}>
+            {Object.entries(PDF_PAGE_SIZES).map(([key, size]) => <option key={key} value={key}>{size.label} · {size.width} × {size.height} mm</option>)}
+          </select>
           <button
             className="tool-btn tool-btn--primary"
             onClick={() => void exportPdf()}
             disabled={exporting}
             aria-busy={exporting}
-            title="Export clean A4 pages to PDF"
+            title={`Export ${PDF_PAGE_SIZES[pdfSize].label} pages to PDF — use no print margins and 100% scale`}
             aria-label={exporting ? 'Preparing PDF' : 'Export PDF'}
           >
             {exporting

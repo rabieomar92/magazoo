@@ -4,6 +4,7 @@ import { emptyBackCover } from '../store/backCover';
 import { FramedImage } from '../components/FramedImage';
 import { BACK_COVER_TEXT_ROLES, backCoverLayout, backCoverTextColor, backCoverTextStyle } from '../lib/backCoverDesign';
 import { fontStack } from '../lib/fonts';
+import { TagBar } from './TagBar';
 
 function lines(text: string): ReactNode {
   return text.split(/\r?\n/).map((line, index) => (
@@ -173,6 +174,7 @@ export function BackCoverPage({ doc, vars }: { doc: Doc; vars: CSSProperties }) 
       dir={doc.design.textDirection === 'rtl' ? 'rtl' : 'ltr'}
     >
       <div className="back-cover-inner">
+        <TagBar doc={doc} pageIndex={0} detail={doc.meta.volume} />
         <main className="back-cover-brand-block" data-editor-tab="content" data-editor-target="backcover-brand">
           {layout.showQr && <div
             className={`back-cover-qr${qrAsset ? '' : ' back-cover-qr--empty'}`}

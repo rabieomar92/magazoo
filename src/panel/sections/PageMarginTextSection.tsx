@@ -49,10 +49,10 @@ export function PageMarginTextSection() {
       <LabeledNumber label="Distance from bottom edge" unit="mm" value={settings.bottomOffset} min={0} max={MAX_MARGIN_TEXT_BOTTOM_OFFSET} step={0.5} onChange={v => set('bottomOffset', v)} />
       <p className="hint">Move vertically across the full page (0–{MAX_MARGIN_TEXT_BOTTOM_OFFSET} mm). At the top edge, the text stops moving so the complete credit stays on the sheet.</p>
       <p className="hint">Spacing and styling apply to all margin text in this document. Keep it inside a clear margin; it does not move body text or photos.</p>
-      <TypographyControl group="marginText" order={10}><LabeledSelect label="Margin text font" value={settings.fontFamily} options={fontOptions(ALL_FONTS)} onChange={v => set('fontFamily', v)} /></TypographyControl>
-      <TypographyControl group="marginText" order={20}><LabeledNumber label="Margin text size" unit="pt" value={settings.fontSize} min={5} max={12} step={0.5} onChange={v => set('fontSize', v)} /></TypographyControl>
+      <TypographyControl group="marginText" order={10} property="fontFamily"><LabeledSelect label="Margin text font" value={settings.fontFamily} options={fontOptions(ALL_FONTS)} onChange={v => set('fontFamily', v)} /></TypographyControl>
+      <TypographyControl group="marginText" order={20} property="fontSize"><LabeledNumber label="Margin text size" unit="pt" value={settings.fontSize} min={5} max={12} step={0.5} onChange={v => set('fontSize', v)} /></TypographyControl>
       <TypographyControl group="marginText" order={30}><Toggle label="Automatic text colour" checked={!settings.color} onChange={v => set('color', v ? undefined : '#777777')} /></TypographyControl>
-      {settings.color && <TypographyControl group="marginText" order={40}><LabeledColor label="Margin text colour" value={settings.color} onChange={v => set('color', v)} /></TypographyControl>}
+      {settings.color && <TypographyControl group="marginText" order={40} property="color"><LabeledColor label="Margin text colour" value={settings.color} onChange={v => set('color', v)} /></TypographyControl>}
     </>}
   </Section>;
 }

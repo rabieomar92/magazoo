@@ -1,4 +1,8 @@
-import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
+import { memo, useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
+import { textTrackingCss, trackingSelector } from '../lib/textTracking';
+import { textStylesCss, textStyleSelector } from '../lib/textStyles';
+import { isReferenceArticle, articlePageHeight } from '../lib/articleLayouts';
+import { ArticlePages } from './ArticlePages';
 import { createPortal } from 'react-dom';
 import { useDoc } from '../store/useDoc';
 import { quoteFlowText } from '../lib/decorativeQuote';
@@ -236,6 +240,7 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
   readOnly?: boolean;
 }) {
   const doc = useImageTheme(storedDoc);
+  const trackingScope = useId();
   const updateDoc = useDoc((state) => state.update);
 
   const bottomMargin = footerBottomMargin(doc);
@@ -272,7 +277,8 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
   const isGallery = familyOf(doc.templateId) === 'gallery';
   const isNews = familyOf(doc.templateId) === 'news';
   const isBackCover = familyOf(doc.templateId) === 'backcover';
-  const isStructured = familyOf(doc.templateId) === 'frontmatter' || isNews;
+  const isReference = isReferenceArticle(doc.templateId);
+  const isStructured = familyOf(doc.templateId) === 'frontmatter' || isNews || isReference;
   const [frontMatterStatus,setFrontMatterStatus] = useState<FrontMatterStatus>({pages:1,overflow:false});
   const reportFrontMatter = useCallback((status:FrontMatterStatus) => setFrontMatterStatus(previous => previous.pages===status.pages && previous.overflow===status.overflow ? previous : status),[]);
   // magazine-2 runs a different sheet plan: sheet 1 is the article + photo strip,
@@ -975,7 +981,7 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
     ? {level: frontMatterStatus.overflow ? 'warn' : 'ok',text: frontMatterStatus.overflow
       ? (isNews ? 'A news block exceeds the printable frame. Check the red-outlined page and adjust its story or image.'
         : 'Text exceeds its frame. Shorten the heading or caption, or reduce its size.')
-      : `${frontMatterStatus.pages} ${frontMatterStatus.pages===1?'page':'pages'} · ${isNews ? 'news & briefs' : 'front matter'}`}
+      : `${frontMatterStatus.pages} ${frontMatterStatus.pages===1?'page':'pages'} · ${isNews ? 'news & briefs' : isReference ? 'article' : 'front matter'}`}
     : isGallery
     ? ({ level: 'ok', text: '2 pages · spread' } as const)
     : isFrontCover
@@ -994,7 +1000,7 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
     [pages, doc.templateId],
   );
   useEffect(() => {
-    if (readOnly) return;
+    if (readOnly || isReference) return;
     if (!hlFree || !populatedPages.length) return;
     const requested = (doc.highlightBox ?? defaultPlacedHighlights(doc.design)).anchor.page;
     if (populatedPages.includes(requested)) return;
@@ -1008,7 +1014,7 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
         current.highlightBox.anchor.page = target;
       }
     });
-  }, [doc.design, doc.highlightBox, hlFree, populatedPages, readOnly, updateDoc]);
+  }, [doc.design, doc.highlightBox, hlFree, populatedPages, readOnly, updateDoc, isReference]);
 
   const scale = readOnly ? 1 : zoom === 'fit' ? fitScale : zoom;
   const pct = Math.round(scale * 100);
@@ -1047,6 +1053,7 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
     ? (doc.highlightBox ?? defaultPlacedHighlights(doc.design)).anchor.page
     : null;
   const effectiveHighlightPage = (() => {
+    if (isReference) return requestedHighlightPage;
     if (requestedHighlightPage === null) return null;
     if (!populatedPages.length || populatedPages.includes(requestedHighlightPage)) return requestedHighlightPage;
     const earlier = populatedPages.filter((page) => page < requestedHighlightPage);
@@ -1070,6 +1077,9 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
   // exclusion values work at Fit, 100%, and in print.
   useLayoutEffect(() => {
     const root = pagesRef.current;
+    // Reference articles own their shaped regions and measured callouts. The
+    // legacy relocation pass must not move their DOM after it was paginated.
+    if (isReference) return;
     const hasPlacedObstacles =
       !isGallery && !isFixedCover && ((doc.images ?? []).length > 0 || hlFree);
     if (!root) return;
@@ -1219,6 +1229,7 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
     isFrontCover,
     isBackCover,
     isFixedCover,
+    isReference,
     nPages,
     pagination.layoutRevision,
     zoom,
@@ -1265,7 +1276,7 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
   const rows = Math.ceil(nPages / cols);
   const frame = {
     width: (cols * PAGE_W_PX + (cols - 1) * PAGE_GAP_PX) * scale,
-    height: rows * (PAGE_H_PX + PAGE_GAP_PX) * scale,
+    height: rows * ((isReference ? articlePageHeight(doc.design) * MM_PX : PAGE_H_PX) + PAGE_GAP_PX) * scale,
   };
   const step = (d: number) => setZoom(clamp(Math.round((scale + d) * 100) / 100, 0.25, 2));
 
@@ -1369,18 +1380,23 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
     >
       {/* Escape hatch — raw CSS from the design panel, scoped by author intent. */}
       {doc.design.customCss && <style>{doc.design.customCss}</style>}
+      <style>{textTrackingCss(doc.design, trackingScope, doc.templateId, key => trackingSelector(key) ?? textStyleSelector(key))}</style>
+      <style>{textStylesCss(doc.design, trackingScope)}</style>
 
       {!readOnly && (toolbarHost ? createPortal(previewControls, toolbarHost) : previewControls)}
 
       <div className="pages-frame" style={frame}>
         <div
           ref={pagesRef}
+          data-tracking-scope={trackingScope}
           className={`pages${spreadOn ? ' pages--spread' : ''}${doc.design.textDirection === 'rtl' ? ' pages--rtl' : ''}${dropCapEnabled(doc.design,doc.templateId) ? '' : ' drop-caps-off'}`}
           lang={doc.design.textDirection === 'rtl' ? 'ar' : undefined}
           style={{ transform: `scale(${scale})` }}
           onClickCapture={readOnly ? undefined : focusPreviewObject}
         >
-          {isNews ? (
+          {isReference ? (
+            <ArticlePages doc={effectiveDoc} vars={vars} onStatus={reportFrontMatter} readOnly={readOnly}/>
+          ) : isNews ? (
             <NewsPages doc={effectiveDoc} vars={vars} onStatus={reportFrontMatter} />
           ) : isStructured ? (
             <FrontMatterPages doc={effectiveDoc} vars={vars} onStatus={reportFrontMatter} />
@@ -1480,7 +1496,7 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
 
       <PageFooters doc={effectiveDoc} root={pagesRef} />
       {/* Hidden measuring rig — same box as the real body columns. */}
-      <div className={`measure-root${doc.design.textDirection === 'rtl' ? ' measure-root--rtl' : ''}${dropCapEnabled(doc.design,doc.templateId) ? '' : ' drop-caps-off'}`} lang={doc.design.textDirection === 'rtl' ? 'ar' : undefined} style={vars} aria-hidden>
+      <div data-tracking-scope={trackingScope} className={`measure-root${doc.design.textDirection === 'rtl' ? ' measure-root--rtl' : ''}${dropCapEnabled(doc.design,doc.templateId) ? '' : ' drop-caps-off'}`} lang={doc.design.textDirection === 'rtl' ? 'ar' : undefined} style={vars} aria-hidden>
         {isSplit ? (
           <>
             {/* Head + foot aside sized first (they set --mag2-head-h/--mag2-aside-h),

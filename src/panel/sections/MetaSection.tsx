@@ -1,5 +1,6 @@
 import { useDoc } from '../../store/useDoc';
 import { familyOf } from '../../schema/document';
+import { isReferenceArticle } from '../../lib/articleLayouts';
 import { LabeledColor, LabeledInput, LabeledTextarea, Section } from '../Field';
 
 export function MetaSection() {
@@ -9,6 +10,7 @@ export function MetaSection() {
   const isFrontCover = useDoc((s) => s.doc.templateId === 'magazine-4');
   const barColor = useDoc((s) => s.doc.design.barColor ?? s.doc.design.colors.accent);
   const isP2 = useDoc((s) => s.doc.templateId === 'paper-2');
+  const isReference = useDoc(s => isReferenceArticle(s.doc.templateId));
   const isNews = useDoc(s => s.doc.templateId === 'news-briefs');
   const isBoard = useDoc(s => s.doc.templateId === 'frontmatter-board');
   const showAuthor = useDoc(s => s.doc.templateId !== 'frontmatter-contents' && s.doc.templateId !== 'frontmatter-board' && s.doc.templateId !== 'news-briefs');
@@ -82,7 +84,7 @@ export function MetaSection() {
         </>
       )}
 
-      {isP2 && (
+      {(isP2 || isReference) && (
         <LabeledTextarea
           rows={2}
           label="Hero caption"

@@ -32,15 +32,15 @@ export function FrontMatterContent() {
           onDown={() => change(f => { [f.entries[index+1],f.entries[index]] = [f.entries[index],f.entries[index+1]]; })}
           onRemove={() => change(f => { f.entries.splice(index,1); })} /></div>
         {contents && <LabeledInput label="Article page" value={entry.page ?? ''} onChange={v => change(f => { f.entries[index].page = v; })} />}
-        <LabeledInput label={contents ? 'Section / article title' : 'Role / group'} value={entry.title} onChange={v => change(f => { f.entries[index].title = v; })} />
-        <LabeledTextarea rows={3} label={contents ? 'Description / articles' : 'Names & affiliations'} value={entry.text} onChange={v => change(f => { f.entries[index].text = v; })} />
+        <LabeledInput editorTarget={`fm-entry-title-${entry.id}`} label={contents ? 'Section / article title' : 'Role / group'} value={entry.title} onChange={v => change(f => { f.entries[index].title = v; })} />
+        <LabeledTextarea writingGuide={contents} editorTarget={`fm-entry-text-${entry.id}`} rows={3} label={contents ? 'Description / articles' : 'Names & affiliations'} value={entry.text} onChange={v => change(f => { f.entries[index].text = v; })} />
       </Section>)}
       <button className="add-btn" onClick={() => change(f => { f.entries.push({id:uid(),title:contents ? 'New article' : 'New role',text:'',page:contents ? '1' : undefined}); })}>+ Add {contents ? 'contents entry' : 'board group'}</button>
     </Section>}
     <Section title={doc.templateId === 'frontmatter-board' ? 'About the publication' : dean ? 'In this issue sidebar' : 'Feature note'} editorTarget="fm-note">
       {dean && <p className="hint">This appears with the magazine cover in the right column. Use it for a short editor-in-chief introduction to the issue.</p>}
-      <LabeledInput label={dean ? 'Sidebar heading' : 'Heading'} value={doc.templateId === 'frontmatter-board' ? content.aboutTitle : content.noteTitle} onChange={v => field(doc.templateId === 'frontmatter-board' ? 'aboutTitle' : 'noteTitle',v)} />
-      <LabeledTextarea rows={6} label={dean ? 'Issue summary' : 'Text'} value={doc.templateId === 'frontmatter-board' ? content.about : content.note} onChange={v => field(doc.templateId === 'frontmatter-board' ? 'about' : 'note',v)} />
+      <LabeledInput editorTarget="fm-heading" label={dean ? 'Sidebar heading' : 'Heading'} value={doc.templateId === 'frontmatter-board' ? content.aboutTitle : content.noteTitle} onChange={v => field(doc.templateId === 'frontmatter-board' ? 'aboutTitle' : 'noteTitle',v)} />
+      <LabeledTextarea writingGuide rows={6} label={dean ? 'Issue summary' : 'Text'} value={doc.templateId === 'frontmatter-board' ? content.about : content.note} onChange={v => field(doc.templateId === 'frontmatter-board' ? 'about' : 'note',v)} />
     </Section>
   </>;
 }
@@ -122,21 +122,21 @@ export function FrontMatterDesign() {
         onChange={v => update(d => { d.design.barSide = v; })}
       />
       <p className="hint">The masthead and page number start on this side; the footer text sits opposite. Both alternate sides on later pages.</p>
-      <TypographyControl group="title" also="subtitle" order={10}><LabeledSelect label="Display font" value={doc.design.fontDisplay} options={fontOptions(ALL_FONTS)} onChange={v => update(d => {d.design.fontDisplay=v;})} /></TypographyControl>
-      <TypographyControl group="body" also="subtitle" order={10}><LabeledSelect label="Body font" value={doc.design.fontBody} options={fontOptions(ALL_FONTS)} onChange={v => update(d => {d.design.fontBody=v; d.design.fontSubtitle=v;})} /></TypographyControl>
+      <TypographyControl group="title" also="subtitle" order={10} property="fontFamily"><LabeledSelect label="Display font" value={doc.design.fontDisplay} options={fontOptions(ALL_FONTS)} onChange={v => update(d => {d.design.fontDisplay=v;})} /></TypographyControl>
+      <TypographyControl group="body" also="subtitle" order={10} property="fontFamily"><LabeledSelect label="Body font" value={doc.design.fontBody} options={fontOptions(ALL_FONTS)} onChange={v => update(d => {d.design.fontBody=v; d.design.fontSubtitle=v;})} /></TypographyControl>
       {(['title','subtitle','body'] as const).map(key => {
         const min = board ? (key === 'title' ? 12 : key === 'subtitle' ? 6 : 5.5) : (key === 'title' ? 20 : 8);
         const max = board ? (key === 'title' ? 32 : key === 'subtitle' ? 14 : 11) : (key === 'title' ? 48 : 16);
-        return <TypographyControl group={key} key={key} order={20}><LabeledNumber key={key} label={`${key[0].toUpperCase()+key.slice(1)} size`} unit="pt" min={min} max={max} step={0.1} value={doc.design.sizes[key]} onChange={v => update(d=>{d.design.sizes[key]=Math.max(min,Math.min(max,v));})} /></TypographyControl>;
+        return <TypographyControl group={key} key={key} order={20} property="fontSize"><LabeledNumber key={key} label={`${key[0].toUpperCase()+key.slice(1)} size`} unit="pt" min={min} max={max} step={0.1} value={doc.design.sizes[key]} onChange={v => update(d=>{d.design.sizes[key]=Math.max(min,Math.min(max,v));})} /></TypographyControl>;
       })}
     </Section>
     <Section title="Colour palette">
       <LabeledColor label="Paper" value={doc.design.paperBg ?? '#ffffff'} onChange={v => update(d=>{d.design.paperBg=v;})} />
-      <TypographyControl group="theme" order={40}><LabeledColor label="Text" value={doc.design.colors.ink} onChange={v => update(d=>{d.design.colors.ink=v;})} /></TypographyControl>
+      <TypographyControl group="theme" order={40} property="color"><LabeledColor label="Text" value={doc.design.colors.ink} onChange={v => update(d=>{d.design.colors.ink=v;})} /></TypographyControl>
       <LabeledColor label="Accent" value={doc.design.colors.accent} onChange={v => update(d=>{d.design.colors.accent=v;})} />
       <LabeledColor label="Top bar" value={doc.design.barColor ?? doc.design.colors.accent} onChange={v => update(d=>{d.design.barColor=v;})} />
       <LabeledColor label="Masthead background" value={doc.design.barTagColor ?? '#bfbfbf'} onChange={v => update(d=>{d.design.barTagColor=v;})} />
-      <TypographyControl group="masthead" order={40}><LabeledColor label="Masthead text" value={doc.design.barTagInk ?? '#111418'} onChange={v => update(d=>{d.design.barTagInk=v;})} /></TypographyControl>
+      <TypographyControl group="masthead" order={40} property="color"><LabeledColor label="Masthead text" value={doc.design.barTagInk ?? '#111418'} onChange={v => update(d=>{d.design.barTagInk=v;})} /></TypographyControl>
     </Section>
   </>;
 }

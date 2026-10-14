@@ -8,7 +8,8 @@ import {
 import type { Asset, Design, Doc, PlacedImage } from '../schema/document';
 import { PAGE_H, PAGE_W } from '../lib/geometry';
 import { placedImageContourClip, placedImageGeometry, snapImageColumn } from '../lib/placedImage';
-import { defaultPlacedHighlights, placedHighlightsGeometry } from '../lib/placedHighlights';
+import { defaultPlacedHighlights, placedHighlightsGeometry, highlightAvoidingTop } from '../lib/placedHighlights';
+import { articleGridDesign, isReferenceArticle } from '../lib/articleLayouts';
 import { useDoc } from '../store/useDoc';
 import { HighlightsBody } from './Sidebar';
 import { FramedImage } from '../components/FramedImage';
@@ -38,12 +39,13 @@ function imageAvoidingTop(
   height: number,
   pxPerMm: number,
   gap: number,
+  pageHeight = PAGE_H,
 ): number {
-  const clamped = Math.min(Math.max(0, desiredTop), Math.max(0, PAGE_H - height));
+  const clamped = Math.min(Math.max(0, desiredTop), Math.max(0, pageHeight - height));
   if (pxPerMm <= 0 || height <= 0) return clamped;
   const pageRect = page.getBoundingClientRect();
   const right = left + width;
-  const bands = Array.from(page.querySelectorAll<HTMLElement>('.placed-image'))
+  const bands = Array.from(page.querySelectorAll<HTMLElement>('.placed-image, [data-callout-obstacle]'))
     .map((image) => image.getBoundingClientRect())
     .filter((rect) => {
       const imageLeft = (rect.left - pageRect.left) / pxPerMm;
@@ -52,43 +54,28 @@ function imageAvoidingTop(
     })
     .map((rect) => ({
       top: Math.max(0, (rect.top - pageRect.top) / pxPerMm - gap),
-      bottom: Math.min(PAGE_H, (rect.bottom - pageRect.top) / pxPerMm + gap),
+      bottom: Math.min(pageHeight, (rect.bottom - pageRect.top) / pxPerMm + gap),
     }))
     .sort((a, b) => a.top - b.top);
-  if (!bands.length) return clamped;
-
-  const merged: { top: number; bottom: number }[] = [];
-  for (const band of bands) {
-    const previous = merged.at(-1);
-    if (previous && band.top <= previous.bottom) previous.bottom = Math.max(previous.bottom, band.bottom);
-    else merged.push({ ...band });
-  }
-  const gaps: { top: number; bottom: number }[] = [];
-  let cursor = 0;
-  for (const band of merged) {
-    if (band.top > cursor) gaps.push({ top: cursor, bottom: band.top });
-    cursor = Math.max(cursor, band.bottom);
-  }
-  if (cursor < PAGE_H) gaps.push({ top: cursor, bottom: PAGE_H });
-
-  const candidates = gaps
-    .filter((slot) => slot.bottom - slot.top >= height - 0.05)
-    .map((slot) => Math.min(Math.max(clamped, slot.top), slot.bottom - height));
-  return candidates.sort((a, b) => Math.abs(a - clamped) - Math.abs(b - clamped))[0] ?? clamped;
+  return highlightAvoidingTop(clamped, height, pageHeight, bands);
 }
 
 function PlacedImageItem({
   image,
   asset,
   design,
+  pageHeight,
+  readOnly,
 }: {
   image: PlacedImage;
   asset: Asset;
   design: Design;
+  pageHeight: number;
+  readOnly: boolean;
 }) {
   const update = useDoc((state) => state.update);
   const drag = useRef<DragState | null>(null);
-  const geometry = placedImageGeometry(image, asset, design);
+  const geometry = placedImageGeometry(image, asset, design, pageHeight);
 
   const applyGeometry = (element: HTMLElement, next: typeof geometry) => {
     element.style.left = `${next.visualLeft}mm`;
@@ -108,7 +95,7 @@ function PlacedImageItem({
     });
 
   const onPointerDown = (event: ReactPointerEvent<HTMLElement>) => {
-    if (event.button !== 0) return;
+    if (readOnly || event.button !== 0) return;
     const page = event.currentTarget.closest<HTMLElement>('.page');
     if (!page) return;
     const pageRect = page.getBoundingClientRect();
@@ -146,6 +133,7 @@ function PlacedImageItem({
       { ...image, anchor: { ...image.anchor, column, y: roundedTop } },
       asset,
       design,
+      pageHeight,
     );
     applyGeometry(event.currentTarget, nextGeometry);
   };
@@ -199,6 +187,8 @@ function PlacedImageItem({
       </div>
       {image.caption.trim() && (
         <figcaption
+          data-editor-tab="images"
+          data-editor-target={`article-caption-${image.id}`}
           dir={design.textDirection ?? 'ltr'}
           style={{ textAlign: image.align ?? 'left' }}
         >
@@ -209,19 +199,20 @@ function PlacedImageItem({
   );
 }
 
-function PlacedHighlightsItem({ doc }: { doc: Doc }) {
+function PlacedHighlightsItem({ doc, design, pageHeight, readOnly }: { doc: Doc; design: Design; pageHeight: number; readOnly: boolean }) {
   const update = useDoc((state) => state.update);
   const elementRef = useRef<HTMLElement>(null);
   const drag = useRef<HighlightDragState | null>(null);
-  const placement = doc.highlightBox ?? defaultPlacedHighlights(doc.design);
-  const geometry = placedHighlightsGeometry(placement, doc.design);
+  const placement = doc.highlightBox ?? defaultPlacedHighlights(design, pageHeight);
+  const geometry = placedHighlightsGeometry(placement, design, 0, pageHeight);
 
   const commitAnchor = useCallback((column: number, y: number) =>
     update((currentDoc) => {
-      currentDoc.highlightBox ??= defaultPlacedHighlights(currentDoc.design);
+      currentDoc.highlightBox ??= defaultPlacedHighlights(design, pageHeight);
+      currentDoc.highlightBox.anchor.page = placement.anchor.page;
       currentDoc.highlightBox.anchor.column = column;
       currentDoc.highlightBox.anchor.y = y;
-    }), [update]);
+    }), [update, design, pageHeight, placement.anchor.page]);
 
   // Content/font/image changes can alter the callout's real height. Keep the
   // stored anchor valid and move it to the nearest image-free slot when one is
@@ -234,11 +225,12 @@ function PlacedHighlightsItem({ doc }: { doc: Doc }) {
     // received a measurable width yet. Without this early commit, a loaded
     // free-placement document could be autosaved before its first layout and
     // lose the box's position on the next open.
-    if (!doc.highlightBox) commitAnchor(placement.anchor.column, placement.anchor.y);
+    const canCommit = !readOnly && !element.closest('[inert]');
+    if (canCommit && !doc.highlightBox) commitAnchor(placement.anchor.column, placement.anchor.y);
     if (!page.offsetWidth) return;
     const pxPerMm = page.getBoundingClientRect().width / PAGE_W;
     const height = element.getBoundingClientRect().height / pxPerMm;
-    const measured = placedHighlightsGeometry(placement, doc.design, height);
+    const measured = placedHighlightsGeometry(placement, design, height, pageHeight);
     const safeTop = imageAvoidingTop(
       page,
       measured.top,
@@ -247,17 +239,18 @@ function PlacedHighlightsItem({ doc }: { doc: Doc }) {
       height,
       pxPerMm,
       Math.max(3, doc.design.gutter * 0.6),
+      pageHeight,
     );
     const rounded = Math.round(safeTop * 10) / 10;
     element.style.top = `${rounded}mm`;
     // Materialise the default placement as soon as the free box is rendered.
     // Without this, a box that had never been dragged existed only as a
     // computed fallback and could disappear or move after an autosave/reload.
-    if (!doc.highlightBox || Math.abs(rounded - placement.anchor.y) > 0.05) commitAnchor(measured.column, rounded);
-  }, [commitAnchor, doc.assets, doc.design, doc.highlightBox, doc.highlights, doc.images, doc.references, placement]);
+    if (canCommit && (!doc.highlightBox || Math.abs(rounded - placement.anchor.y) > 0.05)) commitAnchor(measured.column, rounded);
+  }, [commitAnchor, doc.assets, doc.design, doc.highlightBox, doc.highlights, doc.images, doc.references, placement, design, pageHeight, readOnly]);
 
   const onPointerDown = (event: ReactPointerEvent<HTMLElement>) => {
-    if (event.button !== 0) return;
+    if (readOnly || event.button !== 0) return;
     const page = event.currentTarget.closest<HTMLElement>('.page');
     if (!page) return;
     const pxPerMm = page.getBoundingClientRect().width / PAGE_W;
@@ -286,11 +279,12 @@ function PlacedHighlightsItem({ doc }: { doc: Doc }) {
     if (!page) return;
     const nextLeft = state.startLeft + (event.clientX - state.startClientX) / state.pxPerMm;
     const desiredTop = state.startTop + (event.clientY - state.startClientY) / state.pxPerMm;
-    const column = snapImageColumn(nextLeft, geometry.widthCols, doc.design);
+    const column = snapImageColumn(nextLeft, geometry.widthCols, design);
     const candidate = placedHighlightsGeometry(
       { ...placement, anchor: { ...placement.anchor, column, y: desiredTop } },
-      doc.design,
+      design,
       state.height,
+      pageHeight,
     );
     const top = imageAvoidingTop(
       page,
@@ -300,6 +294,7 @@ function PlacedHighlightsItem({ doc }: { doc: Doc }) {
       state.height,
       state.pxPerMm,
       Math.max(3, doc.design.gutter * 0.6),
+      pageHeight,
     );
     const rounded = Math.round(top * 10) / 10;
     state.column = column;
@@ -340,13 +335,14 @@ function PlacedHighlightsItem({ doc }: { doc: Doc }) {
 }
 
 /** Absolute image overlay for one physical sheet. */
-export function PlacedImages({ doc, pageIndex }: { doc: Doc; pageIndex: number }) {
+export function PlacedImages({ doc, pageIndex, pageHeight = PAGE_H, readOnly = false, includeHighlights = true }: { doc: Doc; pageIndex: number; pageHeight?: number; readOnly?: boolean; includeHighlights?: boolean }) {
+  const design = isReferenceArticle(doc.templateId) ? articleGridDesign(doc.design) : doc.design;
   const images = (doc.images ?? []).filter((image) => image.anchor.page === pageIndex + 1);
   const showHighlights =
-    doc.design.sidebar &&
+    includeHighlights && doc.design.sidebar &&
     doc.design.highlightsPlacement === 'free' &&
     (doc.highlights.some((item) => item.trim()) || doc.references.length > 0) &&
-    (doc.highlightBox ?? defaultPlacedHighlights(doc.design)).anchor.page === pageIndex + 1;
+    (doc.highlightBox ?? defaultPlacedHighlights(design, pageHeight)).anchor.page === pageIndex + 1;
   if (!images.length && !showHighlights) return null;
 
   return (
@@ -354,10 +350,10 @@ export function PlacedImages({ doc, pageIndex }: { doc: Doc; pageIndex: number }
       {images.map((image) => {
         const asset = doc.assets[image.assetId];
         return asset ? (
-          <PlacedImageItem key={image.id} image={image} asset={asset} design={doc.design} />
+          <PlacedImageItem key={image.id} image={image} asset={asset} design={design} pageHeight={pageHeight} readOnly={readOnly}/>
         ) : null;
       })}
-      {showHighlights && <PlacedHighlightsItem doc={doc} />}
+      {showHighlights && <PlacedHighlightsItem doc={doc} design={design} pageHeight={pageHeight} readOnly={readOnly}/>}
     </div>
   );
 }

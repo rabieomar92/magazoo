@@ -16,6 +16,7 @@ import { FrontMatterContent, FrontMatterImages, FrontMatterDesign } from './sect
 import { NewsContent, NewsImages } from './sections/NewsSection';
 import { BackCoverContent, BackCoverImages, BackCoverDesign } from './sections/BackCoverSection';
 import { DirectionSection } from './sections/DirectionSection';
+import { TopBarSection } from './sections/TopBarSection';
 import './editor-refinements.css';
 import {
   blockEditorId,
@@ -189,6 +190,7 @@ export function Panel() {
         <div className="panel-design-pane" hidden={tab !== 'design'}>
           <p className="typography-relocated-note">Font and text styling controls are in the top toolbar. Page layout, backgrounds and object positioning stay here.</p>
           <DirectionSection />{isBackCover ? <BackCoverDesign /> : isFrontMatter || isNews ? <FrontMatterDesign /> : <DesignSection />}
+          {templateId !== 'frontmatter-board' && <TopBarSection />}
           <PageMarginTextSection />
         </div>
       </div>

@@ -1,4 +1,5 @@
 import { TypographyControl } from '../TypographyToolbar';
+import { isReferenceArticle, ARTICLE_LAYOUTS, articleGridDesign, referenceArticleDesign } from '../../lib/articleLayouts';
 import { useRef, useState } from 'react';
 import { useDoc } from '../../store/useDoc';
 import {
@@ -35,6 +36,7 @@ export function DesignSection() {
   });
   const family = useDoc((s) => familyOf(s.doc.templateId));
   const templateId = useDoc((s) => s.doc.templateId);
+  const isReference = isReferenceArticle(templateId);
   const isGate = templateId === 'magazine-3';
   const isFrontCover = useDoc((s) => s.doc.templateId === 'magazine-4');
   /** The families whose sheets can carry a highlights/references callout. */
@@ -62,7 +64,8 @@ export function DesignSection() {
       d.design.colors[key] = v;
     });
 
-  const cpl = cplWarning(design);
+  const imageThemeEnabled = templateId === 'paper-3' ? design.imageTheme !== false : design.imageTheme === true;
+  const cpl = cplWarning(isReference ? articleGridDesign(design) : design);
 
   const onBackgroundFile = async (file: File | undefined) => {
     if (!file) return;
@@ -95,9 +98,25 @@ export function DesignSection() {
   if (isFrontCover) return <FrontCoverDesignSection />;
 
   const generalSettings = (
-    <Section title="Design">
-      {templateId === 'paper-3' && <>
-        <Toggle label="Match colours to hero image" checked={design.imageTheme !== false} onChange={v => set('imageTheme', v)} />
+    <Section title="Page layout & spacing">
+      {isReference && <>
+        <p className="hint">{ARTICLE_LAYOUTS[templateId].name} · inspired by RIKEN Research, December 2025, page {ARTICLE_LAYOUTS[templateId].referencePage}. Four columns reproduce the reference grid. All five layouts share these controls.</p>
+        <LabeledSelect label="Page proportions" value={design.articlePageSize ?? 'reference'} options={[
+          { value: 'reference', label: 'Reference trim · 210 × 276 mm' }, { value: 'a4', label: 'A4 · 210 × 297 mm' },
+        ]} onChange={v => set('articlePageSize', v as Design['articlePageSize'])}/>
+        <p className="hint">Reference pages fit inside A4 or B5 on export without cropping. A4 adds space below the original composition.</p>
+        <button type="button" className="btn" onClick={() => update(d => { d.design = referenceArticleDesign(templateId, d.design); })}>Apply reference design defaults</button>
+        <p className="hint">Resets fonts, sizes, colours and grid spacing. Your text and images stay unchanged; Undo restores your design.</p>
+        <TypographyControl group="body" order={48} property="lineHeight"><LabeledNumber label="Line spacing" value={design.articleLeading ?? 1.28} min={1} max={2.5} step={.02} onChange={v => set('articleLeading', v)}/></TypographyControl>
+        <TypographyControl group="heroCaption" order={10} property="fontFamily"><LabeledSelect label="Caption font" value={design.articleCaptionFont ?? 'Avenir Next LT Pro'} options={fontOptions()} onChange={v => set('articleCaptionFont',v)}/></TypographyControl>
+        <TypographyControl group="heroCaption" order={20} property="fontSize"><LabeledNumber label="Caption size" unit="pt" value={design.articleCaptionSize ?? 7} min={5} max={18} step={.5} onChange={v => set('articleCaptionSize',v)}/></TypographyControl>
+        <TypographyControl group="heroCaption" order={40} property="color"><LabeledColor label="Caption colour" value={design.articleCaptionColor ?? (templateId === 'paper-7' || templateId === 'paper-8' ? design.colors.ink : '#ffffff')} onChange={v => set('articleCaptionColor',v)}/></TypographyControl>
+        <TypographyControl group="heroCaption" order={50} property="align"><SegmentField<NonNullable<Design['articleCaptionAlign']>> label="Caption alignment" value={design.articleCaptionAlign ?? 'left'} options={[
+          {value:'left',label:'Left'},{value:'center',label:'Center'},{value:'right',label:'Right'},{value:'justify',label:'Justify'},
+        ]} onChange={v => set('articleCaptionAlign',v)}/></TypographyControl>
+      </>}
+      {(templateId === 'paper-3' || isReference) && <>
+        <Toggle label="Match colours to hero image" checked={imageThemeEnabled} onChange={v => set('imageTheme', v)} />
         <p className="hint">The photo fades into a solid, image-matched page colour with contrasting text. Turn this off to use your manual palette. Individual text colour overrides remain editable.</p>
         <Toggle label="Photograph rises from the foot of the page" checked={design.heroAtBottom === true} onChange={v => set('heroAtBottom', v)} />
         <p className="hint">The photo fills the bottom edge above the footer, fading upward into the article’s background colour. The masthead stays at the top. Use “Image height” to set how far the photo reaches.</p>
@@ -113,7 +132,7 @@ export function DesignSection() {
         ]}
         onChange={(v) => set('bodyCols', v)}
       />
-      <TypographyControl group="body" order={50}><SegmentField<NonNullable<Design['bodyAlign']>>
+      <TypographyControl group="body" order={50} property="align"><SegmentField<NonNullable<Design['bodyAlign']>>
         label="Text alignment"
         value={design.bodyAlign ?? 'justify'}
         options={[
@@ -181,28 +200,28 @@ export function DesignSection() {
         </>
       )}
 
-      {!isGate && <><TypographyControl group="title" order={20}><LabeledNumber label="Title" unit="pt" value={design.sizes.title} min={16} max={48} step={0.5} onChange={setSize('title')} /></TypographyControl>
-      <TypographyControl group="subtitle" order={20}><LabeledNumber label="Subtitle" unit="pt" value={design.sizes.subtitle} min={8} max={18} step={0.5} onChange={setSize('subtitle')} /></TypographyControl></>}
-      <TypographyControl group="body" order={20}><LabeledNumber label="Body text" unit="pt" value={design.sizes.body} min={7} max={12} step={0.1} onChange={setSize('body')} /></TypographyControl>
-      {!isGate && <><TypographyControl group="category" order={20}><LabeledNumber label="Category" unit="pt" value={design.sizes.categoryLabel} min={6} max={12} step={0.5} onChange={setSize('categoryLabel')} /></TypographyControl>
-      <TypographyControl group="author" order={20}><LabeledNumber label="Author" unit="pt" value={design.sizes.author} min={7} max={12} step={0.5} onChange={setSize('author')} /></TypographyControl>
-      <TypographyControl group="affiliation" order={20}><LabeledNumber label="Affiliation" unit="pt" value={design.sizes.affiliation} min={7} max={12} step={0.5} onChange={setSize('affiliation')} /></TypographyControl></>}
+      {!isGate && <><TypographyControl group="title" order={20} property="fontSize"><LabeledNumber label="Title" unit="pt" value={design.sizes.title} min={16} max={48} step={0.5} onChange={setSize('title')} /></TypographyControl>
+      <TypographyControl group="subtitle" order={20} property="fontSize"><LabeledNumber label="Subtitle" unit="pt" value={design.sizes.subtitle} min={8} max={18} step={0.5} onChange={setSize('subtitle')} /></TypographyControl></>}
+      <TypographyControl group="body" order={20} property="fontSize"><LabeledNumber label="Body text" unit="pt" value={design.sizes.body} min={7} max={12} step={0.1} onChange={setSize('body')} /></TypographyControl>
+      {!isGate && <><TypographyControl group="category" order={20} property="fontSize"><LabeledNumber label="Category" unit="pt" value={design.sizes.categoryLabel} min={6} max={12} step={0.5} onChange={setSize('categoryLabel')} /></TypographyControl>
+      <TypographyControl group="author" order={20} property="fontSize"><LabeledNumber label="Author" unit="pt" value={design.sizes.author} min={7} max={12} step={0.5} onChange={setSize('author')} /></TypographyControl>
+      <TypographyControl group="affiliation" order={20} property="fontSize"><LabeledNumber label="Affiliation" unit="pt" value={design.sizes.affiliation} min={7} max={12} step={0.5} onChange={setSize('affiliation')} /></TypographyControl></>}
 
       <p className="typography-relocated-note" id="editor-target-design-fonts">Select text or choose a text group in the top toolbar to change typography.</p>
-      {!isGate && <TypographyControl group="title" order={10}><LabeledSelect label="Display" value={design.fontDisplay} options={fontOptions(SERIF_FONTS)} onChange={(v) => set('fontDisplay', v)} /></TypographyControl>}
-      <TypographyControl group="body" order={10}><LabeledSelect label="Body" value={design.fontBody} options={fontOptions(SANS_FONTS)} onChange={(v) => set('fontBody', v)} /></TypographyControl>
-      {!isGate && <><TypographyControl group="category" order={10}><LabeledSelect label="Category" value={design.fontCategory ?? design.fontBody} options={fontOptions(ALL_FONTS)} onChange={(v) => set('fontCategory', v)} /></TypographyControl>
-      <TypographyControl group="subtitle" order={10}><LabeledSelect label="Subtitle" value={design.fontSubtitle ?? (family === 'gallery' ? design.fontBody : design.fontDisplay)} options={fontOptions(ALL_FONTS)} onChange={(v) => set('fontSubtitle', v)} /></TypographyControl>
-      <TypographyControl group="author" order={10}><LabeledSelect label="Author" value={design.fontAuthor ?? design.fontBody} options={fontOptions(ALL_FONTS)} onChange={(v) => set('fontAuthor', v)} /></TypographyControl>
-      <TypographyControl group="affiliation" order={10}><LabeledSelect label="Affiliation" value={design.fontAffiliation ?? design.fontBody} options={fontOptions(ALL_FONTS)} onChange={(v) => set('fontAffiliation', v)} /></TypographyControl></>}
+      {!isGate && <TypographyControl group="title" order={10} property="fontFamily"><LabeledSelect label="Display" value={design.fontDisplay} options={fontOptions(SERIF_FONTS)} onChange={(v) => set('fontDisplay', v)} /></TypographyControl>}
+      <TypographyControl group="body" order={10} property="fontFamily"><LabeledSelect label="Body" value={design.fontBody} options={fontOptions(isReference || design.fontBody === 'Georgia' ? ['Georgia', ...SANS_FONTS] : SANS_FONTS)} onChange={(v) => set('fontBody', v)} /></TypographyControl>
+      {!isGate && <><TypographyControl group="category" order={10} property="fontFamily"><LabeledSelect label="Category" value={design.fontCategory ?? design.fontBody} options={fontOptions(ALL_FONTS)} onChange={(v) => set('fontCategory', v)} /></TypographyControl>
+      <TypographyControl group="subtitle" order={10} property="fontFamily"><LabeledSelect label="Subtitle" value={design.fontSubtitle ?? (family === 'gallery' ? design.fontBody : design.fontDisplay)} options={fontOptions(ALL_FONTS)} onChange={(v) => set('fontSubtitle', v)} /></TypographyControl>
+      <TypographyControl group="author" order={10} property="fontFamily"><LabeledSelect label="Author" value={design.fontAuthor ?? design.fontBody} options={fontOptions(ALL_FONTS)} onChange={(v) => set('fontAuthor', v)} /></TypographyControl>
+      <TypographyControl group="affiliation" order={10} property="fontFamily"><LabeledSelect label="Affiliation" value={design.fontAffiliation ?? design.fontBody} options={fontOptions(ALL_FONTS)} onChange={(v) => set('fontAffiliation', v)} /></TypographyControl></>}
 
       <p className="group-label">Colors</p>
-      {templateId === 'paper-3' && design.imageTheme !== false && <p className="hint">These are your saved manual colours. Turn off “Match colours to hero image” above to apply them.</p>}
+      {(templateId === 'paper-3' || isReference) && imageThemeEnabled && <p className="hint">These are your saved manual colours. Turn off “Match colours to hero image” above to apply them.</p>}
       <LabeledColor label="Page color (all pages)" value={design.paperBg ?? '#ffffff'} onChange={(v) => set('paperBg', v)} />
       <LabeledColor label="Hero" value={design.colors.hero} onChange={setColor('hero')} />
       <LabeledColor label="Accent" value={design.colors.accent} onChange={setColor('accent')} />
       <LabeledColor label="Soft accent" value={design.colors.accentSoft} onChange={setColor('accentSoft')} />
-      <TypographyControl group="theme" order={40}><LabeledColor label="Ink (text)" value={design.colors.ink} onChange={setColor('ink')} /></TypographyControl>
+      <TypographyControl group="theme" order={40} property="color"><LabeledColor label="Ink (text)" value={design.colors.ink} onChange={setColor('ink')} /></TypographyControl>
       {!isGate && <>
       <div className="cover-style-list">
         <HeadingTextEditor role="subtitle" label={family === 'gallery' ? 'Descriptions' : 'Subtitle / lede'} />
@@ -306,7 +325,7 @@ export function DesignSection() {
             <>
               <LabeledColor label="Bar line" value={design.barColor ?? '#111418'} onChange={(v) => set('barColor', v)} />
               <LabeledColor label="Tag box" value={design.barTagColor ?? '#bfbfbf'} onChange={(v) => set('barTagColor', v)} />
-              <TypographyControl group="masthead" order={40}><LabeledColor label="Bar text ink" value={design.barTagInk ?? '#111418'} onChange={(v) => set('barTagInk', v)} /></TypographyControl>
+              <TypographyControl group="masthead" order={40} property="color"><LabeledColor label="Bar text ink" value={design.barTagInk ?? '#111418'} onChange={(v) => set('barTagInk', v)} /></TypographyControl>
             </>
           )}
         </div>

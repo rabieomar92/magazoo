@@ -137,7 +137,7 @@ export function NewsImageEditor({ story }: { story: NewsStory }) {
         <button type="button" className="add-btn" onClick={() => change(item => { item.frame = { scale: 1, offsetX: 0, offsetY: 0 }; })}>Reset crop</button>
       </div>}
     </>}
-    <LabeledTextarea label="Caption" editorTarget={`news-caption-${story.id}`} value={story.caption} rows={3}
+    <LabeledTextarea writingGuide label="Caption" editorTarget={`news-caption-${story.id}`} value={story.caption} rows={3}
       placeholder="Explain what the image shows."
       onChange={value => change(item => { item.caption = value; })} />
     <LabeledInput label="Photo credit" editorTarget={`news-credit-${story.id}`} value={story.photoCredit ?? ''}

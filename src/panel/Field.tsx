@@ -1,5 +1,6 @@
-import { useState, type ReactNode } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import { editorTargetId } from '../lib/editorNavigation';
+import { WritingGuide } from './WritingGuide';
 
 interface EditorTargetProps {
   /** Stable destination used by clicks in the page preview. */
@@ -28,11 +29,13 @@ export function LabeledInput({ label, value, onChange, placeholder, editorTarget
   );
 }
 
-export function LabeledTextarea({ label, value, onChange, placeholder, editorTarget, rows = 4 }: LabeledProps & { rows?: number }) {
+export function LabeledTextarea({ label, value, onChange, placeholder, editorTarget, rows = 4, writingGuide=false }: LabeledProps & { rows?: number; writingGuide?:boolean }) {
+  const editorRef=useRef<HTMLTextAreaElement>(null);
   return (
-    <label className="field" id={editorTarget ? editorTargetId(editorTarget) : undefined}>
+    <><label className="field" id={editorTarget ? editorTargetId(editorTarget) : undefined}>
       <span className="field-label">{label}</span>
       <textarea
+        ref={editorRef}
         className="field-input field-textarea"
         dir="auto"
         value={value}
@@ -40,7 +43,7 @@ export function LabeledTextarea({ label, value, onChange, placeholder, editorTar
         rows={rows}
         onChange={(e) => onChange(e.target.value)}
       />
-    </label>
+    </label>{writingGuide&&<WritingGuide text={value} editorRef={editorRef} label={label}/>}</>
   );
 }
 

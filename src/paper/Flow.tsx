@@ -543,11 +543,14 @@ export function Flow({
   doc,
   allowTopBleed = false,
   allowBottomBleed = false,
+  singleColumn = false,
 }: {
   pieces: Piece[];
   doc: Doc;
   allowTopBleed?: boolean;
   allowBottomBleed?: boolean;
+  /** A pre-paginated physical column must not rebalance into nested tracks. */
+  singleColumn?: boolean;
 }) {
   if (pieces.length === 1 && pieces[0].kind === 'image-columns') {
     return <ImageColumnsFlow piece={pieces[0]} />;
@@ -585,7 +588,7 @@ export function Flow({
     const block = doc.blocks.find((candidate) => candidate.id === piece.id);
     return block?.type === 'figure' && block.span === 1;
   });
-  const mixed = !hasInlineFigure && pieces.some((piece) => piece.kind !== 'text');
+  const mixed = !singleColumn && !hasInlineFigure && pieces.some((piece) => piece.kind !== 'text');
   if (mixed) {
     for (const piece of pieces) {
       const last = renderPieces[renderPieces.length - 1];

@@ -13,11 +13,11 @@ export function HeadingTextEditor({ role, label }: { role: HeadingTextRole; labe
     <details className="cover-style-group">
       <summary>{label}</summary>
       <div className="cover-style-fields">
-        <TypographyControl group={role} label={label} order={40}><LabeledColor label={`${label} color`} value={style.color}
+        <TypographyControl group={role} label={label} order={40} property="color"><LabeledColor label={`${label} color`} value={style.color}
           onChange={(value) => update((doc) => { doc.design[colorKey] = value; })} /></TypographyControl>
-        <TypographyControl group={role} label={label} order={30}><Toggle label={`${label} bold`} checked={style.fontWeight >= 700}
+        <TypographyControl group={role} label={label} order={30} property="fontWeight"><Toggle label={`${label} bold`} checked={style.fontWeight >= 700}
           onChange={(value) => update((doc) => { doc.design[`${role}Weight`] = value ? 700 : 400; })} /></TypographyControl>
-        <TypographyControl group={role} label={label} order={30}><Toggle label={`${label} italic`} checked={style.fontStyle === 'italic'}
+        <TypographyControl group={role} label={label} order={30} property="italic"><Toggle label={`${label} italic`} checked={style.fontStyle === 'italic'}
           onChange={(value) => update((doc) => { doc.design[`${role}Italic`] = value; })} /></TypographyControl>
         <TypographyControl group={role} label={label} order={90}><button type="button" className="add-btn cover-style-reset"
           onClick={() => update((doc) => {

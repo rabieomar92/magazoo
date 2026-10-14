@@ -1,5 +1,6 @@
 import type { Doc } from '../schema/document';
 import { barStartsRight } from '../lib/barSide';
+import { topBarVisible } from '../lib/topBar';
 
 /** The paper rule with a tag block. A direct-on-page bar can opt into horizontal
  *  full bleed; bars already living in a full-bleed hero/top region must not. */
@@ -18,7 +19,7 @@ export function TagBar({
   const flip = barStartsRight(doc.design.barSide, pageIndex);
   const topBarText = doc.meta.masthead?.trim();
   const detailText = detail?.trim();
-  if (doc.templateId === 'magazine-4') return null;
+  if (!topBarVisible(doc)) return null;
   return (
     <div
       className={`tag-bar${flip ? ' tag-bar--flip' : ''}${detailText ? ' tag-bar--detailed' : ''}`}

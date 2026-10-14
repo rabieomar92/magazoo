@@ -13,7 +13,8 @@ import { GalleryVerticalPosition } from '../GalleryVerticalPosition';
 import { TOKEN, wrapSelection, type Mark } from '../../lib/richtext';
 import { setActiveEditor } from '../../lib/activeEditor';
 import { normalizeInlineContinuations, removeArticleBlock } from '../../lib/inlineFigure';
-import { blockEditorId } from '../../lib/editorNavigation';
+import { blockEditorId, requestBlockEditorFocus } from '../../lib/editorNavigation';
+import { WritingGuide } from '../WritingGuide';
 import { galleryTextPosition } from '../../lib/galleryTextPosition';
 
 const KEY_TO_MARK: Record<string, Mark> = { b: 'b', i: 'i', u: 'u' };
@@ -365,6 +366,7 @@ export function BodySection({ allowEquations = true }: { allowEquations?: boolea
                   label={`Paragraph ${viewIndex + 1} vertical position`}
                   onChange={value => setCardVerticalPosition(block.id, value)} />
               )}
+              <WritingGuide text={block.text} editorId={blockEditorId(block.id)} label={`Paragraph ${viewIndex+1}`} onFormat={()=>requestBlockEditorFocus(block.id)}/>
               {!isFrontCover && <div className="paragraph-indent">
                 <TypographyControl group={`block:${block.id}`} label={`${block.type === "paragraph" ? "Paragraph" : "Equation"} ${viewIndex + 1}`} order={50}><SegmentField<'default' | 'on' | 'off'>
                   label="Indent"
@@ -381,7 +383,7 @@ export function BodySection({ allowEquations = true }: { allowEquations?: boolea
               </div>}
               {isCardContent && (
                 <div className="paragraph-alignment">
-                  <TypographyControl group={`block:${block.id}`} label={`${block.type === "paragraph" ? "Paragraph" : "Equation"} ${viewIndex + 1}`} order={50}><SegmentField<'left' | 'center' | 'right' | 'justify'>
+                  <TypographyControl group={`block:${block.id}`} label={`${block.type === "paragraph" ? "Paragraph" : "Equation"} ${viewIndex + 1}`} order={50} property="align"><SegmentField<'left' | 'center' | 'right' | 'justify'>
                     label="Alignment"
                     value={block.align ?? templateBodyAlign}
                     options={[
@@ -404,7 +406,7 @@ export function BodySection({ allowEquations = true }: { allowEquations?: boolea
                     }
                   })}/>
                 </TypographyControl>}
-                <TypographyControl group={`block:${block.id}`} label={`${block.type === "paragraph" ? "Paragraph" : "Equation"} ${viewIndex + 1}`} order={20}><LabeledNumber
+                <TypographyControl group={`block:${block.id}`} label={`${block.type === "paragraph" ? "Paragraph" : "Equation"} ${viewIndex + 1}`} order={20} property="fontSize"><LabeledNumber
                   label="Size"
                   unit="pt"
                   value={block.fontSize ?? templateBodySize}
@@ -422,7 +424,7 @@ export function BodySection({ allowEquations = true }: { allowEquations?: boolea
                   step={1}
                   onChange={(topPadding) => setParagraphStyle(index, { topPadding })}
                 /></TypographyControl>
-                <TypographyControl group={`block:${block.id}`} label={`${block.type === "paragraph" ? "Paragraph" : "Equation"} ${viewIndex + 1}`} order={40}><LabeledColor
+                <TypographyControl group={`block:${block.id}`} label={`${block.type === "paragraph" ? "Paragraph" : "Equation"} ${viewIndex + 1}`} order={40} property="color"><LabeledColor
                   label="Color"
                   value={block.color ?? templateInk}
                   onChange={(color) => setParagraphStyle(index, { color })}
@@ -460,7 +462,7 @@ export function BodySection({ allowEquations = true }: { allowEquations?: boolea
                 placeholder="Equation caption (optional)…"
                 onChange={(event) => setEquationCaption(index, event.target.value)}
               />
-              <TypographyControl group={`block:${block.id}`} label={`Equation ${viewIndex + 1}`} order={50}><SegmentField<'left' | 'center' | 'right'>
+              <TypographyControl group={`block:${block.id}`} label={`Equation ${viewIndex + 1}`} order={50} property="align"><SegmentField<'left' | 'center' | 'right'>
                 label="Caption align"
                 value={block.align ?? 'center'}
                 options={[

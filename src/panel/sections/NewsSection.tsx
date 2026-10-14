@@ -1,4 +1,5 @@
 import { TypographyControl } from '../TypographyToolbar';
+import { WritingGuide } from '../WritingGuide';
 import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { useDoc } from '../../store/useDoc';
 import { assetIsReferenced, uid, type Design, type NewsStory } from '../../schema/document';
@@ -79,7 +80,7 @@ function StoryTextEditor({ story, onChange }: { story: NewsStory; onChange: (val
     event.preventDefault();
     wrapSelection(event.currentTarget, TOKEN[mark], onChange);
   };
-  return <label className="field" id={editorTargetId(`news-text-${story.id}`)}>
+  return <><label className="field" id={editorTargetId(`news-text-${story.id}`)}>
     <span className="field-label">Story text <small className="news-word-count">{story.text.trim() ? story.text.trim().split(/\s+/u).length : 0} words</small></span>
     <textarea ref={editor} aria-label="Story text" className="field-input field-textarea field-textarea--grow news-story-editor"
       dir="auto" value={story.text} rows={7}
@@ -87,7 +88,7 @@ function StoryTextEditor({ story, onChange }: { story: NewsStory; onChange: (val
       onFocus={event => setActiveEditor({ el: event.currentTarget, setValue: onChange })}
       onKeyDown={format}
       onChange={event => onChange(event.target.value)} />
-  </label>;
+  </label><WritingGuide text={story.text} editorRef={editor} label="Story" onFormat={()=>requestEditorTargetFocus('content',`news-text-${story.id}`)}/></>;
 }
 
 export function NewsContent() {
@@ -293,25 +294,25 @@ export function NewsContent() {
 
             <details className="news-advanced typography-source">
               <summary>Typography & paragraph style</summary>
-              <TypographyControl group={`news:${story.id}`} label={`Story ${index + 1}: ${story.title || "Untitled"}`} order={20}><LabeledNumber label="Headline size" unit="pt" value={story.headlineSize ?? doc.design.sizes.title * (story.layout === 'lead' ? 1 : story.layout === 'aside' ? .62 : .8)} min={8} max={60} step={.5}
+              <TypographyControl group={`news:${story.id}:title`} label={`Story ${index + 1} · headline`} order={20} property="fontSize"><LabeledNumber label="Headline size" unit="pt" value={story.headlineSize ?? doc.design.sizes.title * (story.layout === 'lead' ? 1 : story.layout === 'aside' ? .62 : .8)} min={8} max={60} step={.5}
                 onChange={value => change(story.id, item => { item.headlineSize = value; })} /></TypographyControl>
-              <TypographyControl group={`news:${story.id}`} label={`Story ${index + 1}: ${story.title || "Untitled"}`} order={20}><LabeledNumber label="Body size" unit="pt" value={story.bodySize ?? doc.design.sizes.body} min={7} max={20} step={.1}
+              <TypographyControl group={`news:${story.id}:body`} label={`Story ${index + 1} · body`} order={20} property="fontSize"><LabeledNumber label="Body size" unit="pt" value={story.bodySize ?? doc.design.sizes.body} min={7} max={20} step={.1}
                 onChange={value => change(story.id, item => { item.bodySize = value; })} /></TypographyControl>
-              <TypographyControl group={`news:${story.id}`} label={`Story ${index + 1}: ${story.title || "Untitled"}`} order={50}><LabeledNumber label="Line spacing" value={story.lineHeight ?? 1.48} min={1.1} max={2} step={.05}
+              <TypographyControl group={`news:${story.id}:body`} label={`Story ${index + 1} · body`} order={50} property="lineHeight"><LabeledNumber label="Line spacing" value={story.lineHeight ?? 1.48} min={1.1} max={2} step={.05}
                 onChange={value => change(story.id, item => { item.lineHeight = value; })} /></TypographyControl>
-              <TypographyControl group={`news:${story.id}`} label={`Story ${index + 1}: ${story.title || "Untitled"}`} order={30}><SegmentField label="Paragraphs" value={story.paragraphStyle ?? 'indent'}
+              <TypographyControl group={`news:${story.id}:body`} label={`Story ${index + 1} · body`} order={30}><SegmentField label="Paragraphs" value={story.paragraphStyle ?? 'indent'}
                 options={[{ value: 'indent', label: 'Indent' }, { value: 'spaced', label: 'Space between' }]}
                 onChange={value => change(story.id, item => { item.paragraphStyle = value; })} /></TypographyControl>
-              <TypographyControl group={`news:${story.id}`} label={`Story ${index + 1}: ${story.title || "Untitled"}`} order={90}><button type="button" className="news-duplicate-btn" onClick={() => change(story.id, item => {
+              <TypographyControl group={`news:${story.id}:body`} label={`Story ${index + 1} · body`} order={90}><button type="button" className="news-duplicate-btn" onClick={() => change(story.id, item => {
                 delete item.headlineSize; delete item.bodySize; delete item.lineHeight; delete item.paragraphStyle;
-              })}>Reset typography to theme</button></TypographyControl>
+              })}>Reset original story typography</button></TypographyControl>
             </details>
 
             <details className="news-advanced typography-source">
               <summary>Paragraph spacing</summary>
               <p className="hint">Optional extra space before each paragraph.</p>
               <div className="news-paragraph-grid">
-                {newsParagraphs(story.text).map((_, paragraph) => <TypographyControl key={paragraph} group={`news:${story.id}`} label={`Story ${index + 1}: ${story.title || "Untitled"}`} order={50}><LabeledNumber key={paragraph}
+                {newsParagraphs(story.text).map((_, paragraph) => <TypographyControl key={paragraph} group={`news:${story.id}:body`} label={`Story ${index + 1} · body`} order={50}><LabeledNumber key={paragraph}
                   label={`Paragraph ${paragraph + 1}`} unit="px" value={story.paragraphTops?.[paragraph] ?? 0}
                   min={0} max={200} step={1}
                   onChange={value => setParagraphTop(story.id, paragraph, value)} /></TypographyControl>)}

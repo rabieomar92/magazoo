@@ -291,17 +291,17 @@ function BackCoverTextEditor({ role }: { role: BackCoverTextRole }) {
     <summary>{label}<span>{style.fontFamily} · {style.fontSize} pt</span></summary>
     <div className="back-cover-text-fields">
       <Toggle label="Show object" checked={style.visible} onChange={visible => set({ visible })} />
-      <TypographyControl group={role} label={label} order={10}><LabeledSelect label="Font" value={style.fontFamily} options={fontOptions(ALL_FONTS)} onChange={fontFamily => set({ fontFamily })} /></TypographyControl>
-      <TypographyControl group={role} label={label} order={20}><LabeledNumber label="Size" unit="pt" value={style.fontSize} min={4.5} max={72} step={.5} onChange={fontSize => set({ fontSize: clamp(fontSize, 4.5, 72) })} /></TypographyControl>
-      <TypographyControl group={role} label={label} order={30}><LabeledSelect label="Weight" value={String(style.fontWeight)} options={WEIGHT_OPTIONS} onChange={value => set({ fontWeight: Number(value) })} /></TypographyControl>
-      <TypographyControl group={role} label={label} order={30}><Toggle label="Italic" checked={style.italic} onChange={italic => set({ italic })} /></TypographyControl>
-      <TypographyControl group={role} label={label} order={50}><LabeledNumber label="Line height" unit="×" value={style.lineHeight} min={.75} max={2.5} step={.05} onChange={lineHeight => set({ lineHeight: clamp(lineHeight, .75, 2.5) })} /></TypographyControl>
+      <TypographyControl group={role} label={label} order={10} property="fontFamily"><LabeledSelect label="Font" value={style.fontFamily} options={fontOptions(ALL_FONTS)} onChange={fontFamily => set({ fontFamily })} /></TypographyControl>
+      <TypographyControl group={role} label={label} order={20} property="fontSize"><LabeledNumber label="Size" unit="pt" value={style.fontSize} min={4.5} max={72} step={.5} onChange={fontSize => set({ fontSize: clamp(fontSize, 4.5, 72) })} /></TypographyControl>
+      <TypographyControl group={role} label={label} order={30} property="fontWeight"><LabeledSelect label="Weight" value={String(style.fontWeight)} options={WEIGHT_OPTIONS} onChange={value => set({ fontWeight: Number(value) })} /></TypographyControl>
+      <TypographyControl group={role} label={label} order={30} property="italic"><Toggle label="Italic" checked={style.italic} onChange={italic => set({ italic })} /></TypographyControl>
+      <TypographyControl group={role} label={label} order={50} property="lineHeight"><LabeledNumber label="Line height" unit="×" value={style.lineHeight} min={.75} max={2.5} step={.05} onChange={lineHeight => set({ lineHeight: clamp(lineHeight, .75, 2.5) })} /></TypographyControl>
       {design.textDirection === 'rtl'
         ? <p className="hint">Arabic uses natural letter spacing so joined characters remain correct. Your Latin value is kept.</p>
-        : <TypographyControl group={role} label={label} order={50}><LabeledNumber label="Letter spacing" unit="em" value={style.letterSpacing} min={-.15} max={.5} step={.005} onChange={letterSpacing => set({ letterSpacing: clamp(letterSpacing, -.15, .5) })} /></TypographyControl>}
+        : <TypographyControl group={role} label={label} order={50} property="tracking"><LabeledNumber label="Letter spacing" unit="em" value={style.letterSpacing} min={-.15} max={.5} step={.005} onChange={letterSpacing => set({ letterSpacing: clamp(letterSpacing, -.15, .5) })} /></TypographyControl>}
       <LabeledNumber label="Space above" unit="mm" value={style.spaceBefore} min={-12} max={40} step={.5} onChange={spaceBefore => set({ spaceBefore: clamp(spaceBefore, -12, 40) })} />
       <p className="hint">Negative spacing moves this object closer to the one above while keeping the reading-order hierarchy.</p>
-      <TypographyControl group={role} label={label} order={40}><LabeledColor label="Colour" value={style.color} onChange={color => set({ color })} /></TypographyControl>
+      <TypographyControl group={role} label={label} order={40} property="color"><LabeledColor label="Colour" value={style.color} onChange={color => set({ color })} /></TypographyControl>
       <div className="back-cover-reset-row">
         <TypographyControl group={role} label={label} order={90}><button type="button" className="add-btn" onClick={usePalette}>Use palette colour</button></TypographyControl>
         <button type="button" className="add-btn" onClick={reset}>Reset this object</button>
@@ -370,9 +370,9 @@ export function BackCoverDesign() {
 
     <DesignGroup number={5} title="Colours & reset" summary="Page palette and object accents">
       <LabeledColor editorTarget="design-paper" label="Page colour" value={design.paperBg ?? '#f5b719'} onChange={value => update(d => { d.design.paperBg = value; })} />
-      <TypographyControl group="theme" order={40}><LabeledColor editorTarget="design-ink" label="Default text colour" value={design.colors.ink} onChange={value => update(d => { d.design.colors.ink = value; })} /></TypographyControl>
+      <TypographyControl group="theme" order={40} property="color"><LabeledColor editorTarget="design-ink" label="Default text colour" value={design.colors.ink} onChange={value => update(d => { d.design.colors.ink = value; })} /></TypographyControl>
       <LabeledColor editorTarget="design-accent" label="Default accent colour" value={design.colors.accent} onChange={value => update(d => { d.design.colors.accent = value; })} />
-      <TypographyControl group="theme" order={40}><LabeledColor label="Muted text colour" value={design.backCover?.mutedColor ?? design.colors.ink} onChange={value => set('mutedColor', value)} /></TypographyControl>
+      <TypographyControl group="theme" order={40} property="color"><LabeledColor label="Muted text colour" value={design.backCover?.mutedColor ?? design.colors.ink} onChange={value => set('mutedColor', value)} /></TypographyControl>
       <LabeledColor label="Social-logo colour" value={design.backCover?.socialIconColor ?? design.colors.accent} onChange={value => set('socialIconColor', value)} />
       <LabeledColor label="Divider colour" value={design.backCover?.ruleColor ?? design.colors.accent} onChange={value => set('ruleColor', value)} />
       <button type="button" className="add-btn back-cover-reset-design" onClick={() => update(d => {

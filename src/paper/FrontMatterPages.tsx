@@ -32,7 +32,7 @@ function Unit({unit,dean,initial=false,doc}: {unit:FrontMatterUnit;dean:boolean;
     style={{fontSize:unit.fontSize ? `${unit.fontSize}pt` : undefined,color:unit.color,paddingTop:unit.topPadding ? `${unit.topPadding}px` : undefined}}>
     {unit.page && <span className="fm-page-number">{unit.page}</span>}
     <div className="fm-entry-copy">
-      {unit.title && <h2>{unit.title}{unit.continued && <small> · continued</small>}</h2>}
+      {unit.title && <h2 {...target(`fm-entry-title-${unit.id}`)}>{unit.title}{unit.continued && <small> · continued</small>}</h2>}
       <div data-fm-text className={unit.decorativeQuote ? 'decorative-quote' : undefined} role={unit.decorativeQuote ? 'blockquote' : undefined} style={{textIndent:dean && unit.indent && !unit.continued ? '1.2em' : undefined}} dangerouslySetInnerHTML={{__html:quoteFlowHtml(unit.text,unit.decorativeQuote,initial && !unit.continued)}} />
     </div>
   </article>;

@@ -83,7 +83,7 @@ export function NewsItem({ piece, doc }: { piece: NewsPiece; doc: Doc }) {
       </div>
       {view.hasPhoto && view.asset && <figure {...target(`news-photo-${piece.id}`, 'images')}>
         <NewsPhoto story={piece} asset={view.asset} />
-        {(piece.caption || piece.photoCredit) && <figcaption>{piece.caption}{piece.photoCredit && <span className="news-photo-credit">{piece.photoCredit}</span>}</figcaption>}
+        {(piece.caption || piece.photoCredit) && <figcaption {...target(`news-caption-${piece.id}`, 'images')}>{piece.caption}{piece.photoCredit && <span className="news-photo-credit" {...target(`news-credit-${piece.id}`, 'images')}>{piece.photoCredit}</span>}</figcaption>}
       </figure>}
     </div>
   </article>;

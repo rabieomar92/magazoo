@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { Doc } from '../schema/document';
 import { imagePalette } from '../lib/imagePalette';
+import { isReferenceArticle } from '../lib/articleLayouts';
 
 export function useImageTheme(source: Doc): Doc {
-  const enabled = source.templateId === 'paper-3' && source.design.imageTheme !== false;
+  const supported = source.templateId === 'paper-3' || isReferenceArticle(source.templateId);
+  const enabled = supported && (source.templateId === 'paper-3' ? source.design.imageTheme !== false : source.design.imageTheme === true);
   const src = enabled && source.hero.assetId ? source.assets[source.hero.assetId]?.src : undefined;
   const bottom = source.design.heroAtBottom === true;
   const [sample, setSample] = useState<{ src: string; bottom: boolean; palette: ReturnType<typeof imagePalette> } | null>(null);
@@ -29,14 +31,17 @@ export function useImageTheme(source: Doc): Doc {
   }, [src, bottom]);
   const palette = sample && sample.src === src && sample.bottom === bottom ? sample.palette : null;
   return useMemo(() => {
-    if (source.templateId !== 'paper-3') return source;
+    if (!supported) return source;
     // Paper 3 deliberately never paints a photograph behind the article text.
-    const design = { ...source.design, pageBackgroundAssetId: undefined };
+    const design = { ...source.design, ...(source.templateId === 'paper-3' ? {pageBackgroundAssetId: undefined} : {}) };
     if (enabled && palette) {
       design.paperBg = palette.background;
-      design.colors = { hero: palette.background, ink: palette.ink, accent: palette.ink, accentSoft: palette.soft };
+      // Reference callouts inherit the page ink, unlike Paper 3's dark-ink
+      // sidebar. Keep their surface on the same contrasting background.
+      design.colors = { hero: palette.background, ink: palette.ink, accent: palette.ink,
+        accentSoft: isReferenceArticle(source.templateId) ? palette.background : palette.soft };
       // Explicit per-object choices still win over the generated theme.
     }
     return { ...source, design };
-  }, [source, enabled, palette]);
+  }, [source, supported, enabled, palette]);
 }

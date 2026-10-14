@@ -95,7 +95,7 @@ describe('editorial board page', () => {
     contents.design.showTopBar = false;
     expect(
       renderToStaticMarkup(<FrontMatterPages doc={contents} vars={{}} onStatus={() => undefined} />),
-    ).toContain('class="tag-bar');
+    ).not.toContain('class="tag-bar');
   });
 });
 
