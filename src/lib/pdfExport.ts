@@ -1,3 +1,5 @@
+import { fitPdfSheets, type PdfPageSize } from './pdfPageSize';
+
 const PRINT_FRAME_CLASS = 'pdf-print-frame';
 const RESOURCE_TIMEOUT_MS = 20_000;
 // Preview's last scheduled overflow correction runs at 1,200 ms. Do not
@@ -345,7 +347,7 @@ export function clonePages(source: HTMLElement, targetDocument: Document, { free
     const original = source.children[index];
     if (original instanceof HTMLElement) child.style.setProperty('display', window.getComputedStyle(original).display, 'important');
     child.style.setProperty('width', '210mm', 'important');
-    child.style.setProperty('height', '297mm', 'important');
+    child.style.setProperty('height', child.dataset.pageHeightMm === '276' ? '276mm' : '297mm', 'important');
     child.style.setProperty('margin', '0', 'important');
     child.style.setProperty('box-shadow', 'none', 'important');
   });
@@ -420,7 +422,7 @@ export function cloneIssuePages(containers: readonly HTMLElement[], targetDocume
  * export uses, so an article's pages in the issue PDF and the same article's
  * own PDF come out of identical code reading identical DOM.
  */
-export async function exportIssuePdf(title: string, root: HTMLElement) {
+export async function exportIssuePdf(title: string, root: HTMLElement, size: PdfPageSize = 'a4') {
   await waitForPreviewResources(root);
   const containers = issuePageContainers(root);
   const sheets = containers.flatMap(container => Array.from(container.children).filter(
@@ -477,6 +479,7 @@ export async function exportIssuePdf(title: string, root: HTMLElement) {
     await waitForStyles(printDocument);
     await waitForFonts(printDocument);
     await Promise.all(Array.from(printDocument.images).map(waitForImage));
+    fitPdfSheets(printDocument, size);
     await nextPaint(printWindow);
     await nextPaint(printWindow);
 
@@ -508,9 +511,12 @@ export async function waitForPreviewResources(source: HTMLElement) {
   await nextPaint();
   await nextPaint();
   await waitForStablePreview(source);
+  if (source.querySelector('.page[data-layout-overflow="true"], [data-image-avoidance="unresolved"]')) {
+    throw new Error('Some content does not fit inside its page. Resolve the layout warning before exporting; changing paper size cannot repair an overflowing source page.');
+  }
 }
 
-export async function exportPreviewPdf(title: string, suppliedSource?: HTMLElement) {
+export async function exportPreviewPdf(title: string, suppliedSource?: HTMLElement, size: PdfPageSize = 'a4') {
   const source = suppliedSource ?? document.querySelector<HTMLElement>('.pages');
   if (!source) throw new Error('The page preview is not ready yet.');
 
@@ -552,6 +558,7 @@ export async function exportPreviewPdf(title: string, suppliedSource?: HTMLEleme
     await waitForStyles(printDocument);
     await waitForFonts(printDocument);
     await Promise.all(Array.from(printDocument.images).map(waitForImage));
+    fitPdfSheets(printDocument, size);
     await nextPaint(printWindow);
     await nextPaint(printWindow);
 

@@ -242,6 +242,7 @@ function paint(el: HTMLElement, items: PaintItem[]) {
       // measured height matches what paints on the sheet.
       const fig = document.createElement('figure');
       fig.className = 'flow-eq';
+      fig.dataset.sourceBlockId = it.id;
       const tex = document.createElement('span');
       tex.className = 'flow-eq-tex';
       tex.innerHTML = renderTex(it.tex, true);
@@ -344,6 +345,7 @@ function paint(el: HTMLElement, items: PaintItem[]) {
       if (it.decorativeQuote) p.classList.add('decorative-quote');
       p.innerHTML = quoteFlowHtml(it.text, it.decorativeQuote, itemIndex === 0);
       if (it.fontSize !== undefined) p.style.fontSize = `${it.fontSize}pt`;
+      if (it.sourceId) p.dataset.sourceBlockId = it.sourceId;
       if (it.color) p.style.color = it.color;
       if (!it.cont && it.topPadding !== undefined) p.style.paddingTop = `${it.topPadding}px`;
       el.appendChild(p);
@@ -606,6 +608,7 @@ export function paginateHosts(
   hosts: HTMLElement[],
   items: FlowItem[],
   isOverflowing: (el: HTMLElement) => boolean = overflows,
+  options: { deferUnfit?: boolean } = {},
 ): Pagination {
   const src: PaintItem[] = items.filter((it) => it.kind !== 'text' || it.text.trim() !== '');
   if (!src.length) return { pages: [], fill: 0, spill: 0 };
@@ -619,7 +622,7 @@ export function paginateHosts(
     let { placed, rest: next } = fillOne(hostAt(pages.length), rest, isOverflowing);
     // Progress guard: a single item taller than a whole page fits nowhere.
     // Force it onto its own page (clipped by overflow:hidden) rather than loop.
-    if (placed.length === 0) {
+    if (placed.length === 0 && !(options.deferUnfit && pages.length < hosts.length - 1)) {
       placed = [rest[0]];
       next = rest.slice(1);
     }

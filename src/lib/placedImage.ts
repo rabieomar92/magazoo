@@ -70,6 +70,7 @@ export function placedImageGeometry(
   image: PlacedImage,
   asset: Asset,
   design: Design,
+  pageHeight = PAGE_H,
 ): PlacedImageGeometry {
   const g = grid(design);
   const widthCols = clamp(Math.round(image.widthCols), 1, Math.min(4, g.totalCols));
@@ -78,7 +79,7 @@ export function placedImageGeometry(
   const height = asset.naturalWidth > 0
     ? width * (asset.naturalHeight / asset.naturalWidth)
     : 0;
-  const maxTop = Math.max(0, PAGE_H - height);
+  const maxTop = Math.max(0, pageHeight - height);
   const left = design.margin + column * (g.col + design.gutter);
   const top = clamp(image.anchor.y, 0, maxTop);
   const right = left + width;
@@ -87,7 +88,7 @@ export function placedImageGeometry(
   const visualLeft = bleed.left ? 0 : left;
   const visualTop = bleed.top ? 0 : top;
   const visualRight = bleed.right ? PAGE_W : right;
-  const visualBottom = bleed.bottom ? PAGE_H : bottom;
+  const visualBottom = bleed.bottom ? pageHeight : bottom;
   return {
     column,
     widthCols,

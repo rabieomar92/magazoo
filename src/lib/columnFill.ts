@@ -109,6 +109,7 @@ function paintText(el: HTMLElement, items: TextPiece[], opener = false) {
     ].filter(Boolean);
     if (classes.length) p.className = classes.join(' ');
     if (it.fontSize !== undefined) p.style.fontSize = `${it.fontSize}pt`;
+    if (it.sourceId) p.dataset.sourceBlockId = it.sourceId;
     if (it.color) p.style.color = it.color;
     if (!it.cont && it.topPadding !== undefined) p.style.paddingTop = `${it.topPadding}px`;
     if (it.decorativeQuote) p.classList.add('decorative-quote');
@@ -149,6 +150,7 @@ function paintStamped(el: HTMLElement, items: TextPiece[]) {
       p.style.setProperty('-webkit-column-break-before', 'always');
     }
     if (it.fontSize !== undefined) p.style.fontSize = `${it.fontSize}pt`;
+    if (it.sourceId) p.dataset.sourceBlockId = it.sourceId;
     if (it.color) p.style.color = it.color;
     if (!it.cont && it.topPadding !== undefined) p.style.paddingTop = `${it.topPadding}px`;
     if (it.decorativeQuote) p.classList.add('decorative-quote');
@@ -548,6 +550,7 @@ function paintInlineFlow(el: HTMLElement, items: InlinePiece[], doc: Doc, opener
       ].filter(Boolean);
       if (classes.length) p.className = classes.join(' ');
       if (it.fontSize !== undefined) p.style.fontSize = `${it.fontSize}pt`;
+      if (it.sourceId) p.dataset.sourceBlockId = it.sourceId;
       if (it.color) p.style.color = it.color;
       if (!it.cont && it.topPadding !== undefined) p.style.paddingTop = `${it.topPadding}px`;
       if (it.decorativeQuote) p.classList.add('decorative-quote');
