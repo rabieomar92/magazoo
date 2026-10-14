@@ -458,7 +458,7 @@
 }
 
 .body-cols p {
-  margin: 0 0 0.8em;
+  margin: 0;
   /* First-line indent ("menjorok") marks each new paragraph. */
   text-indent: 1.5em;
 }
@@ -496,6 +496,12 @@
 }
 .body-cols p.indent-off {
   text-indent: 0;
+}
+
+/* Ordinary paragraphs use an indent, not a blank line. Pull quotes remain
+   separate editorial blocks and retain breathing room around their marks. */
+:is(.body-cols, .mag-cols, .mag2-cols) p.decorative-quote {
+  margin: .65em 0;
 }
 
 /* Inline figure: text flows above and below it — never over it. The measuring
@@ -799,7 +805,8 @@
   overflow-wrap: anywhere;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  /* Do not stretch paragraph gaps to fill the photo's height. */
+  justify-content: flex-start;
 }
 
 .flow-wraprow-sidecol > p:last-child,

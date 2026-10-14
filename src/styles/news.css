@@ -146,7 +146,7 @@
 }
 .news-copy [data-news-text] { white-space: normal; }
 .news-para { margin: 0; orphans: 2; widows: 2; }
-.news-para + .news-para { margin-top: .5lh; text-indent: 1.5em; }
+.news-para + .news-para { margin-top: 0; text-indent: 1.5em; }
 .news-para--indent { text-indent: 1.5em; }
 .news-story[data-paragraph-style="spaced"] .news-para + .news-para {
   margin-top: 4mm;

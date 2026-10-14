@@ -10,7 +10,18 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+.magazoo-data/
+.env
+*.sqlite*
 *.local
+
+# Local proofs, release archives and disposable verification servers
+tmp/
+output/
+deployment-artifacts/
+.tmp-*
+Claude outputs/
+_to_delete/
 
 # Editor directories and files
 .vscode/*

@@ -29,11 +29,11 @@ function Unit({unit,dean,initial=false,doc}: {unit:FrontMatterUnit;dean:boolean;
   return <article data-measure-id={unit.id} className={`fm-unit${dean?' fm-paragraph':''}${unit.continued?' fm-continued':''}`}
     {...(!dean ? target(`fm-entry-${unit.id}`) : {})}
     onClick={dean ? () => requestBlockEditorFocus(unit.id) : undefined}
-    style={{fontSize:unit.fontSize ? `${unit.fontSize}pt` : undefined,color:unit.color,paddingTop:unit.topPadding ? `${unit.topPadding}px` : undefined}}>
+    style={{fontSize:unit.fontSize ? `${unit.fontSize}pt` : undefined,color:unit.color,paddingTop:unit.continued ? '0px' : unit.topPadding !== undefined ? `${unit.topPadding}px` : undefined}}>
     {unit.page && <span className="fm-page-number">{unit.page}</span>}
     <div className="fm-entry-copy">
       {unit.title && <h2 {...target(`fm-entry-title-${unit.id}`)}>{unit.title}{unit.continued && <small> · continued</small>}</h2>}
-      <div data-fm-text className={unit.decorativeQuote ? 'decorative-quote' : undefined} role={unit.decorativeQuote ? 'blockquote' : undefined} style={{textIndent:dean && unit.indent && !unit.continued ? '1.2em' : undefined}} dangerouslySetInnerHTML={{__html:quoteFlowHtml(unit.text,unit.decorativeQuote,initial && !unit.continued)}} />
+      <div data-fm-text className={unit.decorativeQuote ? 'decorative-quote' : undefined} role={unit.decorativeQuote ? 'blockquote' : undefined} style={{textIndent:dean && !unit.continued && (unit.indent === true || (!initial && unit.indent !== false)) ? '1.2em' : undefined}} dangerouslySetInnerHTML={{__html:quoteFlowHtml(unit.text,unit.decorativeQuote,initial && !unit.continued)}} />
     </div>
   </article>;
 }

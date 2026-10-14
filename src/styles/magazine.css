@@ -559,12 +559,16 @@
 }
 
 .mag-cols p {
-  margin: 0 0 0.7em;
+  margin: 0;
+  text-indent: 1.5em;
 }
 
-/* Magazine paragraphs are flush by default (no rule above sets text-indent) —
-   this only matters when a paragraph explicitly turns indent ON. `.cont` never
-   carries one of these classes (paint()/Flow.tsx keep them mutually exclusive). */
+/* A continuation is the same paragraph, not a new indented line. The opener
+   stays flush for its drop cap; an explicit per-paragraph choice still wins. */
+.mag-cols p.cont,
+.mag-cols p.flow-opener {
+  text-indent: 0;
+}
 .mag-cols p.indent-on {
   text-indent: 1.5em;
 }
@@ -760,9 +764,14 @@
 }
 
 .mag2-cols p {
-  margin: 0 0 0.7em;
+  margin: 0;
+  text-indent: 1.5em;
 }
 
+.mag2-cols p.cont,
+.mag2-cols p.flow-opener {
+  text-indent: 0;
+}
 .mag2-cols p.indent-on {
   text-indent: 1.5em;
 }

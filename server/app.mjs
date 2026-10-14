@@ -3,6 +3,7 @@ import { readFile, stat } from 'node:fs/promises';
 import { resolve, extname, sep } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { createAuth } from './passwordAuth.mjs';
+import { imageResponse } from './heroPreview.mjs';
 
 const fail=(status,message)=>{throw Object.assign(new Error(message),{status});};
 const MAX_BODY=64*1024*1024;
@@ -83,7 +84,7 @@ export function createApp({storage,origin,passwordHash,staticDir,authOptions={},
         fail(405,'Method not allowed.');
       }
       const session=auth.session(jar.magazoo_admin);if(!session)fail(401,'Admin login required.');
-      if(req.method!=='GET' && req.headers['x-csrf-token']!==session.csrf)fail(403,'Reload the admin page and try again.');
+      if(!['GET','HEAD'].includes(req.method) && req.headers['x-csrf-token']!==session.csrf)fail(403,'Reload the admin page and try again.');
       if(path==='/api/auth/session' && req.method==='GET')return send(200,{csrf:session.csrf});
       if(path==='/api/auth/logout' && req.method==='POST'){auth.logout(jar.magazoo_admin);res.setHeader('Set-Cookie',cookie('magazoo_admin','',0));return send(200,{ok:true});}
       if(path==='/api/projects' && req.method==='GET')return send(200,storage.list());
@@ -112,6 +113,23 @@ export function createApp({storage,origin,passwordHash,staticDir,authOptions={},
       if(project && req.method==='DELETE'){const data=await body(req,4096);if(!storage.removeProject(project[1],data.confirmation))fail(400,'Type the exact project name to confirm deletion.');return send(200,{ok:true});}
       const items=path.match(/^\/api\/projects\/([\w-]+)\/documents$/);
       if(items && req.method==='POST'){const data=await body(req);return send(201,storage.createDocument(items[1],projectName(data.name,true),validateDoc(data.doc)));}
+      const hero=path.match(/^\/api\/documents\/([\w-]+)\/hero$/);
+      if(hero){
+        if(!['GET','HEAD'].includes(req.method))fail(405,'Method not allowed.');
+        operation='article-preview';
+        if(typeof storage.readHero!=='function')fail(503,'Deploy the complete server folder and restart the application to show article previews.');
+        const source=storage.readHero(hero[1]);
+        if(source===undefined)fail(404,'Document not found.');
+        const preview=imageResponse(source,origin);
+        if(!preview){res.writeHead(204);res.end();return;}
+        res.setHeader('Cross-Origin-Resource-Policy','same-origin');
+        if(preview.location){res.writeHead(302,{Location:preview.location});res.end();return;}
+        // SVG can contain active markup. Keep it inert even if the preview URL
+        // is opened as a document instead of being displayed in an image tag.
+        res.setHeader('Content-Security-Policy',"default-src 'none'; script-src 'none'; style-src 'unsafe-inline'; sandbox");
+        res.writeHead(200,{'Content-Type':preview.type,'Content-Length':preview.bytes.length});
+        res.end(req.method==='HEAD'?undefined:preview.bytes);return;
+      }
       const item=path.match(/^\/api\/documents\/([\w-]+)$/);
       if(item && req.method==='DELETE'){const data=await body(req,4096);if(!storage.removeDocument(item[1],data.confirmation))fail(400,'Type the exact file name to confirm deletion.');return send(200,{ok:true});}
       fail(404,'Not found.');

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fullColumnsForLevelling, isFullColumn } from './fullColumnLevel';
+import { canExpandParagraphGap, fullColumnsForLevelling, isFullColumn } from './fullColumnLevel';
 
 const metric = (remaining: number, lineHeight = 18) => ({
   contentBottom: 500 - remaining,
@@ -8,6 +8,12 @@ const metric = (remaining: number, lineHeight = 18) => ({
 });
 
 describe('full-column levelling eligibility', () => {
+  it('never creates a gap between zero-spacing paragraphs', () => {
+    expect(canExpandParagraphGap(0)).toBe(false);
+    expect(canExpandParagraphGap(-1)).toBe(false);
+    expect(canExpandParagraphGap(NaN)).toBe(false);
+    expect(canExpandParagraphGap(8)).toBe(true);
+  });
   it('accepts a column only when less than one more line fits', () => {
     expect(isFullColumn(metric(0))).toBe(true);
     expect(isFullColumn(metric(17))).toBe(true);

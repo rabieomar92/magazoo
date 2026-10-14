@@ -40,12 +40,88 @@ async function fixture(t){
   server.listen(0,'127.0.0.1');await once(server,'listening');
   t.after(()=>new Promise(resolve=>server.close(()=>{storage.close();resolve();})));
   const endpoint=`http://127.0.0.1:${server.address().port}/api/`;
-  const request=(path,{method='GET',data,headers={}}={})=>fetch(endpoint+path,{method,headers:{Origin:'http://127.0.0.1','Content-Type':'application/json',...headers},body:data===undefined?undefined:JSON.stringify(data)});
+  const request=(path,{method='GET',data,headers={},redirect='follow'}={})=>fetch(endpoint+path,{method,redirect,headers:{Origin:'http://127.0.0.1','Content-Type':'application/json',...headers},body:data===undefined?undefined:JSON.stringify(data)});
   const logged=await request('auth/login',{method:'POST',data:{password:'correct horse battery staple'}});
   const cookie=logged.headers.getSetCookie()[0].split(';')[0];const {csrf}=await logged.json();
   const admin=(path,options={})=>request(path,{...options,headers:{Cookie:cookie,'X-CSRF-Token':csrf,...options.headers}});
-  return{storage,request,admin,cookie,csrf,errors};
+  return{storage,request,admin,cookie,csrf,errors,endpoint};
 }
+
+test('hero previews require admin authentication and return only the image, including cookie-only image requests', async t => {
+  const { storage, request, admin, cookie, endpoint } = await fixture(t);
+  const project = storage.createProject('Images');
+  const bytes = Buffer.from([137,80,78,71,13,10,26,10]);
+  const item = storage.createDocument(project.id, 'image.json', JSON.stringify({ ...doc,
+    hero: { assetId: 'hero' }, assets: { hero: { src: `data:image/png;base64,${bytes.toString('base64')}` } },
+    meta: { title: 'Private article copy' }, blocks: [{ type: 'paragraph', text: 'Private body copy' }] }));
+  const route = `documents/${item.id}/hero?v=1`;
+  assert.equal((await request(route)).status, 401);
+  assert.equal((await request(route, { headers: { Authorization: `Bearer ${item.token}` } })).status, 401);
+  const response = await fetch(endpoint + route, { headers: { Cookie: cookie } });
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get('content-type'), 'image/png');
+  assert.equal(response.headers.get('cache-control'), 'no-store');
+  assert.equal(response.headers.get('cross-origin-resource-policy'), 'same-origin');
+  assert.deepEqual(Buffer.from(await response.arrayBuffer()), bytes);
+  const head = await request(route, { method: 'HEAD', headers: { Cookie: cookie } });
+  assert.equal(head.status, 200);
+  assert.equal(head.headers.get('content-length'), String(bytes.length));
+  assert.equal((await head.arrayBuffer()).byteLength, 0);
+  assert.equal((await admin(route, { method: 'POST' })).status, 405);
+  assert.equal((await admin('documents/missing/hero')).status, 404);
+});
+
+test('preview fallback and malformed assets do not block the library or change saved documents', async t => {
+  const { storage, admin } = await fixture(t);
+  const project = storage.createProject('Optional images');
+  for (const candidate of [doc, { ...doc, hero: { assetId: 'bad' }, assets: { bad: { src: 'javascript:private.png' } } }, '{damaged article']) {
+    const item = storage.createDocument(project.id, `file-${Math.random()}.json`, typeof candidate === 'string' ? candidate : JSON.stringify(candidate));
+    const before = storage.read(item.token);
+    const response = await admin(`documents/${item.id}/hero`);
+    assert.equal(response.status, 204);
+    assert.equal((await response.arrayBuffer()).byteLength, 0);
+    assert.deepEqual(storage.read(item.token), before);
+  }
+  assert.equal((await admin('projects')).status, 200);
+});
+
+test('SVG previews are inert and web image redirects do not expose the session or sharing token', async t => {
+  const { storage, admin } = await fixture(t);
+  const project = storage.createProject('Preview sources');
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>';
+  const item = storage.createDocument(project.id, 'svg.json', JSON.stringify({ ...doc, cover: { assetId: 'cover' },
+    assets: { cover: { src: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}` } } }));
+  const response = await admin(`documents/${item.id}/hero`);
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get('content-type'), 'image/svg+xml');
+  assert.match(response.headers.get('content-security-policy'), /script-src 'none';.*sandbox/);
+  assert.equal(await response.text(), svg);
+  const remote = storage.createDocument(project.id, 'web.json', JSON.stringify({ ...doc, hero: { assetId: 'hero' },
+    assets: { hero: { src: 'https://images.example.org/photo.webp?size=320' } } }));
+  const redirected = await admin(`documents/${remote.id}/hero`, { redirect: 'manual' });
+  assert.equal(redirected.status, 302);
+  assert.equal(redirected.headers.get('location'), 'https://images.example.org/photo.webp?size=320');
+  assert.equal(redirected.headers.get('referrer-policy'), 'no-referrer');
+  assert.equal((await redirected.arrayBuffer()).byteLength, 0);
+  assert.ok(!redirected.headers.get('location').includes(remote.token));
+});
+
+test('an editor save updates the preview without changing list payloads or document state', async t => {
+  const { storage, admin } = await fixture(t);
+  const project = storage.createProject('Changing hero');
+  const initial = { ...doc, hero: { assetId: 'hero' }, assets: { hero: { src: 'data:image/png;base64,aW5pdGlhbA==' } } };
+  const item = storage.createDocument(project.id, 'updated.json', JSON.stringify(initial));
+  assert.equal(await (await admin(`documents/${item.id}/hero?v=1`)).text(), 'initial');
+  const leaseId = 'a'.repeat(36);
+  storage.editLease(item.token, 'acquire', leaseId);
+  const updated = { ...initial, assets: { hero: { src: 'data:image/png;base64,Y2hhbmdlZA==' } } };
+  storage.update(item.token, 1, JSON.stringify(updated), leaseId);
+  const before = storage.read(item.token);
+  assert.equal(await (await admin(`documents/${item.id}/hero?v=2`)).text(), 'changed');
+  const listed = await (await admin('projects')).json();
+  assert.deepEqual(Object.keys(listed[0].items[0]).sort(), ['id', 'name', 'token', 'updated', 'version']);
+  assert.deepEqual(storage.read(item.token), before);
+});
 
 test('unexpected issue failures have a correlated safe diagnostic, with no private data in the response or log', async t => {
   const { storage, admin, errors } = await fixture(t);

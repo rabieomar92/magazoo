@@ -6,7 +6,7 @@ import { fitEquation } from '../lib/mathfit';
 import { HighlightsBody } from './Sidebar';
 import { MagSplitAside } from './MagSplitHead';
 import { exclusionGradient, mergeExclusions, type ColumnExclusion } from '../lib/columnFill';
-import { fullColumnsForLevelling, type FullColumnMetric } from '../lib/fullColumnLevel';
+import { canExpandParagraphGap, fullColumnsForLevelling, type FullColumnMetric } from '../lib/fullColumnLevel';
 import { requestBlockEditorFocus } from '../lib/editorNavigation';
 import { quoteFlowHtml } from '../lib/decorativeQuote';
 
@@ -393,7 +393,8 @@ function useFullColumnParagraphLevelling(
         );
         const gaps: HTMLElement[] = [];
         for (let index = 0; index < children.length - 1; index += 1) {
-          if (children[index].tagName === 'P' && children[index + 1].tagName === 'P') {
+          if (children[index].tagName === 'P' && children[index + 1].tagName === 'P'
+            && canExpandParagraphGap(parseFloat(getComputedStyle(children[index]).marginBottom))) {
             gaps.push(children[index]);
           }
         }

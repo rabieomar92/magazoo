@@ -58,7 +58,7 @@ export type Block =
       /**
        * First-line indent for this paragraph. Absent = family default (paper
        * indents body paragraphs except the page-1 opener and a continuation
-       * run; magazine doesn't indent at all) — an explicit true/false always
+       * run; magazine uses the same indented, no-gap convention) — an explicit true/false always
        * wins over that default. A continuation run (a paragraph's tail after
        * a page break) never indents regardless of this field.
        */

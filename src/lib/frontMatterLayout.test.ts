@@ -17,6 +17,7 @@ describe('front matter layout',()=>{
     expect(result.columns.flat().map(u=>u.text).join(' ')).toBe(text);
     expect(result.columns.length).toBe(5);
     expect(result.columns[1][0].continued).toBe(true);
+    expect(result.columns.flat().filter(u => u.continued).every(u => u.topPadding === 0)).toBe(true);
     expect(result.overflow).toBe(false);
   });
   it('reports an unfit heading and retains the complete content',()=>{

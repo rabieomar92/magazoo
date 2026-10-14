@@ -4,6 +4,11 @@ export interface FullColumnMetric {
   lineHeight: number;
 }
 
+/** Levelling may expand an existing gap, never invent one in no-gap prose. */
+export function canExpandParagraphGap(marginBottom: number): boolean {
+  return Number.isFinite(marginBottom) && marginBottom > 0;
+}
+
 /**
  * A column is full only when its final line is inside the writable area and
  * less than one complete line remains. A clipped/overflowing column is not a

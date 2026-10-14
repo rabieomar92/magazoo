@@ -100,6 +100,28 @@ describe('editorial board page', () => {
 });
 
 describe('dean message page', () => {
+  it('honors zero top padding on a quote instead of restoring its default gap', () => {
+    const doc = makeFrontMatter('frontmatter-dean');
+    doc.blocks = [{id:'quote',type:'paragraph',text:'A quotation with explicit zero spacing.',decorativeQuote:true,topPadding:0}];
+    const host=document.createElement('div');
+    host.innerHTML=renderToStaticMarkup(<FrontMatterPages doc={doc} vars={{}} onStatus={()=>undefined}/>);
+    expect(host.querySelector<HTMLElement>('.fm-measure [data-measure-id="quote"]')?.style.paddingTop).toBe('0px');
+  });
+  it('indents normal paragraphs by default but preserves a flush override and drop-cap opener', () => {
+    const doc = makeFrontMatter('frontmatter-dean');
+    doc.design.dropCap = true;
+    doc.blocks = [
+      {id:'first',type:'paragraph',text:'Opening paragraph.'},
+      {id:'second',type:'paragraph',text:'Next paragraph.'},
+      {id:'flush',type:'paragraph',text:'Explicit flush paragraph.',indent:false},
+    ];
+    const host=document.createElement('div');
+    host.innerHTML=renderToStaticMarkup(<FrontMatterPages doc={doc} vars={{}} onStatus={()=>undefined}/>);
+    const text=(id:string)=>host.querySelector<HTMLElement>(`.fm-measure [data-measure-id="${id}"] [data-fm-text]`)!;
+    expect(text('first').style.textIndent).toBe('');
+    expect(text('second').style.textIndent).toBe('1.2em');
+    expect(text('flush').style.textIndent).toBe('');
+  });
   it('places the issue cover below the sidebar heading and the signature after the message flow', () => {
     const doc = makeFrontMatter('frontmatter-dean');
     doc.assets['signature'] = { src: 'data:image/png;base64,c2lnbmF0dXJl', naturalWidth: 900, naturalHeight: 260 };

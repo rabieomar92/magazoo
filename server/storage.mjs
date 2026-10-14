@@ -2,6 +2,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { randomBytes, randomUUID } from 'node:crypto';
 import { issueError, validateIssueDocuments, validateIssuePlan, validateIssueVersion } from './issue.mjs';
 import { editLocks } from './editLocks.mjs';
+import { heroSource } from './heroPreview.mjs';
 
 export const token = () => randomBytes(32).toString('base64url');
 const object = value => value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -153,6 +154,10 @@ export function openStorage(filename, lockOptions) {
     },
     createDocument(projectId,name,body){const id=randomUUID(),secret=token();db.prepare('INSERT INTO documents VALUES (?,?,?,?,?,1,?)').run(id,projectId,name,secret,body,Date.now());return{id,name,token:secret,version:1};},
     read(secret){return db.prepare('SELECT id,name,body,version FROM documents WHERE token=?').get(secret);},
+    readHero(id) {
+      const row = db.prepare('SELECT body FROM documents WHERE id=?').get(id);
+      return row ? heroSource(row.body) : undefined;
+    },
     lockStatus(secret) { return locks.status(sharedRow(secret).id); },
     editLease(secret, action, leaseId) {
       return transaction(true, () => {
