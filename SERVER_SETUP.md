@@ -4,6 +4,14 @@ The browser editor remains usable without a server. `Save As…` writes a JSON f
 
 The optional Node server adds the private project library at `/#admin` and share links in the form `/#edit=<token>`.
 
+Shared links now reserve editing for one tab at a time. Other visitors remain
+read-only until the owner saves and finishes, closes the page, or its reservation
+expires after roughly three minutes without renewal. Every server save requires
+the tab's active reservation and the existing document version. Deploy the full
+server and frontend together; see [EDIT_LOCK_WRITING.md](EDIT_LOCK_WRITING.md) for
+rollout, recovery and bilingual writing-guide details. Existing editors should
+save and close before deployment, then reload the updated application.
+
 ## Run it
 
 ```powershell

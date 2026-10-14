@@ -1,6 +1,7 @@
 import { DatabaseSync } from 'node:sqlite';
 import { randomBytes, randomUUID } from 'node:crypto';
 import { issueError, validateIssueDocuments, validateIssuePlan, validateIssueVersion } from './issue.mjs';
+import { editLocks } from './editLocks.mjs';
 
 export const token = () => randomBytes(32).toString('base64url');
 const object = value => value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -33,9 +34,9 @@ function readFinalization(text, projectId) {
     code: 'ISSUE_FINALIZATION_INCOMPLETE' }));
   return null;
 }
-export function openStorage(filename) {
+export function openStorage(filename, lockOptions) {
   const db=new DatabaseSync(filename);
-  db.exec(`PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON;
+  db.exec(`PRAGMA busy_timeout=5000; PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON;
     CREATE TABLE IF NOT EXISTS projects (id TEXT PRIMARY KEY,name TEXT NOT NULL UNIQUE,created INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS documents (id TEXT PRIMARY KEY,projectId TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
       name TEXT NOT NULL,token TEXT NOT NULL UNIQUE,body TEXT NOT NULL,version INTEGER NOT NULL DEFAULT 1,updated INTEGER NOT NULL,
@@ -46,6 +47,12 @@ export function openStorage(filename) {
   // never recreate a table or reset an existing arrangement or document.
   const issueColumns = db.prepare('PRAGMA table_info(project_issues)').all();
   if (!issueColumns.some(column => column.name === 'finalized')) db.exec('ALTER TABLE project_issues ADD COLUMN finalized TEXT');
+  const locks = editLocks(db, lockOptions);
+  const sharedRow = secret => {
+    const row = db.prepare('SELECT id,name,body,version FROM documents WHERE token=?').get(secret);
+    if (!row) issueError(404, 'Document not found or link revoked.');
+    return row;
+  };
   const listProjects=db.prepare('SELECT id,name,created FROM projects ORDER BY created DESC');
   const listDocuments=db.prepare('SELECT projectId,id,name,token,version,updated FROM documents ORDER BY name');
   const list=()=>{
@@ -104,6 +111,7 @@ export function openStorage(filename) {
       return transaction(true, () => {
         const checked = checkedIssue(projectId, version, plan);
         const numbering = validateIssueDocuments(documents, checked.plan, checked.snapshot.items);
+        for (const entry of numbering.documents) locks.available(entry.id);
         const sources = new Map(checked.snapshot.items.map(item => [item.id, item]));
         for (const { doc } of sources.values()) {
           for (const key of ['footer', 'frontMatter', 'design']) {
@@ -145,8 +153,27 @@ export function openStorage(filename) {
     },
     createDocument(projectId,name,body){const id=randomUUID(),secret=token();db.prepare('INSERT INTO documents VALUES (?,?,?,?,?,1,?)').run(id,projectId,name,secret,body,Date.now());return{id,name,token:secret,version:1};},
     read(secret){return db.prepare('SELECT id,name,body,version FROM documents WHERE token=?').get(secret);},
-    update(secret,version,body){return db.prepare('UPDATE documents SET body=?,version=version+1,updated=? WHERE token=? AND version=?').run(body,Date.now(),secret,version).changes>0;},
-    removeProject(id,confirmation){return db.prepare('DELETE FROM projects WHERE id=? AND name=?').run(id,confirmation).changes>0;},
-    removeDocument(id,confirmation){return db.prepare('DELETE FROM documents WHERE id=? AND name=?').run(id,confirmation).changes>0;},
+    lockStatus(secret) { return locks.status(sharedRow(secret).id); },
+    editLease(secret, action, leaseId) {
+      return transaction(true, () => {
+        const row = sharedRow(secret);
+        if (action === 'release') return locks.release(row.id, leaseId);
+        if (action === 'renew') return locks.renew(row.id, leaseId);
+        if (action !== 'acquire') issueError(400, 'Unknown editing session action.');
+        const lease = locks.acquire(row.id, leaseId);
+        return { ...lease, name:row.name, version:row.version, doc:JSON.parse(row.body) };
+      });
+    },
+    update(secret,version,body,leaseId){return transaction(true,()=>{
+      const row=sharedRow(secret);locks.assert(row.id,leaseId);
+      const changed=db.prepare('UPDATE documents SET body=?,version=version+1,updated=? WHERE token=? AND version=?').run(body,Date.now(),secret,version).changes>0;
+      if(changed)locks.renew(row.id,leaseId);
+      return changed;
+    });},
+    removeProject(id,confirmation){return transaction(true,()=>{
+      for(const row of db.prepare('SELECT id FROM documents WHERE projectId=?').all(id))locks.available(row.id);
+      return db.prepare('DELETE FROM projects WHERE id=? AND name=?').run(id,confirmation).changes>0;
+    });},
+    removeDocument(id,confirmation){return transaction(true,()=>{locks.available(id);return db.prepare('DELETE FROM documents WHERE id=? AND name=?').run(id,confirmation).changes>0;});},
   };
 }

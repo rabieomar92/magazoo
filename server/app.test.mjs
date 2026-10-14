@@ -146,6 +146,8 @@ test('projects group documents; shared links edit only one JSON with version pro
   assert.equal((await request('documents/shared',{headers:{Authorization:`Bearer ${'x'.repeat(43)}`}})).status,404);
   const initial=await(await request('documents/shared',{headers})).json();assert.equal(initial.name,'one.json');
   assert.equal((await request('documents/shared',{method:'PUT',data:doc,headers})).status,428);
+  await request('documents/shared/lock',{method:'POST',data:{action:'acquire',leaseId:'a'.repeat(36)},headers});
+  headers['X-Edit-Lease']='a'.repeat(36);
   const updated=await request('documents/shared',{method:'PUT',data:{...doc,meta:{title:'Changed'}},headers:{...headers,'If-Match':'1'}});assert.equal(updated.status,200);
   assert.equal((await updated.json()).version,2);
   assert.equal((await request('documents/shared',{method:'PUT',data:doc,headers:{...headers,'If-Match':'1'}})).status,409);
@@ -218,8 +220,10 @@ test('issue finalization rejects a concurrent editor save without partial writes
   const documents = [{ id: first.id, version: 1, pageCount: 3, startNumber: 1 }, { id: second.id, version: 1, pageCount: 2, startNumber: 6 }];
   const originalFirst = storage.read(first.token);
   const edited = { ...doc, meta: { title: 'Live author edits محفوظ' }, highlights: { title: 'Keep', items: ['Preserved'] } };
+  storage.editLease(second.token,'acquire','a'.repeat(36));
   await request('documents/shared', { method: 'PUT', data: edited,
-    headers: { Authorization: `Bearer ${second.token}`, 'If-Match': '1' } });
+    headers: { Authorization: `Bearer ${second.token}`, 'If-Match': '1', 'X-Edit-Lease':'a'.repeat(36) } });
+  storage.editLease(second.token,'release','a'.repeat(36));
   assert.equal((await admin(`${route}/finalize`, { method: 'POST', data: { version: 0, plan, documents } })).status, 409);
   assert.deepEqual(storage.read(first.token), originalFirst);
   assert.deepEqual(JSON.parse(storage.read(second.token).body), edited);
@@ -232,8 +236,9 @@ test('issue finalization rejects a concurrent editor save without partial writes
   assert.equal(snapshot.finalized.contentsStartNumber, 4);
   assert.equal(snapshot.sourcesChanged, false);
   // A stale shared editor cannot silently overwrite the newly assigned folio.
+  storage.editLease(second.token,'acquire','b'.repeat(36));
   assert.equal((await request('documents/shared', { method: 'PUT', data: edited,
-    headers: { Authorization: `Bearer ${second.token}`, 'If-Match': '2' } })).status, 409);
-  storage.update(second.token, 3, JSON.stringify({ ...edited, footer: { startNumber: 6 } }));
+    headers: { Authorization: `Bearer ${second.token}`, 'If-Match': '2','X-Edit-Lease':'b'.repeat(36) } })).status, 409);
+  storage.update(second.token, 3, JSON.stringify({ ...edited, footer: { startNumber: 6 } }),'b'.repeat(36));
   assert.equal((await (await admin(route)).json()).sourcesChanged, true);
 });

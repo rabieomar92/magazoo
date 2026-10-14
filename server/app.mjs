@@ -65,14 +65,19 @@ export function createApp({storage,origin,passwordHash,staticDir,authOptions={},
         res.setHeader('Set-Cookie',cookie('magazoo_admin',session.secret,8*3600));return send(200,{csrf:session.csrf});
       }
       // Sharing tokens grant access to this one document, never admin routes.
-      if(path==='/api/documents/shared'){
+      if(path==='/api/documents/shared' || path==='/api/documents/shared/lock'){
         const secret=req.headers.authorization?.match(/^Bearer ([\w-]{43})$/)?.[1];
         const item=secret && storage.read(secret);if(!item)fail(404,'Document not found or link revoked.');
+        if(path.endsWith('/lock')) {
+          if(req.method==='GET')return send(200,storage.lockStatus(secret));
+          if(req.method==='POST') { const data=await body(req,4096);return send(200,storage.editLease(secret,data?.action,data?.leaseId)); }
+          fail(405,'Method not allowed.');
+        }
         if(req.method==='GET')return send(200,{name:item.name,version:item.version,doc:JSON.parse(item.body)});
         if(req.method==='PUT'){
           const version=Number(req.headers['if-match']);if(!Number.isSafeInteger(version)||version<1)fail(428,'A document version is required.');
           const json=validateDoc(await body(req));
-          if(!storage.update(secret,version,json))fail(409,'A newer version exists. Your changes were not written.');
+          if(!storage.update(secret,version,json,req.headers['x-edit-lease']))fail(409,'A newer version exists. Your changes were not written.');
           return send(200,{version:version+1});
         }
         fail(405,'Method not allowed.');
