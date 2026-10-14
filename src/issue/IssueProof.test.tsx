@@ -76,6 +76,12 @@ it('shows each article through the editor’s own preview, in plan order, around
   expect(articles()).toEqual(['a', 'b']);
   // One live editor preview per article — not a copy of one, and not a shared one.
   expect(pagesRef.current!.querySelectorAll('[data-issue-article] .paper-scroll')).toHaveLength(2);
+  for (const preview of pagesRef.current!.querySelectorAll('.paper-scroll')) {
+    expect(preview.hasAttribute('inert')).toBe(false);
+    expect(preview.classList.contains('paper-scroll--readonly')).toBe(true);
+    expect(preview.getAttribute('role')).toBe('region');
+    expect(preview.getAttribute('tabindex')).toBe('0');
+  }
   expect(pagesRef.current!.querySelectorAll('[data-issue-article] .paper-scroll > .pages-frame > .pages')).toHaveLength(2);
   // The export walks `.pages` containers in document order: one per article
   // plus the contents spread, in reading order.
