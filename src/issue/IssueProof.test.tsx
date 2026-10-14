@@ -36,6 +36,27 @@ it('copies only physical pages and preserves each article’s design without edi
 
 const item = (id: string) => ({ id, name: id.toUpperCase(), doc: presetFor('paper-1') });
 
+it('keeps component font overrides after the live article styles and editor targets are removed', () => {
+  const source=document.createElement('div');source.className='pages';
+  source.innerHTML='<section class="page"><header class="header"><h1 class="title">Title</h1></header><p data-source-block-id="one">Styled <strong>inline emphasis</strong></p><p data-source-block-id="two">Unchanged</p></section>';
+  const rules=document.createElement('style');
+  rules.textContent='.header .title {font-family: Arial; font-size: 24px; font-style: italic;} p[data-source-block-id="one"] {font-size: 12px; line-height: 18px; font-weight: 700; text-decoration-line: underline; color: #123456; text-align: right;}';
+  host.append(rules,source);
+  const before=source.outerHTML;
+  const [copy]=snapshotIssuePages(source,{title:{fontFamily:'Arial',fontSize:18,italic:true},'block:one':{fontSize:9,lineHeight:1.5,fontWeight:700,underline:true,color:'#123456',align:'right'}});
+  rules.remove();source.remove();host.append(copy);
+  const title=copy.querySelector('h1')!, paragraph=copy.querySelector('p')!;
+  expect(title.style.fontFamily).toBe('Arial');expect(title.style.fontStyle).toBe('italic');
+  expect(title.style.fontSize).toBe('24px');
+  expect(paragraph.style.fontWeight).toBe('700');expect(paragraph.style.lineHeight).toBe('1.5');
+  expect(paragraph.style.textDecorationLine).toBe('underline');expect(paragraph.style.textAlign).toBe('right');
+  expect(paragraph.style.color).toBe('rgb(18, 52, 86)');
+  expect(paragraph.style.getPropertyPriority('font-weight')).toBe('important');
+  expect(copy.querySelectorAll('p')[1].style.fontWeight).toBe('');
+  expect(copy.querySelector('[data-source-block-id]')).toBeNull();
+  expect(source.outerHTML).toBe(before);
+});
+
 it('shows each article through the editor’s own preview, in plan order, around the contents spread', () => {
   const pagesRef = createRef<HTMLDivElement>();
   const documents = [item('a'), item('b')];
