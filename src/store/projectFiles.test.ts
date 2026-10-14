@@ -1,7 +1,9 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { emptyDoc, migrate } from '../schema/document';
 import { useDoc } from './useDoc';
 import { bindTarget, saveToTarget, useProjectFile, type ProjectFileHandle } from './projectFiles';
+import { useEditLease } from './editLease';
+beforeEach(()=>useEditLease.setState({status:'active',token:'a'.repeat(43),leaseId:'lease-test',deadline:Date.now()+180000}));
 afterEach(()=>{bindTarget(null,null);vi.unstubAllGlobals();});
 function fileHandle(){
   let modified=1;const writes:Blob[]=[];
@@ -9,6 +11,16 @@ function fileHandle(){
   return{handle,writes,externalChange:()=>modified++};
 }
 describe('document save targets',()=>{
+  it('does not issue a save when this tab has no active editing access',async()=>{
+    const fetch=vi.fn();vi.stubGlobal('fetch',fetch);useEditLease.setState({status:'blocked'});
+    const doc=emptyDoc();useDoc.getState().load(doc);bindTarget({kind:'online',token:'a'.repeat(43),version:1,name:'test.json'},null);
+    await expect(saveToTarget(doc,true)).rejects.toThrow('Editing access');expect(fetch).not.toHaveBeenCalled();expect(useProjectFile.getState().savedDoc).toBeNull();
+  });
+  it('keeps unsaved changes and pauses editing if the server rejects ownership',async()=>{
+    vi.stubGlobal('fetch',vi.fn().mockResolvedValue({ok:false,status:423}));
+    const doc=emptyDoc();doc.meta.title='Keep my unsaved changes';useDoc.getState().load(doc);bindTarget({kind:'online',token:'a'.repeat(43),version:1,name:'test.json'},null);
+    await expect(saveToTarget(doc,true)).rejects.toThrow('Editing access was lost');expect(useEditLease.getState().status).toBe('lost');expect(useDoc.getState().doc).toBe(doc);expect(useProjectFile.getState().savedDoc).toBeNull();
+  });
   it.each(['file','online'] as const)('preserves individual paragraph sizes when saving and reopening %s documents',async kind=>{
     const doc=emptyDoc();
     doc.blocks=[{id:'p1',type:'paragraph',text:'First',fontSize:14,decorativeQuote:true},{id:'p2',type:'paragraph',text:'Second',fontSize:18},{id:'p3',type:'paragraph',text:'Uses the body default'}];
@@ -16,7 +28,7 @@ describe('document save targets',()=>{
     useDoc.getState().load(doc);
     const {handle,writes}=fileHandle();
     const request=vi.fn().mockResolvedValue({status:200,ok:true,json:async()=>({version:2})});
-    if(kind==='online')vi.stubGlobal('fetch',request);
+    if(kind==='online'){vi.stubGlobal('fetch',request);useEditLease.setState({token:'test'});}
     bindTarget(kind==='file'?{kind:'file',handle,modified:1}:{kind:'online',token:'test',version:1,name:'paragraphs.json'},null);
     await saveToTarget(doc);
     const json=kind==='file'?await writes[0].text():request.mock.calls[0][1].body;

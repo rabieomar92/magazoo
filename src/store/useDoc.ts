@@ -62,6 +62,8 @@ export function cloneDocForUpdate(doc: Doc): Doc {
     ),
     design: {
       ...doc.design,
+      textTracking: doc.design.textTracking ? { ...doc.design.textTracking } : undefined,
+      textStyles: doc.design.textStyles ? Object.fromEntries(Object.entries(doc.design.textStyles).map(([key, style]) => [key, { ...style }])) : undefined,
       frontCover: doc.design.frontCover ? { ...doc.design.frontCover, text: doc.design.frontCover.text ? Object.fromEntries(Object.entries(doc.design.frontCover.text).map(([role, style]) => [role, { ...style }])) : undefined } : undefined,
       gateTitle: doc.design.gateTitle ? { ...doc.design.gateTitle } : undefined,
       gateText: doc.design.gateText ? { ...doc.design.gateText } : undefined,

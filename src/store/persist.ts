@@ -89,6 +89,7 @@ export function startAutosave(delay = 1200): () => void {
   if(useProjectFile.getState().target && !useProjectFile.getState().savedDoc) t=setTimeout(()=>void flush(),delay);
   return () => {
     clearTimeout(t);
+    if(useProjectFile.getState().target?.kind==='online' && useProjectFile.getState().savedDoc!==useDoc.getState().doc)void backUp().catch(()=>setStatus('error'));
     unsubscribe();
     unbind();
     document.removeEventListener('visibilitychange',hidden);

@@ -3,6 +3,7 @@ import type { Doc } from '../schema/document';
 import { migrate } from '../schema/document';
 import { useDoc } from './useDoc';
 import { serializeDocument } from '../lib/serializeDocument';
+import { editLeaseId, loseEditLease, releaseEditLease, useEditLease } from './editLease';
 
 export interface ProjectFileHandle {
   name: string;
@@ -75,9 +76,14 @@ export function saveToTarget(doc = useDoc.getState().doc, explicit = false): Pro
         catch (error) { await writer.abort?.().catch(() => {}); throw error; }
         target.modified = (await target.handle.getFile()).lastModified;
       } else {
+        const leaseId=editLeaseId(target.token);
         const response = await fetch(`${import.meta.env.BASE_URL}api/documents/shared`, {
-          method:'PUT', headers:{'Content-Type':'application/json','Authorization':`Bearer ${target.token}`,'If-Match':String(target.version)}, body:json,
+          method:'PUT', headers:{'Content-Type':'application/json','Authorization':`Bearer ${target.token}`,'If-Match':String(target.version),'X-Edit-Lease':leaseId}, body:json,
         });
+        if(response.status===423){
+          if(generation===epoch&&useEditLease.getState().token===target.token&&useEditLease.getState().leaseId===leaseId)loseEditLease();
+          throw new Error('Editing access was lost. Your changes were not written. Download a local copy or reconnect.');
+        }
         if (response.status === 409) throw new SaveConflict('Someone else saved a newer version. Your edits are kept here. Save a copy before reopening the link; no changes were overwritten.');
         if (!response.ok) throw new Error(response.status === 404 ? 'This shared document was removed or its link is no longer valid. Save a local copy.' : 'Online save failed. Your edits are kept in this browser. Check the connection and click Save to retry.');
         target.version = (await response.json()).version;
@@ -113,7 +119,7 @@ export async function saveProjectAs() {
     await pending.catch(() => {});
     const old=useProjectFile.getState();
     bindTarget({kind:'file',handle,modified:0},null);
-    try { await saveToTarget(useDoc.getState().doc,true); if(old.target?.kind==='online')history.replaceState(null,'',location.pathname); }
+    try { await saveToTarget(useDoc.getState().doc,true); if(old.target?.kind==='online'){await releaseEditLease(old.target.token);history.replaceState(null,'',location.pathname);useEditLease.setState({status:'local'});} }
     catch (error) { bindTarget(old.target,old.savedDoc); throw error; }
   } catch(error) { if (!cancelled(error)) alert(error instanceof Error ? error.message : 'Could not save the file.'); }
 }
@@ -132,9 +138,11 @@ export async function openProject() {
   const load = async (file:File,handle?:ProjectFileHandle) => {
     const doc=migrate(JSON.parse(await file.text()));
     await pending.catch(() => {});
+    await releaseEditLease();
     useDoc.getState().load(doc);
     bindTarget(handle ? {kind:'file',handle,modified:file.lastModified}:null,doc);
     if(location.hash.startsWith('#edit='))history.replaceState(null,'',location.pathname);
+    useEditLease.setState({status:'local'});
   };
   try {
     const picker=(window as PickerWindow).showOpenFilePicker;

@@ -9,6 +9,8 @@ import { ErrorBoundary } from './ErrorBoundary';
 import { sampleDoc } from './sample';
 import { FOCUS_BLOCK_EDITOR_EVENT, FOCUS_EDITOR_TARGET_EVENT } from './lib/editorNavigation';
 import { sharedToken, loadSharedProject } from './store/sharedProject';
+import { maintainEditLease, useEditLease } from './store/editLease';
+import { SharedEditingAccess } from './components/SharedEditingAccess';
 import './styles/admin.css';
 import './styles/fonts.css';
 import './styles/page.css';
@@ -34,6 +36,10 @@ export default function App() {
   const [ready, setReady] = useState(false);
   const [loadFailed, setLoadFailed] = useState(false);
   const [sharedError,setSharedError]=useState('');
+  const leaseStatus=useEditLease(s=>s.status);
+  const token=sharedToken();
+  useEffect(()=>maintainEditLease(),[]);
+  useEffect(()=>{if(ready&&!loadFailed&&(!token||leaseStatus==='active'))return startAutosave();},[ready,loadFailed,token,leaseStatus]);
   const [panelWidth, setPanelWidth] = useState(DEFAULT_PANEL_W);
   const [isCollapsed, setIsCollapsed] = useState(
     () =>
@@ -57,7 +63,6 @@ export default function App() {
   // real highlight only on a genuinely empty first run. The `ready` gate avoids
   // flashing the sample before a stored doc loads.
   useEffect(() => {
-    let stop = () => {};
     let cancelled = false;
     (async () => {
       // `ready` gates the entire UI (see the `if (!ready) return <div className="app" />`
@@ -70,8 +75,8 @@ export default function App() {
       try {
         const token=sharedToken();
         if(token){
-          try{await loadSharedProject(token,()=>cancelled);if(!cancelled)stop=startAutosave();}
-          catch(error){if(!cancelled)setSharedError(error instanceof Error?error.message:'Could not open shared project.');}
+          try{await loadSharedProject(token,()=>cancelled);}
+          catch(error){if(!cancelled && useEditLease.getState().status==='local')setSharedError(error instanceof Error?error.message:'Could not open shared project.');}
           return;
         }
         const result = await hydrate();
@@ -90,7 +95,6 @@ export default function App() {
         const blank =
           !doc.meta.title && !doc.news?.stories.length && !doc.frontMatter?.entries.length && doc.blocks.every((b) => b.type !== 'paragraph' || !b.text.trim());
         if (result === 'empty' && blank) load(sampleDoc());
-        stop = startAutosave();
       } catch (err) {
         console.error('Startup failed:', err);
         if (!cancelled) setLoadFailed(true);
@@ -100,7 +104,6 @@ export default function App() {
     })();
     return () => {
       cancelled = true;
-      stop();
     };
   }, []);
 
@@ -156,12 +159,14 @@ export default function App() {
 
   if (!ready) return <div className="app" />;
   if(sharedError)return <main className="admin-page"><div className="admin-content"><h1>Unable to open this shared document</h1><p role="alert">{sharedError}</p><a href={import.meta.env.BASE_URL}>Return to your local editor</a></div></main>;
+  if(token&&leaseStatus!=='active')return <ErrorBoundary><SharedEditingAccess token={token}/></ErrorBoundary>;
 
   return (
     <ErrorBoundary>
       <TypographyProvider><div className="app">
         <Toolbar onPreviewToolsHost={setToolbarPreviewHost} />
         <TypographyToolbar />
+        {token&&<SharedEditingAccess token={token}/>}
         {loadFailed && (
           <div className="app-banner" role="alert">
             Failed to restore saved session. Changes will not be autosaved — use Save As… to

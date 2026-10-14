@@ -11,6 +11,7 @@ import { makeFrontMatter } from './frontMatter';
 import { makeBackCover } from './backCover';
 import { makeNews } from './news';
 import { makeGallery1, makeGallery2, makeGallery3, makeGallery4 } from './gallery';
+import { ARTICLE_LAYOUTS, referenceArticleDesign, type ReferenceArticleId } from '../lib/articleLayouts';
 
 /**
  * Template registry. Two families (paper / magazine), each with several presets.
@@ -518,6 +519,36 @@ const makeMagazine4 = (): Doc => {
 
 // ---- Registry --------------------------------------------------------------
 
+// Original vector demonstration artwork. No magazine photographs or embedded
+// commercial font files are extracted from the reference publication.
+const ARTICLE_MOLECULES = svg(`<rect width="1600" height="900" fill="#fff"/>
+  <defs><radialGradient id="atom"><stop stop-color="#fff" stop-opacity=".8"/><stop offset=".6" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#183042" stop-opacity=".22"/></radialGradient></defs>
+  ${['#e69b8d','#99c9ad','#b0b9e9'].map((colour,cluster) => {
+    const points = Array.from({length:82},(_,i) => {
+      const angle = i * 2.399963;
+      const radius = 25 * Math.sqrt(i);
+      return [cluster*570+225 + Math.cos(angle)*radius*1.6,460+Math.sin(angle)*radius];
+    });
+    return `<g fill="${colour}" stroke="#ffffff" stroke-width="2">${points.map(([x,y],i) => `<circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="${24+i%7}"/><circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="${24+i%7}" fill="url(#atom)"/>`).join('')}</g>`;
+  }).join('')}`);
+
+const makeReferenceArticle = (id: ReferenceArticleId): Doc => {
+  const d = makePaper3();
+  d.templateId = id;
+  d.design = referenceArticleDesign(id, d.design);
+  d.meta.author = '';
+  d.meta.affiliation = '';
+  d.meta.title = id === 'paper-4' ? 'A window into hidden worlds' : id === 'paper-6' ? 'Seeing the invisible' : 'Small worlds, remarkable possibilities';
+  d.meta.subtitle = 'How careful observations turn extraordinary pictures into scientific evidence.';
+  d.meta.heroCaption = 'Illustration: exploring patterns in nature. Replace this demonstration artwork with your own credited photograph.';
+  const assetId = d.hero.assetId!;
+  d.assets[assetId] = { src: id === 'paper-4' ? PHOTO_BLACKHOLE : id === 'paper-5' ? PHOTO_COSMOS_WIDE : id === 'paper-6' ? PHOTO_LATTICE : id === 'paper-7' ? ARTICLE_MOLECULES : PHOTO_OBSERVATORY,
+    naturalWidth: id === 'paper-5' ? 2400 : 1600, naturalHeight: id === 'paper-5' ? 1700 : 900 };
+  d.highlights = ['A striking image starts a question; repeatable measurements help answer it.'];
+  d.meta.highlightsLabel = 'Key insight';
+  return d;
+};
+
 const makePaper3 = (): Doc => {
   const d = emptyDoc();
   const id = uid();
@@ -578,6 +609,9 @@ export const TEMPLATES: (TemplateMeta & { make: () => Doc })[] = [
   { id: 'paper-1', family: 'paper', name: 'Paper 1', kind: 'Academic Journal', make: freshMagazooPreset(makePaper1) },
   { id: 'paper-2', family: 'paper', name: 'Paper 2', kind: 'Physics Letter', make: freshMagazooPreset(makePaper2) },
   { id: 'paper-3', family: 'paper', name: 'Paper 3', kind: 'Image-led Feature', make: freshMagazooPreset(makePaper3) },
+  ...(Object.entries(ARTICLE_LAYOUTS) as [ReferenceArticleId, typeof ARTICLE_LAYOUTS[ReferenceArticleId]][]).map(([id, layout]) => ({
+    id, family: 'paper' as const, name: `Article ${layout.rank + 3}`, kind: layout.name, make: freshMagazooPreset(() => makeReferenceArticle(id)),
+  })),
   { id: 'magazine-1', family: 'magazine', name: 'Magazine 1', kind: 'Modern Editorial', make: freshMagazooPreset(makeMagazine1) },
   { id: 'magazine-2', family: 'magazine', name: 'Magazine 2', kind: 'Particle Feature', make: freshMagazooPreset(makeMagazine2) },
   { id: 'magazine-3', family: 'magazine', name: 'Magazine 3', kind: 'Cosmos Gatefold', make: freshMagazooPreset(makeMagazine3) },

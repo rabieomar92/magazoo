@@ -16,8 +16,10 @@ export function Root(){
         if(!live||location.hash!==destination)return;
         const state=useProjectFile.getState();
         if(state.target && state.savedDoc!==useDoc.getState().doc && !confirm('Leave this document? Some changes are not yet saved. Cancel to save a copy first.')){history.replaceState(null,'',location.pathname+location.search+hash);return;}
+        const token=hash.match(/^#edit=([\w-]{43})$/)?.[1];
+        if(token&&destination!==hash){const {releaseEditLease}=await import('./store/editLease');await releaseEditLease(token);}
       }
-      if(live)setHash(destination);
+      if(live&&location.hash===destination)setHash(destination);
     };
     window.addEventListener('hashchange',change);return()=>{live=false;window.removeEventListener('hashchange',change);};
   },[hash]);

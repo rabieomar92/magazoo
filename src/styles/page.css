@@ -406,6 +406,17 @@
   white-space: nowrap;
 }
 
+/* Optional running bars on the two dedicated covers. Legacy covers omit the
+   bar; enabling it must not displace their independently positioned artwork. */
+.front-cover > .tag-bar,
+.back-cover-inner > .tag-bar {
+  position: absolute;
+  top: var(--topbar-offset, 10mm);
+  left: 0;
+  margin: 0;
+  z-index: 8;
+}
+
 /* Verso: the square and tag mirror to the right end of the rule. */
 .tag-bar--flip {
   flex-direction: row-reverse;

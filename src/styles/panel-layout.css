@@ -255,3 +255,4 @@
     font-size: 16px; /* Prevent mobile browsers zooming when a field is focused. */
   }
 }
+.toolbar .pdf-size-select { width:100px; max-width:100px; flex:none; padding-right:22px; text-overflow:ellipsis; }
