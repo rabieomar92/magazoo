@@ -65,7 +65,8 @@ export function placedImageContourClip(image: PlacedImage): string {
   return `polygon(${[...top, ...bottom].join(', ')})`;
 }
 
-/** Resolve a stored placement against today's grid and source aspect ratio. */
+/** Resolve the frame against today's grid. Height overrides crop, never stretch,
+ * the source; older images retain their original aspect-ratio sizing. */
 export function placedImageGeometry(
   image: PlacedImage,
   asset: Asset,
@@ -76,9 +77,12 @@ export function placedImageGeometry(
   const widthCols = clamp(Math.round(image.widthCols), 1, Math.min(4, g.totalCols));
   const column = clamp(Math.round(image.anchor.column), 0, g.totalCols - widthCols);
   const width = g.span(widthCols);
-  const height = asset.naturalWidth > 0
+  const naturalHeight = asset.naturalWidth > 0
     ? width * (asset.naturalHeight / asset.naturalWidth)
     : 0;
+  const height = typeof image.heightMm === 'number' && Number.isFinite(image.heightMm) && image.heightMm > 0
+    ? clamp(image.heightMm, 1, pageHeight)
+    : naturalHeight;
   const maxTop = Math.max(0, pageHeight - height);
   const left = design.margin + column * (g.col + design.gutter);
   const top = clamp(image.anchor.y, 0, maxTop);

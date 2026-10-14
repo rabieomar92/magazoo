@@ -18,6 +18,36 @@ const image: PlacedImage = {
 };
 
 describe('placed image geometry', () => {
+  it('changes height independently of column width and retains crop settings', () => {
+    const design = emptyDoc().design;
+    const asset = { src: '', naturalWidth: 800, naturalHeight: 400 };
+    for (const heightMm of [1, 42.3, 180, PAGE_H]) {
+      const out = placedImageGeometry({ ...image, heightMm }, asset, design);
+      expect(out.height).toBe(heightMm);
+      expect(out.width).toBeCloseTo(grid(design).span(2));
+      expect(out.top + out.height).toBeLessThanOrEqual(PAGE_H);
+      expect(out.visualHeight).toBe(heightMm);
+    }
+  });
+
+  it('bounds explicit heights to the actual composition and ignores invalid overrides', () => {
+    const design = emptyDoc().design;
+    const asset = { src: '', naturalWidth: 800, naturalHeight: 400 };
+    expect(placedImageGeometry({ ...image, heightMm: 999 }, asset, design, 276).height).toBe(276);
+    expect(placedImageGeometry({ ...image, heightMm: .1 }, asset, design).height).toBe(1);
+    for (const heightMm of [undefined, 0, -20, NaN, Infinity]) {
+      expect(placedImageGeometry({ ...image, heightMm }, asset, design).height).toBeCloseTo(grid(design).span(2) / 2);
+    }
+  });
+
+  it('extends an explicitly sized image only when bleed is deliberately enabled', () => {
+    const design = emptyDoc().design;
+    const asset = { src: '', naturalWidth: 800, naturalHeight: 400 };
+    const out = placedImageGeometry({ ...image, heightMm: 80, bleed: { bottom: true } }, asset, design);
+    expect(out.height).toBe(80);
+    expect(out.visualTop + out.visualHeight).toBe(PAGE_H);
+  });
+
   it('derives width from whole columns and height from source aspect ratio', () => {
     const design = emptyDoc().design;
     const asset = { src: '', naturalWidth: 800, naturalHeight: 400 };

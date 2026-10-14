@@ -1,4 +1,4 @@
-import type { Design } from '../schema/document';
+import { DEFAULT_TOP_BAR_OFFSET, type Design } from '../schema/document';
 import type { Pagination, Piece } from './paginate';
 import { grid } from './geometry';
 
@@ -18,6 +18,17 @@ import { grid } from './geometry';
  * which is why the two regions are separate boxes fed by `paginateHosts`.
  */
 export const P2_HERO_COLS = 2;
+
+/** The title keeps its authored top spacing; only the hero meets the masthead.
+ * Shared by the visible page and pagination twins, including a hidden top bar. */
+export function paper2VerticalVars(d: Design): Record<string, string> {
+  const barBottom = d.showTopBar === false ? 0 : Math.max(0, d.topBarOffset ?? DEFAULT_TOP_BAR_OFFSET) + 6;
+  const start = Math.max(Math.max(barBottom, d.showTopBar === false ? d.margin : 0) + d.gutter, d.firstPageTopMargin ?? 0);
+  return {
+    '--p2-start': `${start}mm`,
+    '--p2-hero-lift': `${d.showHero === false ? 0 : start - barBottom}mm`,
+  };
+}
 
 export function paper2Grid(d: Design) {
   const g = grid(d);
