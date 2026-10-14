@@ -16,7 +16,10 @@ Bukan editor paper akademik. Bukan Word.
   Karena itu `overflows()` membaca KEDUA sumbu. Jangan buang salah satunya.
 - `Doc.blocks` linear. Halaman dihitung, tidak pernah disimpan.
 - Gambar artikel disimpan di `Doc.images`, bukan di alur `Doc.blocks`.
-  Lebarnya selalu sejumlah kolom utuh; tinggi mengikuti aspect ratio sumber.
+  Lebarnya selalu sejumlah kolom utuh; tinggi default mengikuti aspect ratio sumber.
+  `heightMm` boleh mengatur tinggi frame secara independen (1mm sampai tinggi
+  halaman); crop gambar, jangan regangkan sumber. Tanpa override, dokumen lama
+  tetap menggunakan aspect ratio aslinya.
   Anchor horizontal snap ke tepi kiri kolom, sedangkan anchor vertikal bebas
   selama gambar tetap berada di dalam batas halaman.
 - `paper/` tidak boleh mengimpor apa pun dari `panel/`.
