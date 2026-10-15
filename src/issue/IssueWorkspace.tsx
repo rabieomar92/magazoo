@@ -326,7 +326,7 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
             <label className="field">PDF page size<select value={pdfSize} disabled={busy} onChange={event => setPdfSize(event.target.value as PdfPageSize)}>
               {Object.entries(PDF_PAGE_SIZES).map(([key, size]) => <option key={key} value={key}>{size.label} · {size.width} × {size.height} mm</option>)}
             </select></label>
-            <p className="field-hint">B5 fits every compiled page proportionally, including covers and contents. Page order and line breaks stay unchanged; nothing is cropped and no extra bleed is added. Use the matching paper size, no margins, and 100% scale in the print dialog.</p>
+            <p className="field-hint">Every compiled page fits the selected PDF size proportionally, including covers and contents. Page order and line breaks stay unchanged; nothing is cropped or stretched and no extra bleed is added. Small margins may remain where page proportions differ. Use the matching paper size, no margins, and 100% scale in the print dialog. For Magazine, use a custom 203 × 267 mm paper size if your print dialog requires it.</p>
             <p className="field-hint">Finalising writes each article’s starting page number back into the saved document, so a single-article export carries the same folio as the issue.</p>
             {contentsOverflow && ready && <p className="inline-alert" role="alert">The contents text does not fit its two pages. Shorten the heading or introduction, drop a subtitle, or uncheck some entries.</p>}
           </section>
@@ -370,7 +370,7 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
     <footer className="studio-actions">
       <div><strong>{isFinalized ? 'Issue finalised' : proofStale && ready ? 'Arrangement changed' : 'Ready when you are'}</strong><span>{busy ? 'Working… please wait.' : proofStale && ready ? 'Recompile so the page numbers match the order you have set.' : 'Finalising updates page numbers in the project’s saved articles.'}</span></div>
       <div>
-        <button disabled={blocked} onClick={() => void exportIssue()}>{busy ? 'Please wait…' : `Export ${pdfSize.toUpperCase()} issue PDF`}</button>
+        <button disabled={blocked} onClick={() => void exportIssue()}>{busy ? 'Please wait…' : `Export ${pdfSize === 'magazine' ? '203 × 267 mm' : pdfSize.toUpperCase()} issue PDF`}</button>
         <button className="primary" disabled={blocked || isFinalized || save.status === 'error' || items.length === 0} onClick={() => void finalize()}>{isFinalized ? 'Finalised ✓' : busy ? 'Working…' : 'Finalise issue & page numbers'}</button>
       </div>
     </footer>

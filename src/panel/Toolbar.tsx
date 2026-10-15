@@ -133,7 +133,7 @@ export function Toolbar({ onPreviewToolsHost }: { onPreviewToolsHost: (host: HTM
             <span className="tool-btn-label">Save As…</span>
           </button>
           <select className="tool-btn pdf-size-select" aria-label="PDF page size" value={pdfSize} disabled={exporting}
-            title="B5 fits the complete layout proportionally; no cropping or extra bleed."
+            title="Fit the complete layout to the selected sheet without cropping or stretching. Small margins may remain where page proportions differ."
             onChange={event => setPdfSize(event.target.value as PdfPageSize)}>
             {Object.entries(PDF_PAGE_SIZES).map(([key, size]) => <option key={key} value={key}>{size.label} · {size.width} × {size.height} mm</option>)}
           </select>

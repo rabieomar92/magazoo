@@ -1,8 +1,9 @@
-/** ISO sizes. Keep the measured A4 artwork intact; fit it onto the output sheet. */
-export type PdfPageSize = 'a4' | 'b5';
+/** Output sheets. Keep the measured artwork intact; fit it onto the selected sheet. */
+export type PdfPageSize = 'a4' | 'b5' | 'magazine';
 export const PDF_PAGE_SIZES = {
   a4: { label: 'A4', width: 210, height: 297 },
   b5: { label: 'B5 (ISO)', width: 176, height: 250 },
+  magazine: { label: 'Magazine', width: 203, height: 267 },
 } as const;
 
 export function pdfSheetGeometry(size: PdfPageSize, sourceHeight = 297) {
@@ -44,7 +45,7 @@ export function fitPdfSheets(doc: Document, size: PdfPageSize) {
     const sheet = doc.createElement('div');
     sheet.className = 'pdf-export-sheet';
     sheet.dataset.paperSize = size;
-    // The tiny aspect-ratio allowance should match dark/coloured paper too.
+    // Any aspect-ratio allowance should match dark/coloured paper too.
     sheet.style.backgroundColor = doc.defaultView?.getComputedStyle(page).backgroundColor ?? '#fff';
     sheet.style.setProperty('break-after', index === pages.length - 1 ? 'auto' : 'page', 'important');
     sheet.style.setProperty('page-break-after', index === pages.length - 1 ? 'auto' : 'always', 'important');

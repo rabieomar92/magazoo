@@ -104,7 +104,7 @@ export function DesignSection() {
         <LabeledSelect label="Page proportions" value={design.articlePageSize ?? 'reference'} options={[
           { value: 'reference', label: 'Reference trim · 210 × 276 mm' }, { value: 'a4', label: 'A4 · 210 × 297 mm' },
         ]} onChange={v => set('articlePageSize', v as Design['articlePageSize'])}/>
-        <p className="hint">Reference pages fit inside A4 or B5 on export without cropping. A4 adds space below the original composition.</p>
+        <p className="hint">Reference pages fit inside A4, B5 or Magazine (203 × 267 mm) on export without cropping or stretching. Small margins may remain where page proportions differ.</p>
         <button type="button" className="btn" onClick={() => update(d => { d.design = referenceArticleDesign(templateId, d.design); })}>Apply reference design defaults</button>
         <p className="hint">Resets fonts, sizes, colours and grid spacing. Your text and images stay unchanged; Undo restores your design.</p>
         <TypographyControl group="body" order={48} property="lineHeight"><LabeledNumber label="Line spacing" value={design.articleLeading ?? 1.28} min={1} max={2.5} step={.02} onChange={v => set('articleLeading', v)}/></TypographyControl>
