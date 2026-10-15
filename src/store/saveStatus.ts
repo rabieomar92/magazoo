@@ -18,5 +18,5 @@ interface SaveStatusStore {
 
 export const useSaveStatus = create<SaveStatusStore>((set) => ({
   status: 'idle',
-  setStatus: (status) => set({ status }),
+  setStatus: (status) => set(current=>current.status === status ? current : { status }),
 }));

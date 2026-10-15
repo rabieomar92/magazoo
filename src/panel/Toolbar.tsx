@@ -22,7 +22,9 @@ export function Toolbar({ onPreviewToolsHost }: { onPreviewToolsHost: (host: HTM
   const canUndo = useStore(useDoc.temporal, (s) => s.pastStates.length > 0);
   const canRedo = useStore(useDoc.temporal, (s) => s.futureStates.length > 0);
   const saveState = useSaveStatus((s) => s.status);
-  const project=useProjectFile();
+  const projectStatusValue=useProjectFile(s=>s.status);
+  const projectMessage=useProjectFile(s=>s.message);
+  const project={status:projectStatusValue,message:projectMessage};
   const projectStatus = { draft: 'Draft', pending: 'Unsaved changes', saving: 'Saving…', saved: 'Saved', error: 'Save failed', conflict: 'Save conflict' }[project.status];
   const title = useDoc((s) => s.doc.meta.title);
   const [exporting, setExporting] = useState(false);

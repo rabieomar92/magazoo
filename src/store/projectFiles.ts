@@ -30,11 +30,14 @@ export function bindTarget(target:SaveTarget|null, savedDoc:Doc|null) {
 export function markProjectDirty() {
   const state = useProjectFile.getState();
   if (state.target && state.savedDoc === useDoc.getState().doc) {
-    useProjectFile.setState({status:'saved',message:savedMessage(state.target)});
+    const message=savedMessage(state.target);
+    if(state.status!=='saved'||state.message!==message)useProjectFile.setState({status:'saved',message});
     return;
   }
   if (state.status === 'conflict' || state.status === 'error') return;
-  useProjectFile.setState({ status:state.target ? 'pending':'draft', message:state.target ? 'Changes waiting to save…' : 'Draft — choose Save As to save a file' });
+  const status=state.target ? 'pending':'draft';
+  const message=state.target ? 'Changes waiting to save…' : 'Draft — choose Save As to save a file';
+  if(state.status!==status||state.message!==message)useProjectFile.setState({status,message});
 }
 export class SaveConflict extends Error {}
 
@@ -55,7 +58,8 @@ export function saveToTarget(doc = useDoc.getState().doc, explicit = false): Pro
     // drag (or any other quick edit) cannot be replaced by an older snapshot.
     let docToSave = explicit ? doc : useDoc.getState().doc;
     if (state.savedDoc === docToSave && docToSave === useDoc.getState().doc) {
-      useProjectFile.setState({status:'saved',message:savedMessage(state.target!)});
+      const message=savedMessage(state.target!);
+      if(state.status!=='saved'||state.message!==message)useProjectFile.setState({status:'saved',message});
       return;
     }
     if (!explicit && (state.status === 'error' || state.status === 'conflict')) return;

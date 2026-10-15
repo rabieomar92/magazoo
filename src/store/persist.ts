@@ -3,6 +3,7 @@ import { migrate, type Doc } from '../schema/document';
 import { loadDoc, loadSession, saveDoc } from './db';
 import { useSaveStatus } from './saveStatus';
 import { bindTarget, markProjectDirty, saveToTarget, useProjectFile } from './projectFiles';
+import { createBackupWriter } from './backupWriter';
 
 /**
  * Persistence lives outside the store: it subscribes to useDoc rather than
@@ -51,33 +52,54 @@ export async function hydrate(reader: () => Promise<Doc | null> = loadDoc): Prom
  * writes once. Returns an unsubscribe for effect cleanup.
  */
 export function startAutosave(delay = 1200): () => void {
-  let t: ReturnType<typeof setTimeout>;
+  let t: ReturnType<typeof setTimeout>|undefined;
+  let stopped=false;
+  let sawEdit=false;
+  let flushing:Promise<void>|undefined;
+  let flushAgain=false;
+  let backupScheduled=false;
   const { setStatus } = useSaveStatus.getState();
-  let backup:Promise<unknown>=Promise.resolve();
-  const backUp=() => {
+  const writeBackup=createBackupWriter(saveDoc);
+  const backUp=async () => {
     const {target,savedDoc}=useProjectFile.getState();
     const doc=useDoc.getState().doc;
-    backup=backup.catch(()=>{}).then(()=>saveDoc(doc,target,savedDoc!==doc));
-    return backup;
+    await writeBackup({doc,target,pending:savedDoc!==doc});
+    return doc;
   };
-  const flush=async () => {
+  const reportError=()=>{if(!stopped)setStatus('error');};
+  const schedule=()=>{clearTimeout(t);t=setTimeout(()=>void flush(),delay);};
+  const flush=():Promise<void> => {
     clearTimeout(t);
-    try {
-      await backUp();
-      setStatus('saved');
-      await saveToTarget();
-      await backUp();
-    } catch { setStatus('error'); }
+    if (stopped) return Promise.resolve();
+    if (flushing) {flushAgain=true;return flushing;}
+    flushing=(async()=>{
+      try {
+        await backUp();
+        if(stopped)return;
+        await saveToTarget();
+        const saved=await backUp();
+        if(!stopped&&saved===useDoc.getState().doc)setStatus('saved');
+      } catch { reportError(); }
+    })().finally(()=>{
+      flushing=undefined;
+      if(flushAgain&&!stopped){flushAgain=false;schedule();}
+    });
+    return flushing;
   };
   const unsubscribe = useDoc.subscribe((state,previous) => {
     if(state.doc===previous.doc) return;
-    clearTimeout(t);
+    sawEdit=true;
     markProjectDirty();
     setStatus('saving');
-    t = setTimeout(()=>void flush(), delay);
+    schedule();
   });
   const unbind=useProjectFile.subscribe((next,previous)=>{
-    if(next.savedDoc!==previous.savedDoc || next.target!==previous.target) void backUp().catch(()=>setStatus('error'));
+    if(next.savedDoc===previous.savedDoc && next.target===previous.target || backupScheduled)return;
+    // Binding a document and loading it are synchronous adjacent operations.
+    // Read the settled state rather than backing up the previous article under
+    // the new article's recovery key. Coalesce acknowledgements in that turn.
+    backupScheduled=true;
+    queueMicrotask(()=>{backupScheduled=false;if(!stopped)void backUp().catch(reportError);});
   });
   const hidden=()=>{if(document.visibilityState==='hidden') void flush();};
   const beforeUnload=(event:BeforeUnloadEvent)=>{
@@ -86,10 +108,11 @@ export function startAutosave(delay = 1200): () => void {
   };
   document.addEventListener('visibilitychange',hidden);
   window.addEventListener('beforeunload',beforeUnload);
-  if(useProjectFile.getState().target && !useProjectFile.getState().savedDoc) t=setTimeout(()=>void flush(),delay);
+  if(useProjectFile.getState().target && !useProjectFile.getState().savedDoc) schedule();
   return () => {
+    stopped=true;
     clearTimeout(t);
-    if(useProjectFile.getState().target?.kind==='online' && useProjectFile.getState().savedDoc!==useDoc.getState().doc)void backUp().catch(()=>setStatus('error'));
+    if(sawEdit||useProjectFile.getState().target?.kind==='online' && useProjectFile.getState().savedDoc!==useDoc.getState().doc)void backUp().catch(()=>{});
     unsubscribe();
     unbind();
     document.removeEventListener('visibilitychange',hidden);
