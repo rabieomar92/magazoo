@@ -728,8 +728,10 @@ export interface Doc {
      *  Highlights" or "KUANTA". It is deliberately independent of affiliation. */
     masthead?: string;
     /** Additional magazine fields. All optional for back-compat. */
-    /** Caption under paper-2's top-right hero. */
+    /** Caption for the article hero, shared by every hero-capable template. */
     heroCaption?: string;
+    /** A separate caption when the cover and article use different pictures. */
+    coverCaption?: string;
     /** Volume/date line, e.g. "VOL. IX · NO.2 · MARCH 2026". */
     volume?: string;
     /** Location tag overlaid on the page-2 hero photo. */

@@ -8,6 +8,7 @@ import { Flow } from './Flow';
 import { PlacedImages } from './PlacedImages';
 import { FramedImage } from '../components/FramedImage';
 import { PageArtwork } from '../components/PageArtwork';
+import { HeroCaption } from './HeroCaption';
 
 interface Props {
   doc: Doc;
@@ -64,7 +65,7 @@ export function PaperTwoPage({
                   <FramedImage asset={heroAsset} frame={hero} />
                 )}
               </div>
-              {meta.heroCaption && <p className="p2-hero-cap" data-editor-tab="content" data-editor-target="meta-hero-caption">{meta.heroCaption}</p>}
+              {heroAsset && <HeroCaption doc={doc} className="p2-hero-cap" />}
             </div>
           )}
           <div className="p2-right-row">

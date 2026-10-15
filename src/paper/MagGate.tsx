@@ -10,6 +10,7 @@ import { TagBar } from './TagBar';
 import { useGatePlacement } from './useGatePlacement';
 import { gateQuoteRule, gateSpacingBleed, gateTypography, gateTypographyCss } from '../lib/gateTypography';
 import { pageFooter } from '../lib/pageFooter';
+import { HeroCaption } from './HeroCaption';
 
 /** The gatefold photo — the page-1 cover image, split across the two facing cover
  *  sheets. Falls back to the hero for docs that never set a cover. */
@@ -119,6 +120,7 @@ export function MagGateB({ doc, vars }: { doc: Doc; vars: CSSProperties }) {
         </div>
 
         <div className={`mag-gate-foot mag-gate-foot--b${footerEnabled ? '' : ' mag-gate-foot--footer-hidden'}`}>
+          {photo && <HeroCaption doc={doc} cover />}
           <div className="mag-gate-credits">
             {meta.author && <span className="mag-gate-author" style={gateTypographyCss(doc.design, 'author')} data-editor-tab="content" data-editor-target="meta-author">{meta.author}</span>}
             {meta.photoCredit && <span style={gateTypographyCss(doc.design, 'photoCredit')} data-editor-tab="content" data-editor-target="meta-photo-credit">{doc.design.textDirection === 'rtl' ? 'الصورة:' : 'Photo:'} {meta.photoCredit}</span>}

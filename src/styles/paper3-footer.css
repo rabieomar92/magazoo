@@ -40,7 +40,7 @@
   z-index: 4;
 }
 .page--hero-bottom .header {
-  padding-top: max(0px, calc(var(--topbar-offset, 10mm) + var(--bar-h, 5mm) + var(--gutter) - var(--margin)));
+  padding-top: max(0px, calc(var(--topbar-offset, 10mm) + var(--bar-h, 6mm) + var(--gutter) - var(--margin)));
 }
 
 /* Reserve only bottom space, leaving all horizontal/top geometry unchanged. */

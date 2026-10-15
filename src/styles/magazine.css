@@ -891,6 +891,14 @@
   -webkit-print-color-adjust: exact;
 }
 
+/* The empty photo sheet has no page padding to cancel. Anchor its running
+   bar directly to the trim, like every other standalone full-width band. */
+.mag2-photo--empty > .tag-bar {
+  position: absolute;
+  inset: var(--topbar-offset, 10mm) 0 auto;
+  margin: 0;
+}
+
 .mag2-photo-tag {
   position: absolute;
   right: var(--margin);
@@ -904,6 +912,33 @@
   text-transform: none;
   print-color-adjust: exact;
   -webkit-print-color-adjust: exact;
+}
+
+/* One caption panel for the one spread image; the location remains distinct
+   and stacks above the description instead of colliding with it. */
+.mag2-photo-captions {
+  position: absolute;
+  z-index: 3;
+  right: var(--margin);
+  bottom: max(9mm,var(--bottom-margin,var(--margin)));
+  max-width: min(120mm,calc(var(--page-w) - 2 * var(--margin)));
+  color: #fff;
+}
+.mag2-photo-captions .mag2-photo-tag { position: static; display: block; }
+.mag2-photo-captions .hero-caption {
+  margin: 0;
+  padding: 2mm 3mm;
+  background: rgb(11 18 32 / .86);
+}
+.mag-cover-foot:has(> .hero-caption),
+.mag-gate-foot:has(> .hero-caption) { flex-direction: column; align-items: stretch; gap: 3mm; }
+.mag-cover-foot > .hero-caption,
+.mag-gate-foot > .hero-caption,
+.front-cover-footer > .hero-caption {
+  margin: 0;
+  padding: 2mm 3mm;
+  color: #fff;
+  background: rgb(0 0 0 / .76);
 }
 
 /* ---- magazine-3: gatefold cover -------------------------------------------

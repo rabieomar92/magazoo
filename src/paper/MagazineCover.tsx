@@ -4,6 +4,7 @@ import { PlacedImages } from './PlacedImages';
 import { FramedImage } from '../components/FramedImage';
 import { PageArtwork } from '../components/PageArtwork';
 import { TagBar } from './TagBar';
+import { HeroCaption } from './HeroCaption';
 
 /** Magazine page 1: a full-bleed photo cover / masthead. Giant stacked title
  *  with its last word in red, kicker above it, masthead + volume on top, and the
@@ -56,6 +57,7 @@ export function MagazineCover({ doc, vars }: { doc: Doc; vars: CSSProperties }) 
         </div>
 
         <div className="mag-cover-foot">
+          {photo && <HeroCaption doc={doc} cover />}
           <div className="mag-cover-credits">
             {/* magazine-1 shows the raw values; other magazines keep the labels. */}
             {meta.author && <span className="mag-cover-author" data-editor-tab="content" data-editor-target="meta-author">{mag1 ? meta.author : `BY ${meta.author}`}</span>}

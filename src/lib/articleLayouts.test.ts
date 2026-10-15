@@ -183,8 +183,8 @@ describe('reference article compositions', () => {
   it('reserves a lowered masthead on the opening and continuation pages',()=> {
     const doc=presetFor('paper-4');doc.design.topBarOffset=40;doc.design.showHero=false;
     const g=articleGeometry('paper-4',doc.design);
-    expect(g.titleTop).toBeGreaterThanOrEqual(48);
-    expect(articleRegions(g,1).filter(r=>r.page===1).every(r=>r.y>=48)).toBe(true);
+    expect(g.titleTop).toBeGreaterThanOrEqual(50);
+    expect(articleRegions(g,1).filter(r=>r.page===1).every(r=>r.y>=50)).toBe(true);
   });
 
   it.each(ids)('%s preserves all shared settings through save/load and template switching', id=> {

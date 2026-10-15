@@ -111,7 +111,8 @@ export function Panel() {
     const onFocusTarget = (event: Event) => {
       const detail = (event as CustomEvent<EditorTargetDetail>).detail;
       if (!detail?.tab || !detail.target) return;
-      setTab(isGate && /^(meta-|footer-)/.test(detail.target) ? 'design' : detail.tab);
+      const imageCaption = /^meta-(hero|cover)-caption$/.test(detail.target);
+      setTab(imageCaption ? 'images' : isGate && /^(meta-|footer-)/.test(detail.target) ? 'design' : detail.tab);
       requestAnimationFrame(() => reveal(editorTargetId(detail.target)));
     };
     window.addEventListener(FOCUS_BLOCK_EDITOR_EVENT, onFocusBlock);

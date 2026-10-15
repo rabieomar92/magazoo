@@ -13,6 +13,7 @@ import { useDoc } from '../store/useDoc';
 import { useVerticalDrag } from './useVerticalDrag';
 import { CoverTextObject } from './CoverTextObject';
 import { TagBar } from './TagBar';
+import { HeroCaption } from './HeroCaption';
 
 type Paragraph = Extract<Block, { type: 'paragraph' }>;
 
@@ -137,6 +138,7 @@ export function MagazineFrontCover({ doc, vars }: { doc: Doc; vars: CSSPropertie
         </main>
 
         <footer className="front-cover-footer">
+          {photo && <HeroCaption doc={doc} cover />}
           {teasers.length > 0 && (
             <div className="front-cover-teasers">
               {teasers.map((teaser) => {

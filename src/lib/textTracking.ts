@@ -18,6 +18,7 @@ export const TRACKING_SELECTORS: Record<string, string> = {
   attribution: '.mag-quote-by, .mag2-quote-by',
   caption: '.placed-image figcaption, .flow-fig figcaption, .flow-eq figcaption, .fm-board-caption',
   heroCaption: '.article-hero-caption, .p2-hero-cap, [data-editor-target="meta-hero-caption"]',
+  coverCaption: '[data-editor-target="meta-cover-caption"]',
   highlights: '.highlights, .mag2-hl li, .sidebar h3, .hl-below h3, .hl-col h3, .placed-highlights h3, .mag2-hl h3',
   references: '.references',
   newsHeadline: '.news-story h2',

@@ -18,7 +18,9 @@ export function TagBar({
 }) {
   const flip = barStartsRight(doc.design.barSide, pageIndex);
   const topBarText = doc.meta.masthead?.trim();
-  const detailText = detail?.trim();
+  // Every template exposes the same optional issue/date feature. An explicit
+  // empty detail can still suppress it without changing the document metadata.
+  const detailText = (detail ?? doc.meta.volume)?.trim();
   if (!topBarVisible(doc)) return null;
   return (
     <div

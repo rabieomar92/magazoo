@@ -53,6 +53,7 @@ import { useImageTheme } from './useImageTheme';
 import { PageFooters } from './PageFooters';
 import { PreviewReadOnly, PreviewPreserveSourceAnchors } from './PreviewReadOnly';
 import { footerBottomMargin } from '../lib/pageFooter';
+import { TOP_BAR_HEIGHT_MM } from '../lib/topBar';
 
 type PreviewPagination = Pagination & { layoutRevision: number };
 const EMPTY: PreviewPagination = { pages: [], fill: 0, spill: 0, layoutRevision: 0 };
@@ -956,18 +957,17 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
     '--mag-head-h': `${magHeadPx}px`,
     '--mag2-head-h': `${splitHeadPx}px`,
     '--mag2-strip': `${MAG2_STRIP}mm`,
-    '--bar-h': '6mm',
+    '--bar-h': `${TOP_BAR_HEIGHT_MM}mm`,
     // Vertical top-bleed's own clip allowance (see page.css's .pages
     // .body-cols) — has to be a plain length, not calc(var(--margin) +
     // var(--bar-h) + var(--gutter)): Chromium silently computes any calc()
     // inside overflow-clip-margin to 0px (tested directly — a single var()
     // or literal length works, a calc() of any kind, even var()-wrapped,
-    // does not), so the three lengths are summed here in JS instead. 6 must
-    // track --bar-h above by hand since both are literals for the same
-    // reason.
+    // does not), so the three lengths are summed here in JS instead, using
+    // the same physical rule height as --bar-h above.
     '--topbleed-clip': `${Math.max(
       doc.design.margin,
-      (doc.design.topBarOffset ?? DEFAULT_TOP_BAR_OFFSET) + 6 + doc.design.gutter,
+      (doc.design.topBarOffset ?? DEFAULT_TOP_BAR_OFFSET) + TOP_BAR_HEIGHT_MM + doc.design.gutter,
     )}mm`,
     '--p2-head-h': `${p2HeadPx}px`,
     '--p2-heroblock-h': `${p2HeroPx}px`,

@@ -5,7 +5,8 @@ import { loadImage, ImageLoadError } from '../../lib/loadImage';
 import type { ImageFrame } from '../../lib/imageFrame';
 import type { ImageFit } from '../../lib/imageFrame';
 import { FramedImage } from '../../components/FramedImage';
-import { LabeledNumber, LabeledRange, Section, SegmentField } from '../Field';
+import { LabeledNumber, LabeledRange, LabeledTextarea, Section, SegmentField } from '../Field';
+import { heroCaptionText } from '../../lib/heroCaption';
 import { emptyFrontMatter } from '../../store/frontMatter';
 import { emptyBackCover } from '../../store/backCover';
 import { MagazooLoader } from '../../components/MagazooLoader';
@@ -41,6 +42,9 @@ export function ImagePicker({ slot, title, blurb, fit = 'cover', thumbAspectRati
     return f.assetId ? s.doc.assets[f.assetId] : null;
   });
   const update = useDoc((s) => s.update);
+  const caption = useDoc(s => heroCaptionText(s.doc, slot === 'cover'));
+  const board = useDoc(s => s.doc.templateId === 'frontmatter-board');
+  const captionKey = slot === 'cover' && !board ? 'coverCaption' : 'heroCaption';
   const fileRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -131,6 +135,13 @@ export function ImagePicker({ slot, title, blurb, fit = 'cover', thumbAspectRati
           </div>
 
           {children}
+          {(slot === 'hero' || slot === 'cover') && <>
+            <LabeledTextarea label={slot === 'cover' && !board ? 'Cover image caption' : 'Hero image caption'}
+              editorTarget={`meta-${captionKey === 'coverCaption' ? 'cover' : 'hero'}-caption`}
+              rows={3} value={caption} placeholder="Describe this image; keep photo credits in the credit field."
+              onChange={value => update(d => { d.meta[captionKey] = value; })} />
+            {!caption.trim() && <p className="hint hint--warn" role="status">This image has no caption yet. Add a description before publishing.</p>}
+          </>}
           {framing && <><LabeledRange label="Shift horizontally" value={frame.offsetX} min={-50} max={50} step={1} format={(v) => `${v}%`} onChange={setKey('offsetX')} />
           <LabeledRange label="Shift vertically" value={frame.offsetY} min={-50} max={50} step={1} format={(v) => `${v}%`} onChange={setKey('offsetY')} />
           <LabeledRange label="Zoom" value={frame.scale} min={0.5} max={3} step={0.05} format={(v) => `${v.toFixed(2)}×`} onChange={setKey('scale')} />

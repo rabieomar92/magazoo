@@ -30,10 +30,9 @@
 :is(.article-page,.article-measure) :is(.article-callout,.hl-col,.hl-below,.placed-highlights) h3:has(+ .highlights:empty) { display:none; }
 :is(.article-page,.article-measure) :is(.article-callout,.hl-col,.hl-below,.placed-highlights) :is(ul.highlights,ol.references) { margin:0; padding-inline-start:0; font:inherit; columns:1; column-gap:0; }
 :is(.article-page,.article-measure) :is(.article-callout,.hl-col,.hl-below,.placed-highlights) li { margin:0 0 1mm; overflow-wrap:anywhere; }
-.article-page > .tag-bar { position:absolute; z-index:4; margin:0; left:0; right:0; top:var(--topbar-offset); height:4mm; }
-.article-page .tag-bar-mark { width:4mm; min-width:4mm; }
-.article-page .tag-bar-tag { padding:0 2.5mm; font-size:10pt; letter-spacing:0; }
-.article-page .tag-bar-fill { opacity:.5; }
+/* Placement only: size, typography, square, label padding and rule appearance
+   come from the same Particle Feature TagBar styles as every other template. */
+.article-page > .tag-bar { position:absolute; z-index:4; margin:0; left:0; right:0; top:var(--topbar-offset); }
 .article-image-placeholder { display:grid; place-items:center; height:100%; font:12pt var(--sans); color:var(--ink); background:color-mix(in srgb,var(--paper-bg),#777 30%); }
 .article-measure { position:fixed; left:-100000px; top:0; visibility:hidden; pointer-events:none; color:var(--ink); contain:layout; }
 @media screen { .article-page[data-layout-overflow="true"] { outline:.6mm solid #c33b47; outline-offset:-1mm; } }

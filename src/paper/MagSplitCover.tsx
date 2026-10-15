@@ -9,6 +9,7 @@ import { MagTopBar } from './MagazineHead';
 import { PlacedImages } from './PlacedImages';
 import { SpreadPhotoImage } from '../components/SpreadPhotoImage';
 import { PageArtwork } from '../components/PageArtwork';
+import { HeroCaption } from './HeroCaption';
 
 const photoOf = (doc: Doc) =>
   doc.design.showHero !== false && doc.hero.assetId ? doc.assets[doc.hero.assetId] : null;
@@ -84,8 +85,11 @@ export function MagPhotoPage({
       data-editor-target={photo ? 'image-hero' : undefined}
     >
       {photo && <SpreadPhotoImage asset={photo} geometry={photoGeometry} behind />}
-      {!photo && <MagTopBar doc={doc} pageIndex={pageIndex} />}
-      {doc.meta.location && <span className="mag2-photo-tag" data-editor-tab="content" data-editor-target="meta-location">{doc.meta.location}</span>}
+      {!photo && <MagTopBar doc={doc} pageIndex={pageIndex} fullBleed={false} />}
+      {photo && <div className="mag2-photo-captions">
+        {doc.meta.location && <span className="mag2-photo-tag" data-editor-tab="content" data-editor-target="meta-location">{doc.meta.location}</span>}
+        <HeroCaption doc={doc} />
+      </div>}
       <PlacedImages doc={doc} pageIndex={pageIndex} />
     </div>
   );

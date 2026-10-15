@@ -1,10 +1,11 @@
 import type { Doc } from '../schema/document';
 import { FramedImage } from '../components/FramedImage';
 import { TagBar } from './TagBar';
+import { HeroCaption } from './HeroCaption';
 
 /** Magazine pages use the exact same bar structure as paper and gallery pages. */
-export function MagTopBar({ doc, pageIndex = 0 }: { doc: Doc; pageIndex?: number }) {
-  return <TagBar doc={doc} pageIndex={pageIndex} detail={doc.meta.volume} fullBleed />;
+export function MagTopBar({ doc, pageIndex = 0, fullBleed = true }: { doc: Doc; pageIndex?: number; fullBleed?: boolean }) {
+  return <TagBar doc={doc} pageIndex={pageIndex} detail={doc.meta.volume} fullBleed={fullBleed} />;
 }
 
 /** The page-2 spread header: a full-width hero photo with a location tag, its
@@ -23,6 +24,7 @@ export function MagazineHead({ doc }: { doc: Doc }) {
           {meta.location && <figcaption className="mag-hero-tag" data-editor-tab="content" data-editor-target="meta-location">{meta.location}</figcaption>}
         </figure>
       )}
+      {photo && <HeroCaption doc={doc} />}
       {photo && meta.photoCredit && (
         <p className="mag-hero-credit" data-editor-tab="content" data-editor-target="meta-photo-credit">{mag1 ? meta.photoCredit : `PHOTO — ${meta.photoCredit}`}</p>
       )}

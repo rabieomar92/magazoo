@@ -6,6 +6,8 @@ import { runsToHtml } from '../lib/richtext';
 import { dropCapEnabled } from '../lib/textDirection';
 import { requestBlockEditorFocus } from '../lib/editorNavigation';
 import { FramedImage } from '../components/FramedImage';
+import { HeroCaption } from './HeroCaption';
+import { heroCaptionText } from '../lib/heroCaption';
 import { TagBar } from './TagBar';
 import { largestBoardScaleThatFits } from '../lib/frontMatterBoardFit';
 import { SignatureImage } from '../components/SignatureImage';
@@ -163,12 +165,25 @@ export function FrontMatterPages({doc,vars,onStatus}: {doc:Doc;vars:CSSPropertie
       {asset ? <FramedImage asset={asset} frame={frame} fit={fit} /> : <span className="fm-photo-placeholder">{placeholder}</span>}
     </div>;
   };
-  const photo = (slot:'hero'|'cover', className:string, placeholder?:string, fit:'cover'|'contain'='cover') =>
-    framedPhoto(doc[slot],className,`image-${slot}`,placeholder,fit);
+  const photo = (slot:'hero'|'cover', className:string, placeholder?:string, fit:'cover'|'contain'='cover') => {
+    if (doc.design.showHero === false) return null;
+    const image = framedPhoto(doc[slot],className,`image-${slot}`,placeholder,fit);
+    if (!image || !heroCaptionText(doc,slot==='cover').trim()) return image;
+    // Feature rails have fixed image slots. Keep their captions in the frame
+    // instead of extending the rail past the page; the portrait is measured
+    // with the header and can safely keep its description underneath.
+    if (className !== 'fm-portrait') return <div className={className} {...target(`image-${slot}`,'images')}>
+      <FramedImage asset={doc.assets[doc[slot]!.assetId!]} frame={doc[slot]} fit={fit} />
+      <HeroCaption doc={doc} cover={slot==='cover'} overlay />
+    </div>;
+    return <div className="fm-captioned-photo fm-captioned-photo--portrait">
+      {image}<HeroCaption doc={doc} cover={slot==='cover'} />
+    </div>;
+  };
   const boardHero = () => {
     const frame=doc.cover;
     const asset=frame?.assetId ? doc.assets[frame.assetId] : null;
-    if (!asset) return null;
+    if (!asset || doc.design.showHero === false) return null;
     const hasCaption=Boolean(doc.meta.categoryLabel || doc.meta.heroCaption || doc.meta.photoCredit);
     return <figure className="fm-board-hero">
       {framedPhoto(frame,'fm-banner fm-banner--bleed','image-cover')}
@@ -176,7 +191,7 @@ export function FrontMatterPages({doc,vars,onStatus}: {doc:Doc;vars:CSSPropertie
         <p className="fm-board-caption-line">
           {doc.meta.categoryLabel && <strong {...target('meta-category')}>{doc.meta.categoryLabel}</strong>}
           {' '}
-          {doc.meta.heroCaption && <span {...target('meta-hero-caption')}>{doc.meta.heroCaption}</span>}
+          {doc.meta.heroCaption && <span {...target('meta-hero-caption','images')}>{doc.meta.heroCaption}</span>}
         </p>
         {doc.meta.photoCredit && <small {...target('meta-photo-credit')}>{doc.meta.photoCredit}</small>}
       </figcaption>}

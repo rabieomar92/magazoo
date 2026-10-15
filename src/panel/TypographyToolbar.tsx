@@ -16,7 +16,7 @@ const LABELS: Record<string, string> = {
   strapline: 'Strapline', kicker: 'Category / kicker', storyTag: 'Story tag', teaserTitle: 'Teaser title', teaserBody: 'Teaser description', footerBrand: 'Footer publication',
   brand: 'Brand name', tagline: 'Tagline', website: 'Website', qrLabel: 'QR description',
   socialLabel: 'Social-media labels', socialUrl: 'Social-media links', footerText: 'Footer text', imprint: 'Issue mark',
-  caption: 'Image / equation captions', heroCaption: 'Hero image caption', highlights: 'Highlights', references: 'References',
+  caption: 'Image / equation captions', heroCaption: 'Hero image caption', coverCaption: 'Cover image caption', highlights: 'Highlights', references: 'References',
   newsHeadline: 'Story headlines', newsCaption: 'Story captions', newsKicker: 'Story kickers', newsDeck: 'Story introductions', newsByline: 'Story bylines',
 };
 type Group = { group: string; label: string; property?: keyof TextStyle | 'tracking'; also?: string };
@@ -82,7 +82,7 @@ export function TypographyProvider({ children }: { children: ReactNode }) {
       if (target === 'design-fonts' || target === 'design-ink') return 'theme';
       if (target === 'design-topbar') return 'masthead';
       const meta: Record<string, string> = { 'meta-title': 'title', 'meta-subtitle': 'subtitle', 'meta-author': 'author', 'meta-category': doc.templateId === 'magazine-4' || doc.templateId === 'magazine-3' ? 'kicker' : 'category', 'meta-affiliation': doc.templateId === 'magazine-4' ? 'strapline' : 'affiliation', 'meta-masthead': 'masthead', 'meta-volume': 'volume', 'meta-location': 'storyTag', 'meta-photo-credit': 'photoCredit', 'meta-hero-caption': 'heroCaption', 'meta-pull-quote': 'quote', 'meta-pull-quote-by': 'attribution' };
-      return meta[target];
+      return target === 'meta-cover-caption' ? 'coverCaption' : meta[target];
     };
     const targetFocus = (event: Event) => {
       const target = (event as CustomEvent<EditorTargetDetail>).detail?.target;

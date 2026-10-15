@@ -1,5 +1,6 @@
 import { DEFAULT_TOP_BAR_OFFSET, type Design, type TemplateId } from '../schema/document';
 import { pageDimensions } from './pageFormat';
+import { TOP_BAR_HEIGHT_MM } from './topBar';
 
 export const ARTICLE_LAYOUTS = {
   'paper-4': { name: 'Immersive Bleed', rank: 1, referencePage: 19, heroHeight: 154, titleTop: 126, titleCols: 2, bodyTop: 179, dark: true, fade: true },
@@ -40,7 +41,7 @@ export function articleGeometry(id: ReferenceArticleId, design: Design, measured
   const inset = id === 'paper-8';
   const bottomHero = design.heroAtBottom === true && heroHeight > 0;
   const bottomBleed = bottomHero && design.heroBottomBleed === true;
-  const contentTop = Math.max(margin,25,(design.topBarOffset ?? DEFAULT_TOP_BAR_OFFSET)+4+gutter);
+  const contentTop = Math.max(margin,25,(design.topBarOffset ?? DEFAULT_TOP_BAR_OFFSET)+TOP_BAR_HEIGHT_MM+gutter);
   const imageLeft = inset && (design.heroSide ?? (design.textDirection === 'rtl' ? 'left' : 'right')) === 'left';
   const titleTop = Math.max(26, contentTop, bottomHero ? 26 : (inset ? layout.titleTop : layout.titleTop + delta), design.firstPageTopMargin ?? 0);
   const bodyTop = Math.max(titleTop + measuredHeader + gutter, bottomHero ? 26 : inset ? layout.bodyTop : layout.bodyTop + delta);

@@ -259,6 +259,30 @@
   background: transparent;
 }
 
+/* Shared hero captions are text layers, not part of the cropped photograph.
+   In-flow captions participate in the renderer's existing measuring pass. */
+.hero-caption {
+  margin: 2mm 0 0;
+  min-width: 0;
+  font: 400 7pt/1.35 var(--sans);
+  letter-spacing: normal;
+  text-align: start;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  direction: var(--text-dir,ltr);
+}
+.hero-caption--overlay {
+  position: absolute;
+  z-index: 4;
+  inset: auto max(4mm,var(--margin)) 3mm;
+  margin: 0;
+  padding: 2mm 3mm;
+  color: #fff;
+  background: rgb(0 0 0 / .76);
+  box-sizing: border-box;
+}
+.page--hero-bottom .hero-caption--overlay { bottom: max(9mm,var(--bottom-margin,var(--margin))); }
+
 .hero img {
   position: absolute;
   inset: 0;
@@ -339,10 +363,15 @@
      below pin this fixed width to the physical trim; any overlapping hero
      image paints on the higher image layer. */
   width: var(--page-w);
-  height: var(--bar-h);
+  height: var(--bar-h, 6mm);
   background: var(--bar-color);
   color: var(--bar-detail-ink, #cbd5e1);
-  font-family: var(--font-category);
+  /* Particle Feature's running masthead is the shared reference, independent
+     of the article's category/body fonts. Explicit Masthead typography edits
+     still win through the existing scoped text-style rules. */
+  font-family: 'Avenir Next LT Pro Light', 'Avenir Next LT Pro', 'Avenir Next', Avenir, 'Century Gothic', Arial, sans-serif;
+  font-weight: 400;
+  font-style: normal;
   line-height: 1;
   /* Bleeds to both sheet edges on every plain (non-hero) page it appears on —
      a continuation sheet or paper-2's later sheets — same negative-margin
@@ -365,7 +394,7 @@
 
 .tag-bar-mark {
   flex: none;
-  width: var(--bar-h); /* square */
+  width: var(--bar-h, 6mm); /* square */
   background: var(--bar-color);
 }
 
@@ -378,7 +407,7 @@
   background: var(--bar-tag);
   color: var(--bar-ink);
   font-family: inherit;
-  font-size: calc(var(--fs-eyebrow) * 0.85);
+  font-size: 7.225pt;
   line-height: 1;
   letter-spacing: 0.14em;
   text-align: center;
@@ -401,7 +430,7 @@
   overflow: hidden;
   color: var(--bar-detail-ink, #cbd5e1);
   font-family: inherit;
-  font-size: calc(var(--fs-eyebrow) * 0.68);
+  font-size: 5.78pt;
   font-weight: 500;
   line-height: 1;
   letter-spacing: 0.16em;

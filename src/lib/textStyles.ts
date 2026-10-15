@@ -22,6 +22,7 @@ export const TEXT_SELECTORS: Record<string, string> = {
   teaserTitle: '.front-cover-teaser h2', teaserBody: '.front-cover-teaser p',
   footerBrand: '.front-cover-footer-brand',
   heroCaption: '.article-hero-caption, .p2-hero-cap, [data-editor-target="meta-hero-caption"]',
+  coverCaption: '[data-editor-target="meta-cover-caption"]',
   highlights: '.highlights, .mag2-hl li',
   highlightHeading: '[data-editor-target="highlights-label"], .mag2-hl h3',
   referenceHeading: '[data-editor-target="references-label"]',

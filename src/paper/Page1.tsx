@@ -8,6 +8,7 @@ import { TagBar } from './TagBar';
 import { PlacedImages } from './PlacedImages';
 import { FramedImage } from '../components/FramedImage';
 import { PageArtwork } from '../components/PageArtwork';
+import { HeroCaption } from './HeroCaption';
 
 interface Props {
   doc: Doc;
@@ -42,6 +43,7 @@ export function Page1({ doc, vars, pieces }: Props) {
         {design.showHero !== false && heroAsset && (
           <FramedImage asset={heroAsset} frame={hero} />
         )}
+        {design.showHero !== false && heroAsset && <HeroCaption doc={doc} overlay />}
       </div>
       {heroAtBottom && <TagBar doc={doc} pageIndex={0} />}
       <header className="header">
