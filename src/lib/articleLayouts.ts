@@ -1,4 +1,5 @@
 import { DEFAULT_TOP_BAR_OFFSET, type Design, type TemplateId } from '../schema/document';
+import { pageDimensions } from './pageFormat';
 
 export const ARTICLE_LAYOUTS = {
   'paper-4': { name: 'Immersive Bleed', rank: 1, referencePage: 19, heroHeight: 154, titleTop: 126, titleCols: 2, bodyTop: 179, dark: true, fade: true },
@@ -11,7 +12,8 @@ export type ReferenceArticleId = keyof typeof ARTICLE_LAYOUTS;
 export function isReferenceArticle(id?: TemplateId): id is ReferenceArticleId {
   return !!id && Object.prototype.hasOwnProperty.call(ARTICLE_LAYOUTS, id);
 }
-export const articlePageHeight = (design: Design) => design.articlePageSize === 'a4' ? 297 : 276;
+export const articlePageHeight = (design: Design) => design.pageFormat === 'magazine'
+  ? pageDimensions(design).height : design.articlePageSize === 'a4' ? 297 : 276;
 /** The reference grid includes the rail; toggling a callout must not create
  * an extra, narrower image grid. Use only for geometry, not render decisions. */
 export const articleGridDesign = (design: Design): Design => ({ ...design, highlightsPlacement: 'below',
@@ -25,11 +27,12 @@ export interface ArticleObstacle { page: number; left: number; top: number; widt
  * opening composition, continuation pages and independent placed images. */
 export function articleGeometry(id: ReferenceArticleId, design: Design, measuredHeader = 0, captionHeight = 0, footerReserve = 0) {
   const layout = ARTICLE_LAYOUTS[id];
+  const { width } = pageDimensions(design);
   const height = articlePageHeight(design);
   const margin = Math.max(8, Math.min(30, design.margin));
   const gutter = Math.max(2, Math.min(12, design.gutter));
   const columns = Math.max(2, Math.min(4, Math.round(design.bodyCols)));
-  const col = (210 - 2 * margin - (columns - 1) * gutter) / columns;
+  const col = (width - 2 * margin - (columns - 1) * gutter) / columns;
   const span = (count: number) => col * count + gutter * (count - 1);
   const titleCols = Math.max(1, Math.min(columns, Math.round(layout.titleCols * columns / 4)));
   const heroHeight = design.showHero === false ? 0 : Math.max(0, Math.min(160, design.heroHeight));
@@ -43,11 +46,11 @@ export function articleGeometry(id: ReferenceArticleId, design: Design, measured
   const bottom = height - Math.max(margin, 18, footerReserve);
   const image = inset
     ? { x: imageLeft ? margin : margin + col + gutter, y: bottomHero ? bottom-heroHeight-captionHeight-gutter : bodyTop, width: span(columns - 1), height: heroHeight }
-    : { x: 0, y: bottomHero ? bottom-heroHeight : 0, width: 210, height: heroHeight };
+    : { x: 0, y: bottomHero ? bottom-heroHeight : 0, width, height: heroHeight };
   const starts = Array.from({ length: columns }, (_, i) => !bottomHero && inset && (imageLeft ? i < columns-1 : i > 0) && heroHeight > 0
     ? bodyTop + heroHeight + Math.max(captionHeight + gutter, 13)
     : i < titleCols ? bodyTop : titleTop);
-  return { layout, height, margin, gutter, columns, col, span, titleCols, titleTop, bodyTop, bottom, image, starts, bottomHero, contentTop };
+  return { layout, width, height, margin, gutter, columns, col, span, titleCols, titleTop, bodyTop, bottom, image, starts, bottomHero, contentTop };
 }
 
 /** Split each column top-to-bottom around placed photographs, then advance

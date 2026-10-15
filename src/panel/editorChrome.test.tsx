@@ -51,4 +51,18 @@ describe('editor chrome', () => {
     expect(selects.length).toBeGreaterThan(0);
     expect(selects.every((select) => select.classList.contains('select-control'))).toBe(true);
   });
+
+  it('keeps existing history, file and adjacent PDF controls in clearly labelled groups', () => {
+    const host = document.createElement('div');
+    host.innerHTML = renderToStaticMarkup(<Toolbar onPreviewToolsHost={() => undefined} />);
+    const history = host.querySelector('[role="group"][aria-label="Edit history"]')!;
+    const files = host.querySelector('[role="group"][aria-label="Project files"]')!;
+    const output = host.querySelector('[role="group"][aria-label="PDF output"]')!;
+    expect(history.querySelectorAll('button')).toHaveLength(2);
+    expect(files.querySelectorAll('button')).toHaveLength(3);
+    expect(files.querySelector('[aria-label="Save"]')).not.toBeNull();
+    expect(output.querySelector('[aria-label="PDF page size"]')?.classList.contains('select-control')).toBe(true);
+    expect(output.querySelector('[aria-label="Export PDF"]')).not.toBeNull();
+    expect([...output.children].map(node => node.tagName)).toEqual(['SELECT', 'BUTTON']);
+  });
 });

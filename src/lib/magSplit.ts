@@ -55,9 +55,10 @@ export function splitPhoto(
   ar: number,
   frame?: Partial<PhotoFrame>,
   strip = MAG2_STRIP,
+  page = { width: PAGE_W, height: PAGE_H },
 ): SplitPhoto {
-  const regionW = strip + PAGE_W;
-  return framedSpreadPhoto(ar, regionW, PAGE_H, frame);
+  const regionW = strip + page.width;
+  return framedSpreadPhoto(ar, regionW, page.height, frame);
 }
 
 /** Background shorthand values for sheet 1's strip (region starts at its left edge). */
@@ -72,8 +73,8 @@ export const photoPageBg = (p: SplitPhoto, strip = MAG2_STRIP) => ({
   backgroundPosition: `${p.x - strip}mm ${p.y}mm`,
 });
 
-/** Equal A4 halves of a conventional two-sheet gatefold. */
-export const gatePageBg = (p: SplitPhoto, pageIndex: 0 | 1) => ({
+/** Equal halves of a conventional two-sheet gatefold. */
+export const gatePageBg = (p: SplitPhoto, pageIndex: 0 | 1, pageWidth = PAGE_W) => ({
   backgroundSize: `${p.w}mm ${p.h}mm`,
-  backgroundPosition: `${p.x - pageIndex * PAGE_W}mm ${p.y}mm`,
+  backgroundPosition: `${p.x - pageIndex * pageWidth}mm ${p.y}mm`,
 });

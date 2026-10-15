@@ -112,6 +112,20 @@ describe('placed image geometry', () => {
       'polygon(0% 0%, 50% 0%, 50% 30%, 100% 30%, 100% 100%, 50% 100%, 50% 90%, 0% 90%)',
     );
   });
+
+  it('uses native magazine bounds for default height limits, column widths and edge bleeds', () => {
+    const design = { ...emptyDoc().design, pageFormat: 'magazine' as const };
+    const asset = { src: '', naturalWidth: 800, naturalHeight: 400 };
+    const before = JSON.stringify(design);
+    const out = placedImageGeometry({ ...image, heightMm: 999,
+      bleed: { left: true, right: true, top: true, bottom: true } }, asset, design);
+    expect(out.width).toBeCloseTo(grid(design).span(2));
+    expect(out.height).toBe(267);
+    expect(out.top).toBe(0);
+    expect(out.visualWidth).toBe(203);
+    expect(out.visualHeight).toBe(267);
+    expect(JSON.stringify(design)).toBe(before);
+  });
 });
 
 describe('placed highlight geometry', () => {

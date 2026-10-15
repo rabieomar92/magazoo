@@ -1,5 +1,5 @@
 import type { Asset, Design, NewsStory } from '../schema/document';
-import { PAGE_W } from './geometry';
+import { pageDimensions } from './pageFormat';
 import { normalizeImageFrame } from './imageFrame';
 import { newsPhotoPosition, newsPhotoSpan, newsStoryWidth } from './newsLayout';
 
@@ -18,7 +18,7 @@ export function newsPhotoFrameMetrics(
   const photoColumns = position === 'left' || position === 'right'
     ? newsPhotoSpan(story, storyColumns, position)
     : storyColumns;
-  const columnWidth = (PAGE_W - 2 * design.margin - (design.bodyCols - 1) * design.gutter) / design.bodyCols;
+  const columnWidth = (pageDimensions(design).width - 2 * design.margin - (design.bodyCols - 1) * design.gutter) / design.bodyCols;
   const width = Math.max(.1, columnWidth * photoColumns + (photoColumns - 1) * design.gutter);
   const sourceWidth = asset.naturalWidth > 0 ? asset.naturalWidth : 1;
   const sourceHeight = asset.naturalHeight > 0 ? asset.naturalHeight : 1;

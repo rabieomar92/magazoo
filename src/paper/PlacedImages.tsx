@@ -6,14 +6,15 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from 'react';
 import type { Asset, Design, Doc, PlacedImage } from '../schema/document';
-import { PAGE_H, PAGE_W } from '../lib/geometry';
+import { PAGE_H } from '../lib/geometry';
+import { pageDimensions } from '../lib/pageFormat';
 import { placedImageContourClip, placedImageGeometry, snapImageColumn } from '../lib/placedImage';
 import { defaultPlacedHighlights, placedHighlightsGeometry, highlightAvoidingTop } from '../lib/placedHighlights';
 import { articleGridDesign, isReferenceArticle } from '../lib/articleLayouts';
 import { useDoc } from '../store/useDoc';
 import { HighlightsBody } from './Sidebar';
 import { FramedImage } from '../components/FramedImage';
-import { usePreviewReadOnly } from './PreviewReadOnly';
+import { usePreviewReadOnly, usePreserveSourceAnchors } from './PreviewReadOnly';
 
 interface DragState {
   pointerId: number;
@@ -110,7 +111,7 @@ function PlacedImageItem({
       startClientY: event.clientY,
       startLeft: geometry.left,
       startTop: geometry.top,
-      pxPerMm: pageRect.width / PAGE_W,
+      pxPerMm: pageRect.width / pageDimensions(design).width,
       column: geometry.column,
       top: geometry.top,
     };
@@ -204,6 +205,7 @@ function PlacedImageItem({
 
 function PlacedHighlightsItem({ doc, design, pageHeight, readOnly }: { doc: Doc; design: Design; pageHeight: number; readOnly: boolean }) {
   const update = useDoc((state) => state.update);
+  const preserveSourceAnchors = usePreserveSourceAnchors();
   const elementRef = useRef<HTMLElement>(null);
   const drag = useRef<HighlightDragState | null>(null);
   const placement = doc.highlightBox ?? defaultPlacedHighlights(design, pageHeight);
@@ -228,10 +230,10 @@ function PlacedHighlightsItem({ doc, design, pageHeight, readOnly }: { doc: Doc;
     // received a measurable width yet. Without this early commit, a loaded
     // free-placement document could be autosaved before its first layout and
     // lose the box's position on the next open.
-    const canCommit = !readOnly && !element.closest('[inert]');
+    const canCommit = !readOnly && !preserveSourceAnchors && design.pageFormat !== 'magazine' && !element.closest('[inert]');
     if (canCommit && !doc.highlightBox) commitAnchor(placement.anchor.column, placement.anchor.y);
     if (!page.offsetWidth) return;
-    const pxPerMm = page.getBoundingClientRect().width / PAGE_W;
+    const pxPerMm = page.getBoundingClientRect().width / pageDimensions(design).width;
     const height = element.getBoundingClientRect().height / pxPerMm;
     const measured = placedHighlightsGeometry(placement, design, height, pageHeight);
     const safeTop = imageAvoidingTop(
@@ -250,13 +252,13 @@ function PlacedHighlightsItem({ doc, design, pageHeight, readOnly }: { doc: Doc;
     // Without this, a box that had never been dragged existed only as a
     // computed fallback and could disappear or move after an autosave/reload.
     if (canCommit && (!doc.highlightBox || Math.abs(rounded - placement.anchor.y) > 0.05)) commitAnchor(measured.column, rounded);
-  }, [commitAnchor, doc.assets, doc.design, doc.highlightBox, doc.highlights, doc.images, doc.references, placement, design, pageHeight, readOnly]);
+  }, [commitAnchor, doc.assets, doc.design, doc.highlightBox, doc.highlights, doc.images, doc.references, placement, design, pageHeight, readOnly, preserveSourceAnchors]);
 
   const onPointerDown = (event: ReactPointerEvent<HTMLElement>) => {
     if (readOnly || event.button !== 0) return;
     const page = event.currentTarget.closest<HTMLElement>('.page');
     if (!page) return;
-    const pxPerMm = page.getBoundingClientRect().width / PAGE_W;
+    const pxPerMm = page.getBoundingClientRect().width / pageDimensions(design).width;
     if (pxPerMm <= 0) return;
     event.preventDefault();
     event.stopPropagation();
@@ -338,7 +340,7 @@ function PlacedHighlightsItem({ doc, design, pageHeight, readOnly }: { doc: Doc;
 }
 
 /** Absolute image overlay for one physical sheet. */
-export function PlacedImages({ doc, pageIndex, pageHeight = PAGE_H, readOnly = false, includeHighlights = true }: { doc: Doc; pageIndex: number; pageHeight?: number; readOnly?: boolean; includeHighlights?: boolean }) {
+export function PlacedImages({ doc, pageIndex, pageHeight = pageDimensions(doc.design).height, readOnly = false, includeHighlights = true }: { doc: Doc; pageIndex: number; pageHeight?: number; readOnly?: boolean; includeHighlights?: boolean }) {
   const inheritedReadOnly = usePreviewReadOnly();
   readOnly = readOnly || inheritedReadOnly;
   const design = isReferenceArticle(doc.templateId) ? articleGridDesign(doc.design) : doc.design;

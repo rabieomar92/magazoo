@@ -45,7 +45,7 @@ export function ArticlePages({ doc, vars, onStatus, readOnly = false }: { doc: D
   const gridDesign = useMemo(() => articleGridDesign(doc.design), [doc.design]);
   const renderDoc = layout.free && placement === 'free' ? { ...doc, highlightBox: layout.free } : doc;
   const g = articleGeometry(id, doc.design, layout.header, layout.caption, footerBottomMargin(doc));
-  const styles = { ...vars, '--page-h': `${g.height}mm`, '--article-col': `${g.col}mm`, '--article-leading': String(doc.design.articleLeading ?? 1.28),
+  const styles = { ...vars, '--page-w': `${g.width}mm`, '--page-h': `${g.height}mm`, '--article-col': `${g.col}mm`, '--article-leading': String(doc.design.articleLeading ?? 1.28),
     '--margin':`${g.margin}mm`, '--gutter':`${g.gutter}mm`, '--col':`${g.col}mm`,
     '--article-caption-font': fontStack(doc.design.articleCaptionFont ?? 'Avenir Next LT Pro'),
     '--article-caption-size': `${doc.design.articleCaptionSize ?? 7}pt`,
@@ -132,8 +132,8 @@ export function ArticlePages({ doc, vars, onStatus, readOnly = false }: { doc: D
         // Headings, lead images, masthead and footer are also protected regions.
         const protectedAreas: ArticleObstacle[] = [
           ...imageBounds.filter(o=>o.page===page),
-          {page,left:0,top:0,width:210,height:geometry.contentTop},
-          {page,left:0,top:geometry.bottom,width:210,height:geometry.height-geometry.bottom},
+          {page,left:0,top:0,width:geometry.width,height:geometry.contentTop},
+          {page,left:0,top:geometry.bottom,width:geometry.width,height:geometry.height-geometry.bottom},
           ...leadObstacles.filter(o=>o.page===page),
         ];
         const gap = Math.max(3, geometry.gutter*.6);
@@ -175,7 +175,7 @@ export function ArticlePages({ doc, vars, onStatus, readOnly = false }: { doc: D
       const overlap = (a: ArticleObstacle,b: ArticleObstacle) => a.page===b.page&&Math.min(a.left+a.width,b.left+b.width)>Math.max(a.left,b.left)+.5&&Math.min(a.top+a.height,b.top+b.height)>Math.max(a.top,b.top)+.5;
       const overflow = geometry.bodyTop > geometry.bottom - 8 || geometry.starts.some(y => y > geometry.bottom - 8)
         || (geometry.bottomHero && leadObstacles.length>1 && overlap(leadObstacles[0],leadObstacles[1]))
-        || imageBounds.some(o => o.top + o.height > geometry.height + .5 || o.left + o.width > 210.5)
+        || imageBounds.some(o => o.top + o.height > geometry.height + .5 || o.left + o.width > geometry.width + .5)
         || callouts.some(c=>c.top<0||c.top+c.height>geometry.bottom+.5||[...imageBounds,...leadObstacles].some(image=>overlap(c,image)));
       setLayout({ regions: filled, pages, header: headerHeight, caption: captionHeight, overflow, callouts, free });
       onStatus({ pages, overflow });
@@ -208,12 +208,12 @@ export function ArticlePages({ doc, vars, onStatus, readOnly = false }: { doc: D
   const asset = doc.hero.assetId ? doc.assets[doc.hero.assetId] : undefined;
   const hasImage = doc.design.showHero !== false && g.image.height > 0;
   const captionText = doc.meta.heroCaption ?? '';
-  const measureStyles = { ...styles, width: '210mm' };
+  const measureStyles = { ...styles, width: `${g.width}mm` };
   return <>
     {Array.from({ length: layout.pages }, (_, page) => <div key={page}
       className={`page article-page article-page--${id}${g.layout.dark ? ' article-page--dark' : ''}`}
-      data-page-height-mm={g.height} data-layout-overflow={layout.overflow ? 'true' : undefined}
-      style={{ ...styles, height: `${g.height}mm` }}>
+      data-page-width-mm={g.width} data-page-height-mm={g.height} data-layout-overflow={layout.overflow ? 'true' : undefined}
+      style={{ ...styles, width: `${g.width}mm`, height: `${g.height}mm` }}>
       {page === 0 && <PageArtwork doc={doc}/>}
       {page === 0 && <>
         {hasImage && <figure data-callout-obstacle className={`article-hero${g.layout.fade ? ' article-hero--fade' : ''}${g.bottomHero ? ' article-hero--bottom' : ''}`} data-editor-tab="images" data-editor-target="image-hero"
@@ -240,7 +240,7 @@ export function ArticlePages({ doc, vars, onStatus, readOnly = false }: { doc: D
       <div ref={caption} className="article-inset-caption article-hero-caption" style={{ position: 'static', width: `${g.image.width}mm` }}>{captionText}</div>
       <div ref={callout} className="article-callout hl-col" style={{ width: `${calloutWidth}mm` }}><HighlightsBody doc={doc}/></div>
       <div ref={probes}/>
-      {Array.from({ length: lastImagePage }, (_, page) => <div key={page} data-article-image-page={page} style={{ position: 'relative', width: '210mm', height: `${g.height}mm` }}><PlacedImages doc={doc} pageIndex={page} pageHeight={g.height} readOnly includeHighlights={false}/></div>)}
+      {Array.from({ length: lastImagePage }, (_, page) => <div key={page} data-article-image-page={page} style={{ position: 'relative', width: `${g.width}mm`, height: `${g.height}mm` }}><PlacedImages doc={doc} pageIndex={page} pageHeight={g.height} readOnly includeHighlights={false}/></div>)}
     </div>
   </>;
 }

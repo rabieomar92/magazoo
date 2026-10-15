@@ -1,18 +1,18 @@
 import { useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import type { Doc } from '../schema/document';
 import { gatePlacement, clampGate } from '../lib/gatePlacement';
-import { PAGE_W } from '../lib/geometry';
+import { pageDimensions } from '../lib/pageFormat';
 import { useDoc } from '../store/useDoc';
 import { useVerticalDrag } from './useVerticalDrag';
 
 /** The box the copy is already occupying, in page millimetres. Recorded the
  * first time a block is placed by hand so that taking hold of it moves it
  * without also re-flowing the text to a different measure. */
-function currentBox(element: HTMLElement, rtl: boolean) {
+function currentBox(element: HTMLElement, rtl: boolean, pageWidth: number) {
   const page = element.closest<HTMLElement>('.page');
   if (!page) return {};
   const pageRect = page.getBoundingClientRect();
-  const pxPerMm = pageRect.width / PAGE_W;
+  const pxPerMm = pageRect.width / pageWidth;
   if (!pxPerMm) return {};
   const rects = Array.from(element.children)
     .map(child => child.getBoundingClientRect())
@@ -35,7 +35,8 @@ export function useGatePlacement(doc: Doc, side: 'title' | 'text', vars: CSSProp
   const update = useDoc(state => state.update);
   const key = side === 'title' ? 'gateTitle' : 'gateText';
   const box = doc.design[key];
-  const position = gatePlacement(box, doc.design.margin);
+  const page = pageDimensions(doc.design);
+  const position = gatePlacement(box, doc.design.margin, doc.design);
 
   // The block can also be dragged up and down on the sheet. One that is still
   // centred reports where it currently sits, so taking hold of it simply
@@ -46,11 +47,11 @@ export function useGatePlacement(doc: Doc, side: 'title' | 'text', vars: CSSProp
       if (!page) return position.top ?? doc.design.margin;
       return (element.getBoundingClientRect().top - page.getBoundingClientRect().top) / pxPerMm;
     },
-    clamp: value => clampGate(value, 0, 260),
+    clamp: value => clampGate(value, 0, page.height - 37),
     commit: (top, element) => update(d => {
       const stored = d.design[key];
-      const next = { ...(stored ?? currentBox(element, d.design.textDirection === 'rtl')), top };
-      d.design[key] = { ...next, ...gatePlacement(next, d.design.margin) };
+      const next = { ...(stored ?? currentBox(element, d.design.textDirection === 'rtl', page.width)), top };
+      d.design[key] = { ...next, ...gatePlacement(next, d.design.margin, doc.design) };
     }),
   });
   useLayoutEffect(() => {
@@ -66,7 +67,7 @@ export function useGatePlacement(doc: Doc, side: 'title' | 'text', vars: CSSProp
     const measure = () => {
       const rect = frame.getBoundingClientRect();
       const scale = rect.width / frame.clientWidth || 1;
-      const pxPerMm = frame.clientWidth / (210 - 2 * doc.design.margin);
+      const pxPerMm = frame.clientWidth / (page.width - 2 * doc.design.margin);
       const bar = frame.querySelector<HTMLElement>('.tag-bar');
       const foot = frame.querySelector<HTMLElement>('.mag-gate-foot');
       const min = bar ? Math.max(0, (bar.getBoundingClientRect().bottom - rect.top) / scale + 5 * pxPerMm) : 0;

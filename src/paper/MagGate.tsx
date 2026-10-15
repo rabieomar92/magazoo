@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react';
 import type { Doc } from '../schema/document';
-import { PAGE_H, PAGE_W } from '../lib/geometry';
+import { pageDimensions } from '../lib/pageFormat';
 import { framedSpreadPhoto } from '../lib/magSplit';
 import { MagTopBar } from './MagazineHead';
 import { PlacedImages } from './PlacedImages';
@@ -26,9 +26,10 @@ function gateGeometry(doc: Doc, pageIndex: 0 | 1) {
   const ar = photo.asset.naturalHeight > 0
     ? photo.asset.naturalWidth / photo.asset.naturalHeight
     : 16 / 9;
-  const geometry = framedSpreadPhoto(ar, PAGE_W * 2, PAGE_H, photo.frame);
+  const { width, height } = pageDimensions(doc.design);
+  const geometry = framedSpreadPhoto(ar, width * 2, height, photo.frame);
   const physicalHalf = doc.design.textDirection === 'rtl' ? 1 - pageIndex : pageIndex;
-  return { ...geometry, x: geometry.x - physicalHalf * PAGE_W };
+  return { ...geometry, x: geometry.x - physicalHalf * width };
 }
 
 /** magazine-3 gatefold, sheet 1 (left half of the photo). Masthead + big stacked
@@ -49,6 +50,8 @@ export function MagGateA({ doc, vars }: { doc: Doc; vars: CSSProperties }) {
         (doc.design.firstPageTopMargin ?? 0) > 0 ? ' page--first-offset' : ''
       }`}
       style={{ ...vars, ...placement.style, '--gate-title-size': `${doc.design.gateTitleSize ?? 46}pt`, '--mag-kicker-color': kickerColor } as CSSProperties}
+      data-page-width-mm={pageDimensions(doc.design).width}
+      data-page-height-mm={pageDimensions(doc.design).height}
       data-editor-tab={photo ? 'images' : undefined}
       data-editor-target={photo ? 'image-cover' : undefined}
     >
@@ -96,6 +99,8 @@ export function MagGateB({ doc, vars }: { doc: Doc; vars: CSSProperties }) {
     <div
       className={`page mag-gate mag-gate--b${placement.positioned ? ' mag-gate--positioned' : ''}${photo ? ' page--dedicated-bg' : ''}`}
       style={{ ...vars, ...placement.style, '--mag-kicker-color': kickerColor, '--gate-quote-rule': `${quoteRule}px`, '--gate-quote-rule-gap': quoteRule > 0 ? '12px' : '0px' } as CSSProperties}
+      data-page-width-mm={pageDimensions(doc.design).width}
+      data-page-height-mm={pageDimensions(doc.design).height}
       data-editor-tab={photo ? 'images' : undefined}
       data-editor-target={photo ? 'image-cover' : undefined}
     >

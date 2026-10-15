@@ -33,6 +33,19 @@ describe('continuous spread-photo framing', () => {
     expect(leftX - rightX).toBeCloseTo(PAGE_W);
   });
 
+  it('fits native magazine spread windows to their real trim without an A4 gutter', () => {
+    const page = { width: 203, height: 267 };
+    const split = splitPhoto(16 / 9, undefined, MAG2_STRIP, page);
+    expect(split.x + split.w).toBeGreaterThanOrEqual(MAG2_STRIP + page.width);
+    expect(split.y + split.h).toBeGreaterThanOrEqual(page.height);
+    expect(split.w).toBeCloseTo(page.height * 16 / 9);
+    expect(split.h).toBeCloseTo(page.height);
+    const spread = framedSpreadPhoto(3 / 2, page.width * 2, page.height);
+    const leftX = Number.parseFloat(gatePageBg(spread, 0, page.width).backgroundPosition);
+    const rightX = Number.parseFloat(gatePageBg(spread, 1, page.width).backgroundPosition);
+    expect(leftX - rightX).toBe(203);
+  });
+
   it('cannot pan a zoomed image beyond any region edge', () => {
     const regionW = PAGE_W * 2;
     for (const scale of [1, 1.1, 2, 3]) {

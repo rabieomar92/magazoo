@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import type { Doc } from '../schema/document';
+import { pageDimensions } from '../lib/pageFormat';
 import {
   newsCopyHtml,
   newsCopySpan,
@@ -203,7 +204,7 @@ export function NewsPages({ doc, vars, onStatus }: { doc: Doc; vars: CSSProperti
       if (photo !== 'none' && story.assetId && !story.caption.trim()) issues.push({ storyId: story.id, blocking: false, message: 'This image has no caption.' });
       const copyWidth = photo !== 'none' && story.assetId && (photo === 'left' || photo === 'right')
         ? newsCopySpan(story, width, photo) : width;
-      const columnMm = (210 - 2 * doc.design.margin - (doc.design.bodyCols - 1) * doc.design.gutter) / doc.design.bodyCols;
+      const columnMm = (pageDimensions(doc.design).width - 2 * doc.design.margin - (doc.design.bodyCols - 1) * doc.design.gutter) / doc.design.bodyCols;
       const columns = newsTextColumns(story, width, story.assetId ? photo : 'none');
       const textMm = (columnMm * copyWidth + doc.design.gutter * (copyWidth - columns)) / columns;
       if (textMm < 28) issues.push({ storyId: story.id, blocking: false, message: 'Copy columns are narrower than 28 mm. Widen this story, reduce text columns or give the image fewer columns.' });
@@ -225,6 +226,7 @@ export function NewsPages({ doc, vars, onStatus }: { doc: Doc; vars: CSSProperti
 
   const pageVars = { ...vars, '--news-page-cols': doc.design.bodyCols } as CSSProperties;
   const sheet = (index: number, content: ReactNode) => <div className="page news-page" style={pageVars} dir={doc.design.textDirection ?? 'ltr'} key={index}
+    data-page-width-mm={pageDimensions(doc.design).width} data-page-height-mm={pageDimensions(doc.design).height}
     data-layout-overflow={index >= 0 && layout.overflowPages.includes(index) ? 'true' : undefined}>
     <TagBar doc={doc} pageIndex={index} detail={doc.meta.volume} />
     <div className="news-shell">

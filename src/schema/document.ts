@@ -363,6 +363,9 @@ export interface TextStyle {
 }
 
 export interface Design {
+  /** Render-only output override; selected paper size is a browser preference,
+   * not an authoring change. Missing keeps the original A4/reference layout. */
+  pageFormat?: 'magazine';
   textStyles?: Record<string, TextStyle>;
   /** Reference article compositions retain the magazine's 210 × 276 mm trim,
    * or can explicitly extend their text area to A4. Other templates ignore it. */

@@ -5,6 +5,7 @@ import { Toolbar } from './Toolbar';
 import { exportPreviewPdf } from '../lib/pdfExport';
 import { useDoc } from '../store/useDoc';
 import { useProjectFile } from '../store/projectFiles';
+import { usePdfPreferences } from '../store/pdfPreferences';
 
 vi.mock('../lib/pdfExport', () => ({ exportPreviewPdf: vi.fn().mockResolvedValue(undefined) }));
 
@@ -13,11 +14,12 @@ let root: ReturnType<typeof createRoot>;
 beforeEach(() => {
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
   vi.clearAllMocks();
+  usePdfPreferences.getState().setSize('a4');
   host = document.createElement('div');
   document.body.append(host);
   root = createRoot(host);
 });
-afterEach(() => { act(() => root.unmount()); host.remove(); vi.unstubAllGlobals(); });
+afterEach(() => { act(() => root.unmount()); host.remove(); usePdfPreferences.getState().setSize('a4'); vi.unstubAllGlobals(); });
 
 it.each(['a4', 'b5', 'magazine'])('exports the selected %s sheet without editing or saving the article', async size => {
   const sourceDoc = useDoc.getState().doc;
@@ -38,4 +40,16 @@ it.each(['a4', 'b5', 'magazine'])('exports the selected %s sheet without editing
   expect(useDoc.getState().doc).toBe(sourceDoc);
   expect(JSON.stringify(useDoc.getState().doc)).toBe(sourceJson);
   expect(useProjectFile.getState()).toBe(fileState);
+});
+
+it('remembers the selected paper size across toolbar remounts without saving the document', () => {
+  const before = useDoc.getState().doc;
+  act(() => root.render(<Toolbar onPreviewToolsHost={() => undefined} />));
+  const select = host.querySelector<HTMLSelectElement>('[aria-label="PDF page size"]')!;
+  act(() => { select.value = 'magazine'; select.dispatchEvent(new Event('change', { bubbles: true })); });
+  act(() => root.render(null));
+  act(() => root.render(<Toolbar onPreviewToolsHost={() => undefined} />));
+  expect(host.querySelector<HTMLSelectElement>('[aria-label="PDF page size"]')!.value).toBe('magazine');
+  expect(useDoc.getState().doc).toBe(before);
+  expect(exportPreviewPdf).not.toHaveBeenCalled();
 });

@@ -1,59 +1,62 @@
 /* Editor chrome only: no selectors target the preview or printed pages. */
 .typography-toolbar {
-  flex:none; display:flex; align-items:center; gap:10px;
-  box-sizing:border-box; height:64px; min-width:0; padding:4px 12px;
-  background:var(--surface,#fff); border-bottom:1px solid var(--line,#dfe3ea);
+  flex:none; display:flex; align-items:center; gap:12px;
+  box-sizing:border-box; height:58px; min-width:0; padding:4px 16px;
+  background:#fff; border-bottom:1px solid #e5e9f0;
 }
 .typography-toolbar .typography-context {
-  flex:0 0 224px; min-width:0; margin:0; padding-right:10px;
-  border-right:1px solid var(--line,#dfe3ea);
+  flex:0 0 204px; min-width:0; margin:0; padding-right:12px;
+  border-right:1px solid #e5e9f0;
 }
 /* Never wrap formatting into extra rows. Native horizontal scrolling keeps
    every original control reachable without taking space from the page. */
 .typography-controls {
-  flex:1; min-width:0; height:56px; display:flex; align-items:center;
-  flex-wrap:nowrap; gap:12px; overflow-x:auto; overflow-y:hidden;
+  flex:1; min-width:0; height:50px; display:flex; align-items:center;
+  flex-wrap:nowrap; gap:10px; overflow-x:auto; overflow-y:hidden;
   scrollbar-width:none;
   overscroll-behavior-x:contain;
 }
 .typography-controls::-webkit-scrollbar { display:none; }
-.typography-overflow-nav { display:flex; flex:none; gap:3px; padding-left:6px; border-left:1px solid var(--line,#dfe3ea); }
-.typography-overflow-nav button { width:26px; height:30px; padding:0; border:1px solid #e2e8f0; border-radius:6px; background:#fff; color:#475569; font-size:22px; cursor:pointer; }
+.typography-overflow-nav { display:flex; flex:none; align-items:center; gap:3px; padding-left:8px; border-left:1px solid #e5e9f0; }
+.typography-overflow-nav button { width:25px; height:29px; padding:0; border:1px solid #e2e8f0; border-radius:6px; background:#f8fafc; color:#64748b; font-size:20px; line-height:1; cursor:pointer; }
 .typography-overflow-nav button:hover:not(:disabled) { background:#f1f5f9; color:#4338ca; }
 .typography-overflow-nav button:disabled { opacity:.3; cursor:default; }
-.typography-control { flex:0 0 auto; display:flex; align-items:center; gap:5px; height:44px; }
+.typography-control { flex:0 0 auto; display:flex; align-items:flex-end; gap:4px; height:43px; padding-bottom:1px; box-sizing:border-box; }
 .typography-control[hidden] { display:none; }
 .typography-control .text-style-reset { width:auto; height:28px; padding:3px 8px; font-size:11px; white-space:nowrap; }
-.typography-control[data-complete-property] .tool-btn { min-width:28px; height:28px; padding:3px 7px; }
+.typography-control[data-complete-property] .tool-btn { min-width:29px; height:29px; padding:3px 7px; border-radius:6px; }
 .typography-control[data-complete-property] .tool-btn[aria-pressed="true"] { background:#ede9fe; color:#4338ca; border-color:#a5b4fc; }
-.typography-toolbar .typography-control[data-complete-property="fontWeight"] select.field-input.select-control { width:132px; }
-.typography-toolbar .typography-control[data-complete-property="align"] select.field-input.select-control { width:156px; }
-.tracking-reset { align-self:flex-end; border:1px solid #e2e8f0; background:#fff; border-radius:5px; width:26px; height:28px; color:#475569; cursor:pointer; }
+.typography-toolbar .typography-control[data-complete-property="fontWeight"] select.field-input.select-control { width:114px; }
+.typography-toolbar .typography-control[data-complete-property="align"] select.field-input.select-control { width:136px; }
+.tracking-reset { align-self:flex-end; border:1px solid #e2e8f0; background:#f8fafc; border-radius:6px; width:25px; height:29px; color:#64748b; cursor:pointer; }
 .tracking-reset:disabled { opacity:.35; cursor:default; }
 .typography-toolbar .field {
   display:flex; flex-direction:column; align-items:flex-start;
   flex-wrap:nowrap; gap:3px; margin:0;
 }
-.typography-toolbar .field-label { flex:none; font-size:10px; line-height:12px; white-space:nowrap; }
+.typography-toolbar .field-label { flex:none; margin:0; color:#718096; font-size:9.5px; font-weight:550; line-height:11px; white-space:nowrap; }
 .typography-toolbar .field-input {
-  box-sizing:border-box; height:28px; min-height:28px; padding:3px 6px; font-size:12px;
+  box-sizing:border-box; height:29px; min-height:29px; padding:3px 7px; border:1px solid #dfe6ef;
+  border-radius:6px; background-color:#fff; color:#34435a; box-shadow:0 1px 2px #10182803; font-size:11px; line-height:1.2;
 }
-.typography-toolbar .field-input--num { width:60px; }
+.typography-toolbar .field-input:hover { border-color:#bfcbdb; }
+.typography-toolbar .field-input:focus { border-color:#a5b4fc; box-shadow:0 0 0 2px #6366f114; }
+.typography-toolbar .field-input--num { width:63px; font-variant-numeric:tabular-nums; }
 .typography-toolbar select.field-input.select-control {
   /* Keep text out of the chevron's fixed area. The compact input padding
      otherwise overrides the shared select padding, painting text over it. */
   min-width:0; max-width:100%; padding-inline:8px 32px;
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }
-.typography-toolbar .field--inline select.field-input.select-control { width:208px; min-width:0; }
-.typography-context .select-control { width:100%; min-width:0; }
-.typography-control .color-input { gap:4px; height:28px; }
-.typography-control .color-input input[type='color'] { width:28px; height:28px; padding:2px; }
-.typography-control .field-input--hex { width:72px; }
-.typography-control .segment { flex-wrap:nowrap; height:28px; }
-.typography-control .segment-btn { min-height:28px; padding:3px 8px; white-space:nowrap; font-size:11px; }
+.typography-toolbar .field--inline select.field-input.select-control { width:190px; min-width:0; }
+.typography-context .select-control { width:100%; min-width:0; background-color:#f8fafc; font-weight:600; }
+.typography-control .color-input { gap:4px; height:29px; }
+.typography-control .color-input input[type='color'] { box-sizing:border-box; width:29px; height:29px; padding:3px; border:1px solid #dfe6ef; border-radius:6px; background:#fff; }
+.typography-control .field-input--hex { width:70px; }
+.typography-control .segment { flex-wrap:nowrap; height:29px; border:1px solid #e5eaf1; border-radius:6px; background:#f8fafc; }
+.typography-control .segment-btn { min-height:27px; padding:3px 7px; white-space:nowrap; font-size:10.5px; }
 .typography-control .toggle input[type='checkbox'] { margin:6px 0; }
-.typography-control-scope { max-width:46px; color:var(--muted,#667085); font-size:9px; line-height:11px; }
+.typography-control-scope { align-self:center; max-width:43px; color:#94a3b8; font-size:8.5px; line-height:10px; }
 .typography-scope-note { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
 .typography-control .hint { max-width:200px; margin:0; font-size:10px; line-height:12px; }
 .typography-control .cover-style-fields { display:flex; flex-wrap:nowrap; align-items:center; gap:8px; }
@@ -64,9 +67,14 @@
 .panel :is(.cover-style-group, .typography-source):not(:has(input,textarea,select,button)) { display:none; }
 .panel :is(.paragraph-indent, .paragraph-alignment, .paragraph-style-grid):not(:has(input,textarea,select,button)) { display:none; }
 .panel .group-label { padding-top:12px; margin-top:18px; border-top:1px solid var(--line-soft,#edf0f4); }
+.typography-toolbar :is(button,select,input):focus-visible { outline:2px solid #a5b4fc; outline-offset:1px; }
 @media(max-width:700px) {
   .typography-toolbar { gap:8px; padding-inline:8px; }
-  .typography-toolbar .typography-context { flex-basis:112px; padding-right:8px; }
+  .typography-toolbar .typography-context { flex-basis:144px; padding-right:8px; }
   .typography-toolbar .field--inline select.field-input.select-control { width:176px; }
+  .typography-overflow-nav { padding-left:5px; gap:2px; }
+}
+@media(max-width:420px) {
+  .typography-toolbar .typography-context { flex-basis:118px; }
 }
 @media print { .typography-toolbar { display:none !important; } }

@@ -30,6 +30,25 @@ describe('Gatefold placement', () => {
     expect(saved.design.gateTitle!.top).toBe(42);
     expect(saved.design.gateText!.inset).toBe(30);
   });
+  it('fits native magazine boxes without scaling their stored physical dimensions', () => {
+    const design = { pageFormat: 'magazine' as const };
+    expect(gatePlacement(undefined, 14, design)).toEqual({ inset: 14, width: 175, top: undefined });
+    expect(gatePlacement({ inset: 20, width: 130, top: 42 }, 14, design)).toEqual({ inset: 20, width: 130, top: 42 });
+    for (const inset of [-100, 8, 30, 152, 400]) {
+      const box = gatePlacement({ inset, width: 500, top: 500 }, 14, design);
+      expect(box.inset + box.width).toBeLessThanOrEqual(195);
+      expect(box.top).toBe(230);
+    }
+  });
+
+  it('renders native gatefold trim and fits both photo windows to the same magazine spread', () => {
+    const doc = presetFor('magazine-3');
+    doc.design.pageFormat = 'magazine';
+    const host = document.createElement('div');
+    host.innerHTML = renderToStaticMarkup(<MagGateA doc={doc} vars={{}} />);
+    expect(host.querySelector<HTMLElement>('.page')?.dataset.pageWidthMm).toBe('203');
+    expect(host.querySelector<HTMLElement>('.page')?.dataset.pageHeightMm).toBe('267');
+  });
   it('keeps Arabic titles intact with natural wrapping by default', () => {
     const doc = presetFor('magazine-3');
     doc.design.textDirection = 'rtl';

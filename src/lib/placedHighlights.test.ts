@@ -10,6 +10,14 @@ describe('shared highlight geometry', () => {
     expect(placedHighlightsGeometry(box,design,46).top).toBe(251);
     expect(defaultPlacedHighlights({...design,heroHeight:999},276).anchor.y).toBe(276-design.margin);
   });
+  it('defaults to native magazine dimensions without requiring a height argument', () => {
+    const design = { ...emptyDoc().design, pageFormat: 'magazine' as const, heroHeight: 999 };
+    const box = { widthCols: 2 as const, anchor: { page: 1, column: 99, y: 999 } };
+    expect(placedHighlightsGeometry(box, design, 46).top).toBe(221);
+    expect(defaultPlacedHighlights(design).anchor.y).toBe(267 - design.margin);
+    const bounds = placedHighlightsGeometry(box, design, 46);
+    expect(bounds.left + bounds.width).toBeCloseTo(203 - design.margin);
+  });
   it('merges overlapping exclusion bands without changing the caller’s input', () => {
     const bands=[{top:150,bottom:220},{top:80,bottom:160},{top:0,bottom:25}];
     const before=JSON.stringify(bands);

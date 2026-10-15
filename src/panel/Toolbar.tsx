@@ -5,6 +5,7 @@ import { openProject, saveProject, saveProjectAs, useProjectFile } from '../stor
 import { useSaveStatus, type SaveState } from '../store/saveStatus';
 import { exportPreviewPdf } from '../lib/pdfExport';
 import { PDF_PAGE_SIZES, type PdfPageSize } from '../lib/pdfPageSize';
+import { usePdfPageSize } from '../store/pdfPreferences';
 import { Wordmark } from '../components/Wordmark';
 import { MagazooLoader } from '../components/MagazooLoader';
 
@@ -28,7 +29,7 @@ export function Toolbar({ onPreviewToolsHost }: { onPreviewToolsHost: (host: HTM
   const projectStatus = { draft: 'Draft', pending: 'Unsaved changes', saving: 'Saving…', saved: 'Saved', error: 'Save failed', conflict: 'Save conflict' }[project.status];
   const title = useDoc((s) => s.doc.meta.title);
   const [exporting, setExporting] = useState(false);
-  const [pdfSize, setPdfSize] = useState<PdfPageSize>('a4');
+  const [pdfSize, setPdfSize] = usePdfPageSize();
 
   const exportPdf = async () => {
     if (exporting) return;
@@ -90,7 +91,7 @@ export function Toolbar({ onPreviewToolsHost }: { onPreviewToolsHost: (host: HTM
         aria-label="Preview tools"
       />
       <div className="toolbar-actions">
-        <div className="toolbar-group toolbar-group--history">
+        <div className="toolbar-group toolbar-group--history" role="group" aria-label="Edit history">
           <button
             className="tool-btn"
             onClick={undo}
@@ -112,7 +113,7 @@ export function Toolbar({ onPreviewToolsHost }: { onPreviewToolsHost: (host: HTM
             <span className="tool-btn-label">Redo</span>
           </button>
         </div>
-        <div className="toolbar-group toolbar-group--files">
+        <div className="toolbar-group toolbar-group--files" role="group" aria-label="Project files">
           <button
             className="tool-btn"
             onClick={() => void openProject()}
@@ -132,8 +133,10 @@ export function Toolbar({ onPreviewToolsHost }: { onPreviewToolsHost: (host: HTM
             <span className="tool-btn-icon" aria-hidden="true">↓</span>
             <span className="tool-btn-label">Save As…</span>
           </button>
-          <select className="tool-btn pdf-size-select" aria-label="PDF page size" value={pdfSize} disabled={exporting}
-            title="Fit the complete layout to the selected sheet without cropping or stretching. Small margins may remain where page proportions differ."
+        </div>
+        <div className="toolbar-group toolbar-group--export" role="group" aria-label="PDF output">
+          <select className="tool-btn select-control pdf-size-select" aria-label="PDF page size" value={pdfSize} disabled={exporting}
+            title={`Output: ${PDF_PAGE_SIZES[pdfSize].width} × ${PDF_PAGE_SIZES[pdfSize].height} mm. Magazine reflows the preview at its native size. This browser remembers your choice; your article JSON is unchanged.`}
             onChange={event => setPdfSize(event.target.value as PdfPageSize)}>
             {Object.entries(PDF_PAGE_SIZES).map(([key, size]) => <option key={key} value={key}>{size.label} · {size.width} × {size.height} mm</option>)}
           </select>
@@ -142,7 +145,7 @@ export function Toolbar({ onPreviewToolsHost }: { onPreviewToolsHost: (host: HTM
             onClick={() => void exportPdf()}
             disabled={exporting}
             aria-busy={exporting}
-            title={`Export ${PDF_PAGE_SIZES[pdfSize].label} pages to PDF — use no print margins and 100% scale`}
+            title={`Export ${PDF_PAGE_SIZES[pdfSize].label} pages to PDF — choose Save as PDF, Default margins (the publication sets zero), 100% scale, and background graphics`}
             aria-label={exporting ? 'Preparing PDF' : 'Export PDF'}
           >
             {exporting

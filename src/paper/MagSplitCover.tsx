@@ -2,7 +2,7 @@ import type { CSSProperties } from 'react';
 import type { Doc } from '../schema/document';
 import type { Piece } from '../lib/paginate';
 import { MAG2_STRIP, splitPhoto } from '../lib/magSplit';
-import { PAGE_W } from '../lib/geometry';
+import { pageDimensions } from '../lib/pageFormat';
 import { Flow } from './Flow';
 import { MagSplitHead } from './MagSplitHead';
 import { MagTopBar } from './MagazineHead';
@@ -28,11 +28,12 @@ interface Props {
  *  photo continues on sheet 2 — see MagPhotoPage. */
 export function MagSplitCover({ doc, vars, pieces }: Props) {
   const photo = photoOf(doc);
-  const p = splitPhoto(arOf(doc), doc.hero);
-  const stripGeometry = doc.design.textDirection === 'rtl' ? { ...p, x: p.x - PAGE_W } : p;
+  const page = pageDimensions(doc.design);
+  const p = splitPhoto(arOf(doc), doc.hero, MAG2_STRIP, page);
+  const stripGeometry = doc.design.textDirection === 'rtl' ? { ...p, x: p.x - page.width } : p;
 
   return (
-    <div className="page mag2-page" style={vars}>
+    <div className="page mag2-page" style={vars} data-page-width-mm={page.width} data-page-height-mm={page.height}>
       <PageArtwork doc={doc} />
       <div className="mag2-inner">
         <MagSplitHead doc={doc} />
@@ -69,13 +70,16 @@ export function MagPhotoPage({
   pageIndex: number;
 }) {
   const photo = photoOf(doc);
-  const p = splitPhoto(arOf(doc), doc.hero);
+  const page = pageDimensions(doc.design);
+  const p = splitPhoto(arOf(doc), doc.hero, MAG2_STRIP, page);
   const photoGeometry = { ...p, x: p.x - (doc.design.textDirection === 'rtl' ? 0 : MAG2_STRIP) };
 
   return (
     <div
       className={`page mag2-photo${photo ? ' page--dedicated-bg' : ' mag2-photo--empty'}`}
       style={vars}
+      data-page-width-mm={page.width}
+      data-page-height-mm={page.height}
       data-editor-tab={photo ? 'images' : undefined}
       data-editor-target={photo ? 'image-hero' : undefined}
     >

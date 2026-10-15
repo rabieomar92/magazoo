@@ -7,26 +7,31 @@ import { LabeledColor, LabeledInput, LabeledNumber, Section, SegmentField, Toggl
 import { GateTextEditor } from './GateTextEditor';
 import { FooterSection } from './FooterSection';
 import { clampSpacing, SUBTITLE_GAP } from '../../lib/spacing';
+import { pageDimensions } from '../../lib/pageFormat';
+import { usePdfPageSize } from '../../store/pdfPreferences';
 
 function GatePositionEditor({ kind }: { kind: 'title' | 'text' }) {
   const design = useDoc(s => s.doc.design);
+  const [pdfSize] = usePdfPageSize();
+  const outputDesign = { ...design, pageFormat: pdfSize === 'magazine' ? 'magazine' as const : undefined };
+  const dimensions = pageDimensions(outputDesign);
   const update = useDoc(s => s.update);
   const rtl = design.textDirection === 'rtl';
   const key = kind === 'title' ? 'gateTitle' : 'gateText';
   const title = kind === 'title';
   const box = design[key] ?? (title && (design.firstPageTopMargin ?? 0) > 0 ? { top: design.firstPageTopMargin } : undefined);
-  const position = gatePlacement(box, design.margin);
+  const position = gatePlacement(box, design.margin, outputDesign);
   const auto = box?.top === undefined;
   const set = (patch: Partial<GateTextPlacement>) => update(d => {
     const next = { ...box, ...patch };
-    d.design[key] = { ...next, ...gatePlacement(next, d.design.margin) };
+    d.design[key] = { ...next, ...gatePlacement(next, d.design.margin, outputDesign) };
   });
   return <Section title="Block position" editorTarget={`gate-${kind}-position`}>
     <p className="hint">Drag the block up or down on the sheet itself — that writes the distance below. Width and side stay numeric here, so the block keeps its column.</p>
     <Toggle label={title ? 'Centre title vertically' : 'Centre facing text vertically'} checked={auto} onChange={v => set({ top: v ? undefined : title ? 65 : 105 })} />
-    {!auto && <LabeledNumber label={title ? 'Title block from top' : 'Facing text from top'} unit="mm" min={0} max={260} value={position.top!} onChange={v => set({ top: clampGate(v, 0, 260) })} />}
-    <LabeledNumber label={`Distance from ${rtl ? 'right' : 'left'} edge`} unit="mm" min={8} max={152} value={position.inset} onChange={v => set({ inset: v })} />
-    <LabeledNumber label="Text block width" unit="mm" min={50} max={210 - position.inset - 8} value={position.width} onChange={v => set({ width: v })} />
+    {!auto && <LabeledNumber label={title ? 'Title block from top' : 'Facing text from top'} unit="mm" min={0} max={dimensions.height - 37} value={position.top!} onChange={v => set({ top: clampGate(v, 0, dimensions.height - 37) })} />}
+    <LabeledNumber label={`Distance from ${rtl ? 'right' : 'left'} edge`} unit="mm" min={8} max={dimensions.width - 58} value={position.inset} onChange={v => set({ inset: v })} />
+    <LabeledNumber label="Text block width" unit="mm" min={50} max={dimensions.width - position.inset - 8} value={position.width} onChange={v => set({ width: v })} />
     <SegmentField label="Block alignment" value={box?.align ?? (!title && !rtl ? 'end' : 'start')} options={[{ value: 'start', label: rtl ? 'Right' : 'Left' }, { value: 'center', label: 'Centre' }, { value: 'end', label: rtl ? 'Left' : 'Right' }]} onChange={align => set({ align })} />
     <button type="button" className="add-btn" onClick={() => update(d => { delete d.design[key]; if (title) delete d.design.firstPageTopMargin; })}>Reset block position</button>
   </Section>;

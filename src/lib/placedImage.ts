@@ -1,5 +1,6 @@
 import type { Asset, Design, PlacedImage } from '../schema/document';
-import { grid, PAGE_H, PAGE_W } from './geometry';
+import { grid } from './geometry';
+import { pageDimensions } from './pageFormat';
 
 export interface PlacedImageGeometry {
   column: number;
@@ -71,7 +72,7 @@ export function placedImageGeometry(
   image: PlacedImage,
   asset: Asset,
   design: Design,
-  pageHeight = PAGE_H,
+  pageHeight = pageDimensions(design).height,
 ): PlacedImageGeometry {
   const g = grid(design);
   const widthCols = clamp(Math.round(image.widthCols), 1, Math.min(4, g.totalCols));
@@ -91,7 +92,7 @@ export function placedImageGeometry(
   const bleed = image.bleed ?? {};
   const visualLeft = bleed.left ? 0 : left;
   const visualTop = bleed.top ? 0 : top;
-  const visualRight = bleed.right ? PAGE_W : right;
+  const visualRight = bleed.right ? pageDimensions(design).width : right;
   const visualBottom = bleed.bottom ? pageHeight : bottom;
   return {
     column,

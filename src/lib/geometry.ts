@@ -2,6 +2,7 @@ import { DEFAULT_TOP_BAR_OFFSET, type Design, type TemplateId } from '../schema/
 import { fontStack } from './fonts';
 import { headingTextVars } from './headingText';
 import { clampSpacing, SUBTITLE_GAP } from './spacing';
+import { pageDimensions } from './pageFormat';
 
 export const PAGE_W = 210; // mm, A4
 export const PAGE_H = 297;
@@ -25,7 +26,7 @@ export function grid(d: Design) {
   const extraCol = rail || flow;
 
   const totalCols = d.bodyCols + (extraCol ? 1 : 0);
-  const content = PAGE_W - 2 * d.margin;
+  const content = pageDimensions(d).width - 2 * d.margin;
   const col = (content - (totalCols - 1) * d.gutter) / totalCols;
   const span = (n: number) => n * col + (n - 1) * d.gutter;
 
@@ -65,6 +66,7 @@ export function readableInk(hex: string): string {
 
 export function cssVars(d: Design, templateId?: TemplateId, bottomMargin = d.margin): Record<string, string> {
   const g = grid(d);
+  const page = pageDimensions(d);
   const paperBg = d.paperBg ?? '#ffffff';
   const topBarOffset = Math.max(0, d.topBarOffset ?? DEFAULT_TOP_BAR_OFFSET);
   const firstPageTop = Math.max(0, d.firstPageTopMargin ?? 0);
@@ -77,8 +79,8 @@ export function cssVars(d: Design, templateId?: TemplateId, bottomMargin = d.mar
     '--paper-bg': paperBg,
     '--paper-ink': readableInk(paperBg),
     '--page-bg-opacity': String(d.pageBackgroundOpacity ?? 1),
-    '--page-w': `${PAGE_W}mm`,
-    '--page-h': `${PAGE_H}mm`,
+    '--page-w': `${page.width}mm`,
+    '--page-h': `${page.height}mm`,
     '--margin': `${d.margin}mm`,
     '--bottom-margin': `${bottomMargin}mm`,
     '--gutter': `${d.gutter}mm`,

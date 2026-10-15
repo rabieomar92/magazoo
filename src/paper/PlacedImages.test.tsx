@@ -9,7 +9,7 @@ import { grid } from '../lib/geometry';
 import { placedImageGeometry } from '../lib/placedImage';
 import { useDoc } from '../store/useDoc';
 import { PlacedImages } from './PlacedImages';
-import { PreviewReadOnly } from './PreviewReadOnly';
+import { PreviewReadOnly, PreviewPreserveSourceAnchors } from './PreviewReadOnly';
 
 const pointerEvent = (type: string, x: number, y: number) => {
   const event = new MouseEvent(type, { bubbles: true, button: 0, clientX: x, clientY: y });
@@ -118,6 +118,96 @@ describe('PlacedImages', () => {
     }));
     expect(useDoc.getState().doc.highlights).toEqual(['Keep this highlight']);
 
+    act(() => root.unmount());
+    host.remove();
+  });
+  it('measures native magazine image dragging in the same physical millimetres as the sheet', () => {
+    const doc = emptyDoc();
+    doc.design.pageFormat = 'magazine';
+    doc.design.sidebar = false;
+    doc.assets.asset = { src: 'data:image/png;base64,', naturalWidth: 800, naturalHeight: 400 };
+    doc.images = [{ id: 'native', assetId: 'asset', caption: '', widthCols: 2,
+      anchor: { page: 1, column: 0, y: 20 } }];
+    useDoc.getState().load(doc);
+    const host = document.createElement('div');
+    host.className = 'page';
+    document.body.append(host);
+    host.getBoundingClientRect = () => ({ x: 0, y: 0, left: 0, top: 0, right: 406, bottom: 534,
+      width: 406, height: 534, toJSON: () => ({}) });
+    const root = createRoot(host);
+    act(() => root.render(<PlacedImages doc={useDoc.getState().doc} pageIndex={0} />));
+    const placed = host.querySelector<HTMLElement>('.placed-image')!;
+    act(() => {
+      placed.dispatchEvent(pointerEvent('pointerdown', 10, 40));
+      placed.dispatchEvent(pointerEvent('pointermove', 10, 80));
+    });
+    expect(useDoc.getState().doc.images[0].anchor.y).toBe(20);
+    act(() => placed.dispatchEvent(pointerEvent('pointerup', 10, 80)));
+    expect(useDoc.getState().doc.images[0].anchor.y).toBe(40);
+    act(() => root.unmount());
+    host.remove();
+  });
+
+  it.each([
+    ['native', 'magazine', false],
+    ['A4 round trip', undefined, true],
+  ] as const)('does not materialise or clamp stored highlights while rendering a %s output proof', (_label, pageFormat, preserve) => {
+    for (const existing of [false, true]) {
+      const doc = emptyDoc();
+      doc.design.sidebar = true;
+      doc.design.highlightsPlacement = 'free';
+      doc.highlights = ['Keep the original source anchors'];
+      if (existing) doc.highlightBox = { widthCols: 2, anchor: { page: 1, column: 0, y: 999 } };
+      useDoc.getState().load(doc);
+      const original = useDoc.getState().doc;
+      const before = JSON.stringify(original);
+      const proof = { ...original, design: { ...original.design, pageFormat } };
+      const host = document.createElement('div');
+      host.className = 'page';
+      document.body.append(host);
+      Object.defineProperty(host, 'offsetWidth', { configurable: true, value: 406 });
+      host.getBoundingClientRect = () => ({ x: 0, y: 0, left: 0, top: 0, right: 406, bottom: 534,
+        width: 406, height: 534, toJSON: () => ({}) });
+      const root = createRoot(host);
+      act(() => root.render(<PreviewPreserveSourceAnchors.Provider value={preserve}>
+        <PlacedImages doc={proof} pageIndex={0} />
+      </PreviewPreserveSourceAnchors.Provider>));
+      expect(host.querySelector('.placed-highlights')).not.toBeNull();
+      expect(JSON.stringify(useDoc.getState().doc)).toBe(before);
+      act(() => root.unmount());
+      host.remove();
+    }
+  });
+
+  it('still saves an intentional highlight drag in a native source-preserving proof', () => {
+    const doc = emptyDoc();
+    doc.design.sidebar = true;
+    doc.design.highlightsPlacement = 'free';
+    doc.highlights = ['Deliberate dragging remains editable'];
+    doc.highlightBox = { widthCols: 2, anchor: { page: 1, column: 0, y: 30 } };
+    useDoc.getState().load(doc);
+    const original = useDoc.getState().doc;
+    const proof = { ...original, design: { ...original.design, pageFormat: 'magazine' as const } };
+    const host = document.createElement('div');
+    host.className = 'page';
+    document.body.append(host);
+    host.getBoundingClientRect = () => ({ x: 0, y: 0, left: 0, top: 0, right: 406, bottom: 534,
+      width: 406, height: 534, toJSON: () => ({}) });
+    const root = createRoot(host);
+    act(() => root.render(<PreviewPreserveSourceAnchors.Provider value={true}>
+      <PlacedImages doc={proof} pageIndex={0} />
+    </PreviewPreserveSourceAnchors.Provider>));
+    const box = host.querySelector<HTMLElement>('.placed-highlights')!;
+    box.getBoundingClientRect = () => ({ x: 0, y: 60, left: 0, top: 60, right: 180, bottom: 140,
+      width: 180, height: 80, toJSON: () => ({}) });
+    act(() => {
+      box.dispatchEvent(pointerEvent('pointerdown', 40, 70));
+      box.dispatchEvent(pointerEvent('pointermove', 40, 110));
+    });
+    expect(useDoc.getState().doc.highlightBox?.anchor.y).toBe(30);
+    act(() => box.dispatchEvent(pointerEvent('pointerup', 40, 110)));
+    expect(useDoc.getState().doc.highlightBox?.anchor.y).toBe(50);
+    expect(useDoc.getState().doc.design.pageFormat).toBeUndefined();
     act(() => root.unmount());
     host.remove();
   });

@@ -3,6 +3,8 @@ import { createRoot } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { ContentsSpread } from './ContentsSpread';
 import { contentsDesignOf, DEFAULT_CONTENTS_DESIGN } from './model';
+import { clonePages } from '../lib/pdfExport';
+import { fitPdfSheets } from '../lib/pdfPageSize';
 
 let host: HTMLDivElement;
 let root: ReturnType<typeof createRoot>;
@@ -41,4 +43,38 @@ it('loads older plans safely and normalises colour picker values', () => {
   expect(contentsDesignOf({})).toEqual(DEFAULT_CONTENTS_DESIGN);
   expect(contentsDesignOf({ contentsDesign: { pageColor: '#abc', textColor: '#12345', topBarColor: 'bad' } }))
     .toMatchObject({ pageColor: '#aabbcc', textColor: DEFAULT_CONTENTS_DESIGN.textColor, topBarColor: DEFAULT_CONTENTS_DESIGN.topBarColor });
+});
+
+it.each(['mosaic', 'feature', 'sections'] as const)('lays out both %s contents sheets at native Magazine dimensions and restores legacy size', layout => {
+  const design = { ...DEFAULT_CONTENTS_DESIGN, layout };
+  const before = JSON.stringify(design);
+  for (const pageSize of ['magazine', 'a4', 'b5'] as const) {
+    act(() => root.render(<ContentsSpread entries={[]} design={design} pageSize={pageSize} />));
+    const pages = [...host.querySelectorAll<HTMLElement>('.issue-contents-page')];
+    expect(pages).toHaveLength(2);
+    for (const page of pages) {
+      expect(page.style.getPropertyValue('--page-w')).toBe(pageSize === 'magazine' ? '203mm' : '210mm');
+      expect(page.style.getPropertyValue('--page-h')).toBe(pageSize === 'magazine' ? '267mm' : '297mm');
+      expect(page.dataset.pageWidthMm).toBe(pageSize === 'magazine' ? '203' : '210');
+      expect(page.dataset.pageHeightMm).toBe(pageSize === 'magazine' ? '267' : '297');
+      expect(page.style.transform).toBe('');
+    }
+  }
+  expect(JSON.stringify(design)).toBe(before);
+});
+
+it.each(['mosaic', 'feature', 'sections'] as const)('exports both native %s contents sheets at 100% with no fitting border', layout => {
+  act(() => root.render(<ContentsSpread entries={[]} design={{ ...DEFAULT_CONTENTS_DESIGN, layout }} pageSize="magazine" />));
+  const printDocument = document.implementation.createHTMLDocument('Native contents export');
+  clonePages(host, printDocument, { freezeColumns: false });
+  expect(() => fitPdfSheets(printDocument, 'magazine')).not.toThrow();
+  const sheets = [...printDocument.querySelectorAll<HTMLElement>('.pdf-export-sheet > .pdf-export-page')];
+  expect(sheets).toHaveLength(2);
+  for (const page of sheets) {
+    expect(page.style.width).toBe('203mm');
+    expect(page.style.height).toBe('267mm');
+    expect(page.style.getPropertyValue('--pdf-fit-scale')).toBe('1');
+    expect(page.style.getPropertyValue('--pdf-fit-left')).toBe('0mm');
+    expect(page.style.getPropertyValue('--pdf-fit-top')).toBe('0mm');
+  }
 });

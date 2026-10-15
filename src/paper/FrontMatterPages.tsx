@@ -10,6 +10,7 @@ import { TagBar } from './TagBar';
 import { largestBoardScaleThatFits } from '../lib/frontMatterBoardFit';
 import { SignatureImage } from '../components/SignatureImage';
 import { signatureGeometry } from '../lib/signature';
+import { pageDimensions } from '../lib/pageFormat';
 import { quoteFlowText, quoteFlowHtml } from '../lib/decorativeQuote';
 
 export interface FrontMatterStatus { pages: number; overflow: boolean }
@@ -20,7 +21,7 @@ function Unit({unit,dean,initial=false,doc}: {unit:FrontMatterUnit;dean:boolean;
     const content = doc.frontMatter ?? emptyFrontMatter();
     const frame = content.signature;
     const asset = frame?.assetId ? doc.assets[frame.assetId] : null;
-    const geometry = signatureGeometry(asset, content, doc.design.margin);
+    const geometry = signatureGeometry(asset, content, doc.design.margin, pageDimensions(doc.design).width);
     return <article data-measure-id={unit.id} className={`fm-unit fm-dean-signature fm-dean-signature--${geometry.align}`}>
       {asset && <div className="fm-signature-image" data-editor-tab="images" data-editor-target="image-signature"><SignatureImage asset={asset} crop={content.signatureCrop} blend={content.signatureBlend !== false} /></div>}
       {content.signoff && <div className="fm-signoff" data-editor-tab="content" data-editor-target="meta-author"><span>{content.signoff}</span></div>}
@@ -46,7 +47,7 @@ export function FrontMatterPages({doc,vars,onStatus}: {doc:Doc;vars:CSSPropertie
   const logoWidth = Math.max(8,Math.min(40,content.logoWidth ?? 18));
   const logoAsset = content.logo?.assetId ? doc.assets[content.logo.assetId] : null;
   const logoAspect = logoAsset ? Math.max(.8,Math.min(8,logoAsset.naturalWidth/Math.max(1,logoAsset.naturalHeight))) : 3.2;
-  const signature = signatureGeometry(content.signature?.assetId ? doc.assets[content.signature.assetId] : null, content, doc.design.margin);
+  const signature = signatureGeometry(content.signature?.assetId ? doc.assets[content.signature.assetId] : null, content, doc.design.margin, pageDimensions(doc.design).width);
   const [boardScale,setBoardScale] = useState(1);
   const pageVars = {
     ...vars,

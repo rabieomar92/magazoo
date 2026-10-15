@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { clonePages, cssImageUrls, PDF_EXPORT_CSS, waitForStablePreview } from './pdfExport';
+import { clonePages, cssImageUrls, PDF_EXPORT_CSS, pdfExportCss, waitForStablePreview } from './pdfExport';
 
 describe('PDF export layout contract', () => {
   it('preserves grid and flex page layouts', () => {
@@ -80,9 +80,44 @@ describe('PDF export layout contract', () => {
     expect(PDF_EXPORT_CSS).not.toContain('.pdf-page-snapshot');
   });
 
-  it('maps every page to exact portrait A4 geometry', () => {
+  it('defaults to an A4 output sheet without overriding measured page heights', () => {
+    expect(PDF_EXPORT_CSS).toContain('@page { size: 210mm 297mm; margin: 0; }');
     expect(PDF_EXPORT_CSS).toContain('width: 210mm !important');
-    expect(PDF_EXPORT_CSS).toContain('height: 297mm !important');
+    expect(PDF_EXPORT_CSS).not.toContain('height: 297mm !important');
+  });
+
+  it.each([
+    ['a4', 210, 297], ['b5', 176, 250], ['magazine', 203, 267],
+  ] as const)('sets the %s print document to the selected exact sheet size, without a conflicting A4 rule', (size, width, height) => {
+    const css = pdfExportCss(size);
+    expect(css).toContain(`@page { size: ${width}mm ${height}mm; margin: 0; }`);
+    expect(css).toContain(`width: ${width}mm !important`);
+    expect(css).not.toContain('size: A4');
+    if (size !== 'a4') expect(css).not.toContain('width: 210mm');
+    expect(css).not.toContain('height: 297mm');
+  });
+
+  it('clones native Magazine dimensions and columns without touching the article or its preview zoom', () => {
+    const source = document.createElement('div');
+    source.className = 'pages pages--spread'; source.style.transform = 'scale(0.6)';
+    source.innerHTML = '<div class="page" data-page-width-mm="203" data-page-height-mm="267"><div style="column-count:2;column-fill:auto;width:260.5px;height:700.25px">Native text</div><svg><path d="M0 0L2 2" /></svg></div>';
+    const column = source.querySelector<HTMLElement>('.page > div')!;
+    Object.defineProperty(column, 'offsetHeight', { value: 700 });
+    document.body.append(source);
+    const before = source.outerHTML;
+    try {
+      const output = document.implementation.createHTMLDocument();
+      clonePages(source, output);
+      const cloned = output.querySelector<HTMLElement>('.page')!;
+      expect(cloned.style.width).toBe('203mm'); expect(cloned.style.height).toBe('267mm');
+      const container = output.querySelector<HTMLElement>('.pdf-export-pages')!;
+      expect(container.style.width).toBe('203mm');
+      expect(container.style.minWidth).toBe('203mm'); expect(container.style.transform).toBe('none');
+      const clonedColumn = cloned.querySelector<HTMLElement>('div')!;
+      expect(clonedColumn.style.width).toBe('260.5px'); expect(clonedColumn.style.height).toBe('700.25px');
+      expect(cloned.textContent).toBe('Native text'); expect(cloned.querySelector('svg path')).not.toBeNull();
+      expect(cloned.querySelector('canvas')).toBeNull(); expect(source.outerHTML).toBe(before);
+    } finally { source.remove(); }
   });
 
   it('finds CSS background resources used by gallery and magazine pages', () => {

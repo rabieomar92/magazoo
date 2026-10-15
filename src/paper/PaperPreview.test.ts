@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Piece } from '../lib/paginate';
-import { populatedPhysicalPages } from '../lib/physicalFlowPages';
+import { physicalPageFit, populatedPhysicalPages } from '../lib/physicalFlowPages';
 
 const copy = (text: string): Piece => ({ kind: 'text', text });
 const emptyWrappedPage = (): Piece => ({
@@ -31,5 +31,24 @@ describe('populatedPhysicalPages', () => {
   it('accounts for editorial cover sheets before article flow', () => {
     expect(populatedPhysicalPages([[copy('article')]], 'magazine-1')).toEqual([2]);
     expect(populatedPhysicalPages([[copy('article')]], 'magazine-3')).toEqual([3]);
+  });
+
+  it('reports three Magazine 2 sheets when article text continues after its dedicated photo sheet', () => {
+    const pagination = { pages: [[copy('opening article')], [copy('continued article')]], fill: .98, spill: 44 };
+    const physicalPages = populatedPhysicalPages(pagination.pages, 'magazine-2');
+    expect(physicalPages).toEqual([1, 3]);
+    expect(physicalPageFit(pagination, Math.max(...physicalPages))).toEqual({
+      level: 'ok', text: '3 pages · last page 98% full',
+    });
+    expect(pagination.pages).toHaveLength(2);
+  });
+
+  it('retains the existing low-fullness warning and suggested word count', () => {
+    const pagination = { pages: [[copy('opening')], [copy('short continuation')]], fill: .1, spill: 37 };
+    expect(physicalPageFit(pagination, 3)).toEqual({
+      level: 'warn', text: '3 pages · last page nearly empty. Cut ~37 words to save a page.',
+    });
+    expect(physicalPageFit({ pages: [[copy('single article')]], fill: .9, spill: 0 }, 1))
+      .toEqual({ level: 'ok', text: '1 page' });
   });
 });

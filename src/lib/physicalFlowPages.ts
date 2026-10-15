@@ -1,5 +1,15 @@
 import { familyOf, type TemplateId } from '../schema/document';
-import type { Piece } from './paginate';
+import { fitMessage, type Pagination, type Piece } from './paginate';
+
+/** Fullness belongs to the last flow region; the count must include physical
+ * cover/photo sheets and separately placed content as the preview does. */
+export function physicalPageFit(pagination: Pagination, physicalCount: number) {
+  const fit = fitMessage(pagination);
+  return {
+    ...fit,
+    text: fit.text.replace(/^\d+ pages?\b/, `${physicalCount} ${physicalCount === 1 ? 'page' : 'pages'}`),
+  };
+}
 
 function pieceHasFlowContent(piece: Piece): boolean {
   if (piece.kind === 'text') return Boolean(piece.text.trim());

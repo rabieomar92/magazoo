@@ -1,4 +1,4 @@
-import { fitPdfSheets, type PdfPageSize } from './pdfPageSize';
+import { fitPdfSheets, PDF_PAGE_SIZES, pdfPageDimensions, type PdfPageSize } from './pdfPageSize';
 
 const PRINT_FRAME_CLASS = 'pdf-print-frame';
 const RESOURCE_TIMEOUT_MS = 20_000;
@@ -36,13 +36,15 @@ export function waitForStablePreview(source: HTMLElement): Promise<void> {
  * Keeping text, vectors, CSS backgrounds, and images as DOM content means the
  * resulting PDF remains searchable and sharp at any zoom level.
  */
-export const PDF_EXPORT_CSS = `
-  @page { size: A4 portrait; margin: 0; }
+export function pdfExportCss(size: PdfPageSize = 'a4') {
+  const { width, height } = PDF_PAGE_SIZES[size];
+  return `
+  @page { size: ${width}mm ${height}mm; margin: 0; }
   html, body {
     margin: 0 !important;
     padding: 0 !important;
-    width: 210mm !important;
-    min-width: 210mm !important;
+    width: ${width}mm !important;
+    min-width: ${width}mm !important;
     background: #fff !important;
   }
   body {
@@ -52,8 +54,8 @@ export const PDF_EXPORT_CSS = `
   }
   .pdf-export-pages {
     display: block !important;
-    width: 210mm !important;
-    min-width: 210mm !important;
+    width: ${width}mm !important;
+    min-width: ${width}mm !important;
     margin: 0 !important;
     padding: 0 !important;
     transform: none !important;
@@ -61,8 +63,6 @@ export const PDF_EXPORT_CSS = `
   }
   .pdf-export-pages > .pdf-export-page {
     box-sizing: border-box !important;
-    width: 210mm !important;
-    height: 297mm !important;
     margin: 0 !important;
     box-shadow: none !important;
     break-inside: avoid !important;
@@ -88,6 +88,11 @@ export const PDF_EXPORT_CSS = `
     display: none !important;
   }
 `;
+}
+
+/** Retained for callers inspecting the default A4 print stylesheet. Individual
+ * sheets get their measured dimensions inline, never a forced A4 height. */
+export const PDF_EXPORT_CSS = pdfExportCss();
 
 function safeFileStem(title: string) {
   const printableTitle = Array.from(title, (character) =>
@@ -335,8 +340,12 @@ export function clonePages(source: HTMLElement, targetDocument: Document, { free
   pages.classList.remove('pages--spread');
   pages.classList.add('pdf-export-pages');
   pages.style.setProperty('display', 'block', 'important');
-  pages.style.setProperty('width', '210mm', 'important');
-  pages.style.setProperty('min-width', '210mm', 'important');
+  const pageWidths = Array.from(pages.children)
+    .filter((child): child is HTMLElement => child instanceof HTMLElement && child.classList.contains('page'))
+    .map(page => pdfPageDimensions(page).width);
+  const containerWidth = Math.max(...pageWidths, 0) || 210;
+  pages.style.setProperty('width', `${containerWidth}mm`, 'important');
+  pages.style.setProperty('min-width', `${containerWidth}mm`, 'important');
   pages.style.setProperty('transform', 'none', 'important');
 
   Array.from(pages.children).forEach((child, index) => {
@@ -346,8 +355,9 @@ export function clonePages(source: HTMLElement, targetDocument: Document, { free
     // Galleries need grid and front matter needs flex, not forced block layout.
     const original = source.children[index];
     if (original instanceof HTMLElement) child.style.setProperty('display', window.getComputedStyle(original).display, 'important');
-    child.style.setProperty('width', '210mm', 'important');
-    child.style.setProperty('height', child.dataset.pageHeightMm === '276' ? '276mm' : '297mm', 'important');
+    const { width, height } = pdfPageDimensions(child);
+    child.style.setProperty('width', `${width}mm`, 'important');
+    child.style.setProperty('height', `${height}mm`, 'important');
     child.style.setProperty('margin', '0', 'important');
     child.style.setProperty('box-shadow', 'none', 'important');
   });
@@ -445,13 +455,13 @@ export async function exportIssuePdf(title: string, root: HTMLElement, size: Pdf
     if (!printDocument || !printWindow) throw new Error('The browser could not create a PDF document.');
 
     printDocument.open();
-    printDocument.write('<!doctype html><html><head></head><body></body></html>');
+    printDocument.write('<!doctype html><html><head><meta charset="utf-8"></head><body></body></html>');
     printDocument.close();
     printDocument.title = `${safeFileStem(title)} - Magazoo`;
     copyAuthorStyles(document, printDocument);
 
     const exportCss = printDocument.createElement('style');
-    exportCss.textContent = PDF_EXPORT_CSS;
+    exportCss.textContent = pdfExportCss(size);
     printDocument.head.appendChild(exportCss);
 
     // The proof pane carries a zoom, and column geometry has to be frozen from
@@ -545,13 +555,13 @@ export async function exportPreviewPdf(title: string, suppliedSource?: HTMLEleme
     }
 
     printDocument.open();
-    printDocument.write('<!doctype html><html><head></head><body></body></html>');
+    printDocument.write('<!doctype html><html><head><meta charset="utf-8"></head><body></body></html>');
     printDocument.close();
     printDocument.title = `${safeFileStem(title)} - Magazoo`;
     copyAuthorStyles(document, printDocument);
 
     const exportCss = printDocument.createElement('style');
-    exportCss.textContent = PDF_EXPORT_CSS;
+    exportCss.textContent = pdfExportCss(size);
     printDocument.head.appendChild(exportCss);
     clonePages(source, printDocument);
 

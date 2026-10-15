@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
+import { memo, useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent as ReactMouseEvent } from 'react';
 import { textTrackingCss, trackingSelector } from '../lib/textTracking';
 import { textStylesCss, textStyleSelector } from '../lib/textStyles';
 import { isReferenceArticle, articlePageHeight } from '../lib/articleLayouts';
@@ -7,12 +7,13 @@ import { createPortal } from 'react-dom';
 import { useDoc } from '../store/useDoc';
 import { quoteFlowText } from '../lib/decorativeQuote';
 import { DEFAULT_TOP_BAR_OFFSET, familyOf } from '../schema/document';
-import { cssVars, grid, PAGE_W, PAGE_H, readableInk } from '../lib/geometry';
+import { cssVars, grid, readableInk } from '../lib/geometry';
+import { pageDimensions, withPageFormat } from '../lib/pageFormat';
+import { usePdfPageSize } from '../store/pdfPreferences';
 import { dropCapEnabled } from '../lib/textDirection';
 import {
   paginate,
   paginateHosts,
-  fitMessage,
   type FlowItem,
   type Pagination,
 } from '../lib/paginate';
@@ -28,7 +29,7 @@ import { MAG2_STRIP } from '../lib/magSplit';
 import { paper2Grid, paper2Fit, paper2VerticalVars } from '../lib/paper2';
 import { defaultPlacedHighlights } from '../lib/placedHighlights';
 import { placedImageContour } from '../lib/placedImage';
-import { populatedPhysicalPages } from '../lib/physicalFlowPages';
+import { physicalPageFit, populatedPhysicalPages } from '../lib/physicalFlowPages';
 import { requestEditorTargetFocus, type EditorTab } from '../lib/editorNavigation';
 import type { Mark } from '../lib/richtext';
 import { Page1 } from './Page1';
@@ -50,7 +51,7 @@ import { NewsPages } from './NewsPages';
 import { BackCoverPage } from './BackCoverPage';
 import { useImageTheme } from './useImageTheme';
 import { PageFooters } from './PageFooters';
-import { PreviewReadOnly } from './PreviewReadOnly';
+import { PreviewReadOnly, PreviewPreserveSourceAnchors } from './PreviewReadOnly';
 import { footerBottomMargin } from '../lib/pageFooter';
 
 type PreviewPagination = Pagination & { layoutRevision: number };
@@ -65,8 +66,6 @@ const FORMAT_BTNS: { mark: Mark; label: string; title: string }[] = [
 // A4 in CSS px at the reference 96dpi (1mm = 96/25.4 px). Preview-only: used to
 // size the zoom frame, never for layout/pagination (those stay in mm/pt).
 const MM_PX = 96 / 25.4;
-const PAGE_W_PX = PAGE_W * MM_PX;
-const PAGE_H_PX = PAGE_H * MM_PX;
 const PAGE_GAP_PX = 20; // .page bottom margin
 const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n));
 
@@ -213,7 +212,15 @@ function positionImageAvoidingCallouts(pageNodes: HTMLElement[]): number {
  * briefly so a burst of keystrokes causes one pagination pass, not one each. */
 export function PaperPreview({ toolbarHost }: { toolbarHost: HTMLElement | null }) {
   const liveDoc = useDoc((state) => state.doc);
+  const [pdfSize] = usePdfPageSize();
+  const previousSize = useRef(pdfSize);
+  const hasChangedOutput = useRef(false);
+  if (previousSize.current !== pdfSize) {
+    hasChangedOutput.current = true;
+    previousSize.current = pdfSize;
+  }
   const [previewDoc, setPreviewDoc] = useState(liveDoc);
+  const outputDoc = useMemo(() => withPageFormat(previewDoc, pdfSize), [previewDoc, pdfSize]);
 
   useEffect(() => {
     const active = document.activeElement;
@@ -225,7 +232,7 @@ export function PaperPreview({ toolbarHost }: { toolbarHost: HTMLElement | null 
     return () => window.clearTimeout(timer);
   }, [liveDoc]);
 
-  return <PaperPreviewLayout doc={previewDoc} toolbarHost={toolbarHost} pending={previewDoc !== liveDoc} />;
+  return <PaperPreviewLayout key={pdfSize === 'magazine' ? 'magazine' : 'original'} doc={outputDoc} toolbarHost={toolbarHost} pending={previewDoc !== liveDoc} preserveSourceAnchors={hasChangedOutput.current || pdfSize === 'magazine'} />;
 }
 
 export const PaperPreviewLayout = memo(function PaperPreviewLayout({
@@ -233,14 +240,18 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
   toolbarHost,
   pending,
   readOnly = false,
+  preserveSourceAnchors = false,
 }: {
   doc: ReturnType<typeof useDoc.getState>['doc'];
   toolbarHost: HTMLElement | null;
   pending: boolean;
   /** Used by the issue compiler: layout without editing or store writes. */
   readOnly?: boolean;
+  preserveSourceAnchors?: boolean;
 }) {
   const doc = useImageTheme(storedDoc);
+  const physicalPage = pageDimensions(doc.design);
+  const pageWidthPx = physicalPage.width * MM_PX;
   const trackingScope = useId();
   const updateDoc = useDoc((state) => state.update);
 
@@ -397,14 +408,14 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
     if (!el) return;
     const measure = () => {
       const avail = el.clientWidth - 40; // .paper-scroll padding (20px each side)
-      const contentW = cols * PAGE_W_PX + (cols - 1) * PAGE_GAP_PX;
+      const contentW = cols * pageWidthPx + (cols - 1) * PAGE_GAP_PX;
       setFitScale(clamp(avail / contentW, 0.25, 1)); // cap 1: fit only shrinks
     };
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [cols]);
+  }, [cols, pageWidthPx]);
 
   // The two body boxes are sized off --header-h / --footer-h, which we only know
   // after the real header paints. Measure it, feed the measuring hosts the same
@@ -977,20 +988,6 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
     '--text-dir': doc.design.textDirection === 'rtl' ? 'rtl' : 'ltr',
   } as React.CSSProperties;
 
-  // paper-2 spends two of paginateHosts' regions on sheet 1, so the fit badge
-  // has to count sheets, not regions.
-  const fit = isStructured
-    ? {level: frontMatterStatus.overflow ? 'warn' : 'ok',text: frontMatterStatus.overflow
-      ? (isNews ? 'A news block exceeds the printable frame. Check the red-outlined page and adjust its story or image.'
-        : 'Text exceeds its frame. Shorten the heading or caption, or reduce its size.')
-      : `${frontMatterStatus.pages} ${frontMatterStatus.pages===1?'page':'pages'} · ${isNews ? 'news & briefs' : isReference ? 'article' : 'front matter'}`}
-    : isGallery
-    ? ({ level: 'ok', text: '2 pages · spread' } as const)
-    : isFrontCover
-      ? ({ level: 'ok', text: '1 page · cover' } as const)
-    : isBackCover
-      ? ({ level: 'ok', text: '1 page · back cover' } as const)
-    : fitMessage(isP2 ? paper2Fit(pagination) : pagination);
   const pages = pagination.pages;
 
   // Free highlights are page obstacles just like images. A stale page number
@@ -1002,7 +999,7 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
     [pages, doc.templateId],
   );
   useEffect(() => {
-    if (readOnly || isReference) return;
+    if (readOnly || preserveSourceAnchors || isReference || doc.design.pageFormat === 'magazine') return;
     if (!hlFree || !populatedPages.length) return;
     const requested = (doc.highlightBox ?? defaultPlacedHighlights(doc.design)).anchor.page;
     if (populatedPages.includes(requested)) return;
@@ -1016,7 +1013,7 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
         current.highlightBox.anchor.page = target;
       }
     });
-  }, [doc.design, doc.highlightBox, hlFree, populatedPages, readOnly, updateDoc, isReference]);
+  }, [doc.design, doc.highlightBox, hlFree, populatedPages, readOnly, preserveSourceAnchors, updateDoc, isReference]);
 
   const scale = readOnly ? 1 : zoom === 'fit' ? fitScale : zoom;
   const pct = Math.round(scale * 100);
@@ -1071,6 +1068,40 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
       ? (effectiveHighlightPage ?? 0)
       : 0;
   const nPages = Math.max(flowPageCount, lastPlacedImagePage, highlightPage, calloutPageCount);
+
+  // Count the actual sheets, including dedicated magazine photo/cover pages,
+  // while preserving the measured last-flow-page fullness and fit warnings.
+  const fit = isStructured
+    ? {level: frontMatterStatus.overflow ? 'warn' : 'ok',text: frontMatterStatus.overflow
+      ? (isNews ? 'A news block exceeds the printable frame. Check the red-outlined page and adjust its story or image.'
+        : 'Text exceeds its frame. Shorten the heading or caption, or reduce its size.')
+      : `${frontMatterStatus.pages} ${frontMatterStatus.pages===1?'page':'pages'} · ${isNews ? 'news & briefs' : isReference ? 'article' : 'front matter'}`}
+    : isGallery
+    ? ({ level: 'ok', text: '2 pages · spread' } as const)
+    : isFrontCover
+      ? ({ level: 'ok', text: '1 page · cover' } as const)
+    : isBackCover
+      ? ({ level: 'ok', text: '1 page · back cover' } as const)
+    : physicalPageFit(isP2 ? paper2Fit(pagination) : pagination, nPages);
+
+  // Export reads physical dimensions from the real settled sheets, never from
+  // a print-dialog default. Observe continuations added by any template engine.
+  const pageHeight = isReference ? articlePageHeight(doc.design) : physicalPage.height;
+  useLayoutEffect(() => {
+    const host = pagesRef.current;
+    if (!host) return;
+    const stamp = () => {
+      for (const page of Array.from(host.children)) {
+        if (!(page instanceof HTMLElement) || !page.classList.contains('page')) continue;
+        page.dataset.pageWidthMm = String(physicalPage.width);
+        page.dataset.pageHeightMm = String(pageHeight);
+      }
+    };
+    stamp();
+    const observer = new MutationObserver(stamp);
+    observer.observe(host, { childList: true });
+    return () => observer.disconnect();
+  }, [physicalPage.width, pageHeight, nPages]);
 
 
   // Measure the real page after its header/template geometry has settled.
@@ -1277,8 +1308,8 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
   const fitShort = fit.text.split(' ·', 1)[0];
   const rows = Math.ceil(nPages / cols);
   const frame = {
-    width: (cols * PAGE_W_PX + (cols - 1) * PAGE_GAP_PX) * scale,
-    height: rows * ((isReference ? articlePageHeight(doc.design) * MM_PX : PAGE_H_PX) + PAGE_GAP_PX) * scale,
+    width: (cols * pageWidthPx + (cols - 1) * PAGE_GAP_PX) * scale,
+    height: rows * (pageHeight * MM_PX + PAGE_GAP_PX) * scale,
   };
   const step = (d: number) => setZoom(clamp(Math.round((scale + d) * 100) / 100, 0.25, 2));
 
@@ -1372,7 +1403,7 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
   );
 
   return (
-    <PreviewReadOnly.Provider value={readOnly}><div
+    <PreviewReadOnly.Provider value={readOnly}><PreviewPreserveSourceAnchors.Provider value={preserveSourceAnchors || doc.design.pageFormat === 'magazine'}><div
         className={`paper-scroll${readOnly ? ' paper-scroll--readonly' : ''}${doc.design.textDirection === 'rtl' ? ' paper-scroll--rtl' : ''}`}
         data-preview-pending={pending ? 'true' : undefined}
         data-preview-overflow={isStructured && frontMatterStatus.overflow ? 'true' : undefined}
@@ -1397,7 +1428,7 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
           data-tracking-scope={trackingScope}
           className={`pages${spreadOn ? ' pages--spread' : ''}${doc.design.textDirection === 'rtl' ? ' pages--rtl' : ''}${dropCapEnabled(doc.design,doc.templateId) ? '' : ' drop-caps-off'}`}
           lang={doc.design.textDirection === 'rtl' ? 'ar' : undefined}
-          style={{ transform: `scale(${scale})` }}
+          style={{ transform: `scale(${scale})`, '--page-w': `${physicalPage.width}mm`, '--page-h': `${pageHeight}mm` } as CSSProperties}
           onClickCapture={readOnly ? undefined : focusPreviewObject}
         >
           {isReference ? (
@@ -1574,6 +1605,6 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
             are all set imperatively per call, right before it's measured. */}
         <div ref={colProbeRef} />
       </div>
-    </div></PreviewReadOnly.Provider>
+    </div></PreviewPreserveSourceAnchors.Provider></PreviewReadOnly.Provider>
   );
 });

@@ -62,7 +62,9 @@ export function useVerticalDrag({ start, clamp, commit }: VerticalDragOptions) {
     if (readOnly || event.button !== 0) return;
     const element = event.currentTarget;
     const page = element.closest<HTMLElement>('.page');
-    const pxPerMm = page ? page.getBoundingClientRect().width / PAGE_W : 0;
+    const measuredWidth = Number(page?.dataset.pageWidthMm);
+    const pageWidth = Number.isFinite(measuredWidth) && measuredWidth > 0 ? measuredWidth : PAGE_W;
+    const pxPerMm = page ? page.getBoundingClientRect().width / pageWidth : 0;
     if (!pxPerMm) return;
     event.stopPropagation();
     state.current = {

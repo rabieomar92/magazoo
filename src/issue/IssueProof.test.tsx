@@ -105,3 +105,14 @@ it('shows each article through the editor’s own preview, in plan order, around
   // into the article the editor owns.
   expect(documents.map(entry => JSON.stringify(entry.doc))).toEqual(before);
 });
+
+it('passes the native Magazine size through to both generated contents pages', () => {
+  const pagesRef = createRef<HTMLDivElement>();
+  const plan: IssuePlan = { order: ['__contents__'], startNumber: 1, countCovers: false, contentsTitle: 'Contents', contentsSubtitle: '', contentsExcluded: [], direction: 'ltr' };
+  act(() => root.render(<IssueProof plan={plan} entries={[]} documents={[]} magazineName="Magazoo!" contentsStart={1}
+    pageSize="magazine" scale={0.5} pagesRef={pagesRef} onOverflow={() => {}} />));
+  const pages = [...pagesRef.current!.querySelectorAll<HTMLElement>('.issue-contents-page')];
+  expect(pages).toHaveLength(2);
+  expect(pages.map(page => [page.style.getPropertyValue('--page-w'), page.style.getPropertyValue('--page-h')]))
+    .toEqual([['203mm', '267mm'], ['203mm', '267mm']]);
+});

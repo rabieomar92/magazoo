@@ -4,6 +4,7 @@ import { ContentsSpread } from './ContentsSpread';
 import { PaperPreviewLayout } from '../paper/PaperPreview';
 import type { IssueSourceDocument } from './IssueRenderer';
 import type { Doc } from '../schema/document';
+import type { PdfPageSize } from '../lib/pdfPageSize';
 
 /**
  * One article in the compiled issue — the article's own editor preview.
@@ -33,10 +34,11 @@ const Article = memo(function Article({ id, doc }: { id: string; doc: Doc }) {
  * and `exportIssuePdf` prints these same elements, one `clonePages` call per
  * article, exactly as printing that article on its own would.
  */
-export function IssueProof({ plan, entries, documents, magazineName, design, contentsStart, contentsSide = 'left', pagesRef, onOverflow, scale }: {
+export function IssueProof({ plan, entries, documents, magazineName, design, contentsStart, contentsSide = 'left', pageSize = 'a4', pagesRef, onOverflow, scale }: {
   plan: IssuePlan; entries: readonly ContentsEntry[]; documents: readonly IssueSourceDocument[];
   magazineName: string; design?: ContentsDesign; contentsStart: number; scale: number;
   contentsSide?: 'left' | 'right';
+  pageSize?: PdfPageSize;
   pagesRef: RefObject<HTMLDivElement | null>; onOverflow: (overflow: boolean) => void;
 }) {
   const [box, setBox] = useState({ width: 0, height: 0 });
@@ -60,7 +62,7 @@ export function IssueProof({ plan, entries, documents, magazineName, design, con
     const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure);
     observer?.observe(pages);
     return () => observer?.disconnect();
-  }, [pagesRef, documents, entries.length]);
+  }, [pagesRef, documents, entries.length, pageSize]);
 
   // Where the contents spread sits in the reading order. An arrangement that
   // somehow carries no contents slot still shows every article, with the
@@ -78,7 +80,7 @@ export function IssueProof({ plan, entries, documents, magazineName, design, con
       <div className="pages issue-proof-contents">
         <ContentsSpread entries={entries} title={plan.contentsTitle} subtitle={plan.contentsSubtitle}
           direction={plan.direction} startNumber={contentsStart} magazineName={magazineName}
-          design={design} mastheadSide={contentsSide} onOverflow={onOverflow} />
+          design={design} mastheadSide={contentsSide} pageSize={pageSize} onOverflow={onOverflow} />
       </div>
       {plan.order.slice(split + 1).map(article)}
     </div>

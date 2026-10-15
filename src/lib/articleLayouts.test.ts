@@ -50,6 +50,36 @@ describe('reference article compositions', () => {
     expect(g.image.height).toBe(139);
   });
 
+  it.each(ids)('%s reflows into a native magazine grid without scaling the artwork', id => {
+    const doc = presetFor(id);
+    doc.design.pageFormat = 'magazine';
+    const before = JSON.stringify(doc);
+    const g = articleGeometry(id, doc.design);
+    expect(g.width).toBe(203);
+    expect(g.height).toBe(267);
+    expect(g.margin).toBe(14);
+    expect(g.gutter).toBe(4);
+    expect(g.col).toBe(40.75);
+    expect(g.image.height).toBe(ARTICLE_LAYOUTS[id].heroHeight);
+    expect(g.image.x + g.image.width).toBeLessThanOrEqual(203);
+    if (id !== 'paper-8') expect(g.image.width).toBe(203);
+    const regions = articleRegions(g, 2);
+    expect(regions).toHaveLength(12);
+    expect(regions.every(r => r.width === 40.75)).toBe(true);
+    expect(regions.every(r => r.x + r.width <= 189 && r.y + r.height <= 249)).toBe(true);
+    expect(grid(articleGridDesign(doc.design)).col).toBe(g.col);
+    expect(JSON.stringify(doc)).toBe(before);
+  });
+
+  it('uses the native magazine trim even when an older article selected A4', () => {
+    const doc = presetFor('paper-5');
+    doc.design.articlePageSize = 'a4';
+    doc.design.pageFormat = 'magazine';
+    const g = articleGeometry('paper-5', doc.design, 0, 0, 46);
+    expect(g.height).toBe(267);
+    expect(g.bottom).toBe(221);
+  });
+
   it('never gives an image obstacle overlapping text regions', () => {
     const g = articleGeometry('paper-4', presetFor('paper-4').design);
     const obstacle = { page:1,left:60.5,top:65,width:89,height:50 };

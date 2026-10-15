@@ -1,10 +1,11 @@
 import type { Design, PlacedHighlights } from '../schema/document';
-import { grid, PAGE_H } from './geometry';
+import { grid } from './geometry';
+import { pageDimensions } from './pageFormat';
 
 const clamp = (value: number, low: number, high: number) =>
   Math.min(high, Math.max(low, value));
 
-export function defaultPlacedHighlights(design: Design, pageHeight = PAGE_H): PlacedHighlights {
+export function defaultPlacedHighlights(design: Design, pageHeight = pageDimensions(design).height): PlacedHighlights {
   const g = grid(design);
   const widthCols = Math.min(2, g.totalCols) as PlacedHighlights['widthCols'];
   return {
@@ -21,7 +22,7 @@ export function placedHighlightsGeometry(
   placement: PlacedHighlights,
   design: Design,
   height = 0,
-  pageHeight = PAGE_H,
+  pageHeight = pageDimensions(design).height,
 ) {
   const g = grid(design);
   const widthCols = clamp(

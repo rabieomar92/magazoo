@@ -14,13 +14,13 @@ export function normalizeSignatureCrop(crop?: SignatureCrop): SignatureCrop {
 
 /** Shared by the controls and printed page: size is a physical width, never
  * a zoom level inside a different-sized crop box. */
-export function signatureGeometry(asset: Asset | null | undefined, content: Partial<FrontMatter>, pageMargin = 14) {
+export function signatureGeometry(asset: Asset | null | undefined, content: Partial<FrontMatter>, pageMargin = 14, pageWidth = 210) {
   const crop = normalizeSignatureCrop(content.signatureCrop);
   const sourceWidth = asset && Number.isFinite(asset.naturalWidth) && asset.naturalWidth > 0 ? asset.naturalWidth : 3;
   const sourceHeight = asset && Number.isFinite(asset.naturalHeight) && asset.naturalHeight > 0 ? asset.naturalHeight : 1;
   const aspect = sourceWidth * crop.width / (sourceHeight * crop.height);
   // Dean's fixed rail (35), rail gap (7) and column gap (6), all in mm.
-  const columnWidth = Math.max(10, (210 - 2 * bounded(pageMargin, 14, 0, 80) - 48) / 2);
+  const columnWidth = Math.max(10, (pageWidth - 2 * bounded(pageMargin, 14, 0, 80) - 48) / 2);
   const requestedWidth = bounded(content.signatureWidth, 34, 10, 80);
   // Tall scans must not consume a column. The editor reports the actual size
   // and offers a margin trim instead of stretching or silently cropping them.

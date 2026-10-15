@@ -5,12 +5,15 @@ import { FramedImage } from '../components/FramedImage';
 import { Wordmark } from '../components/Wordmark';
 import { readableInk } from '../lib/geometry';
 import { barStartsRight } from '../lib/barSide';
+import { pageDimensions } from '../lib/pageFormat';
+import type { PdfPageSize } from '../lib/pdfPageSize';
 import './contents.css';
 
 export interface ContentsSpreadProps {
   entries: readonly ContentsEntry[]; title?: string; subtitle?: string; direction?: 'ltr' | 'rtl';
   startNumber?: number; magazineName?: string; design?: ContentsDesign; onOverflow?: (overflow: boolean) => void;
   mastheadSide?: 'left' | 'right';
+  pageSize?: PdfPageSize;
 }
 
 /**
@@ -155,8 +158,12 @@ function MosaicCard({ entry, design, ratio, photo }: {
  * between them before the rest is simply left at the foot. */
 const CARD_GAP_MM = 7;
 const MAX_EXTRA_GAP_MM = 11;
-/** A contents sheet is A4. Used only to recover the pane's zoom exactly. */
-const PAGE_WIDTH_PX = (210 * 96) / 25.4;
+/** B5 remains an output fit of the original composition; Magazine is native. */
+const contentsDimensions = (size: PdfPageSize) => pageDimensions(size === 'magazine' ? { pageFormat: 'magazine' } : undefined);
+function contentsPageStyle(size: PdfPageSize) {
+  const dimensions = contentsDimensions(size);
+  return { '--page-w': `${dimensions.width}mm`, '--page-h': `${dimensions.height}mm` } as CSSProperties;
+}
 
 /**
  * Which entries most deserve a picture when there is not room for all of them.
@@ -189,11 +196,12 @@ function pictureScore(entry: ContentsEntry, salt: number) {
  * density, the surplus is reported rather than drawn off the page, and the
  * studio shows the editor which way to go.
  */
-function MosaicSpread({ entries, title, direction, startNumber, magazineName, design, onOverflow, mastheadSide }: {
+function MosaicSpread({ entries, title, direction, startNumber, magazineName, design, onOverflow, mastheadSide, pageSize }: {
   entries: readonly ContentsEntry[]; title: string; direction: 'ltr' | 'rtl';
   startNumber: number; magazineName: string; design: ContentsDesign;
   onOverflow?: (overflow: boolean) => void;
   mastheadSide: 'left' | 'right';
+  pageSize: PdfPageSize;
 }) {
   const probe = useRef<HTMLDivElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
@@ -217,7 +225,7 @@ function MosaicSpread({ entries, title, direction, startNumber, magazineName, de
     .sort((a, b) => b.score - a.score || a.index - b.index)
     .map(item => item.index);
 
-  const signature = `${entries.map((entry, i) => `${entry.id}:${entry.title}:${entry.subtitle}:${entry.hero?.src ?? ''}:${entry.badge ?? ''}:${entry.section ?? ''}:${entry.showHero ?? ''}:${ratios[i].toFixed(3)}`).join('|')}|${title}|${direction}|${JSON.stringify(design)}`;
+  const signature = `${entries.map((entry, i) => `${entry.id}:${entry.title}:${entry.subtitle}:${entry.hero?.src ?? ''}:${entry.badge ?? ''}:${entry.section ?? ''}:${entry.showHero ?? ''}:${ratios[i].toFixed(3)}`).join('|')}|${title}|${direction}|${JSON.stringify(design)}|${pageSize}`;
   const [plan, setPlan] = useState<{ signature: string; tier: number; pages: number[][][]; gaps: number[][]; photos: boolean[] } | null>(null);
   const settled = useRef(signature);
   if (settled.current !== signature) { settled.current = signature; const next = pinned ?? 0; if (tier !== next) setTier(next); }
@@ -238,12 +246,13 @@ function MosaicSpread({ entries, title, direction, startNumber, magazineName, de
       const withPhoto = Array.from(host.querySelectorAll<HTMLElement>('[data-variant=photo]'));
       const asText = Array.from(host.querySelectorAll<HTMLElement>('[data-variant=text]'));
       if (!columnHeight || withPhoto.length !== entries.length || asText.length !== entries.length) return;
-      // The sheet is exactly A4 wide, so that known width is what the pane's
+      // The sheet has a known physical width, so that is what the pane's
       // zoom is measured against — deriving it from a rounded `offsetHeight`
       // is off by a fraction of a percent, which is enough to over-space a
       // column and push its last card past the foot of the page.
       const sheet = body.closest<HTMLElement>('.page');
-      const scale = sheet ? sheet.getBoundingClientRect().width / PAGE_WIDTH_PX : 1;
+      const pageWidthPx = contentsDimensions(pageSize).width * 96 / 25.4;
+      const scale = sheet ? sheet.getBoundingClientRect().width / pageWidthPx : 1;
       if (!Number.isFinite(scale) || scale <= 0) return;
       const picture = withPhoto.map(card => card.getBoundingClientRect().height);
       const text = asText.map(card => card.getBoundingClientRect().height);
@@ -285,6 +294,7 @@ function MosaicSpread({ entries, title, direction, startNumber, magazineName, de
   }, [signature, tier, pinned, entries, design.gapScale, onOverflow]);
 
   const style = {
+    ...contentsPageStyle(pageSize),
     '--contents-paper': design.pageColor,
     '--contents-ink': design.textColor,
     '--contents-bar': design.topBarColor,
@@ -312,9 +322,11 @@ function MosaicSpread({ entries, title, direction, startNumber, magazineName, de
   const columnsFor = (page: number) => current ? current.pages[page] : [[], []];
   const gapFor = (page: number, column: number) => current?.gaps[page]?.[column];
   const photoFor = (index: number) => current ? current.photos[index] : eligible[index] && forced[index] !== false;
+  const dimensions = contentsDimensions(pageSize);
 
   return <>{[0, 1].map(index => (
     <section key={index} className={className(index)} dir={direction} lang={direction === 'rtl' ? 'ar' : 'en'} style={style}
+      data-page-width-mm={dimensions.width} data-page-height-mm={dimensions.height}
       aria-label={`${title || 'Contents'} · ${index + 1} of 2`}>
       <div className={`issue-contents-masthead${barStartsRight(mastheadSide, index) ? ' is-right' : ''}`}>
         <span className="issue-contents-kicker" dir="auto">{title || 'Contents'}</span>
@@ -352,15 +364,16 @@ function MosaicSpread({ entries, title, direction, startNumber, magazineName, de
   ))}</>;
 }
 
-function ContentsPage({ group, index, title, subtitle, direction, startNumber, magazineName, design, onOverflow, mastheadSide }: {
+function ContentsPage({ group, index, title, subtitle, direction, startNumber, magazineName, design, onOverflow, mastheadSide, pageSize }: {
   group: readonly ContentsEntry[]; index: number; title: string; subtitle: string; direction: 'ltr' | 'rtl';
   startNumber: number; magazineName: string; design: ContentsDesign; onOverflow: (overflow: boolean) => void;
   mastheadSide: 'left' | 'right';
+  pageSize: PdfPageSize;
 }) {
   const page = useRef<HTMLElement>(null);
   const pinned = design.density === 'auto' ? null : PINNED[design.density];
   const [tier, setTier] = useState(pinned ?? 0);
-  const signature = `${group.map(entry => `${entry.id}:${entry.title}:${entry.subtitle}:${entry.hero?.src ?? ''}:${entry.badge ?? ''}:${entry.section ?? ''}:${entry.showHero ?? ''}:${JSON.stringify(entry.frame ?? null)}`).join('|')}|${title}|${subtitle}|${direction}|${JSON.stringify(design)}`;
+  const signature = `${group.map(entry => `${entry.id}:${entry.title}:${entry.subtitle}:${entry.hero?.src ?? ''}:${entry.badge ?? ''}:${entry.section ?? ''}:${entry.showHero ?? ''}:${JSON.stringify(entry.frame ?? null)}`).join('|')}|${title}|${subtitle}|${direction}|${JSON.stringify(design)}|${pageSize}`;
   const settled = useRef(signature);
   if (settled.current !== signature) { settled.current = signature; const next = pinned ?? 0; if (tier !== next) setTier(next); }
 
@@ -383,6 +396,7 @@ function ContentsPage({ group, index, title, subtitle, direction, startNumber, m
   }, [tier, pinned, signature, onOverflow]);
 
   const style = {
+    ...contentsPageStyle(pageSize),
     '--contents-paper': design.pageColor,
     '--contents-ink': design.textColor,
     '--contents-bar': design.topBarColor,
@@ -407,9 +421,11 @@ function ContentsPage({ group, index, title, subtitle, direction, startNumber, m
     {subtitle && <p>{subtitle}</p>}
   </header>;
   const foot = <footer className="issue-contents-footer"><span>{startNumber + index}</span><span dir="auto">{magazineName}</span></footer>;
+  const dimensions = contentsDimensions(pageSize);
 
   if (design.layout === 'sections') {
-    return <section ref={page} className={className} dir={direction} lang={direction === 'rtl' ? 'ar' : 'en'} style={style} aria-label={`${title || 'Contents'} · ${index + 1} of 2`}>
+    return <section ref={page} className={className} dir={direction} lang={direction === 'rtl' ? 'ar' : 'en'} style={style}
+      data-page-width-mm={dimensions.width} data-page-height-mm={dimensions.height} aria-label={`${title || 'Contents'} · ${index + 1} of 2`}>
       {head}
       <div className="issue-contents-body">
         {group.length ? <div className="issue-contents-sections">{grouped(group).map((block, position) => {
@@ -467,7 +483,8 @@ function ContentsPage({ group, index, title, subtitle, direction, startNumber, m
 
   const [feature, ...rest] = group;
   const featureDeck = feature ? contentsDeck(feature.subtitle) : '';
-  return <section ref={page} className={className} dir={direction} lang={direction === 'rtl' ? 'ar' : 'en'} style={style} aria-label={`${title || 'Contents'} · ${index + 1} of 2`}>
+  return <section ref={page} className={className} dir={direction} lang={direction === 'rtl' ? 'ar' : 'en'} style={style}
+    data-page-width-mm={dimensions.width} data-page-height-mm={dimensions.height} aria-label={`${title || 'Contents'} · ${index + 1} of 2`}>
     {head}
     <div className="issue-contents-body">
       {feature ? <article className="issue-contents-feature" data-contents-id={feature.id}>
@@ -494,7 +511,7 @@ function ContentsPage({ group, index, title, subtitle, direction, startNumber, m
   </section>;
 }
 
-export function ContentsSpread({ entries, title = 'Contents', subtitle = '', direction = 'ltr', startNumber = 1, magazineName = 'Magazoo!', design = DEFAULT_CONTENTS_DESIGN, onOverflow, mastheadSide = 'left' }: ContentsSpreadProps) {
+export function ContentsSpread({ entries, title = 'Contents', subtitle = '', direction = 'ltr', startNumber = 1, magazineName = 'Magazoo!', design = DEFAULT_CONTENTS_DESIGN, onOverflow, mastheadSide = 'left', pageSize = 'a4' }: ContentsSpreadProps) {
   // Hooks first, branch second: the two layouts are different components and
   // the rules of hooks do not care that only one of them ever renders.
   const [spill, setSpill] = useState<[boolean, boolean]>([false, false]);
@@ -502,7 +519,7 @@ export function ContentsSpread({ entries, title = 'Contents', subtitle = '', dir
   useEffect(() => { if (!mosaic) onOverflow?.(spill[0] || spill[1]); }, [mosaic, spill, onOverflow]);
   if (mosaic) return <MosaicSpread
     entries={entries} title={title} direction={direction} startNumber={startNumber}
-    magazineName={magazineName} design={design} onOverflow={onOverflow} mastheadSide={mastheadSide}
+    magazineName={magazineName} design={design} onOverflow={onOverflow} mastheadSide={mastheadSide} pageSize={pageSize}
   />;
   const split = Math.ceil(entries.length / 2);
   const groups = [entries.slice(0, split), entries.slice(split)];
@@ -511,7 +528,7 @@ export function ContentsSpread({ entries, title = 'Contents', subtitle = '', dir
   return <>{groups.map((group, index) => (
     <ContentsPage
       key={index} group={group} index={index} title={title} subtitle={subtitle} direction={direction}
-      startNumber={startNumber} magazineName={magazineName} design={design} onOverflow={report(index)} mastheadSide={mastheadSide}
+      startNumber={startNumber} magazineName={magazineName} design={design} onOverflow={report(index)} mastheadSide={mastheadSide} pageSize={pageSize}
     />
   ))}</>;
 }

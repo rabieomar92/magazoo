@@ -2,6 +2,8 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { migrate } from '../schema/document';
 import { exportIssuePdf, issuePageGroups } from '../lib/pdfExport';
 import { PDF_PAGE_SIZES, type PdfPageSize } from '../lib/pdfPageSize';
+import { pageDimensions, withPageFormat } from '../lib/pageFormat';
+import { usePdfPageSize } from '../store/pdfPreferences';
 import { issueApi } from './api';
 import { contentsDesignOf, contentsEntries, defaultIssuePlan, reconcileIssuePlan, CONTENTS_ID, type ContentsDensity, type ContentsDesign, type ContentsEntryStyle, type ContentsLayout, type ContentsPictures, type IssueItem, type IssuePlan, type IssueResponse } from './model';
 import { IssueCompiler, type CompiledIssue, type CompileProgress } from './IssueCompiler';
@@ -13,8 +15,6 @@ import './issue.css';
 import { Wordmark } from '../components/Wordmark';
 import { MagazooLoader } from '../components/MagazooLoader';
 
-const PAGE_WIDTH_PX = (210 * 96) / 25.4;
-const PAGE_HEIGHT_PX = (297 * 96) / 25.4;
 /** What the compiled sheets are built from, and the only thing that can put
  * the proof out of date. Everything else an editor can change — wording,
  * colours, crops, which entries are listed — the contents spread re-lays on
@@ -63,7 +63,9 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
   const [error, setError] = useState('');
   const [progress, setProgress] = useState<CompileProgress>({ completed: 0, total: data.items.length, name: '', pass: 1, passes: 2 });
   const [busy, setBusy] = useState(false);
-  const [pdfSize, setPdfSize] = useState<PdfPageSize>('a4');
+  const [pdfSize, setPdfSize] = usePdfPageSize();
+  const compositionFormat = pdfSize === 'magazine' ? 'magazine' : 'a4';
+  const [compiledFormat, setCompiledFormat] = useState<typeof compositionFormat | null>(null);
   const [contentsOverflow, setContentsOverflow] = useState(true);
   const [finalizedPlan, setFinalizedPlan] = useState('');
   const [notice, setNotice] = useState('');
@@ -77,9 +79,9 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
   const save = useIssueAutosave(data.project.id, csrf, plan, data.version, data.plan);
 
   // A new array identity is what tells the compiler to set the issue again.
-  const sources = useMemo(() => { void compileToken; return data.items.map(({ id, name, doc }) => ({ id, name, doc })); }, [data.items, compileToken]);
-  const ready = !!compiled;
-  const assignments = useMemo(() => compiled?.assignments ?? [], [compiled]);
+  const sources = useMemo(() => { void compileToken; return data.items.map(({ id, name, doc }) => ({ id, name, doc: withPageFormat(doc, compositionFormat) })); }, [data.items, compileToken, compositionFormat]);
+  const ready = !!compiled && compiledFormat === compositionFormat;
+  const assignments = useMemo(() => ready ? compiled!.assignments : [], [compiled, ready]);
   const contentsDesign = useMemo(() => contentsDesignOf(plan), [plan]);
   /**
    * What the contents spread on screen is drawn from.
@@ -92,15 +94,15 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
    * contents page numbered against an arrangement the sheets were not built
    * from is exactly the error a proof exists to catch.
    */
-  const proofPlan = useMemo<IssuePlan | null>(() => (compiled ? {
-    ...compiled.plan,
+  const proofPlan = useMemo<IssuePlan | null>(() => (ready ? {
+    ...compiled!.plan,
     contentsTitle: plan.contentsTitle,
     contentsSubtitle: plan.contentsSubtitle,
     direction: plan.direction,
     contentsExcluded: plan.contentsExcluded,
     contentsDesign: plan.contentsDesign,
     contentsStyle: plan.contentsStyle,
-  } : null), [compiled, plan]);
+  } : null), [compiled, plan, ready]);
   const proofDesign = contentsDesign;
   const entries = useMemo(() => {
     if (!compiled || !proofPlan) return [];
@@ -112,15 +114,16 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
     .filter((item): item is IssueItem => !!item), [plan.order, plan.contentsExcluded, items]);
   const physicalPages = assignments.reduce((total, row) => total + row.pageCount, 0);
   const contentsStart = assignments.find(row => row.id === CONTENTS_ID)?.startNumber ?? plan.startNumber;
-  const isFinalized = finalizedPlan === JSON.stringify(plan);
+  const finalizationKey = JSON.stringify([plan, compositionFormat]);
+  const isFinalized = ready && finalizedPlan === finalizationKey;
   // Only the arrangement can go stale now; everything else is live.
   const proofStale = ready && numberingKey(compiled!.plan) !== numberingKey(plan);
 
   useEffect(() => {
-    if (!ready || restoredFinalization.current) return;
+    if (!ready || compositionFormat !== 'a4' || restoredFinalization.current) return;
     restoredFinalization.current = true;
-    if (!data.sourcesChanged && data.finalized && data.plan && data.finalized.documents.every(saved => assignments.some(row => row.id === saved.id && row.pageCount === saved.pageCount && row.startNumber === saved.startNumber))) setFinalizedPlan(JSON.stringify(data.plan));
-  }, [ready, data, assignments]);
+    if (!data.sourcesChanged && data.finalized && data.plan && data.finalized.documents.every(saved => assignments.some(row => row.id === saved.id && row.pageCount === saved.pageCount && row.startNumber === saved.startNumber))) setFinalizedPlan(JSON.stringify([data.plan, compositionFormat]));
+  }, [ready, data, assignments, compositionFormat]);
 
   // Fit a whole sheet in the stage — both directions, the way a proofing view
   // fits a page rather than only its width. Never above 100%: a preview that
@@ -128,20 +131,30 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
   useLayoutEffect(() => {
     const stage = stageRef.current;
     if (!stage) return;
+    const dimensions = pageDimensions(compositionFormat === 'magazine' ? { pageFormat: 'magazine' } : undefined);
+    const pageWidth = dimensions.width * 96 / 25.4;
+    const pageHeight = dimensions.height * 96 / 25.4;
     const measure = () => setFitScale(Math.min(1, Math.max(0.12,
-      Math.min((stage.clientWidth - 44) / PAGE_WIDTH_PX, (stage.clientHeight - 44) / PAGE_HEIGHT_PX))));
+      Math.min((stage.clientWidth - 44) / pageWidth, (stage.clientHeight - 44) / pageHeight))));
     measure();
     const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure);
     observer?.observe(stage);
     return () => observer?.disconnect();
-  }, []);
+  }, [compositionFormat]);
   const scale = zoom === 'fit' ? fitScale : zoom;
 
   const onCompiled = useCallback((result: CompiledIssue) => {
     setCompiled(result);
+    setCompiledFormat(compositionFormat);
     setRenderError('');
     setProofVersion(value => value + 1);
-  }, []);
+  }, [compositionFormat]);
+  useEffect(() => {
+    setRenderError('');
+    setNotice('');
+    setContentsOverflow(true);
+    setProgress({ completed: 0, total: items.length, name: '', pass: 1, passes: 2 });
+  }, [compositionFormat, items.length]);
   // The crop control measures the real slot on the compiled sheet, so it has
   // to re-read after the spread has settled from an edit.
   useEffect(() => {
@@ -173,6 +186,7 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
   };
   const recompile = useCallback(() => {
     setCompiled(null); setRenderError(''); setNotice('');
+    setContentsOverflow(true);
     setProgress({ completed: 0, total: items.length, name: '', pass: 1, passes: 2 });
     setCompileToken(value => value + 1);
   }, [items.length]);
@@ -193,10 +207,11 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
     const result = await issueApi<{ version: number; items: { id: string; version: number }[] }>(data.project.id, csrf, '/finalize', 'POST', { version, plan, documents });
     save.acceptFinalizedVersion(result.version);
     setItems(previous => previous.map(item => ({ ...item, version: result.items.find(updated => updated.id === item.id)?.version ?? item.version })));
-    setFinalizedPlan(JSON.stringify(plan));
+    setFinalizedPlan(finalizationKey);
     setNotice('Issue finalised. Starting page numbers are saved to every article. Your two-page contents spread is ready.');
   });
   const exportIssue = () => execute(async () => {
+    if (!ready || proofStale || contentsOverflow) throw new Error('Wait for the selected page size to finish compiling before exporting.');
     const sheetCount = (root: HTMLElement) => issuePageGroups(root).reduce((total, group) => total + group.sheets.length, 0);
     let root: HTMLDivElement | null = null;
     for (let attempt = 0; attempt < 100; attempt++) {
@@ -326,7 +341,7 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
             <label className="field">PDF page size<select value={pdfSize} disabled={busy} onChange={event => setPdfSize(event.target.value as PdfPageSize)}>
               {Object.entries(PDF_PAGE_SIZES).map(([key, size]) => <option key={key} value={key}>{size.label} · {size.width} × {size.height} mm</option>)}
             </select></label>
-            <p className="field-hint">Every compiled page fits the selected PDF size proportionally, including covers and contents. Page order and line breaks stay unchanged; nothing is cropped or stretched and no extra bleed is added. Small margins may remain where page proportions differ. Use the matching paper size, no margins, and 100% scale in the print dialog. For Magazine, use a custom 203 × 267 mm paper size if your print dialog requires it.</p>
+            <p className="field-hint">Magazine lays out every article, cover and contents page directly at 203 × 267 mm, without an A4 border. Changing to Magazine recompiles the issue and may change its page counts; saved article content stays untouched. B5 proportionally fits the existing composition. Choose Save as PDF, Default margins (the publication sets them to zero), 100% scale and Background graphics in the print dialog. A physical printer may require a custom 203 × 267 mm paper size.</p>
             <p className="field-hint">Finalising writes each article’s starting page number back into the saved document, so a single-article export carries the same folio as the issue.</p>
             {contentsOverflow && ready && <p className="inline-alert" role="alert">The contents text does not fit its two pages. Shorten the heading or introduction, drop a subtitle, or uncheck some entries.</p>}
           </section>
@@ -351,7 +366,7 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
         </div>
         <div className="stage-scroll" ref={stageRef}>
           {ready
-            ? <IssueProof plan={proofPlan!} entries={entries} documents={compiled!.numbered} magazineName={data.project.name} design={proofDesign} contentsStart={contentsStart} contentsSide={assignments.find(row => row.id === CONTENTS_ID)?.mastheadSide} scale={scale} pagesRef={pagesRef} onOverflow={setContentsOverflow} />
+            ? <IssueProof plan={proofPlan!} entries={entries} documents={compiled!.numbered} magazineName={data.project.name} design={proofDesign} contentsStart={contentsStart} contentsSide={assignments.find(row => row.id === CONTENTS_ID)?.mastheadSide} pageSize={pdfSize} scale={scale} pagesRef={pagesRef} onOverflow={setContentsOverflow} />
             : <div className="stage-progress">
                 {renderError
                   ? <><Wordmark className="stage-mark" /><h3>An article needs attention</h3><p role="alert">{renderError}</p><button className="primary" onClick={recompile}>Try again</button></>
@@ -377,6 +392,6 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
 
     {busy && <div className="studio-busy"><MagazooLoader variant="banner" label="Magazoo is working…" detail="Please keep this window open." /></div>}
 
-    {!ready && !renderError && <IssueCompiler key={compileToken} sources={sources} plan={plan} items={items} onComplete={onCompiled} onError={onCompileError} onProgress={onProgress} />}
+    {!ready && !renderError && <IssueCompiler key={`${compileToken}-${compositionFormat}`} sources={sources} plan={plan} items={items} onComplete={onCompiled} onError={onCompileError} onProgress={onProgress} />}
   </main>;
 }

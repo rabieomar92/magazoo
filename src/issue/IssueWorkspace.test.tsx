@@ -8,6 +8,9 @@ import { assignIssuePages, defaultIssuePlan, type IssueResponse } from './model'
 import { emptyDoc } from '../schema/document';
 import type { IssueCompiler as Compiler } from './IssueCompiler';
 import type { IssueProof as Proof } from './IssueProof';
+import { usePdfPreferences } from '../store/pdfPreferences';
+
+const compilation = vi.hoisted(() => ({ sources: vi.fn(), hold: false, complete: undefined as (() => void) | undefined }));
 
 vi.mock('./api', () => ({ issueApi: vi.fn() }));
 vi.mock('../lib/pdfExport', async importOriginal => ({
@@ -17,16 +20,20 @@ vi.mock('../lib/pdfExport', async importOriginal => ({
 vi.mock('./IssueCompiler', () => ({
   IssueCompiler: ({ sources, items, plan, onComplete }: ComponentProps<typeof Compiler>) => {
     useEffect(() => {
-      const counts = Object.fromEntries(items.map(item => [item.id, 1]));
-      onComplete({ numbered: sources, documents: [], counts, assignments: assignIssuePages(plan, items, counts), plan });
+      compilation.sources(sources);
+      const counts = Object.fromEntries(items.map(item => [item.id, sources.find(source => source.id === item.id)?.doc.design.pageFormat === 'magazine' ? 2 : 1]));
+      const complete = () => onComplete({ numbered: sources, documents: [], counts, assignments: assignIssuePages(plan, items, counts), plan });
+      if (compilation.hold) compilation.complete = complete;
+      else complete();
     }, [sources, items, plan, onComplete]);
     return null;
   },
 }));
 vi.mock('./IssueProof', () => ({
-  IssueProof: ({ pagesRef, onOverflow }: ComponentProps<typeof Proof>) => {
+  IssueProof: ({ pagesRef, onOverflow, documents, pageSize }: ComponentProps<typeof Proof>) => {
     useEffect(() => onOverflow(false), [onOverflow]);
-    return <div ref={pagesRef}><div className="pages"><section className="page" /><section className="page" /><section className="page" /></div></div>;
+    const count = 2 + documents.reduce((total, source) => total + (source.doc.design.pageFormat === 'magazine' ? 2 : 1), 0);
+    return <div ref={pagesRef} data-proof-size={pageSize}><div className="pages">{Array.from({ length: count }, (_, index) => <section key={index} className="page" />)}</div></div>;
   },
 }));
 
@@ -36,6 +43,9 @@ let response: IssueResponse;
 beforeEach(() => {
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
   vi.clearAllMocks();
+  usePdfPreferences.setState({ size: 'a4' });
+  compilation.hold = false;
+  compilation.complete = undefined;
   const items = [{ id: 'article', name: 'A science story', version: 3, updated: 0, doc: emptyDoc() }];
   response = { project: { id: 'project', name: 'Test magazine' }, version: 7, items, plan: defaultIssuePlan(items) };
   vi.mocked(issueApi).mockResolvedValue(response);
@@ -64,10 +74,48 @@ it.each(['a4', 'b5', 'magazine'])('exports the compiled issue at %s without savi
 
   expect(exportIssuePdf).toHaveBeenCalledExactlyOnceWith('Test magazine', expect.any(HTMLDivElement), size);
   const exportedRoot = vi.mocked(exportIssuePdf).mock.calls[0][1];
-  expect(exportedRoot.querySelectorAll('.page')).toHaveLength(3);
+  expect(exportedRoot.querySelectorAll('.page')).toHaveLength(size === 'magazine' ? 4 : 3);
+  expect(exportedRoot.dataset.proofSize).toBe(size);
+  const sources = compilation.sources.mock.calls.at(-1)![0];
+  expect(sources[0].doc.design.pageFormat).toBe(size === 'magazine' ? 'magazine' : undefined);
   expect(JSON.stringify(response)).toBe(before);
   // The only server operation is the initial read: choosing an output size
   // must not finalise page numbers or rewrite articles/the saved issue plan.
   expect(issueApi).toHaveBeenCalledTimes(1);
   expect(vi.mocked(issueApi).mock.calls[0][3]).toBe('GET');
+});
+
+it('blocks the old proof until native Magazine recompiles, then restores the legacy composition without writing data', async () => {
+  const before = JSON.stringify(response);
+  await act(async () => root.render(<IssueWorkspace projectId="project" csrf="test-token" onClose={() => undefined} />));
+  act(() => host.querySelector<HTMLButtonElement>('#tab-output')!.click());
+  const select = host.querySelector<HTMLSelectElement>('#panel-output select')!;
+  const exportButton = () => [...host.querySelectorAll<HTMLButtonElement>('.studio-actions button')].find(button => button.textContent?.startsWith('Export '))!;
+  expect(exportButton().disabled).toBe(false);
+  compilation.hold = true;
+  act(() => { select.value = 'magazine'; select.dispatchEvent(new Event('change', { bubbles: true })); });
+  expect(exportButton().disabled).toBe(true);
+  expect(host.querySelector('[data-proof-size]')).toBeNull();
+  expect(compilation.sources.mock.calls.at(-1)![0][0].doc.design.pageFormat).toBe('magazine');
+  act(() => compilation.complete!());
+  expect(exportButton().disabled).toBe(false);
+  expect(host.querySelector('[data-proof-size]')?.getAttribute('data-proof-size')).toBe('magazine');
+  expect(host.querySelector('.inspector-metrics')?.textContent).toContain('4pages');
+
+  compilation.hold = false;
+  act(() => { select.value = 'a4'; select.dispatchEvent(new Event('change', { bubbles: true })); });
+  expect(exportButton().disabled).toBe(false);
+  expect(compilation.sources.mock.calls.at(-1)![0][0].doc.design.pageFormat).toBeUndefined();
+  expect(host.querySelector('.inspector-metrics')?.textContent).toContain('3pages');
+  expect(JSON.stringify(response)).toBe(before);
+  expect(issueApi).toHaveBeenCalledTimes(1);
+});
+
+it('opens in the shared browser page-size preference without saving the choice to the issue', async () => {
+  usePdfPreferences.setState({ size: 'magazine' });
+  await act(async () => root.render(<IssueWorkspace projectId="project" csrf="test-token" onClose={() => undefined} />));
+  act(() => host.querySelector<HTMLButtonElement>('#tab-output')!.click());
+  expect(host.querySelector<HTMLSelectElement>('#panel-output select')!.value).toBe('magazine');
+  expect(compilation.sources.mock.calls.at(-1)![0][0].doc.design.pageFormat).toBe('magazine');
+  expect(issueApi).toHaveBeenCalledTimes(1);
 });
