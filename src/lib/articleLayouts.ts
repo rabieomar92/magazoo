@@ -39,18 +39,20 @@ export function articleGeometry(id: ReferenceArticleId, design: Design, measured
   const delta = heroHeight - layout.heroHeight;
   const inset = id === 'paper-8';
   const bottomHero = design.heroAtBottom === true && heroHeight > 0;
+  const bottomBleed = bottomHero && design.heroBottomBleed === true;
   const contentTop = Math.max(margin,25,(design.topBarOffset ?? DEFAULT_TOP_BAR_OFFSET)+4+gutter);
   const imageLeft = inset && (design.heroSide ?? (design.textDirection === 'rtl' ? 'left' : 'right')) === 'left';
   const titleTop = Math.max(26, contentTop, bottomHero ? 26 : (inset ? layout.titleTop : layout.titleTop + delta), design.firstPageTopMargin ?? 0);
   const bodyTop = Math.max(titleTop + measuredHeader + gutter, bottomHero ? 26 : inset ? layout.bodyTop : layout.bodyTop + delta);
   const bottom = height - Math.max(margin, 18, footerReserve);
+  const imageBottom = bottomBleed ? height : bottom;
   const image = inset
-    ? { x: imageLeft ? margin : margin + col + gutter, y: bottomHero ? bottom-heroHeight-captionHeight-gutter : bodyTop, width: span(columns - 1), height: heroHeight }
-    : { x: 0, y: bottomHero ? bottom-heroHeight : 0, width, height: heroHeight };
+    ? { x: imageLeft ? margin : margin + col + gutter, y: bottomHero ? imageBottom-heroHeight-(bottomBleed ? 0 : captionHeight+gutter) : bodyTop, width: span(columns - 1), height: heroHeight }
+    : { x: 0, y: bottomHero ? imageBottom-heroHeight : 0, width, height: heroHeight };
   const starts = Array.from({ length: columns }, (_, i) => !bottomHero && inset && (imageLeft ? i < columns-1 : i > 0) && heroHeight > 0
     ? bodyTop + heroHeight + Math.max(captionHeight + gutter, 13)
     : i < titleCols ? bodyTop : titleTop);
-  return { layout, width, height, margin, gutter, columns, col, span, titleCols, titleTop, bodyTop, bottom, image, starts, bottomHero, contentTop };
+  return { layout, width, height, margin, gutter, columns, col, span, titleCols, titleTop, bodyTop, bottom, image, starts, bottomHero, bottomBleed, contentTop };
 }
 
 /** Split each column top-to-bottom around placed photographs, then advance
@@ -81,7 +83,7 @@ export function referenceArticleDesign(id: ReferenceArticleId, base: Design): De
   const layout = ARTICLE_LAYOUTS[id];
   const bg = id === 'paper-4' ? '#241711' : id === 'paper-5' ? '#094441' : '#ffffff';
   return { ...base, articlePageSize: 'reference', bodyCols: 4, margin: 14, gutter: 4,
-    heroHeight: layout.heroHeight, showHero: true, imageTheme: false, heroAtBottom: false, articleLeading: 1.28,
+    heroHeight: layout.heroHeight, showHero: true, imageTheme: false, heroAtBottom: false, heroBottomBleed: false, articleLeading: 1.28,
     firstPageTopMargin: 0, subtitleGap: 1.5, bodyAlign: 'left', sidebar: true, highlightsPlacement: 'page1-flow',
     fontBody: 'Georgia', fontDisplay: 'Avenir Next LT Pro', fontSubtitle: 'Avenir Next LT Pro Light',
     fontCategory: 'Avenir Next LT Pro Light', fontAuthor: 'Avenir Next LT Pro', fontAffiliation: 'Avenir Next LT Pro', paperBg: bg,

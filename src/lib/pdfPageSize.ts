@@ -66,8 +66,13 @@ export function fitPdfSheets(doc: Document, size: PdfPageSize) {
   pages.forEach((page, index) => {
     const source = dimensions[index];
     const fit = pdfSheetGeometry(size, source.height, source.width);
+    // Bottom-bleed artwork must meet the output trim as well as its source
+    // trim. Move any aspect-fit allowance above this opt-in sheet instead of
+    // introducing a blank strip below its photograph. Scale/crop stay intact.
+    const top = page.classList.contains('page--hero-bottom-bleed')
+      ? Math.max(0, fit.height - source.height * fit.scale) : fit.top;
     page.style.setProperty('--pdf-fit-left', `${fit.left}mm`);
-    page.style.setProperty('--pdf-fit-top', `${fit.top}mm`);
+    page.style.setProperty('--pdf-fit-top', `${top}mm`);
     page.style.setProperty('--pdf-fit-scale', String(fit.scale));
     const sheet = doc.createElement('div');
     sheet.className = 'pdf-export-sheet';

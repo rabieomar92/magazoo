@@ -51,6 +51,7 @@ export function ArticlePages({ doc, vars, onStatus, readOnly = false }: { doc: D
     '--article-caption-size': `${doc.design.articleCaptionSize ?? 7}pt`,
     '--article-caption-color': doc.design.articleCaptionColor,
     '--article-caption-align': doc.design.articleCaptionAlign ?? 'left',
+    '--hero-bottom-caption-clearance': `${g.height-g.bottom+2}mm`,
   } as CSSProperties;
   const calloutWidth = placement === 'free' ? placedHighlightsGeometry(doc.highlightBox ?? defaultPlacedHighlights(gridDesign, g.height), gridDesign, 0, g.height).width
     : placement === 'below' ? g.span(g.columns) : g.col;
@@ -122,7 +123,7 @@ export function ArticlePages({ doc, vars, onStatus, readOnly = false }: { doc: D
       const callouts: ArticleObstacle[] = [];
       let free: PlacedHighlights | undefined;
       const leadObstacles: ArticleObstacle[] = [
-        ...(geometry.image.height > 0 ? [{page:0,left:geometry.image.x,top:geometry.image.y,width:geometry.image.width,height:geometry.image.height+(id==='paper-8'?captionHeight+1:0)}] : []),
+        ...(geometry.image.height > 0 ? [{page:0,left:geometry.image.x,top:geometry.image.y,width:geometry.image.width,height:geometry.image.height+(id==='paper-8'&&!geometry.bottomBleed?captionHeight+1:0)}] : []),
         {page:0,left:geometry.margin,top:geometry.titleTop,width:geometry.span(geometry.titleCols),height:headerHeight},
       ];
       if (hasCallout && placement === 'free') {
@@ -211,17 +212,17 @@ export function ArticlePages({ doc, vars, onStatus, readOnly = false }: { doc: D
   const measureStyles = { ...styles, width: `${g.width}mm` };
   return <>
     {Array.from({ length: layout.pages }, (_, page) => <div key={page}
-      className={`page article-page article-page--${id}${g.layout.dark ? ' article-page--dark' : ''}`}
+      className={`page article-page article-page--${id}${g.layout.dark ? ' article-page--dark' : ''}${page===0&&g.bottomBleed?' page--hero-bottom-bleed':''}`}
       data-page-width-mm={g.width} data-page-height-mm={g.height} data-layout-overflow={layout.overflow ? 'true' : undefined}
       style={{ ...styles, width: `${g.width}mm`, height: `${g.height}mm` }}>
       {page === 0 && <PageArtwork doc={doc}/>}
       {page === 0 && <>
-        {hasImage && <figure data-callout-obstacle className={`article-hero${g.layout.fade ? ' article-hero--fade' : ''}${g.bottomHero ? ' article-hero--bottom' : ''}`} data-editor-tab="images" data-editor-target="image-hero"
+        {hasImage && <figure data-callout-obstacle className={`article-hero${g.layout.fade ? ' article-hero--fade' : ''}${g.bottomHero ? ' article-hero--bottom' : ''}${g.bottomBleed?' article-hero--bottom-bleed':''}${id==='paper-8'&&g.bottomBleed?' article-hero--inset-caption':''}`} data-editor-tab="images" data-editor-target="image-hero"
           style={{ left: `${g.image.x}mm`, top: `${g.image.y}mm`, width: `${g.image.width}mm`, height: `${g.image.height}mm` }}>
           {asset ? <FramedImage asset={asset} frame={doc.hero}/> : <div className="article-image-placeholder">Add a hero photograph</div>}
-          {id !== 'paper-8' && captionText && <figcaption className="article-hero-caption" data-editor-tab="content" data-editor-target="meta-hero-caption">{captionText}</figcaption>}
+          {(id !== 'paper-8'||g.bottomBleed) && captionText && <figcaption className="article-hero-caption" data-editor-tab="content" data-editor-target="meta-hero-caption">{captionText}</figcaption>}
         </figure>}
-        {id === 'paper-8' && hasImage && captionText && <div data-callout-obstacle className="article-inset-caption article-hero-caption" data-editor-tab="content" data-editor-target="meta-hero-caption"
+        {id === 'paper-8' && !g.bottomBleed && hasImage && captionText && <div data-callout-obstacle className="article-inset-caption article-hero-caption" data-editor-tab="content" data-editor-target="meta-hero-caption"
           style={{ left: `${g.image.x}mm`, top: `${g.image.y + g.image.height + 1}mm`, width: `${g.image.width}mm` }}>{captionText}</div>}
         <div data-callout-obstacle className="article-header-position" style={{ left: `${g.margin}mm`, top: `${g.titleTop}mm`, width: `${g.span(g.titleCols)}mm` }}><ArticleHeader doc={doc}/></div>
       </>}

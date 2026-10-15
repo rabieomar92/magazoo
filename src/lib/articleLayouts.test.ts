@@ -137,6 +137,42 @@ describe('reference article compositions', () => {
     expect(regions.filter(r=>r.page===1)).toHaveLength(4);
   });
 
+  it.each(ids)('%s optionally bleeds a bottom hero to the real trim without changing photo height or text width', id => {
+    for (const format of ['reference', 'a4', 'magazine'] as const) {
+      const doc = presetFor(id);
+      doc.design.heroAtBottom = true;
+      doc.design.heroBottomBleed = true;
+      doc.design.articlePageSize = format === 'a4' ? 'a4' : 'reference';
+      if (format === 'magazine') doc.design.pageFormat = 'magazine';
+      const before = JSON.stringify(doc);
+      const g = articleGeometry(id, doc.design, 30, 8, 44);
+      expect(g.bottomBleed).toBe(true);
+      expect(g.image.y + g.image.height).toBe(g.height);
+      expect(g.height).toBe(format === 'magazine' ? 267 : format === 'a4' ? 297 : 276);
+      expect(g.image.height).toBe(doc.design.heroHeight);
+      expect(g.image.x + g.image.width).toBeLessThanOrEqual(g.width);
+      const regions = articleRegions(g, 1);
+      expect(regions.filter(r => r.page === 0).every(r => r.x >= g.image.x + g.image.width ||
+        r.x + r.width <= g.image.x || r.y + r.height <= g.image.y - 2)).toBe(true);
+      expect(regions.every(r => r.y + r.height <= g.bottom)).toBe(true);
+      expect(regions.every(r => r.width === g.col)).toBe(true);
+      expect(JSON.stringify(doc)).toBe(before);
+      const legacy = articleGeometry(id, { ...doc.design, heroBottomBleed: undefined }, 30, 8, 44);
+      expect(legacy.bottomBleed).toBe(false);
+      expect(legacy.image.y + legacy.image.height).toBe(g.bottom - (id === 'paper-8' ? 8 + g.gutter : 0));
+      expect(g.col).toBe(legacy.col);
+    }
+  });
+
+  it('does not apply bottom bleed to a top-positioned or hidden hero', () => {
+    const doc = presetFor('paper-4');
+    doc.design.heroBottomBleed = true;
+    expect(articleGeometry('paper-4', doc.design).bottomBleed).toBe(false);
+    doc.design.heroAtBottom = true;
+    doc.design.showHero = false;
+    expect(articleGeometry('paper-4', doc.design).bottomBleed).toBe(false);
+  });
+
   it('mirrors the inset image while keeping physical columns equal',()=> {
     const doc=presetFor('paper-8');doc.design.heroSide='left';
     const g=articleGeometry('paper-8',doc.design);
@@ -155,7 +191,7 @@ describe('reference article compositions', () => {
     const doc=presetFor(id);
     doc.design.highlightsPlacement='free';
     doc.design.textTracking={body:.015,highlights:.025,'block:local':.04};
-    doc.design.imageTheme=true;doc.design.heroAtBottom=true;
+    doc.design.imageTheme=true;doc.design.heroAtBottom=true;doc.design.heroBottomBleed=true;
     doc.highlightBox={widthCols:2,anchor:{page:2,column:1,y:145}};
     doc.blocks=[{id:'local',type:'paragraph',text:'Retained quote',decorativeQuote:true,fontSize:11,color:'#345678',topPadding:5},
       {id:'eq',type:'equation',tex:'E=mc^2',caption:'Energy'}];
@@ -168,5 +204,6 @@ describe('reference article compositions', () => {
     expect(restored.design.highlightsPlacement).toBe('free');
     expect(restored.design.imageTheme).toBe(true);
     expect(restored.design.heroAtBottom).toBe(true);
+    expect(restored.design.heroBottomBleed).toBe(true);
   });
 });

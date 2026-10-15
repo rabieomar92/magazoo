@@ -7,6 +7,8 @@
 .article-hero > .article-hero-caption { position:absolute; z-index:1; top:31mm; left:var(--margin); width:37mm; margin:0; padding:2mm; color:var(--article-caption-color,#fff); background:#0006; }
 .article-page--paper-5 .article-hero > .article-hero-caption { top:auto; bottom:15mm; }
 .article-page--paper-7 .article-hero > .article-hero-caption { top:auto; bottom:3mm; left:auto; right:var(--margin); color:var(--article-caption-color,#202124); background:#ffffffe8; }
+.article-page .article-hero--bottom-bleed > .article-hero-caption { top:auto; bottom:var(--hero-bottom-caption-clearance,20mm); }
+.article-page .article-hero--inset-caption > .article-hero-caption { left:2mm; right:2mm; width:auto; box-sizing:border-box; color:var(--article-caption-color,#fff); background:#0009; }
 .article-inset-caption { position:absolute; margin:0; padding:0; background:none; color:var(--article-caption-color,var(--ink)); }
 .article-page > .article-header-position,.article-page > .article-inset-caption { position:absolute; }
 .article-header.header { margin:0; padding:0; border:0; }

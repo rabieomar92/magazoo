@@ -66,6 +66,37 @@ describe('PDF output sheet fitting', () => {
     fitPdfSheets(output, 'a4');
     expect(output.documentElement.outerHTML).toBe(before);
   });
+  it.each([
+    ['b5', 210, 297],
+    ['b5', 210, 276],
+    ['a4', 210, 276],
+    ['magazine', 203, 267],
+  ] as const)('anchors only opted-in bottom-bleed %s artwork (%s × %s) to the output bottom trim', (size, width, height) => {
+    const source = document.createElement('div');
+    source.innerHTML = `<div class="page page--hero-bottom-bleed" data-page-width-mm="${width}" data-page-height-mm="${height}"><p>Bleeding photograph</p><img src="/photo.png"/><figcaption>Retain this caption</figcaption><footer>1 · Magazoo!</footer></div>
+      <div class="page" data-page-width-mm="${width}" data-page-height-mm="${height}">Normal sheet</div>`;
+    source.style.transform = 'scale(0.5)';
+    const original = source.outerHTML;
+    const output = document.implementation.createHTMLDocument();
+    clonePages(source, output);
+    fitPdfSheets(output, size);
+    const [bleed, normal] = [...output.querySelectorAll<HTMLElement>('.pdf-export-page')];
+    const fit = pdfSheetGeometry(size, height, width);
+    expect(parseFloat(bleed.style.getPropertyValue('--pdf-fit-top')) + height * fit.scale).toBeCloseTo(fit.height, 10);
+    expect(bleed.style.getPropertyValue('--pdf-fit-scale')).toBe(String(fit.scale));
+    expect(bleed.style.getPropertyValue('--pdf-fit-left')).toBe(`${fit.left}mm`);
+    expect(normal.style.getPropertyValue('--pdf-fit-top')).toBe(`${fit.top}mm`);
+    expect(normal.style.getPropertyValue('--pdf-fit-scale')).toBe(String(fit.scale));
+    expect(bleed.querySelector('figcaption')?.textContent).toBe('Retain this caption');
+    expect(bleed.querySelector('footer')?.textContent).toBe('1 · Magazoo!');
+    expect(bleed.querySelector('img')?.getAttribute('src')).toBe('/photo.png');
+    if (size === 'magazine') {
+      expect(bleed.style.getPropertyValue('--pdf-fit-scale')).toBe('1');
+      expect(bleed.style.getPropertyValue('--pdf-fit-top')).toBe('0mm');
+      expect(bleed.style.getPropertyValue('--pdf-fit-left')).toBe('0mm');
+    }
+    expect(source.outerHTML).toBe(original);
+  });
   it.each(['a4','b5'] as const)('fits mixed native, reference and A4 artwork onto %s without cropping', size => {
     const source = document.createElement('div');
     source.innerHTML = '<div class="page" data-page-height-mm="276">Reference trim</div><div class="page">A4 trim</div><div class="page" data-page-width-mm="203" data-page-height-mm="267">Native trim</div>';

@@ -66,4 +66,23 @@ describe('DesignSection font choices', () => {
     expect(host.textContent).toContain('First-page background graphic');
     act(()=>root.unmount());
   });
+
+  it.each(['paper-3','paper-4','paper-5','paper-6','paper-7','paper-8'] as const)('%s offers optional bottom trim bleed only with bottom hero placement', template => {
+    const host = document.createElement('div');
+    const root = createRoot(host);
+    act(() => { useDoc.setState({ doc: presetFor(template) }); root.render(<DesignSection />); });
+    const checkbox = (label: string) => [...host.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')]
+      .find(input => input.closest('label')?.textContent?.includes(label));
+    expect(checkbox('Bleed hero image to bottom edge')).toBeUndefined();
+    act(() => checkbox('Photograph rises from the foot of the page')!.click());
+    const bleed = checkbox('Bleed hero image to bottom edge')!;
+    expect(bleed).toBeDefined();
+    expect(bleed.checked).toBe(false);
+    act(() => bleed.click());
+    expect(useDoc.getState().doc.design.heroBottomBleed).toBe(true);
+    act(() => checkbox('Photograph rises from the foot of the page')!.click());
+    expect(checkbox('Bleed hero image to bottom edge')).toBeUndefined();
+    expect(useDoc.getState().doc.design.heroBottomBleed).toBe(true);
+    act(() => root.unmount());
+  });
 });

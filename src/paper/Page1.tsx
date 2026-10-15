@@ -24,9 +24,10 @@ export function Page1({ doc, vars, pieces }: Props) {
   // height the measuring pass computed for it — only the picture moves, and
   // the masthead stays at the head of the page on its own.
   const heroAtBottom = doc.templateId === 'paper-3' && design.heroAtBottom === true && design.showHero !== false;
+  const heroBottomBleed = heroAtBottom && design.heroBottomBleed === true;
 
   return (
-    <div className={`page${doc.templateId === 'paper-3' ? ' page--paper3' : ''}${heroAtBottom ? ' page--hero-bottom' : ''}`} style={vars}>
+    <div className={`page${doc.templateId === 'paper-3' ? ' page--paper3' : ''}${heroAtBottom ? ' page--hero-bottom' : ''}${heroBottomBleed ? ' page--hero-bottom-bleed' : ''}`} style={vars}>
       <PageArtwork doc={doc} />
       <div
         className={`hero${design.showHero === false ? ' hero--hidden' : ''}`}

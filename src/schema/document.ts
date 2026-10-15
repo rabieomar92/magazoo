@@ -442,12 +442,15 @@ export interface Design {
   /** Hide the article hero while retaining the document's top bar. */
   showHero?: boolean;
   /**
-   * Paper 3 only. Absent/false = the photograph opens the page from the top
+   * Paper 3 and reference article layouts. Absent/false = the photograph opens the page from the top
    * edge. True prints it rising from the foot of the page with the article
    * above it. The picture leaves the flow either way, so page 1 holds exactly
    * the same amount of text.
    */
   heroAtBottom?: boolean;
+  /** Optional bottom trim bleed for a bottom-positioned article hero.
+   * Missing/false preserves the existing composition and footer clearance. */
+  heroBottomBleed?: boolean;
   /**
    * paper-2's top band. Absent = the defaults below, so v1 files and the other
    * templates (which never draw the band) are unaffected.

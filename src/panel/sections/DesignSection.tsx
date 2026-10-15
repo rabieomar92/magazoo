@@ -119,7 +119,11 @@ export function DesignSection() {
         <Toggle label="Match colours to hero image" checked={imageThemeEnabled} onChange={v => set('imageTheme', v)} />
         <p className="hint">The photo fades into a solid, image-matched page colour with contrasting text. Turn this off to use your manual palette. Individual text colour overrides remain editable.</p>
         <Toggle label="Photograph rises from the foot of the page" checked={design.heroAtBottom === true} onChange={v => set('heroAtBottom', v)} />
-        <p className="hint">The photo fills the bottom edge above the footer, fading upward into the article’s background colour. The masthead stays at the top. Use “Image height” to set how far the photo reaches.</p>
+        <p className="hint">Places the photograph below the article, with the masthead at the top. Use “Image height” to set how far the photo reaches.</p>
+        {design.heroAtBottom === true && <>
+          <Toggle label="Bleed hero image to bottom edge" checked={design.heroBottomBleed === true} onChange={v => set('heroBottomBleed', v)} />
+          <p className="hint">Runs the photo to the page’s bottom trim without a blank footer band. The page number and footer remain readable over the image. Text and captions stay inside the page.</p>
+        </>}
       </>}
       <p className="group-label">Layout</p>
       <SegmentField<Design['bodyCols']>
