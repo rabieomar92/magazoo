@@ -531,8 +531,6 @@
   color: var(--ink);
   line-height: 1.55;
   --drop-cap-color: var(--mag-red);
-  --drop-cap-font-size: calc(var(--fs-body) * 5.3);
-  --drop-cap-line-height: calc(var(--fs-body) * 3.84);
   --drop-cap-weight: 800;
   /* RTL — see page.css's .body-cols comment; same reasoning applies here. */
   direction: var(--text-dir, ltr);
@@ -743,8 +741,6 @@
   color: var(--ink);
   line-height: 1.55;
   --drop-cap-color: var(--mag-red);
-  --drop-cap-font-size: calc(var(--fs-body) * 5.3);
-  --drop-cap-line-height: calc(var(--fs-body) * 3.84);
   --drop-cap-weight: 800;
   /* RTL — see page.css's .body-cols comment. */
   direction: var(--text-dir, ltr);

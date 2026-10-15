@@ -120,6 +120,5 @@
   overflow-clip-margin: var(--topbleed-clip);
 }
 
-/* Drop caps are real `.drop-cap` elements now, so they are neither regenerated
-   nor repeated when RTL text fragments into another column. No RTL suppression
-   is needed: logical floats in the template styles place them at reading-start. */
+/* Drop-cap markers remain in the text. Shared three-line initial-letter rules
+   target only the opening region, never continued paragraphs or later sheets. */

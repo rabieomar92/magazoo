@@ -13,6 +13,7 @@ import '../styles/front-matter.css';
 import '../styles/paper3-footer.css';
 import '../styles/back-cover.css';
 import '../styles/news.css';
+import '../styles/drop-caps.css';
 import '../styles/rtl.css';
 import 'katex/dist/katex.min.css';
 import './contents.css';

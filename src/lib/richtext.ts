@@ -120,9 +120,9 @@ const escapeHtml = (s: string) => s.replace(/[&<>]/g, (c) => ESC[c]);
 
 /** Split the first user-visible grapheme from a plain-text run. `Array.from`
  * keeps surrogate-pair characters whole; the following Unicode marks keep an
- * Arabic/Jawi vowel mark attached to its base letter. A real element is used
- * for the cap (rather than `::first-letter`) because Chromium can repeat a
- * generated first letter at multicolumn fragment boundaries in RTL text. */
+ * Arabic/Jawi vowel mark attached to its base letter. The inline marker records
+ * which source fragment can own an initial. Shared ::first-letter CSS draws
+ * it only in an opening region, never on a continuation fragment. */
 function takeDropCap(text: string): { leading: string; cap: string; rest: string } | null {
   const leading = text.match(/^\s*/u)?.[0] ?? '';
   const body = text.slice(leading.length);

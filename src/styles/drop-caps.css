@@ -1,0 +1,52 @@
+/* The marker stays in the authored text flow. Only ::first-letter draws the
+   initial, so the same geometry is used in preview, measuring hosts and PDF.
+   Never size it from --fs-body: an individual paragraph can override both
+   its size and leading. Two baseline intervals + the body cap height is the
+   optical height of a three-line initial, whatever the two typefaces are. */
+.drop-cap {
+  all: unset;
+  display: inline;
+}
+
+:is(
+  :is(.body-cols--p1, .p2-flow-l, .p2-host-l, .mag-cols--p1, .mag2-cols) p.flow-opener:not(.cont),
+  .news-copy p,
+  .fm-paragraph:not(.fm-continued) [data-fm-text]
+):has(.drop-cap)::first-letter {
+  float: inline-start;
+  font-family: var(--serif);
+  font-size: calc((2lh + 1cap) / .7);
+  font-size-adjust: cap-height .7;
+  font-weight: var(--drop-cap-weight, inherit);
+  line-height: 3lh;
+  margin: 0;
+  margin-inline-end: calc(var(--fs-body, 10pt) * .28);
+  padding: 0;
+  letter-spacing: 0;
+  color: var(--drop-cap-color, var(--ink));
+}
+
+/* Native initial-letter aligns the actual glyph to the first capital's top
+   and the third baseline, and releases the full column width on line four.
+   This also handles font loading, bold/italic openers and paragraph overrides
+   without asynchronous DOM fitting or a different pagination code path. */
+@supports (initial-letter: 3) or (-webkit-initial-letter: 3) {
+  :is(
+    :is(.body-cols--p1, .p2-flow-l, .p2-host-l, .mag-cols--p1, .mag2-cols) p.flow-opener:not(.cont),
+    .news-copy p,
+    .fm-paragraph:not(.fm-continued) [data-fm-text]
+  ):has(.drop-cap)::first-letter {
+    float: none;
+    font-size: 1em;
+    font-size-adjust: none;
+    line-height: inherit;
+    -webkit-initial-letter: 3;
+    initial-letter: 3;
+  }
+}
+
+/* Keep the letter in the sentence when decoration is disabled. No blank
+   float or enlarged first letter is left in either preview or print. */
+.drop-caps-off :is(p, [data-fm-text]):has(.drop-cap)::first-letter {
+  all: unset !important;
+}
