@@ -25,6 +25,12 @@
 .article-column .flow-fig { margin:0; }
 .article-column .flow-textband { column-count:1; }
 .article-column .flow-eq { margin:2mm 0; }
+/* Independent captions must measure in the same family as visible page
+   captions. Inheriting system-ui from the hidden rig under-counted long URLs. */
+:is(.article-page,.article-measure) .placed-image > figcaption { font-family:var(--sans); }
+/* Measuring and visible atomic figures obey the same contour clearance.
+   Paragraphs wrap beside the outline; an indivisible figure moves past it. */
+.article-column:has(> [data-tight-contour]) figure { clear:both; }
 :is(.article-page,.article-measure) :is(.article-callout,.hl-col,.hl-below,.placed-highlights) { box-sizing:border-box; padding:2mm; margin:0; border:.2mm solid var(--accent); box-shadow:none; background:var(--accent-soft); color:var(--ink); font:calc(var(--fs-body) * .9)/1.3 var(--sans); text-align:start; direction:var(--text-dir,ltr); }
 :is(.article-page,.article-measure) :is(.article-callout,.hl-col,.hl-below,.placed-highlights) h3 { margin:0 0 1.2mm; font:600 calc(var(--fs-eyebrow) + 1pt)/1.2 var(--sans); color:var(--accent); }
 :is(.article-page,.article-measure) :is(.article-callout,.hl-col,.hl-below,.placed-highlights) h3:has(+ .highlights:empty) { display:none; }

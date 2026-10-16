@@ -5,6 +5,12 @@ import { extraTextGroups, textStyleSelector, textStylesCss } from './textStyles'
 import { presetFor, TEMPLATE_META } from '../store/presets';
 
 describe('component typography',()=>{
+  it('inherits an individual news headline font only within its own story',()=>{
+    const design=emptyDoc().design;design.textStyles={'news:story-one:title':{fontFamily:'Helvetica'},'news:story-two:body':{fontFamily:'Arial'}};
+    const css=textStylesCss(design,'proof');
+    expect(css).toContain('[data-tracking-scope="proof"] [data-news-id="story-one"] { --drop-cap-font:Helvetica, Arial, sans-serif; }');
+    expect(css.match(/--drop-cap-font/g)).toHaveLength(1);
+  });
   it('keeps older files untouched until a style is explicitly edited',()=>{
     expect(textStylesCss(emptyDoc().design,'scope')).toBe('');
   });

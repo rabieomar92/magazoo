@@ -9,6 +9,7 @@ import { exclusionGradient, mergeExclusions, type ColumnExclusion } from '../lib
 import { canExpandParagraphGap, fullColumnsForLevelling, type FullColumnMetric } from '../lib/fullColumnLevel';
 import { requestBlockEditorFocus } from '../lib/editorNavigation';
 import { quoteFlowHtml } from '../lib/decorativeQuote';
+import { ContourFloat } from './ContourFloat';
 
 /** A standalone display equation with an optional caption. KaTeX can't wrap math,
  *  so a too-wide formula is scaled down to the column rather than running off the
@@ -300,6 +301,7 @@ function useFullColumnParagraphLevelling(
   useLayoutEffect(() => {
     const grid = gridRef.current;
     if (!grid) return;
+    if(grid.querySelector('[data-tight-contour]'))return;
     let frame = 0;
     let disposed = false;
 
@@ -517,6 +519,7 @@ function ImageColumnsFlow({ piece }: { piece: Extract<Piece, { kind: 'image-colu
                 }}
                 key={`${columnIndex}-${segment.order}`}
               >
+                {segment.contour && <ContourFloat contour={segment.contour}/>}
                 {segment.pieces.map((textPiece, pieceIndex) => {
                   const opener = !opened;
                   opened = true;

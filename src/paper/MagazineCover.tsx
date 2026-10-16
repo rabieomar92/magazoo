@@ -32,7 +32,7 @@ export function MagazineCover({ doc, vars }: { doc: Doc; vars: CSSProperties }) 
     >
       <PageArtwork doc={doc} />
       {photo && <FramedImage className="mag-cover-photo" asset={photo} frame={cover} />}
-      <div className="mag-cover-scrim" />
+      {photo && <div className="mag-cover-scrim" />}
       <div className="mag-cover-inner">
         <TagBar doc={doc} pageIndex={0} detail={meta.volume} fullBleed />
 

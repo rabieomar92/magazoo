@@ -238,6 +238,16 @@ export function splitRichTextAt(src: string, requestedOffset: number): { head: s
   return { head, tail };
 }
 
+/** Fit the exact styled fragment that will be committed at a word boundary.
+ * A raw prefix with no closing bold/italic markers paints in a different font, so
+ * measuring it can undercount lines beside an image or caption. Whole input
+ * stays untouched, including intentionally literal unmatched punctuation. */
+export function fittedRichTextHead(words:string[],count:number):string {
+  const head=words.slice(0,count).join(' ');
+  if(!head||count>=words.length)return head;
+  return head+[...openMarkers(head)].reverse().join('');
+}
+
 /**
  * Wrap (or unwrap) the current selection of a textarea with a marker, then
  * restore the selection. Toggling: if the selection is already wrapped in the

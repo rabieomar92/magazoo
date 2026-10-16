@@ -16,7 +16,7 @@
  * its own paragraph continuation use the remaining page space, then advances
  * whole to the next valid position.
  */
-import { runsToHtml, openMarkers, renderTex } from './richtext';
+import { runsToHtml, openMarkers, renderTex, fittedRichTextHead } from './richtext';
 import { fitEquation } from './mathfit';
 import { fillColumns } from './columnFill';
 import { quoteFlowHtml } from './decorativeQuote';
@@ -150,6 +150,8 @@ export type Piece =
           order: number;
           top: number;
           bottom: number;
+          /** Measured native CSS shape for per-line freeform image wrapping. */
+          contour?: {side:'left'|'right';path:string};
           pieces: {
             kind: 'text';
             sourceId?: string;
@@ -502,7 +504,7 @@ function fillOne(
       ...src.slice(0, n),
       {
         ...straddle,
-        text: w.slice(0, mid).join(' '),
+        text: fittedRichTextHead(w,mid),
         cont: straddle.cont,
         indent: straddle.cont ? undefined : straddle.indent,
       },
@@ -522,7 +524,7 @@ function fillOne(
     ...src.slice(0, n),
     {
       ...straddle,
-      text: w.slice(0, best).join(' '),
+      text: fittedRichTextHead(w,best),
       cont: straddle.cont,
       indent: straddle.cont ? undefined : straddle.indent,
     },
@@ -538,7 +540,7 @@ function fillOne(
         ...src.slice(0, n),
         {
           ...straddle,
-          text: w.slice(0, best).join(' '),
+          text: fittedRichTextHead(w,best),
           cont: straddle.cont,
           indent: straddle.cont ? undefined : straddle.indent,
         },

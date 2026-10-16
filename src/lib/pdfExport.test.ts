@@ -1,7 +1,26 @@
 import { describe, expect, it, vi } from 'vitest';
-import { clonePages, cssImageUrls, PDF_EXPORT_CSS, pdfExportCss, waitForStablePreview } from './pdfExport';
+import { clonePages, cssImageUrls, PDF_EXPORT_CSS, pdfExportCss, waitForStablePreview,waitForPreviewResources } from './pdfExport';
 
 describe('PDF export layout contract', () => {
+  it('requires the author to finish the canvas border draft before exporting',async()=>{
+    const source=document.createElement('div');source.innerHTML='<figure data-outline-editing="true"></figure>';
+    await expect(waitForPreviewResources(source)).rejects.toThrow('Apply or cancel the image border');
+  });
+  it('removes canvas-only move controls after cloning without changing publication text',()=>{
+    const source=document.createElement('div');source.className='pages';
+    source.innerHTML='<div class="page"><figure><button data-editor-only="true">Move image</button><figcaption>Exact caption</figcaption></figure><p>Exact article</p></div>';
+    const target=document.implementation.createHTMLDocument('print');clonePages(source,target);
+    expect(target.querySelector('[data-editor-only]')).toBeNull();
+    expect(target.querySelector('.page')!.textContent).toBe('Exact captionExact article');
+    expect(source.querySelector('button')).not.toBeNull();
+  });
+  it('retains inherited document language so contour hyphenation cannot change during printing',()=>{
+    const owner=document.createElement('section');owner.lang='ms';owner.innerHTML='<div class="pages"><div class="page">Bahasa Melayu</div></div>';document.body.append(owner);
+    const target=document.implementation.createHTMLDocument('print');
+    clonePages(owner.firstElementChild as HTMLElement,target);
+    expect(target.querySelector<HTMLElement>('.pages')!.lang).toBe('ms');
+    owner.remove();
+  });
   it('preserves grid and flex page layouts', () => {
     const source=document.createElement('div');
     source.innerHTML='<div class="page gallery" style="display:grid"></div><div class="page" style="display:flex"></div>';
@@ -130,6 +149,13 @@ describe('PDF export layout contract', () => {
 });
 
 describe('PDF preview readiness',()=>{
+  it('refuses to export a caption that has no image-free position',async()=>{
+    vi.useFakeTimers();const source=document.createElement('div');source.innerHTML='<div class="page"><figcaption data-caption-unplaced="true">No safe slot</figcaption></div>';document.body.append(source);
+    try{
+      const check=expect(waitForPreviewResources(source)).rejects.toThrow('Some content does not fit');
+      await vi.advanceTimersByTimeAsync(2000);await check;
+    }finally{source.remove();vi.useRealTimers();}
+  });
   it('waits for pending edits and a full quiet layout interval',async()=>{
     vi.useFakeTimers();
     const container=document.createElement('div');container.className='paper-scroll';container.dataset.previewPending='true';

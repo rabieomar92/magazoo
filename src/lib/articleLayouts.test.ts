@@ -29,7 +29,7 @@ describe('reference article compositions', () => {
     expect(geometries.map(g => g.titleCols)).toEqual([2,4,3,4,4]);
     expect(geometries[0].starts).toEqual([179,179,126,126]);
     expect(geometries[2].starts).toEqual([168,168,168,124]);
-    expect(geometries[4].starts).toEqual([68,184,184,184]);
+    expect(geometries[4].starts).toEqual([68,175,175,175]);
     expect(geometries[4].image).toEqual({x:60.5,y:68,width:135.5,height:103});
     expect(new Set(geometries.map(g => JSON.stringify([g.image,g.starts,g.titleTop]))).size).toBe(5);
   });
@@ -177,7 +177,100 @@ describe('reference article compositions', () => {
     const doc=presetFor('paper-8');doc.design.heroSide='left';
     const g=articleGeometry('paper-8',doc.design);
     expect(g.image.x).toBe(g.margin);
-    expect(g.starts).toEqual([184,184,184,68]);
+    expect(g.starts).toEqual([175,175,175,68]);
+  });
+
+  it('fits one-, two- and three-column inset photographs to either grid edge', () => {
+    for (const format of ['reference','a4','magazine'] as const) {
+      for (const bodyCols of [2,3,4] as const) {
+        for (const heroWidthCols of [1,2,3] as const) {
+          for (const heroSide of ['left','right'] as const) {
+            const doc = presetFor('paper-8');
+            Object.assign(doc.design, {bodyCols,heroWidthCols,heroSide,
+              articlePageSize:format === 'a4' ? 'a4' : 'reference',
+              pageFormat:format === 'magazine' ? 'magazine' : undefined});
+            const g = articleGeometry('paper-8',doc.design,34,5);
+            const count = Math.min(heroWidthCols,bodyCols);
+            const first = heroSide === 'left' ? 0 : bodyCols-count;
+            expect(g.image.width).toBe(g.span(count));
+            expect(g.image.x).toBe(g.margin+first*(g.col+g.gutter));
+            expect(g.image.x+g.image.width).toBeLessThanOrEqual(g.width-g.margin+.0001);
+            expect(g.starts).toEqual(Array.from({length:bodyCols},(_,i)=>
+              i>=first&&i<first+count ? g.bodyTop+g.image.height+1+5+g.gutter : g.bodyTop));
+            const regions = articleRegions(g,1);
+            expect(regions.every(r=>r.width===g.col)).toBe(true);
+            expect(regions.filter(r=>r.page===0).every(r=>r.x>=g.image.x+g.image.width-.0001 ||
+              r.x+r.width<=g.image.x+.0001 || r.y>=g.image.y+g.image.height+5)).toBe(true);
+          }
+        }
+      }
+    }
+  });
+
+  it('uses measured caption height plus normal spacing, without a fixed blank band', () => {
+    const design = presetFor('paper-8').design;
+    const noCaption = articleGeometry('paper-8',design,35,0);
+    const shortCaption = articleGeometry('paper-8',design,35,3);
+    const longCaption = articleGeometry('paper-8',design,35,24);
+    expect(noCaption.starts[1]-(noCaption.image.y+noCaption.image.height)).toBe(design.gutter);
+    expect(shortCaption.starts[1]-(shortCaption.image.y+shortCaption.image.height+1+3)).toBe(design.gutter);
+    expect(longCaption.starts[1]-(longCaption.image.y+longCaption.image.height+1+24)).toBe(design.gutter);
+  });
+
+  it('lets the inset title move upwards and downwards with its measured content', () => {
+    const design = presetFor('paper-8').design;
+    const baseline = articleGeometry('paper-8',design,30);
+    const raised = articleGeometry('paper-8',{...design,firstPageTopMargin:22},30);
+    const lowered = articleGeometry('paper-8',{...design,firstPageTopMargin:50},30);
+    expect(baseline.titleTop).toBe(37);
+    expect(raised.titleTop).toBe(22);
+    expect(raised.bodyTop).toBe(22+30+design.gutter);
+    expect(raised.image.y).toBe(raised.bodyTop);
+    expect(lowered.titleTop).toBe(50);
+    expect(lowered.bodyTop).toBe(50+30+design.gutter);
+    expect(articleGeometry('paper-8',{...design,firstPageTopMargin:0},30).titleTop).toBe(37);
+  });
+
+  it('protects a visible masthead but frees its space when it is hidden', () => {
+    const design = {...presetFor('paper-8').design,firstPageTopMargin:14,topBarOffset:40};
+    expect(articleGeometry('paper-8',design,30).titleTop).toBe(50);
+    const hidden = articleGeometry('paper-8',{...design,showTopBar:false},30);
+    expect(hidden.titleTop).toBe(14);
+    expect(articleRegions(hidden,1).filter(r=>r.page===1).every(r=>r.y===14)).toBe(true);
+  });
+
+  it('keeps all text columns available when the inset hero is hidden', () => {
+    const design = {...presetFor('paper-8').design,heroWidthCols:2 as const,showHero:false};
+    const g = articleGeometry('paper-8',design,30,8);
+    expect(g.starts).toEqual([g.bodyTop,g.bodyTop,g.bodyTop,g.bodyTop]);
+  });
+
+  it('subtracts only the selected bottom-hero columns, with and without trim bleed', () => {
+    for (const heroWidthCols of [1,2,3] as const) for (const heroSide of ['left','right'] as const) {
+      for (const heroBottomBleed of [false,true]) {
+        const design = {...presetFor('paper-8').design,heroWidthCols,heroSide,heroAtBottom:true,heroBottomBleed};
+        const g = articleGeometry('paper-8',design,30,8);
+        const regions = articleRegions(g,1);
+        expect(g.image.width).toBe(g.span(heroWidthCols));
+        expect(regions.filter(r=>r.page===0).every(r=>r.x>=g.image.x+g.image.width-.0001 ||
+          r.x+r.width<=g.image.x+.0001 || r.y+r.height<=g.image.y-2+.0001)).toBe(true);
+        expect(regions.filter(r=>r.page===1)).toHaveLength(4);
+        if (heroBottomBleed) expect(g.image.y+g.image.height).toBe(g.height);
+      }
+    }
+  });
+
+  it.each(['paper-4','paper-5','paper-6','paper-7'] as const)('%s ignores an inset width retained after switching templates', id => {
+    const design = presetFor(id).design;
+    expect(JSON.stringify(articleGeometry(id,{...design,heroWidthCols:1}))).toBe(JSON.stringify(articleGeometry(id,design)));
+  });
+
+  it('resets an inset width explicitly without changing the source document', () => {
+    const design = {...presetFor('paper-8').design,heroWidthCols:1 as const};
+    const reset = referenceArticleDesign('paper-8',design);
+    expect(design.heroWidthCols).toBe(1);
+    expect(reset.heroWidthCols).toBeUndefined();
+    expect(articleGeometry('paper-8',reset).image.width).toBe(135.5);
   });
 
   it('reserves a lowered masthead on the opening and continuation pages',()=> {

@@ -106,6 +106,8 @@ export function cssVars(d: Design, templateId?: TemplateId, bottomMargin = d.mar
     '--accent-soft': d.colors.accentSoft,
     '--ink': d.colors.ink,
     '--serif': fontStack(d.fontDisplay),
+    '--drop-cap-font': fontStack(typeof d.textStyles?.title?.fontFamily === 'string' && /^[\p{L}\p{N} _-]{1,80}$/u.test(d.textStyles.title.fontFamily)
+      ? d.textStyles.title.fontFamily : d.fontDisplay),
     '--sans': fontStack(d.fontBody),
     // Per-element fonts. Undefined → the family the element used before this
     // setting existed, so old files render identically.

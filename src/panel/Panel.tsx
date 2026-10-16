@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useDoc } from '../store/useDoc';
 import { familyOf, type TemplateFamily, type TemplateId } from '../schema/document';
 import { TEMPLATE_META } from '../store/presets';
+import { IMAGE_LED_COMPOSITIONS, isImageLedTemplate, templateChoiceId, templateChoices, templateDisplayName } from '../lib/templateChoices';
 import { MetaSection } from './sections/MetaSection';
 import { FooterSection } from './sections/FooterSection';
 import { PageMarginTextSection } from './sections/PageMarginTextSection';
@@ -16,6 +17,7 @@ import { FrontMatterContent, FrontMatterImages, FrontMatterDesign } from './sect
 import { NewsContent, NewsImages } from './sections/NewsSection';
 import { BackCoverContent, BackCoverImages, BackCoverDesign } from './sections/BackCoverSection';
 import { DirectionSection } from './sections/DirectionSection';
+import { PhotoBackgroundSection } from './sections/PhotoBackgroundSection';
 import { TopBarSection } from './sections/TopBarSection';
 import './editor-refinements.css';
 import {
@@ -44,6 +46,8 @@ const TEMPLATE_GROUPS: { family: TemplateFamily; label: string }[] = [
   { family: 'magazine', label: 'Editorial' },
   { family: 'gallery', label: 'Photo essay' },
 ];
+
+const LAYOUT_CHOICES = templateChoices(TEMPLATE_META);
 
 /**
  * Writing is the one dominant task, the rest is occasional setup — so the panel
@@ -146,16 +150,16 @@ export function Panel() {
           <span>Layout</span>
           <select
             className="select-control"
-            value={templateId}
+            value={templateChoiceId(templateId)}
             aria-label="Layout template"
             onChange={(event) => {
               const next = event.target.value as TemplateId;
-              if (next !== templateId) setPendingTemplate(next);
+              if (next !== templateChoiceId(templateId)) setPendingTemplate(next);
             }}
           >
             {TEMPLATE_GROUPS.map((group) => (
               <optgroup label={group.label} key={group.family}>
-                {TEMPLATE_META.filter((template) => template.family === group.family).map((template) => (
+                {LAYOUT_CHOICES.filter((template) => template.family === group.family).map((template) => (
                   <option value={template.id} key={template.id}>
                     {template.name} — {template.kind}
                   </option>
@@ -164,6 +168,19 @@ export function Panel() {
             ))}
           </select>
         </label>
+        {isImageLedTemplate(templateId) && <div className="template-composition-group">
+          <label className="template-switch-field">
+            <span>Composition</span>
+            <select className="select-control" value={templateId} aria-label="Image-led composition" aria-describedby="image-led-composition-hint"
+              onChange={event => {
+                const next = event.target.value as TemplateId;
+                if (next !== templateId) setPendingTemplate(next);
+              }}>
+              {IMAGE_LED_COMPOSITIONS.map(composition => <option value={composition.id} key={composition.id}>{composition.name}</option>)}
+            </select>
+          </label>
+          <p id="image-led-composition-hint" className="template-composition-hint">{IMAGE_LED_COMPOSITIONS.find(composition => composition.id === templateId)?.description}</p>
+        </div>}
       </div>
 
       <div className="panel-scroll">
@@ -190,7 +207,7 @@ export function Panel() {
         )}
         <div className="panel-design-pane" hidden={tab !== 'design'}>
           <p className="typography-relocated-note">Font and text styling controls are in the top toolbar. Page layout, backgrounds and object positioning stay here.</p>
-          <DirectionSection />{isBackCover ? <BackCoverDesign /> : isFrontMatter || isNews ? <FrontMatterDesign /> : <DesignSection />}
+          <DirectionSection /><PhotoBackgroundSection />{isBackCover ? <BackCoverDesign /> : isFrontMatter || isNews ? <FrontMatterDesign /> : <DesignSection />}
           {templateId !== 'frontmatter-board' && <TopBarSection />}
           <PageMarginTextSection />
         </div>
@@ -200,7 +217,7 @@ export function Panel() {
           <span className="template-warning-icon" aria-hidden="true">!</span>
           <h2 id="template-warning-title">Changing the layout can reflow every page</h2>
           <p id="template-warning-copy">
-            You are changing from <strong>{TEMPLATE_META.find(t=>t.id===templateId)?.name ?? templateId}</strong> to <strong>{TEMPLATE_META.find(t=>t.id===pendingTemplate)?.name ?? pendingTemplate}</strong>. Your writing, images and saved project data will remain, but page breaks, image positions and template-specific settings may look different.
+            You are changing from <strong>{templateDisplayName(templateId, TEMPLATE_META)}</strong> to <strong>{templateDisplayName(pendingTemplate, TEMPLATE_META)}</strong>. Your writing, images and saved project data will remain, but page breaks, image positions and template-specific settings may look different.
           </p>
           <p className="template-warning-advice">For an important issue, save a separate copy before continuing. You can also use Undo immediately after the change.</p>
           <div className="template-warning-actions">

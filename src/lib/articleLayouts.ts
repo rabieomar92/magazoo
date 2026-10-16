@@ -41,17 +41,28 @@ export function articleGeometry(id: ReferenceArticleId, design: Design, measured
   const inset = id === 'paper-8';
   const bottomHero = design.heroAtBottom === true && heroHeight > 0;
   const bottomBleed = bottomHero && design.heroBottomBleed === true;
-  const contentTop = Math.max(margin,25,(design.topBarOffset ?? DEFAULT_TOP_BAR_OFFSET)+TOP_BAR_HEIGHT_MM+gutter);
+  const mastheadBottom = design.showTopBar === false ? 0 : (design.topBarOffset ?? DEFAULT_TOP_BAR_OFFSET)+TOP_BAR_HEIGHT_MM+gutter;
+  const contentTop = inset ? Math.max(margin, mastheadBottom)
+    : Math.max(margin,25,(design.topBarOffset ?? DEFAULT_TOP_BAR_OFFSET)+TOP_BAR_HEIGHT_MM+gutter);
   const imageLeft = inset && (design.heroSide ?? (design.textDirection === 'rtl' ? 'left' : 'right')) === 'left';
-  const titleTop = Math.max(26, contentTop, bottomHero ? 26 : (inset ? layout.titleTop : layout.titleTop + delta), design.firstPageTopMargin ?? 0);
-  const bodyTop = Math.max(titleTop + measuredHeader + gutter, bottomHero ? 26 : inset ? layout.bodyTop : layout.bodyTop + delta);
+  // Zero is the legacy automatic composition. An explicit inset title position
+  // must be able to move up as well as down, without crossing a visible masthead.
+  const customInsetTop = inset && (design.firstPageTopMargin ?? 0) > 0;
+  const titleTop = customInsetTop ? Math.max(contentTop, design.firstPageTopMargin!)
+    : Math.max(26, contentTop, bottomHero ? 26 : (inset ? layout.titleTop : layout.titleTop + delta), design.firstPageTopMargin ?? 0);
+  const bodyTop = Math.max(titleTop + measuredHeader + gutter, customInsetTop ? 0 : bottomHero ? 26 : inset ? layout.bodyTop : layout.bodyTop + delta);
   const bottom = height - Math.max(margin, 18, footerReserve);
   const imageBottom = bottomBleed ? height : bottom;
+  const heroColumns = Math.max(1, Math.min(columns, 3, Math.round(design.heroWidthCols ?? columns - 1)));
+  const imageColumn = imageLeft ? 0 : columns - heroColumns;
   const image = inset
-    ? { x: imageLeft ? margin : margin + col + gutter, y: bottomHero ? imageBottom-heroHeight-(bottomBleed ? 0 : captionHeight+gutter) : bodyTop, width: span(columns - 1), height: heroHeight }
+    ? { x: margin + imageColumn * (col + gutter), y: bottomHero ? imageBottom-heroHeight-(bottomBleed ? 0 : captionHeight+gutter) : bodyTop, width: span(heroColumns), height: heroHeight }
     : { x: 0, y: bottomHero ? imageBottom-heroHeight : 0, width, height: heroHeight };
-  const starts = Array.from({ length: columns }, (_, i) => !bottomHero && inset && (imageLeft ? i < columns-1 : i > 0) && heroHeight > 0
-    ? bodyTop + heroHeight + Math.max(captionHeight + gutter, 13)
+  // Reserve the measured caption and one normal gutter, not an unrelated
+  // 13 mm floor. Only columns actually covered by the inset photo move down.
+  const insetCaptionSpace = captionHeight > 0 ? 1 + captionHeight : 0;
+  const starts = Array.from({ length: columns }, (_, i) => !bottomHero && inset && i >= imageColumn && i < imageColumn + heroColumns && heroHeight > 0
+    ? bodyTop + heroHeight + insetCaptionSpace + gutter
     : i < titleCols ? bodyTop : titleTop);
   return { layout, width, height, margin, gutter, columns, col, span, titleCols, titleTop, bodyTop, bottom, image, starts, bottomHero, bottomBleed, contentTop };
 }
@@ -84,7 +95,7 @@ export function referenceArticleDesign(id: ReferenceArticleId, base: Design): De
   const layout = ARTICLE_LAYOUTS[id];
   const bg = id === 'paper-4' ? '#241711' : id === 'paper-5' ? '#094441' : '#ffffff';
   return { ...base, articlePageSize: 'reference', bodyCols: 4, margin: 14, gutter: 4,
-    heroHeight: layout.heroHeight, showHero: true, imageTheme: false, heroAtBottom: false, heroBottomBleed: false, articleLeading: 1.28,
+    heroHeight: layout.heroHeight, heroWidthCols: undefined, showHero: true, imageTheme: false, heroAtBottom: false, heroBottomBleed: false, articleLeading: 1.28,
     firstPageTopMargin: 0, subtitleGap: 1.5, bodyAlign: 'left', sidebar: true, highlightsPlacement: 'page1-flow',
     fontBody: 'Georgia', fontDisplay: 'Avenir Next LT Pro', fontSubtitle: 'Avenir Next LT Pro Light',
     fontCategory: 'Avenir Next LT Pro Light', fontAuthor: 'Avenir Next LT Pro', fontAffiliation: 'Avenir Next LT Pro', paperBg: bg,

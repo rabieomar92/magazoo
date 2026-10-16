@@ -29,10 +29,11 @@
  * row-spanning object with different height accounting and remains outside
  * this pass; Flow.tsx balances the text bands around those rows separately.
  */
-import { runsToHtml, openMarkers } from './richtext';
+import { runsToHtml, fittedRichTextHead, openMarkers } from './richtext';
 import { quoteFlowHtml } from './decorativeQuote';
 import type { Piece } from './paginate';
 import type { Doc } from '../schema/document';
+import { tightContour, measureContour, contourOpening, offsetContourBands, type ContourBand, type TightContour } from './tightContour';
 
 type TextPiece = Extract<Piece, { kind: 'text' }>;
 type FigurePiece = Extract<Piece, { kind: 'figure' }>;
@@ -194,7 +195,7 @@ function splitAt(
     const mid = (lo + hi) >> 1;
     paintText(probe, [
       ...before,
-      { ...straddle, text: w.slice(0, mid).join(' '), indent: straddle.indent },
+      { ...straddle, text: fittedRichTextHead(w,mid), indent: straddle.indent },
     ], opener);
     if (!isOverflowing(probe)) {
       best = mid;
@@ -287,7 +288,7 @@ export function fillColumns(
   return { columns, remainder: rest };
 }
 
-export interface ColumnExclusion {
+export interface ColumnExclusion extends ContourBand {
   top: number;
   bottom: number;
 }
@@ -295,6 +296,7 @@ export interface ColumnExclusion {
 /** Merge overlapping image bands before turning them into one CSS shape. */
 export function mergeExclusions(exclusions: ColumnExclusion[]): ColumnExclusion[] {
   const sorted = exclusions
+    .filter(band=>!band.outline)
     .map(({ top, bottom }) => ({ top: Math.max(0, top), bottom: Math.max(0, bottom) }))
     .filter(({ top, bottom }) => bottom > top)
     .sort((a, b) => a.top - b.top);
@@ -335,7 +337,7 @@ function splitTextRegion(
     const mid = (lo + hi) >> 1;
     paintText(probe, [
       ...before,
-      { ...straddle, text: content.slice(0, mid).join(' '), exclusions: undefined },
+      { ...straddle, text: fittedRichTextHead(content,mid), exclusions: undefined },
     ], opener);
     if (!isOverflowing(probe)) {
       best = mid;
@@ -375,6 +377,7 @@ export interface FilledImageSegment {
   top: number;
   bottom: number;
   pieces: TextPiece[];
+  contour?: TightContour;
 }
 
 export interface FilledImageColumn {
@@ -470,6 +473,35 @@ export function fillColumnsAroundImages(
 
   const mergedByColumn = exclusionsByColumn.map(mergeExclusions);
   for (let columnIndex = 0; columnIndex < mergedByColumn.length; columnIndex += 1) {
+    const width=Number.parseFloat(probe.style.width)||probe.clientWidth;
+    let start=0;
+    let bands=exclusionsByColumn[columnIndex];
+    let contour=tightContour(bands,width,columnHeight,(Number.parseFloat(computed.fontSize)||12)*9);
+    if(contour) {
+      if(!opened&&rest[0]&&!rest[0].cont&&!rest[0].decorativeQuote&&!probe.closest('.drop-caps-off')) {
+        paintText(probe,[rest[0]],true);
+        const first=probe.querySelector('p')!,style=getComputedStyle(first);
+        const leading=Number.parseFloat(style.lineHeight);
+        if(Number.isFinite(leading)) {
+          const opening=contourOpening(bands,width,columnHeight,3*leading+(Number.parseFloat(style.paddingTop)||0)+segmentSafety);
+          if(!opening)continue;
+          probe.style.height=`${opening.bottom-opening.top-segmentSafety}px`;
+          const head=fillTextRegion(rest,probe,isOverflowing,true);
+          columns[columnIndex].segments.push({...opening,order:segmentOrder++,pieces:head.placed});
+          rest=head.remainder;if(head.placed.length)opened=true;
+          start=opening.bottom;
+          if(start>=columnHeight||!rest.length)continue;
+          bands=offsetContourBands(bands,start);
+          contour=tightContour(bands,width,columnHeight-start,(Number.parseFloat(computed.fontSize)||12)*9);
+        }
+      }
+      probe.style.height=`${Math.max(0,columnHeight-start-segmentSafety)}px`;
+      const shape=contour;
+      const filled=fillTextRegion(rest,probe,el=>{if(shape)measureContour(el,shape);return isOverflowing(el);},!opened);
+      columns[columnIndex].segments.push({top:start,bottom:columnHeight,order:segmentOrder++,pieces:filled.placed,contour});
+      rest=filled.remainder;if(filled.placed.length)opened=true;
+      continue;
+    }
     const segments = writableSegments(mergedByColumn[columnIndex], columnHeight);
     for (const bounds of segments) {
       const height = bounds.bottom - bounds.top;
@@ -608,7 +640,7 @@ function splitInlineAt(
         ...before,
         {
           ...straddle,
-          text: w.slice(0, mid).join(' '),
+          text: fittedRichTextHead(w,mid),
           colBreak: undefined,
         },
       ],

@@ -1,6 +1,18 @@
 import { beforeAll, describe, expect, it } from 'vitest';
-import { openMarkers, parseRuns, runsToHtml, splitRichTextAt, wrapSelection } from './richtext';
+import { openMarkers, parseRuns, runsToHtml, splitRichTextAt, wrapSelection,fittedRichTextHead } from './richtext';
 import { paginate, type FlowItem } from './paginate';
+
+describe('styled fitting fragments',()=>{
+  it('measures the same closed bold/italic head that pagination will render',()=>{
+    const source='***Alpha beta gamma delta***'.split(' ');
+    const head=fittedRichTextHead(source,2);
+    expect(head).toBe('***Alpha beta***');
+    expect(parseRuns(head).every(run=>run.b&&run.i)).toBe(true);
+    expect(openMarkers(head)).toEqual([]);
+    expect(fittedRichTextHead(source,source.length)).toBe(source.join(' '));
+    expect(fittedRichTextHead(['*literal','punctuation'],2)).toBe('*literal punctuation');
+  });
+});
 
 beforeAll(() => {
   // wrapSelection restores the caret on the next frame; jsdom needs a stub.

@@ -14,7 +14,7 @@
   .fm-paragraph:not(.fm-continued) [data-fm-text]
 ):has(.drop-cap)::first-letter {
   float: inline-start;
-  font-family: var(--serif);
+  font-family: var(--drop-cap-font, var(--serif));
   font-size: calc((2lh + 1cap) / .7);
   font-size-adjust: cap-height .7;
   font-weight: var(--drop-cap-weight, inherit);

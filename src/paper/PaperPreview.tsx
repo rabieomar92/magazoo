@@ -22,13 +22,14 @@ import {
   columnizeAllAroundImages,
   hasClippedTextLine,
   type PageImageExclusions,
+  type ColumnExclusion,
 } from '../lib/columnFill';
 import { wrapAll } from '../lib/textWrap';
 import { applyMark, insertMath } from '../lib/activeEditor';
 import { MAG2_STRIP } from '../lib/magSplit';
 import { paper2Grid, paper2Fit, paper2VerticalVars } from '../lib/paper2';
 import { defaultPlacedHighlights } from '../lib/placedHighlights';
-import { placedImageContour } from '../lib/placedImage';
+import { placedImageContour, placedImagePolygon, placedImageWrapGap } from '../lib/placedImage';
 import { physicalPageFit, populatedPhysicalPages } from '../lib/physicalFlowPages';
 import { requestEditorTargetFocus, type EditorTab } from '../lib/editorNavigation';
 import type { Mark } from '../lib/richtext';
@@ -54,6 +55,7 @@ import { PageFooters } from './PageFooters';
 import { PreviewReadOnly, PreviewPreserveSourceAnchors } from './PreviewReadOnly';
 import { footerBottomMargin } from '../lib/pageFooter';
 import { TOP_BAR_HEIGHT_MM } from '../lib/topBar';
+import {useHeroCaptionLayout} from './useHeroCaptionLayout';
 
 type PreviewPagination = Pagination & { layoutRevision: number };
 const EMPTY: PreviewPagination = { pages: [], fill: 0, spill: 0, layoutRevision: 0 };
@@ -345,6 +347,8 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
   // the minimum small reserve needed to force the affected words onward.
   const [wrapSafetyBoost, setWrapSafetyBoost] = useState(0);
   const [calloutPageCount, setCalloutPageCount] = useState(0);
+  const [captionFitError,setCaptionFitError]=useState(false);
+  const heroCaptionEpoch=useHeroCaptionLayout();
   const imageExclusionKey = useRef('');
   const wrapGuardTries = useRef(0);
   // A real-page wrap row can very occasionally settle differently from its
@@ -1071,7 +1075,7 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
 
   // Count the actual sheets, including dedicated magazine photo/cover pages,
   // while preserving the measured last-flow-page fullness and fit warnings.
-  const fit = isStructured
+  const fit = captionFitError ? {level:'warn' as const,text:'A caption cannot fit outside the image border. Reduce its width/size or move the image.'} : isStructured
     ? {level: frontMatterStatus.overflow ? 'warn' : 'ok',text: frontMatterStatus.overflow
       ? (isNews ? 'A news block exceeds the printable frame. Check the red-outlined page and adjust its story or image.'
         : 'Text exceeds its frame. Shorten the heading or caption, or reduce its size.')
@@ -1112,10 +1116,11 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
     const root = pagesRef.current;
     // Reference articles own their shaped regions and measured callouts. The
     // legacy relocation pass must not move their DOM after it was paginated.
-    if (isReference) return;
+    if (isReference) {setCaptionFitError(false);return;}
     const hasPlacedObstacles =
-      !isGallery && !isFixedCover && ((doc.images ?? []).length > 0 || hlFree);
+      !isGallery && !isFixedCover && ((doc.images ?? []).length > 0 || hlFree || !!doc.design.heroCaptionPlacement || !!doc.design.coverCaptionPlacement);
     if (!root) return;
+    setCaptionFitError(!!root.querySelector('[data-caption-unplaced="true"]'));
     const pageNodes = Array.from(root.children).filter(
       (child): child is HTMLElement => child instanceof HTMLElement && child.classList.contains('page'),
     );
@@ -1137,7 +1142,7 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
       if (!page || !pageNodes.includes(page) || !page.offsetWidth) return;
       const imageNodes = Array.from(
         page.querySelectorAll<HTMLElement>(
-          '.placed-image, .placed-highlights, .sidebar-relocated, [data-image-avoiding-callout][data-image-avoidance="resolved"]',
+          '.placed-image, .placed-image--free-caption > figcaption, [data-hero-caption-floating], .placed-highlights, .sidebar-relocated, [data-image-avoiding-callout][data-image-avoidance="resolved"]',
         ),
       );
       if (!imageNodes.length) return;
@@ -1159,7 +1164,7 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
           ? (flowWidth - (columnCount - 1) * columnGap) / columnCount
           : flowWidth;
       const rtl = computed.direction === 'rtl';
-      const columns = Array.from({ length: columnCount }, () => [] as { top: number; bottom: number }[]);
+      const columns = Array.from({ length: columnCount }, () => [] as ColumnExclusion[]);
 
       const addBand = (physicalColumn: number, top: number, bottom: number) => {
         const clippedTop = Math.max(0, top);
@@ -1179,11 +1184,12 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
           ? (doc.images ?? []).find((candidate) => candidate.id === imageId)
           : undefined;
 
-        if (placedImage?.wrapShape === 'contour') {
+        if (placedImage?.wrapShape === 'contour' || placedImage?.wrapShape === 'polygon') {
           const frame = imageNode.querySelector<HTMLElement>('.placed-image-frame');
           const frameRect = frame?.getBoundingClientRect() ?? imageRect;
           const captionRect = imageNode.querySelector<HTMLElement>('figcaption')?.getBoundingClientRect();
           const slices = placedImageContour(placedImage);
+          const gap = placedImage.wrapShape === 'polygon' ? placedImageWrapGap(placedImage)*MM_PX : imageWrapGap;
           if (!frameRect.width || !frameRect.height || !slices.length) continue;
 
           for (let physicalColumn = 0; physicalColumn < columnCount; physicalColumn += 1) {
@@ -1191,7 +1197,16 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
             const right = left + columnWidth * renderedScale;
             const frameOverlapLeft = Math.max(left, frameRect.left);
             const frameOverlapRight = Math.min(right, frameRect.right);
-            if (frameOverlapRight - frameOverlapLeft > 1) {
+            if (Math.min(right+gap*renderedScale,frameRect.right)-Math.max(left-gap*renderedScale,frameRect.left)>0) {
+              if (placedImage.wrapShape === 'polygon') {
+                const points = placedImagePolygon(placedImage).map(p=>({
+                  x: Math.round((frameRect.left+frameRect.width*p.x/100-left)/renderedScale*100)/100,
+                  y: Math.round((frameRect.top+frameRect.height*p.y/100-flowRect.top)/renderedScale*100)/100,
+                }));
+                const top=Math.min(...points.map(p=>p.y)),bottom=Math.max(...points.map(p=>p.y));
+                if(bottom+gap>0&&top-gap<flowHeight) columns[rtl?columnCount-1-physicalColumn:physicalColumn]
+                  .push({top,bottom,outline:{points,gap}});
+              } else {
               const relativeCenter = clamp(
                 ((frameOverlapLeft + frameOverlapRight) / 2 - frameRect.left) / frameRect.width,
                 0,
@@ -1207,6 +1222,7 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
                 (frameRect.height / renderedScale) * (slice.bottom / 100) +
                 imageWrapGap;
               addBand(physicalColumn, contourTop, contourBottom);
+              }
             }
 
             if (captionRect) {
@@ -1214,8 +1230,8 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
               if (captionOverlap > 1) {
                 addBand(
                   physicalColumn,
-                  (captionRect.top - flowRect.top) / renderedScale - imageWrapGap,
-                  (captionRect.bottom - flowRect.top) / renderedScale + imageWrapGap,
+                  (captionRect.top - flowRect.top) / renderedScale - gap,
+                  (captionRect.bottom - flowRect.top) / renderedScale + gap,
                 );
               }
             }
@@ -1266,6 +1282,7 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
     nPages,
     pagination.layoutRevision,
     zoom,
+    heroCaptionEpoch,
   ]);
 
   // The hidden probe now rejects any candidate whose actual glyph rectangles
@@ -1316,6 +1333,7 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
   const focusPreviewObject = (event: ReactMouseEvent<HTMLDivElement>) => {
     const origin = event.target;
     if (!(origin instanceof Element)) return;
+    if(origin.closest('[data-editor-only]'))return;
     if (origin.closest('[data-drag-moved]')) return;
     // Flow paragraphs and gallery/cover cards already navigate by stable block
     // id. Do not let a clickable full-page cover photo steal that click.
@@ -1428,7 +1446,7 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
           data-tracking-scope={trackingScope}
           className={`pages${spreadOn ? ' pages--spread' : ''}${doc.design.textDirection === 'rtl' ? ' pages--rtl' : ''}${dropCapEnabled(doc.design,doc.templateId) ? '' : ' drop-caps-off'}`}
           lang={doc.design.textDirection === 'rtl' ? 'ar' : undefined}
-          style={{ transform: `scale(${scale})`, '--page-w': `${physicalPage.width}mm`, '--page-h': `${pageHeight}mm` } as CSSProperties}
+          style={{ transform: `scale(${scale})`, '--canvas-control-scale':1/scale, '--page-w': `${physicalPage.width}mm`, '--page-h': `${pageHeight}mm` } as CSSProperties}
           onClickCapture={readOnly ? undefined : focusPreviewObject}
         >
           {isReference ? (

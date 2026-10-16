@@ -181,6 +181,20 @@ describe('fillInlineColumns', () => {
 });
 
 describe('image-shaped columns', () => {
+  it('measures a three-line initial in a clear opening before the shaped continuation',()=>{
+    const style=document.createElement('style');style.textContent='.cap-probe p { line-height:10px; }';document.head.append(style);
+    const probe=document.createElement('div');probe.className='cap-probe';probe.style.width='120px';document.body.append(probe);
+    const source=text('one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen');
+    const band={top:60,bottom:150,outline:{points:[{x:0,y:60},{x:70,y:110},{x:0,y:150}],gap:0}};
+    const result=fillColumnsAroundImages([source],probe,[[band]],250,el=>words(el.textContent??'').length>Math.floor(parseFloat(el.style.height)/10));
+    expect(result.columns[0].segments[0].top).toBe(0);
+    expect(result.columns[0].segments[0].bottom).toBe(58);
+    expect(result.columns[0].segments[0].contour).toBeUndefined();
+    expect(result.columns[0].segments[1].contour).toBeDefined();
+    expect(result.columns[0].segments[1].pieces[0].cont).toBe(true);
+    expect(imageWordsInReadingOrder(result.columns)).toEqual(words(source.text));
+    expect(result.remainder).toEqual([]);probe.remove();style.remove();
+  });
   it('rejects a fractionally clipped glyph line even when rounded scroll metrics say it fits', () => {
     const probe = document.createElement('div');
     probe.innerHTML = '<p>فيزيک ممبنتو کيت</p>';
@@ -343,6 +357,32 @@ describe('image-shaped columns', () => {
     expect(sawMeasuredOpener).toBe(true);
     expect(remainder).toEqual([]);
     expect(imageWordsInReadingOrder(columns)).toEqual(words(source.text));
+  });
+
+  it('retains one native shaped host per column and all copy in reading order',()=>{
+    const probe=document.createElement('div');probe.style.width='120px';
+    const source=text('one two three four five six seven eight nine ten eleven twelve');
+    const outline={top:20,bottom:70,outline:{points:[{x:0,y:20},{x:80,y:40},{x:0,y:70}],gap:3}};
+    let sawShape=false;
+    const filled=fillColumnsAroundImages([source],probe,[[outline],[outline]],80,el=>{
+      sawShape ||= !!el.querySelector('[data-tight-contour]');
+      const count=words([...el.querySelectorAll('p')].map(p=>p.textContent??'').join(' ')).length;
+      return count>8;
+    });
+    expect(sawShape).toBe(true);
+    expect(filled.columns.map(c=>c.segments.length)).toEqual([1,1]);
+    expect(filled.columns.every(c=>!!c.segments[0].contour)).toBe(true);
+    expect(filled.remainder).toEqual([]);
+    expect(imageWordsInReadingOrder(filled.columns)).toEqual(words(source.text));
+  });
+
+  it('does not reserve a phantom rectangle when the drawn border misses this column',()=>{
+    const probe=document.createElement('div');probe.style.width='120px';
+    const source=text('all these words remain available across the whole column');
+    const filled=fillColumnsAroundImages([source],probe,[[{top:0,bottom:100,outline:{points:[{x:160,y:0},{x:200,y:50},{x:160,y:100}],gap:0}}]],100,()=>false);
+    expect(filled.columns[0].segments[0].contour).toBeUndefined();
+    expect(filled.remainder).toEqual([]);
+    expect(imageWordsInReadingOrder(filled.columns)).toEqual(words(source.text));
   });
 
   it('finds a common final baseline while retaining every word around image bands', () => {

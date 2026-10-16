@@ -12,6 +12,8 @@ import { quoteFlowHtml, quoteFlowText } from './decorativeQuote';
 import type { NewsPiece } from './newsLayout';
 import { runsToHtml } from './richtext';
 import { dropCapEnabled } from './textDirection';
+import {cssVars} from './geometry';
+import {fontStack,ALL_FONTS} from './fonts';
 
 // jsdom cannot measure glyphs, baselines or line wrapping. These tests protect
 // the shared CSS/markup contract; actual three-line fitting is browser-tested.
@@ -29,6 +31,18 @@ const node = (html: string) => {
 const marker = runsToHtml('Imagine a tiny world.', true);
 
 describe('shared three-line drop-cap geometry', () => {
+  it.each(ALL_FONTS)('follows the title font %s without changing three-line sizing',font=>{
+    const doc=emptyDoc();doc.design.fontDisplay=font;
+    expect(cssVars(doc.design)['--drop-cap-font']).toBe(fontStack(font));
+    expect(fallback.declarations).toContain('font-family: var(--drop-cap-font, var(--serif))');
+    expect(native.declarations).toMatch(/initial-letter:\s*3\s*;/);
+  });
+  it('follows a title toolbar override, ignores body fonts and rejects invalid imported title CSS',()=>{
+    const d=emptyDoc().design;d.fontDisplay='Playfair Display';d.fontBody='Arial';d.textStyles={title:{fontFamily:'Helvetica'},body:{fontFamily:'Bebas Neue'}};
+    expect(cssVars(d)['--drop-cap-font']).toBe(fontStack('Helvetica'));
+    d.textStyles.title.fontFamily='Arial; } body {';
+    expect(cssVars(d)['--drop-cap-font']).toBe(fontStack('Playfair Display'));
+  });
   it('draws only the first-letter pseudo-element, leaving markers in the sentence', () => {
     expect(css).toMatch(/\.drop-cap\s*\{\s*all:\s*unset;\s*display:\s*inline;/);
     expect(fallback).toBeDefined();

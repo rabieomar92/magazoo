@@ -14,6 +14,10 @@ import { editorTargetId } from '../../lib/editorNavigation';
 import { LabeledNumber, LabeledRange, RowButtons, Section, SegmentField } from '../Field';
 import { MagazooLoader } from '../../components/MagazooLoader';
 import { TypographyControl } from '../TypographyToolbar';
+import { FreeformImageEditor } from '../FreeformImageEditor';
+import { wrappedHeroImage } from '../../lib/wrappedHero';
+import { pageDimensions } from '../../lib/pageFormat';
+import {requestImageOutline} from '../../lib/imageCanvas';
 
 const DEFAULT_FRAME = { scale: 1, offsetX: 0, offsetY: 0 };
 const imageDesign = (doc: Doc) => isReferenceArticle(doc.templateId) ? articleGridDesign(doc.design) : doc.design;
@@ -139,6 +143,16 @@ export function ArticleImagesSection() {
         Images sit independently on the page. Drag one in the preview: its left edge snaps to a
         column while its vertical position remains free.
       </p>
+      {sourceDoc.hero.assetId && sourceDoc.assets[sourceDoc.hero.assetId] && sourceDoc.design.showHero !== false && <>
+        <button type="button" className="add-btn" onClick={()=>update(doc=>{
+          const image = wrappedHeroImage(doc,uid());
+          if (!image) return;
+          doc.images ??= [];
+          doc.images.push(image);
+          doc.design.showHero = false;
+        })}>Use hero as a wrapped page image</button>
+        <p className="hint">Moves a copy of the hero into the text area, ready to outline and position. Its original image and caption are retained; Undo restores the hero layout.</p>
+      </>}
       <input
         ref={fileRef}
         type="file"
@@ -248,15 +262,33 @@ export function ArticleImagesSection() {
                 onChange={(align) => change(image.id, (current) => { current.align = align; })}
               />
               </TypographyControl>
-              <SegmentField<'box' | 'contour'>
+              <SegmentField<'attached'|'free'> label="Caption position" value={image.captionPlacement?'free':'attached'}
+                options={[{value:'attached',label:'Automatic'},{value:'free',label:'Free position'}]}
+                onChange={value=>change(image.id,current=>{
+                  if(value==='attached')delete current.captionPlacement;
+                  else {const g=asset?imageGeometry(current,asset,sourceDoc):null;
+                    current.captionPlacement={x:g?.left??design.margin,y:g?g.visualTop+g.visualHeight+1:design.margin,widthMm:g?.width??40};}
+                })}/>
+              {image.captionPlacement&&<div className="image-boundary-coordinates">
+                <LabeledNumber label="Caption X" unit="mm" value={image.captionPlacement.x} min={0} max={pageDimensions(design).width} step={.5}
+                  onChange={v=>change(image.id,current=>{current.captionPlacement!.x=v;})}/>
+                <LabeledNumber label="Caption Y" unit="mm" value={image.captionPlacement.y} min={0} max={pageHeight} step={.5}
+                  onChange={v=>change(image.id,current=>{current.captionPlacement!.y=v;})}/>
+                <LabeledNumber label="Caption width" unit="mm" value={image.captionPlacement.widthMm} min={5} max={pageDimensions(design).width} step={.5}
+                  onChange={v=>change(image.id,current=>{current.captionPlacement!.widthMm=v;})}/>
+              </div>}
+              <p className="hint">Drag the caption to move it. Drag either side handle to resize its width. Text avoids the caption box, and the caption stays outside the image border. If it cannot fit, the preview shows a warning.</p>
+              <SegmentField<'box' | 'contour' | 'polygon'>
                 label="Text wrap shape"
                 value={image.wrapShape ?? 'box'}
                 options={[
                   { value: 'box', label: 'Box' },
                   { value: 'contour', label: 'Custom contour' },
+                  { value: 'polygon', label: 'Draw outline' },
                 ]}
-                onChange={(wrapShape) => change(image.id, (current) => { current.wrapShape = wrapShape; })}
+                onChange={(wrapShape) => wrapShape==='polygon'?requestImageOutline(image.id):change(image.id, (current) => { current.wrapShape = wrapShape; })}
               />
+              {image.wrapShape === 'polygon' && asset && <FreeformImageEditor image={image}/>}
               {image.wrapShape === 'contour' && (
                 <div className="contour-wrap-editor">
                   <p className="hint">

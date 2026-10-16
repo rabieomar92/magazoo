@@ -104,7 +104,7 @@
   margin: 0;
   border: 0;
   outline: 0;
-  pointer-events: auto;
+  pointer-events: none;
   cursor: grab;
   touch-action: none;
   user-select: none;
@@ -189,6 +189,7 @@
   height: var(--placed-image-h);
   overflow: hidden;
   background: var(--paper-bg, #fff);
+  pointer-events: auto;
 }
 
 /* Custom contour wrapping uses the same stepped boundary for paint and text
@@ -225,9 +226,18 @@
   color: var(--ink);
   background: var(--paper-bg, #fff);
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  pointer-events: auto;
   /* A freely enlarged frame may meet the trim. Keep the complete caption
      inside the page, overlapping the photo only when space below runs out. */
   transform: translateY(min(0mm, calc(var(--placed-caption-space, 9999mm) - 100%)));
+}
+
+/* Keep a freeform caption beside the visible subject, not below transparent
+   space cut from the bottom of its original frame. Its measured rectangle is
+   also the text exclusion, so no stray body line slips between art and caption. */
+.placed-image--polygon:not(.placed-image--caption-overlay) > figcaption {
+  transform: translateY(min(calc(-1 * var(--placed-polygon-tail, 0mm)), calc(var(--placed-caption-space, 9999mm) - 100%)));
 }
 
 /* A caption cannot live below artwork that reaches the bottom trim. Keep it
@@ -242,6 +252,37 @@
   background: color-mix(in srgb, var(--paper-bg, #fff) 88%, transparent);
   backdrop-filter: blur(2px);
 }
+
+.placed-image--free-caption > figcaption { position:absolute; z-index:2; margin:0; transform:none; bottom:auto; padding:.3em 0; }
+@media screen {
+  .placed-image-tools {
+    position:absolute; z-index:3; left:50%; top:calc(var(--placed-image-h) * .5);
+    display:flex; align-items:center; gap:4px; white-space:nowrap; padding:3px;
+    border:1px solid #c7d2fe; border-radius:9px; background:#fff;
+    box-shadow:0 2px 9px #0f172a26; pointer-events:auto;
+    transform:translate(-50%,-50%) scale(var(--canvas-control-scale,1));
+    opacity:0; transition:opacity .12s;
+  }
+  .placed-image-tools button { display:flex; align-items:center; gap:5px; white-space:nowrap; min-height:29px; padding:5px 8px; margin:0; border:0; border-radius:5px; background:#fff; color:#312e81; font:600 12px/1.2 system-ui,sans-serif; letter-spacing:normal; text-transform:none; cursor:pointer; touch-action:none; }
+  .placed-image-tools button:hover { background:#eef2ff; }
+  .placed-image-tools .placed-image-move { cursor:grab; }
+  .placed-image:is(:hover,:focus-within,[data-dragging]) > .placed-image-tools { opacity:1; }
+  .placed-image-tools button:focus-visible { outline:2px solid #6366f1; outline-offset:1px; }
+  .placed-image[data-dragging],.placed-image[data-dragging] .placed-image-move { cursor:grabbing; }
+  .placed-image[data-image-readonly="true"],
+  .placed-image[data-image-readonly="true"] :is(.placed-image-frame,figcaption) { cursor:default; touch-action:pan-x pan-y; }
+  .placed-image > figcaption { cursor:grab; touch-action:none; }
+  .placed-image > figcaption { position:relative; }
+  .caption-resize { position:absolute; z-index:4; top:50%; width:10px; height:24px; min-height:0; padding:0; margin:0; border:2px solid #fff; border-radius:4px; background:#4f46e5; box-shadow:0 0 0 1px #6366f1; cursor:ew-resize; touch-action:none; opacity:0; transform:translate(-50%,-50%) scale(var(--canvas-control-scale,1)); }
+  .caption-resize--left { left:0; }
+  .caption-resize--right { left:100%; }
+  figcaption:is(:hover,:focus-within) > .caption-resize { opacity:1; }
+  figcaption:has(> .caption-resize):is(:hover,:focus-within) { outline:1px dashed #818cf8; outline-offset:2px; }
+  .caption-resize:focus-visible { outline:2px solid #312e81; outline-offset:3px; }
+  .placed-image > figcaption[data-caption-unplaced="true"] { outline:2px solid #d33; }
+  .placed-image > figcaption[data-caption-unplaced="true"]::after { content:'Caption cannot fit here. Reduce its width/size or move the image.'; position:absolute; left:0; top:100%; display:block; color:#a00; background:#fff; font:11px/1.3 sans-serif; }
+}
+@media print { [data-editor-only] { display:none !important; } }
 
 .hero {
   position: relative;
@@ -501,8 +542,10 @@
   }
 
   .flow-source-paragraph:hover {
-    outline-color: color-mix(in srgb, var(--accent, #4f46e5) 35%, transparent);
-    background-color: color-mix(in srgb, var(--accent-soft, #eef2ff) 42%, transparent);
+    /* A paragraph's rectangle includes the transparent space reclaimed by
+       image contours. Never paint a solid selection slab over that artwork. */
+    text-decoration: underline dotted color-mix(in srgb, var(--ink) 35%, transparent);
+    text-underline-offset: .2em;
   }
 }
 
@@ -1474,6 +1517,7 @@
 .paper-scroll--readonly .pages [data-editor-target]:hover,
 .paper-scroll--readonly .pages [data-source-block-id]:hover {
   outline: none;
+  text-decoration: none;
 }
 
 .paper-scroll--readonly:focus-visible {

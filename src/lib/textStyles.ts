@@ -72,7 +72,11 @@ export function textStylesCss(design: Design, scope: string): string {
     if (typeof style.underline === 'boolean') rules.push(`text-decoration-line:${style.underline ? 'underline' : 'none'}`);
     if (typeof style.color === 'string' && /^#[\da-f]{3,8}$/i.test(style.color)) rules.push(`color:${style.color}`);
     if (['left','center','right','justify'].includes(style.align ?? '')) rules.push(`text-align:${style.align}`);
-    return rules.length ? [`[data-tracking-scope=${cssQuote(scope)}] :is(${selector}) { ${rules.map(rule=>`${rule} !important`).join(';')}; }`] : [];
+    const output=rules.length ? [`[data-tracking-scope=${cssQuote(scope)}] :is(${selector}) { ${rules.map(rule=>`${rule} !important`).join(';')}; }`] : [];
+    if(key.startsWith('news:')&&key.endsWith(':title')&&typeof style.fontFamily==='string'&&/^[\p{L}\p{N} _-]{1,80}$/u.test(style.fontFamily)) {
+      output.push(`[data-tracking-scope=${cssQuote(scope)}] [data-news-id=${cssQuote(key.slice(5,-6))}] { --drop-cap-font:${fontStack(style.fontFamily)}; }`);
+    }
+    return output;
   }).join('\n');
 }
 

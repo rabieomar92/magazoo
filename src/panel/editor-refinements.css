@@ -10,6 +10,13 @@
 .app .template-switch-compact { padding:12px; border-bottom:1px solid #eef2f6; }
 .app .template-switch-field { font-size:11px; font-weight:500; }
 .app .template-switch-field select { height:34px; border-color:#e2e8f0; background-color:#fff; font-weight:500; }
+.app .template-composition-group { display:grid; min-width:0; gap:5px; margin-top:8px; padding-top:8px; border-top:1px solid #eef2f6; }
+.app .template-composition-group .template-switch-field { grid-template-columns:78px minmax(0,1fr); }
+.app .template-composition-hint { margin:0 0 0 87px; color:#64748b; font-size:10px; line-height:1.4; overflow-wrap:anywhere; }
+@media (max-width:600px) {
+  .app .template-composition-group .template-switch-field { grid-template-columns:minmax(0,1fr); }
+  .app .template-composition-hint { margin-left:0; }
+}
 .app .panel-scroll { padding:0 14px 24px; background:#fff; scrollbar-width:thin; scrollbar-color:#cbd5e1 transparent; }
 .app .panel-scroll::-webkit-scrollbar-thumb { background:#cbd5e1; border-color:#fff; }
 .app .panel .section { margin:0; padding:16px 0; border:0; border-bottom:1px solid #edf2f7; border-radius:0; box-shadow:none; }

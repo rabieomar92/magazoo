@@ -7,6 +7,8 @@ import { useDoc } from '../../store/useDoc';
 import { placedImageGeometry } from '../../lib/placedImage';
 import { articleGridDesign, articlePageHeight, isReferenceArticle } from '../../lib/articleLayouts';
 import { ArticleImagesSection } from './ArticleImagesSection';
+import { cloneDocForUpdate } from '../../store/useDoc';
+import {PlacedImages} from '../../paper/PlacedImages';
 
 let host: HTMLDivElement;
 let root: Root;
@@ -69,5 +71,76 @@ describe('page-image height controls', () => {
     edit(slider, '160');
     expect(useDoc.getState().doc.images[0].heightMm).toBe(160);
     expect(useDoc.getState().doc.images[1].heightMm).toBeUndefined();
+  });
+});
+
+describe('freeform page-image controls', () => {
+  it('saves independent caption coordinates, clones them safely, and preserves them through JSON and undo',()=>{
+    mount('paper-8');useDoc.temporal.getState().clear();
+    const before=useDoc.getState().doc;
+    const free=[...host.querySelectorAll<HTMLButtonElement>('button')].find(b=>b.textContent==='Free position')!;
+    act(()=>free.click());
+    const width=[...host.querySelectorAll('label')].find(l=>l.textContent?.startsWith('Caption width'))!.querySelector<HTMLInputElement>('input')!;
+    edit(width,'26.5');
+    const saved=useDoc.getState().doc;
+    expect(saved.images[0].captionPlacement!.widthMm).toBe(26.5);
+    expect(saved.images[0].anchor).toEqual(before.images[0].anchor);
+    expect(saved.blocks).toEqual(before.blocks);
+    const clone=cloneDocForUpdate(saved);clone.images[0].captionPlacement!.x=99;
+    expect(saved.images[0].captionPlacement!.x).not.toBe(99);
+    expect(migrate(JSON.parse(JSON.stringify(saved))).images[0].captionPlacement).toEqual(saved.images[0].captionPlacement);
+    act(()=>useDoc.temporal.getState().undo());
+    expect(useDoc.getState().doc.images[0].captionPlacement!.widthMm).not.toBe(26.5);
+  });
+  it.each(['paper-1','paper-2','paper-3','paper-4','paper-5','paper-6','paper-7','paper-8','magazine-1','magazine-2','magazine-3'] as const)('%s offers a saved, undoable outline without changing copy or image framing', template => {
+    mount(template);
+    const before = useDoc.getState().doc;
+    act(()=>root.render(<><ArticleImagesSection/><div className="page"><PlacedImages doc={before} pageIndex={0} includeHighlights={false}/></div></>));
+    const firstGroup = host.querySelector('[aria-label="Text wrap shape"]')!;
+    const button = [...firstGroup.querySelectorAll<HTMLButtonElement>('button')].find(b=>b.textContent==='Draw outline')!;
+    act(()=>button.click());
+    expect(useDoc.getState().doc.images[0].wrapShape).toBeUndefined();
+    expect(host.querySelector('[aria-label="Point X"]')).toBeNull();
+    const svg=host.querySelector<SVGSVGElement>('[aria-label="Draw image border on canvas"]')!;
+    svg.getBoundingClientRect=()=>({x:0,y:0,left:0,top:0,width:100,height:100,right:100,bottom:100,toJSON(){}});
+    const pointer=(type:string,x:number,y:number)=>{const event=new MouseEvent(type,{bubbles:true,button:0,clientX:x,clientY:y});Object.defineProperty(event,'pointerId',{value:5});svg.dispatchEvent(event);};
+    act(()=>{pointer('pointerdown',20,10);pointer('pointermove',90,20);pointer('pointermove',80,90);pointer('pointermove',10,80);pointer('pointerup',20,10);});
+    expect(useDoc.getState().doc.images[0].wrapPolygon).toBeUndefined();
+    const apply = [...document.querySelectorAll<HTMLButtonElement>('.canvas-outline-tools button')].find(b=>b.textContent==='Apply border')!;
+    act(()=>apply.click());
+    const saved = useDoc.getState().doc;
+    expect(saved.images[0].wrapShape).toBe('polygon');
+    expect(saved.images[0].wrapPolygon?.[0]).toEqual({x:20,y:10});
+    expect(saved.images[0].frame).toEqual(before.images[0].frame);
+    expect(saved.images[0].caption).toBe('Caption stays');
+    expect(saved.blocks).toEqual(before.blocks);
+    expect(saved.meta).toEqual(before.meta);
+    expect(saved.images[1]).toEqual(before.images[1]);
+    expect(migrate(JSON.parse(JSON.stringify(saved))).images[0].wrapPolygon).toEqual(saved.images[0].wrapPolygon);
+    act(()=>useDoc.temporal.getState().undo());
+    expect(useDoc.getState().doc.images[0].wrapPolygon).toBeUndefined();
+    act(()=>useDoc.temporal.getState().redo());
+    expect(useDoc.getState().doc.images[0].wrapPolygon).toEqual(saved.images[0].wrapPolygon);
+    const draft=cloneDocForUpdate(saved);
+    draft.images[0].wrapPolygon![0].x=95;
+    expect(saved.images[0].wrapPolygon![0].x).toBe(20);
+  });
+
+  it('can reuse the hero as an outlined page image without losing its caption or source',()=>{
+    mount('paper-8');
+    const before=useDoc.getState().doc;
+    const button=[...host.querySelectorAll<HTMLButtonElement>('button')].find(b=>b.textContent==='Use hero as a wrapped page image')!;
+    act(()=>button.click());
+    const saved=useDoc.getState().doc;
+    expect(saved.design.showHero).toBe(false);
+    expect(saved.images).toHaveLength(3);
+    expect(saved.images[2]).toMatchObject({assetId:before.hero.assetId,caption:before.meta.heroCaption??'',wrapShape:'polygon'});
+    expect(saved.hero).toEqual(before.hero);
+    expect(saved.meta).toEqual(before.meta);
+    expect(saved.assets).toEqual(before.assets);
+    expect(saved.blocks).toEqual(before.blocks);
+    act(()=>useDoc.temporal.getState().undo());
+    expect(useDoc.getState().doc.images).toEqual(before.images);
+    expect(useDoc.getState().doc.design.showHero).toBe(before.design.showHero);
   });
 });

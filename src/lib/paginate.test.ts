@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { paginate, type FlowItem } from './paginate';
+import {runsToHtml} from './richtext';
 
 const words = (s: string) => s.trim().split(/\s+/).filter(Boolean);
 const text = (t: string): FlowItem => ({ kind: 'text', text: t });
@@ -7,6 +8,20 @@ const text = (t: string): FlowItem => ({ kind: 'text', text: t });
 const budgetOverflow = (budget: number) => (el: HTMLElement) => (el.textContent?.length ?? 0) > budget;
 
 describe('paginate', () => {
+  it('fits styled fragment heads in their final bold font, not an unclosed plain-text prefix',()=>{
+    const source='**one two three four five six seven eight nine**';
+    const result=paginate(document.createElement('div'),document.createElement('div'),[text(source)],host=>{
+      const boldWords=words([...host.querySelectorAll('strong')].map(s=>s.textContent).join(' ')).length;
+      return boldWords>3||words(host.textContent??'').length>6;
+    });
+    const visible:string[]=[];
+    for(const piece of result.pages.flat())if(piece.kind==='text'){
+      const p=document.createElement('p');p.innerHTML=runsToHtml(piece.text);
+      expect(words(p.textContent??'').length).toBeLessThanOrEqual(3);
+      visible.push(...words(p.textContent??''));
+    }
+    expect(visible).toEqual(words(source.replaceAll('**','')));
+  });
   it('loses no words across the page break, even when a paragraph straddles it', () => {
     const paragraphs = [
       'Paragraph zero holds a short introduction sentence used as page one filler content for the test.',

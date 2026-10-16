@@ -10,6 +10,7 @@ import { placedImageGeometry } from '../lib/placedImage';
 import { useDoc } from '../store/useDoc';
 import { PlacedImages } from './PlacedImages';
 import { PreviewReadOnly, PreviewPreserveSourceAnchors } from './PreviewReadOnly';
+import {requestImageOutline} from '../lib/imageCanvas';
 
 const pointerEvent = (type: string, x: number, y: number) => {
   const event = new MouseEvent(type, { bubbles: true, button: 0, clientX: x, clientY: y });
@@ -29,6 +30,131 @@ describe('PlacedImages', () => {
   });
 
   afterEach(() => useDoc.getState().load(emptyDoc()));
+
+  it('treats a click as selection, cancels incomplete drags, and allows keyboard positioning',()=>{
+    const doc=emptyDoc();doc.design.sidebar=false;
+    doc.assets.art={src:'',naturalWidth:200,naturalHeight:200};
+    doc.images=[{id:'gesture',assetId:'art',caption:'',widthCols:1,heightMm:40,anchor:{page:1,column:0,y:50}}];
+    useDoc.getState().load(doc);useDoc.temporal.getState().clear();
+    const host=document.createElement('div');document.body.append(host);const root=createRoot(host);
+    act(()=>root.render(<div className="page"><PlacedImages doc={useDoc.getState().doc} pageIndex={0}/></div>));
+    const page=host.querySelector<HTMLElement>('.page')!,image=host.querySelector<HTMLElement>('.placed-image')!;
+    page.getBoundingClientRect=()=>({x:0,y:0,left:0,top:0,width:420,height:594,right:420,bottom:594,toJSON(){}});
+    const original=image.getAttribute('style');
+    act(()=>{image.dispatchEvent(pointerEvent('pointerdown',10,10));image.dispatchEvent(pointerEvent('pointermove',11,11));image.dispatchEvent(pointerEvent('pointerup',11,11));});
+    expect(useDoc.temporal.getState().pastStates).toHaveLength(0);
+    act(()=>{image.dispatchEvent(pointerEvent('pointerdown',10,10));image.dispatchEvent(pointerEvent('pointermove',10,90));});
+    expect(image.dataset.dragging).toBe('true');
+    act(()=>image.dispatchEvent(pointerEvent('pointercancel',10,90)));
+    expect(image.getAttribute('style')).toBe(original);
+    expect(useDoc.getState().doc.images[0].anchor.y).toBe(50);
+    expect(useDoc.temporal.getState().pastStates).toHaveLength(0);
+    const button=host.querySelector<HTMLButtonElement>('[aria-label="Move image"]')!;
+    expect(button.dataset.editorOnly).toBe('true');
+    act(()=>button.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowDown',shiftKey:true,bubbles:true})));
+    expect(useDoc.getState().doc.images[0].anchor.y).toBe(55);
+    expect(useDoc.temporal.getState().pastStates).toHaveLength(1);
+    act(()=>useDoc.temporal.getState().undo());
+    expect(useDoc.getState().doc.images[0].anchor.y).toBe(50);
+    act(()=>root.unmount());host.remove();
+  });
+
+  it('does not expose move controls or save image gestures in read-only mode',()=>{
+    const doc=emptyDoc();doc.assets.art={src:'',naturalWidth:200,naturalHeight:200};
+    doc.images=[{id:'readonly-image',assetId:'art',caption:'',widthCols:1,anchor:{page:1,column:0,y:30}}];
+    useDoc.getState().load(doc);useDoc.temporal.getState().clear();
+    const host=document.createElement('div'),root=createRoot(host);
+    act(()=>root.render(<div className="page"><PreviewReadOnly.Provider value={true}><PlacedImages doc={doc} pageIndex={0}/></PreviewReadOnly.Provider></div>));
+    const image=host.querySelector<HTMLElement>('.placed-image')!;
+    expect(image.dataset.imageReadonly).toBe('true');
+    expect(image.querySelector('button')).toBeNull();
+    act(()=>requestImageOutline('readonly-image'));
+    expect(document.querySelector('.canvas-outline-tools')).toBeNull();
+    act(()=>{image.dispatchEvent(pointerEvent('pointerdown',10,10));image.dispatchEvent(pointerEvent('pointermove',90,90));image.dispatchEvent(pointerEvent('pointerup',90,90));});
+    expect(useDoc.getState().doc.images[0].anchor.y).toBe(30);
+    expect(useDoc.temporal.getState().pastStates).toHaveLength(0);
+    act(()=>root.unmount());
+  });
+
+  it('opens drawing from the canvas button without capturing it as an image drag',()=>{
+    const doc=emptyDoc();doc.design.sidebar=false;doc.assets.art={src:'',naturalWidth:200,naturalHeight:200};
+    doc.images=[{id:'draw-on-canvas',assetId:'art',caption:'',widthCols:1,anchor:{page:1,column:0,y:60}}];
+    useDoc.getState().load(doc);useDoc.temporal.getState().clear();
+    const host=document.createElement('div'),root=createRoot(host);document.body.append(host);
+    act(()=>root.render(<div className="page"><PlacedImages doc={doc} pageIndex={0}/></div>));
+    const image=host.querySelector<HTMLElement>('.placed-image')!;
+    let captured=false;Object.defineProperty(image,'setPointerCapture',{value:()=>{captured=true;}});
+    const button=host.querySelector<HTMLButtonElement>('.placed-image-draw')!;
+    act(()=>{button.dispatchEvent(pointerEvent('pointerdown',20,20));button.click();});
+    expect(captured).toBe(false);expect(host.querySelector('[aria-label="Draw image border on canvas"]')).not.toBeNull();
+    expect(useDoc.temporal.getState().pastStates).toHaveLength(0);
+    act(()=>document.querySelector<HTMLButtonElement>('.canvas-outline-apply')!.click());
+    expect(useDoc.getState().doc.images[0].wrapShape).toBe('polygon');
+    expect(useDoc.temporal.getState().pastStates).toHaveLength(1);
+    expect(document.querySelector('.canvas-outline-tools')).toBeNull();
+    act(()=>useDoc.temporal.getState().undo());expect(useDoc.getState().doc.images[0].wrapShape).toBeUndefined();
+    act(()=>root.unmount());host.remove();
+  });
+
+  it.each(['left','right'] as const)('resizes the caption from its %s canvas handle with one undoable save',side=>{
+    const doc=emptyDoc();doc.design.sidebar=false;doc.assets.art={src:'',naturalWidth:200,naturalHeight:200};
+    doc.images=[{id:'resize',assetId:'art',caption:'Exact caption text',widthCols:1,heightMm:30,anchor:{page:1,column:0,y:120}}];
+    useDoc.getState().load(doc);useDoc.temporal.getState().clear();
+    const host=document.createElement('div'),root=createRoot(host);document.body.append(host);
+    act(()=>root.render(<div className="page"><PlacedImages doc={useDoc.getState().doc} pageIndex={0}/></div>));
+    const page=host.querySelector<HTMLElement>('.page')!,cap=host.querySelector<HTMLElement>('figcaption')!;
+    page.getBoundingClientRect=()=>({x:0,y:0,left:0,top:0,width:420,height:594,right:420,bottom:594,toJSON(){}});
+    cap.getBoundingClientRect=()=>({x:240,y:80,left:240,top:80,width:80,height:20,right:320,bottom:100,toJSON(){}});
+    Object.defineProperty(cap,'offsetHeight',{value:20});
+    const handle=host.querySelector<HTMLButtonElement>(`[aria-label="Resize caption from ${side}"]`)!;
+    const start=side==='left'?240:320,end=side==='left'?220:360;
+    act(()=>{handle.dispatchEvent(pointerEvent('pointerdown',start,90));handle.dispatchEvent(pointerEvent('pointermove',end,90));});
+    expect(useDoc.getState().doc.images[0].captionPlacement).toBeUndefined();
+    expect(useDoc.temporal.getState().pastStates).toHaveLength(0);
+    act(()=>handle.dispatchEvent(pointerEvent('pointerup',end,90)));
+    const saved=useDoc.getState().doc.images[0];
+    expect(saved.captionPlacement).toMatchObject(side==='left'?{x:110,y:40,widthMm:50}:{x:120,y:40,widthMm:60});
+    expect(saved.caption).toBe('Exact caption text');expect(saved.anchor).toEqual(doc.images[0].anchor);
+    expect(useDoc.temporal.getState().pastStates).toHaveLength(1);
+    act(()=>useDoc.temporal.getState().undo());expect(useDoc.getState().doc.images[0].captionPlacement).toBeUndefined();
+    act(()=>root.unmount());host.remove();
+  });
+
+  it.each(['move','resize'] as const)('restores caption fit status and geometry when a %s gesture is canceled',kind=>{
+    const doc=emptyDoc();doc.design.sidebar=false;doc.assets.art={src:'data:image/png;base64,AA',naturalWidth:200,naturalHeight:200};
+    doc.images=[{id:'cancel-caption',assetId:'art',caption:'Unchanged caption',widthCols:1,anchor:{page:1,column:0,y:120}}];
+    useDoc.getState().load(doc);useDoc.temporal.getState().clear();
+    const host=document.createElement('div'),root=createRoot(host);document.body.append(host);
+    act(()=>root.render(<div className="page"><PlacedImages doc={doc} pageIndex={0}/></div>));
+    const page=host.querySelector<HTMLElement>('.page')!,cap=host.querySelector<HTMLElement>('figcaption')!;
+    page.getBoundingClientRect=()=>({x:0,y:0,left:0,top:0,width:420,height:594,right:420,bottom:594,toJSON(){}});
+    cap.getBoundingClientRect=()=>({x:240,y:80,left:240,top:80,width:80,height:2000,right:320,bottom:2080,toJSON(){}});
+    Object.defineProperty(cap,'offsetHeight',{value:10000});
+    const before=cap.getAttribute('style'),target=kind==='move'?cap:cap.querySelector<HTMLElement>('[aria-label="Resize caption from right"]')!;
+    act(()=>{target.dispatchEvent(pointerEvent('pointerdown',320,90));target.dispatchEvent(pointerEvent('pointermove',360,110));});
+    expect(cap.dataset.captionUnplaced).toBe('true');
+    act(()=>target.dispatchEvent(pointerEvent('pointercancel',360,110)));
+    expect(cap.getAttribute('style')).toBe(before);expect(cap.dataset.captionUnplaced).toBeUndefined();
+    expect(useDoc.temporal.getState().pastStates).toHaveLength(0);
+    expect(useDoc.getState().doc.images[0].captionPlacement).toBeUndefined();
+    act(()=>root.unmount());host.remove();
+  });
+
+  it('keeps a freeform caption below the visible subject and outside the clipped frame',()=>{
+    const doc=emptyDoc();doc.design.sidebar=false;
+    doc.assets.art={src:'data:image/png;base64,',naturalWidth:500,naturalHeight:500};
+    doc.images=[{id:'cutout',assetId:'art',caption:'Protected caption',widthCols:2,heightMm:100,anchor:{page:1,column:0,y:100},wrapShape:'polygon',wrapPolygon:[{x:0,y:0},{x:100,y:0},{x:100,y:80},{x:0,y:80}]}];
+    const host=document.createElement('div'),root=createRoot(host);
+    act(()=>root.render(<PlacedImages doc={doc} pageIndex={0} readOnly/>));
+    const figure=host.querySelector<HTMLElement>('.placed-image')!;
+    expect(figure.classList.contains('placed-image--polygon')).toBe(true);
+    expect(parseFloat(figure.style.getPropertyValue('--placed-polygon-tail'))).toBeCloseTo(20);
+    expect(figure.style.getPropertyValue('--placed-contour-clip')).toContain('100% 80%');
+    expect(figure.querySelector('.placed-image-frame figcaption')).toBeNull();
+    expect(figure.querySelector(':scope > figcaption')?.textContent).toBe('Protected caption');
+    expect(doc.images[0].wrapPolygon![2].y).toBe(80);
+    act(()=>root.unmount());
+  });
 
   it('snaps horizontal dragging and clamps vertical dragging to the page', () => {
     const doc = emptyDoc();
@@ -88,6 +214,41 @@ describe('PlacedImages', () => {
 
     act(() => root.unmount());
     host.remove();
+  });
+
+  it('drags a caption independently, commits once, preserves the image, and supports undo',()=>{
+    const doc=emptyDoc();doc.design.sidebar=false;
+    doc.assets.art={src:'data:image/png;base64,',naturalWidth:500,naturalHeight:500};
+    doc.images=[{id:'caption-drag',assetId:'art',caption:'Caption stays outside the image',widthCols:1,heightMm:40,anchor:{page:1,column:0,y:120}}];
+    useDoc.getState().load(doc);useDoc.temporal.getState().clear();
+    const host=document.createElement('div'),root=createRoot(host);document.body.append(host);
+    act(()=>root.render(<div className="page"><PlacedImages doc={useDoc.getState().doc} pageIndex={0}/></div>));
+    const page=host.querySelector<HTMLElement>('.page')!,cap=host.querySelector<HTMLElement>('figcaption')!;
+    page.getBoundingClientRect=()=>({x:0,y:0,left:0,top:0,width:420,height:594,right:420,bottom:594,toJSON(){}});
+    cap.getBoundingClientRect=()=>({x:240,y:80,left:240,top:80,width:80,height:20,right:320,bottom:100,toJSON(){}});
+    act(()=>{cap.dispatchEvent(pointerEvent('pointerdown',250,90));cap.dispatchEvent(pointerEvent('pointermove',270,120));});
+    expect(useDoc.getState().doc.images[0].captionPlacement).toBeUndefined();
+    expect(useDoc.getState().doc.images[0].anchor).toEqual(doc.images[0].anchor);
+    act(()=>cap.dispatchEvent(pointerEvent('pointerup',270,120)));
+    expect(useDoc.getState().doc.images[0].captionPlacement).toEqual({x:130,y:55,widthMm:40});
+    expect(useDoc.getState().doc.images[0].anchor).toEqual(doc.images[0].anchor);
+    expect(useDoc.temporal.getState().pastStates).toHaveLength(1);
+    act(()=>useDoc.temporal.getState().undo());
+    expect(useDoc.getState().doc.images[0].captionPlacement).toBeUndefined();
+    act(()=>root.unmount());host.remove();
+  });
+
+  it('does not save caption movements in read-only mode',()=>{
+    const doc=emptyDoc();doc.assets.art={src:'',naturalWidth:200,naturalHeight:200};
+    doc.images=[{id:'ro-caption',assetId:'art',caption:'Read only',widthCols:1,anchor:{page:1,column:0,y:100},captionPlacement:{x:100,y:80,widthMm:30}}];
+    useDoc.getState().load(doc);useDoc.temporal.getState().clear();
+    const host=document.createElement('div'),root=createRoot(host);
+    act(()=>root.render(<div className="page"><PlacedImages doc={useDoc.getState().doc} pageIndex={0} readOnly/></div>));
+    const cap=host.querySelector('figcaption')!;
+    act(()=>{cap.dispatchEvent(pointerEvent('pointerdown',10,10));cap.dispatchEvent(pointerEvent('pointermove',120,120));cap.dispatchEvent(pointerEvent('pointerup',120,120));});
+    expect(useDoc.getState().doc.images[0].captionPlacement).toEqual({x:100,y:80,widthMm:30});
+    expect(useDoc.temporal.getState().pastStates).toHaveLength(0);
+    act(()=>root.unmount());
   });
 
   it('materialises the default free highlights placement so autosave can retain it', () => {

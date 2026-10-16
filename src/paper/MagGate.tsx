@@ -58,7 +58,7 @@ export function MagGateA({ doc, vars }: { doc: Doc; vars: CSSProperties }) {
     >
       <PageArtwork doc={doc} />
       {photo && geometry && <SpreadPhotoImage asset={photo.asset} geometry={geometry} behind />}
-      <div className="mag-gate-scrim mag-gate-scrim--a" />
+      {photo && <div className="mag-gate-scrim mag-gate-scrim--a" />}
       <div className="mag-gate-inner" ref={placement.inner}>
         <TagBar doc={doc} pageIndex={0} detail={meta.volume} fullBleed />
 
@@ -106,7 +106,7 @@ export function MagGateB({ doc, vars }: { doc: Doc; vars: CSSProperties }) {
       data-editor-target={photo ? 'image-cover' : undefined}
     >
       {photo && geometry && <SpreadPhotoImage asset={photo.asset} geometry={geometry} behind />}
-      <div className="mag-gate-scrim mag-gate-scrim--b" />
+      {photo && <div className="mag-gate-scrim mag-gate-scrim--b" />}
       <div className="mag-gate-inner mag-gate-inner--b" ref={placement.inner}>
         {!photo && <MagTopBar doc={doc} pageIndex={1} />}
         <div className={`mag-gate-mid mag-gate-mid--b mag-gate-mid--draggable${placement.drag.dragging ? ' is-dragging' : ''}${bleed < 0 ? ' mag-gate-mid--signed' : ''}`} style={bleed < 0 ? { '--gate-spacing-bleed': `${bleed}px` } as CSSProperties : undefined} ref={placement.mid} {...placement.drag.handlers} title="Drag up or down to place this block" data-editor-tab="design" data-editor-target="gate-text-position">

@@ -337,6 +337,10 @@ function freezeColumnLayout(source: HTMLElement, clone: HTMLElement) {
  */
 export function clonePages(source: HTMLElement, targetDocument: Document, { freezeColumns = true } = {}) {
   const pages = source.cloneNode(true) as HTMLElement;
+  // The print iframe has no surrounding document language. Losing inherited
+  // English/Bahasa Melayu changes automatic hyphenation and therefore contour
+  // line breaks even when every width/font/shape is identical to the preview.
+  if(!pages.lang){const language=source.closest<HTMLElement>('[lang]')?.lang||source.ownerDocument.documentElement.lang;if(language)pages.lang=language;}
   pages.classList.remove('pages--spread');
   pages.classList.add('pdf-export-pages');
   pages.style.setProperty('display', 'block', 'important');
@@ -370,6 +374,7 @@ export function clonePages(source: HTMLElement, targetDocument: Document, { free
   Array.from(pages.children).forEach(child => {
     if (!child.classList.contains('page')) child.remove();
   });
+  pages.querySelectorAll('[data-editor-only]').forEach(node=>node.remove());
 
   targetDocument.body.appendChild(pages);
 }
@@ -513,6 +518,7 @@ export async function exportIssuePdf(title: string, root: HTMLElement, size: Pdf
  * searchable, resolution-independent text in the exported PDF.
  */
 export async function waitForPreviewResources(source: HTMLElement) {
+  if(source.querySelector('[data-outline-editing="true"]'))throw new Error('Apply or cancel the image border before exporting.');
   await waitForFonts(document);
   await Promise.all([
     ...Array.from(source.querySelectorAll<HTMLImageElement>('img')).map(waitForImage),
@@ -521,7 +527,7 @@ export async function waitForPreviewResources(source: HTMLElement) {
   await nextPaint();
   await nextPaint();
   await waitForStablePreview(source);
-  if (source.querySelector('.page[data-layout-overflow="true"], [data-image-avoidance="unresolved"]')) {
+  if (source.querySelector('.page[data-layout-overflow="true"], [data-image-avoidance="unresolved"], [data-caption-unplaced="true"]')) {
     throw new Error('Some content does not fit inside its page. Resolve the layout warning before exporting; changing paper size cannot repair an overflowing source page.');
   }
 }

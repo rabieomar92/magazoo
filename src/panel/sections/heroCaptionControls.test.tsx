@@ -55,6 +55,18 @@ const heroTemplates: TemplateId[] = [
 ];
 
 describe('caption controls beside each actual primary image', () => {
+  it('resets a free caption to its native slot without changing the image or description',()=>{
+    mount('paper-3');
+    act(()=>useDoc.getState().update(d=>{d.design.heroCaptionPlacement={x:35,y:70,widthMm:50};}));
+    const before=useDoc.getState().doc;
+    const reset=[...node.querySelectorAll('button')].find(b=>b.textContent==='Reset caption position')!;
+    expect(node.textContent).toContain('Caption X');expect(node.textContent).toContain('Caption width');
+    act(()=>reset.click());
+    expect(useDoc.getState().doc.design.heroCaptionPlacement).toBeUndefined();
+    expect(useDoc.getState().doc.hero).toEqual(before.hero);expect(useDoc.getState().doc.meta).toEqual(before.meta);
+    act(()=>useDoc.temporal.getState().undo());
+    expect(useDoc.getState().doc.design.heroCaptionPlacement).toEqual({x:35,y:70,widthMm:50});
+  });
   it.each(heroTemplates)('%s edits only its hero description and supports undo, redo and JSON round-trip', templateId => {
     const original = mount(templateId);
     const input = node.querySelector<HTMLTextAreaElement>(`#${editorTargetId('meta-hero-caption')} textarea`)!;

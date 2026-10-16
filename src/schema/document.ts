@@ -194,10 +194,20 @@ export interface PlacedImage {
    * This is deliberately column-sliced rather than freeform DOM flow, so the
    * established left-to-right/right-to-left filling order remains unchanged.
    */
-  wrapShape?: 'box' | 'contour';
+  wrapShape?: 'box' | 'contour' | 'polygon';
   /** Percentage of the image height that is clear at the top/bottom of each
    * occupied column, stored from the physical left edge to the right edge. */
   wrapContour?: { top: number[]; bottom: number[] };
+  /** Author-drawn closed image outline, in percentages of the visible frame.
+   * Pagination and the visible crop share its even-odd fill rule. */
+  wrapPolygon?: { x: number; y: number }[];
+  /** Curve tension (0 = straight segments) and text clearance in millimetres.
+   * Missing values preserve straight existing paths with 0.8mm clearance. */
+  wrapSmoothing?: number;
+  wrapGapMm?: number;
+  /** Optional independent caption box, in absolute page millimetres. Its
+   * rendered position is nudged to the nearest image-free slot, never into art. */
+  captionPlacement?: { x:number; y:number; widthMm:number };
   /** Extend artwork from its column-sized layout footprint to selected trim
    * edges. The source keeps its aspect ratio via cover-cropping; captions stay
    * aligned to the original footprint. */
@@ -441,6 +451,9 @@ export interface Design {
   pageBackgroundOpacity?: number;
   /** Hide the article hero while retaining the document's top bar. */
   showHero?: boolean;
+  /** Optional page-relative millimetres. Missing keeps the native caption slot. */
+  heroCaptionPlacement?: { x:number; y:number; widthMm:number };
+  coverCaptionPlacement?: { x:number; y:number; widthMm:number };
   /**
    * Paper 3 and reference article layouts. Absent/false = the photograph opens the page from the top
    * edge. True prints it rising from the foot of the page with the article
@@ -477,8 +490,12 @@ export interface Design {
   barSide?: 'left' | 'right';
   /** Physical distance from the page's top trim edge to the top bar, in mm. */
   topBarOffset?: number;
-  /** Physical side of the split hero in Paper 2. Does not reverse the image. */
+  /** Physical side of the split/inset hero in Paper 2 and Inset Research.
+   * Does not reverse the image. */
   heroSide?: 'left' | 'right';
+  /** Inset Research hero width in whole text columns. Missing retains the
+   * original all-but-one-column inset; narrower grids clamp to their width. */
+  heroWidthCols?: 1 | 2 | 3;
   /**
    * Physical top coordinate for the first page's main content, in mm. The top
    * bar is independent and remains at `topBarOffset`. Zero keeps the selected

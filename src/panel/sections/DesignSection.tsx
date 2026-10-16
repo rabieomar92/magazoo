@@ -1,5 +1,5 @@
 import { TypographyControl } from '../TypographyToolbar';
-import { isReferenceArticle, ARTICLE_LAYOUTS, articleGridDesign, referenceArticleDesign } from '../../lib/articleLayouts';
+import { isReferenceArticle, ARTICLE_LAYOUTS, articleGeometry, articleGridDesign, referenceArticleDesign } from '../../lib/articleLayouts';
 import { useRef, useState } from 'react';
 import { useDoc } from '../../store/useDoc';
 import {
@@ -192,15 +192,21 @@ export function DesignSection() {
           />
           <p className="hint">Negative subtitle gaps pull the subtitle up; small adjustments can tighten the layout. Large negative values can overlap the title.</p>
           <LabeledNumber
-            label="First-page top margin"
+            label={templateId === 'paper-8' ? 'Top to title' : 'First-page top margin'}
             unit="mm"
-            value={design.firstPageTopMargin ?? 0}
+            value={templateId === 'paper-8' ? articleGeometry('paper-8', design).titleTop : design.firstPageTopMargin ?? 0}
             min={0}
             max={250}
             step={1}
             onChange={(v) => set('firstPageTopMargin', v)}
           />
-          <p className="hint">Moves the first page’s main content only. The top bar keeps its own edge distance.</p>
+          <p className="hint">{templateId === 'paper-8'
+            ? 'Distance from the page’s top edge to the title block. The title and text move together, keeping clear of a visible top bar. Enter 0 to restore the template’s automatic position.'
+            : 'Moves the first page’s main content only. The top bar keeps its own edge distance.'}</p>
+          {templateId === 'paper-8' && (design.firstPageTopMargin ?? 0) > 0 && <button
+            type="button" className="add-btn"
+            onClick={() => update(d => { delete d.design.firstPageTopMargin; })}
+          >Reset title position</button>}
         </>
       )}
 

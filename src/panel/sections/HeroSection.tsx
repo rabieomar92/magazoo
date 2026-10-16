@@ -1,5 +1,5 @@
-import { useRef, useState, type ReactNode } from 'react';
-import { useDoc } from '../../store/useDoc';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useDoc,currentDocumentSession } from '../../store/useDoc';
 import { assetIsReferenced, uid, type Doc, type Asset } from '../../schema/document';
 import { loadImage, ImageLoadError } from '../../lib/loadImage';
 import type { ImageFrame } from '../../lib/imageFrame';
@@ -10,6 +10,7 @@ import { heroCaptionText } from '../../lib/heroCaption';
 import { emptyFrontMatter } from '../../store/frontMatter';
 import { emptyBackCover } from '../../store/backCover';
 import { MagazooLoader } from '../../components/MagazooLoader';
+import {heroCaptionPageDimensions} from '../../lib/heroCaptionPlacement';
 
 type Frame = ImageFrame & { assetId: string | null };
 export type ImageSlot = 'hero' | 'cover' | 'frontmatter-logo' | 'frontmatter-signature' | 'backcover-qr' | 'backcover-logo';
@@ -45,9 +46,24 @@ export function ImagePicker({ slot, title, blurb, fit = 'cover', thumbAspectRati
   const caption = useDoc(s => heroCaptionText(s.doc, slot === 'cover'));
   const board = useDoc(s => s.doc.templateId === 'frontmatter-board');
   const captionKey = slot === 'cover' && !board ? 'coverCaption' : 'heroCaption';
+  const placementKey=slot==='cover'&&!board?'coverCaptionPlacement':'heroCaptionPlacement';
+  const placement=useDoc(s=>s.doc.design[placementKey]);
+  const dimensions=heroCaptionPageDimensions(useDoc(s=>s.doc));
   const fileRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const uploadRevision=useRef(0);
+  const hidden=useDoc(s=>(slot==='hero'||slot==='cover')&&(s.doc.design.showHero===false||(slot==='hero'&&!(s.doc.design.heroHeight>0))));
+  useEffect(()=>{
+    setLoading(false);
+    return ()=>{uploadRevision.current+=1;};
+  },[slot]);
+
+  const showImage=(doc:Doc)=>{
+    if(slot!=='hero'&&slot!=='cover')return;
+    doc.design.showHero=true;
+    if(slot==='hero'&&!(doc.design.heroHeight>0))doc.design.heroHeight=95;
+  };
 
   const setFrame = (d: Doc, f: Frame) => {
     if (slot === 'hero') d.hero = f;
@@ -69,13 +85,16 @@ export function ImagePicker({ slot, title, blurb, fit = 'cover', thumbAspectRati
     if (!file) return;
     setError(null);
     setLoading(true);
-    const expectedDoc = useDoc.getState().doc;
+    const request=++uploadRevision.current;
+    const expectedSession=currentDocumentSession();
+    const expectedAsset=frameFor(useDoc.getState().doc,slot).assetId;
     try {
       const { src, naturalWidth, naturalHeight } = await loadImage(file);
       // Late uploads must not change a different document or replacement.
       const current = useDoc.getState().doc;
-      if (current !== expectedDoc) {
-        setError('The document changed while the image was loading. Please select the image again.');
+      if(request!==uploadRevision.current)return;
+      if (currentDocumentSession()!==expectedSession||frameFor(current,slot).assetId!==expectedAsset) {
+        setError('The document changed or its image was replaced while this image was loading. Please select the image again.');
         return;
       }
       update((d) => {
@@ -83,12 +102,13 @@ export function ImagePicker({ slot, title, blurb, fit = 'cover', thumbAspectRati
         const id = uid();
         d.assets[id] = { src, naturalWidth, naturalHeight };
         setFrame(d, { assetId: id, offsetX: 0, offsetY: 0, scale: 1 });
+        showImage(d);
         if (prev && prev !== id && !assetIsReferenced(d, prev)) delete d.assets[prev];
       });
     } catch (e) {
-      setError(e instanceof ImageLoadError ? e.message : 'Failed to load image.');
+      if(request===uploadRevision.current)setError(e instanceof ImageLoadError ? e.message : 'Failed to load image.');
     } finally {
-      setLoading(false);
+      if(request===uploadRevision.current)setLoading(false);
     }
   };
 
@@ -113,12 +133,16 @@ export function ImagePicker({ slot, title, blurb, fit = 'cover', thumbAspectRati
         ref={fileRef}
         type="file"
         accept="image/*"
+        aria-label={`Choose ${title.toLowerCase()}`}
         hidden
         onChange={(e) => {
           onFile(e.target.files?.[0]);
           e.target.value = '';
         }}
       />
+      {hidden&&<p className="hint hint--warn" role="status">This image is hidden in the layout. Uploading a photo will show it.{' '}
+        {asset&&<button type="button" className="add-btn" onClick={()=>update(showImage)}>Show image</button>}
+      </p>}
 
       {asset ? (
         <>
@@ -141,6 +165,15 @@ export function ImagePicker({ slot, title, blurb, fit = 'cover', thumbAspectRati
               rows={3} value={caption} placeholder="Describe this image; keep photo credits in the credit field."
               onChange={value => update(d => { d.meta[captionKey] = value; })} />
             {!caption.trim() && <p className="hint hint--warn" role="status">This image has no caption yet. Add a description before publishing.</p>}
+            <p className="hint">Drag this caption anywhere on its page. Arrow keys move it by 1 mm; hold Shift for 5 mm. Its font controls remain in the top toolbar.</p>
+            {placement&&<>
+              <div className="image-boundary-coordinates">
+                <LabeledNumber label="Caption X" unit="mm" min={0} max={dimensions.width} step={.5} value={placement.x} onChange={x=>update(d=>{d.design[placementKey]={...placement,x};})}/>
+                <LabeledNumber label="Caption Y" unit="mm" min={0} max={dimensions.height} step={.5} value={placement.y} onChange={y=>update(d=>{d.design[placementKey]={...placement,y};})}/>
+                <LabeledNumber label="Caption width" unit="mm" min={5} max={dimensions.width} step={.5} value={placement.widthMm} onChange={widthMm=>update(d=>{d.design[placementKey]={...placement,widthMm};})}/>
+              </div>
+              <button type="button" className="add-btn" onClick={()=>update(d=>{delete d.design[placementKey];})}>Reset caption position</button>
+            </>}
           </>}
           {framing && <><LabeledRange label="Shift horizontally" value={frame.offsetX} min={-50} max={50} step={1} format={(v) => `${v}%`} onChange={setKey('offsetX')} />
           <LabeledRange label="Shift vertically" value={frame.offsetY} min={-50} max={50} step={1} format={(v) => `${v}%`} onChange={setKey('offsetY')} />
@@ -174,6 +207,8 @@ export function HeroSection() {
   const templateId = useDoc((s) => s.doc.templateId ?? 'paper-1');
   const heroHeight = useDoc((s) => s.doc.design.heroHeight);
   const heroSide = useDoc((s) => s.doc.design.heroSide ?? (s.doc.design.textDirection === 'rtl' ? 'left' : 'right'));
+  const columns = useDoc((s) => Math.max(2, Math.min(4, Math.round(s.doc.design.bodyCols))));
+  const heroWidthCols = useDoc((s) => s.doc.design.heroWidthCols);
   const update = useDoc((s) => s.update);
 
   // magazine-3 is a gatefold: one cover photo split across both cover sheets, and
@@ -213,6 +248,17 @@ export function HeroSection() {
                 }
               />
             )}
+            {templateId === 'paper-8' && <>
+              <SegmentField<1 | 2 | 3>
+                label="Image width"
+                value={Math.max(1, Math.min(3, columns, heroWidthCols ?? columns - 1)) as 1 | 2 | 3}
+                options={([1, 2, 3] as const).filter(value => value <= columns).map(value => ({
+                  value, label: `${value} ${value === 1 ? 'column' : 'columns'}`,
+                }))}
+                onChange={value => update(d => { d.design.heroWidthCols = value; })}
+              />
+              <p className="hint">The image stays on the selected side, aligned to the text grid. Text flows below its caption; height and crop remain independent.</p>
+            </>}
             <LabeledNumber
               label="Height"
               unit="mm"

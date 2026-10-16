@@ -3,6 +3,11 @@ import { temporal } from 'zundo';
 import { emptyDoc, type Doc, type TemplateId } from '../schema/document';
 import { makeBackCover } from './backCover';
 
+// Session identity changes only on load, not on a normal immutable edit.
+// Async image decoding must not confuse typing with opening another article.
+let documentSession=0;
+export const currentDocumentSession=()=>documentSession;
+
 interface State {
   doc: Doc;
   /** Mutate a draft. Keep every edit going through here. */
@@ -49,6 +54,8 @@ export function cloneDocForUpdate(doc: Doc): Doc {
       wrapContour: image.wrapContour
         ? { top: [...image.wrapContour.top], bottom: [...image.wrapContour.bottom] }
         : undefined,
+      wrapPolygon: image.wrapPolygon?.map(point => ({ ...point })),
+      captionPlacement: image.captionPlacement ? {...image.captionPlacement} : undefined,
     })),
     highlightBox: doc.highlightBox
       ? { ...doc.highlightBox, anchor: { ...doc.highlightBox.anchor } }
@@ -62,6 +69,8 @@ export function cloneDocForUpdate(doc: Doc): Doc {
     ),
     design: {
       ...doc.design,
+      heroCaptionPlacement: doc.design.heroCaptionPlacement ? {...doc.design.heroCaptionPlacement} : undefined,
+      coverCaptionPlacement: doc.design.coverCaptionPlacement ? {...doc.design.coverCaptionPlacement} : undefined,
       textTracking: doc.design.textTracking ? { ...doc.design.textTracking } : undefined,
       textStyles: doc.design.textStyles ? Object.fromEntries(Object.entries(doc.design.textStyles).map(([key, style]) => [key, { ...style }])) : undefined,
       frontCover: doc.design.frontCover ? { ...doc.design.frontCover, text: doc.design.frontCover.text ? Object.fromEntries(Object.entries(doc.design.frontCover.text).map(([role, style]) => [role, { ...style }])) : undefined } : undefined,
@@ -93,6 +102,7 @@ export const useDoc = create<State>()(
           return { doc: next };
         }),
       load: (doc) => {
+        documentSession+=1;
         set({ doc });
         // Loading a file is a new editing session. Keeping the previous
         // document in the undo stack is surprising and can resurrect unrelated
