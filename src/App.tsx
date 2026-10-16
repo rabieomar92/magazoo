@@ -26,6 +26,7 @@ import './styles/back-cover.css';
 import './styles/news.css';
 import './styles/drop-caps.css';
 import './styles/rtl.css';
+import './panel/workspace-polish.css';
 
 const DEFAULT_PANEL_W = 380;
 const MIN_PANEL_W = 320;
@@ -165,7 +166,7 @@ export default function App() {
   return (
     <ErrorBoundary>
       <TypographyProvider><div className="app">
-        <Toolbar onPreviewToolsHost={setToolbarPreviewHost} />
+        <Toolbar onPreviewToolsHost={setToolbarPreviewHost} onToggleSidebar={toggleCollapse} sidebarCollapsed={isCollapsed}/>
         <TypographyToolbar />
         {token&&<SharedEditingAccess token={token}/>}
         {loadFailed && (
@@ -185,15 +186,6 @@ export default function App() {
             onDoubleClick={resetWidth}
             title="Drag to resize sidebar · Double-click to reset width"
           >
-            <button
-              type="button"
-              className="splitter-toggle"
-              onClick={toggleCollapse}
-              title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-              aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            >
-              <span className={`splitter-chevron${isCollapsed ? ' splitter-chevron--right' : ' splitter-chevron--left'}`} aria-hidden="true" />
-            </button>
           </div>
           <PaperPreview toolbarHost={toolbarPreviewHost} />
         </div>

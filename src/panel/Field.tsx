@@ -220,7 +220,13 @@ export function Section({
   title,
   children,
   editorTarget,
-}: { title: string; children: ReactNode } & EditorTargetProps) {
+  collapsible = false,
+  defaultOpen = true,
+}: { title: string; children: ReactNode; collapsible?: boolean; defaultOpen?: boolean } & EditorTargetProps) {
+  if(collapsible) return <details className="section section--disclosure" open={defaultOpen} id={editorTarget ? editorTargetId(editorTarget) : undefined}>
+    <summary className="section-summary"><h2 className="section-title">{title}</h2><span className="section-chevron" aria-hidden="true"/></summary>
+    <div className="section-body">{children}</div>
+  </details>;
   return (
     <section className="section" id={editorTarget ? editorTargetId(editorTarget) : undefined}>
       <h2 className="section-title">{title}</h2>

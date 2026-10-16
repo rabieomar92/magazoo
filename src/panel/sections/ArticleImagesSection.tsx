@@ -181,6 +181,7 @@ export function ArticleImagesSection() {
             id={editorTargetId(`article-image-${image.id}`)}
             key={image.id}
           >
+            <div className="image-card-heading"><span>Page image {images.indexOf(image)+1}</span><RowButtons onRemove={() => remove(image.id)} /></div>
             <div className="figure-edit">
               <div className="figure-thumb">
                 {asset ? <img src={asset.src} alt="" /> : <span className="figure-missing">Image missing</span>}
@@ -190,6 +191,7 @@ export function ArticleImagesSection() {
                 dir="auto"
                 value={image.caption}
                 placeholder="Image caption…"
+                aria-label={`Page image ${images.indexOf(image)+1} caption`}
                 id={`editor-target-article-caption-${image.id}`}
                 onChange={(event) => change(image.id, (current) => { current.caption = event.target.value; })}
               />
@@ -217,7 +219,7 @@ export function ArticleImagesSection() {
                 step={0.1}
                 onChange={changeHeight}
               />
-              <LabeledRange
+              <details className="control-disclosure"><summary>Fine size adjustment</summary><LabeledRange
                 label="Adjust image height"
                 value={height}
                 min={1}
@@ -239,6 +241,8 @@ export function ArticleImagesSection() {
                 Use original proportions
               </button>
               <p className="hint">Height changes the frame without stretching the photo. Use zoom and image shift to adjust the crop. Vertical bleed still extends the frame to the selected page edge.</p>
+              </details>
+              <details className="control-disclosure"><summary>Position & caption</summary>
               <LabeledNumber
                 label="Page"
                 value={image.anchor.page}
@@ -278,6 +282,8 @@ export function ArticleImagesSection() {
                   onChange={v=>change(image.id,current=>{current.captionPlacement!.widthMm=v;})}/>
               </div>}
               <p className="hint">Drag the caption to move it. Drag either side handle to resize its width. Text avoids the caption box, and the caption stays outside the image border. If it cannot fit, the preview shows a warning.</p>
+              </details>
+              <details className="control-disclosure"><summary>Text wrapping & outline</summary>
               <SegmentField<'box' | 'contour' | 'polygon'>
                 label="Text wrap shape"
                 value={image.wrapShape ?? 'box'}
@@ -331,7 +337,8 @@ export function ArticleImagesSection() {
                   </button>
                 </div>
               )}
-              <LabeledRange
+              </details>
+              <details className="control-disclosure"><summary>Crop & framing</summary><LabeledRange
                 label="Image zoom"
                 value={image.frame?.scale ?? 1}
                 min={0.5}
@@ -377,6 +384,8 @@ export function ArticleImagesSection() {
               >
                 Reset image framing
               </button>
+              </details>
+              <details className="control-disclosure"><summary>Bleed to page edges</summary>
               <SegmentField<'none' | 'left' | 'right' | 'both'>
                 label="Horizontal bleed"
                 value={
@@ -434,11 +443,11 @@ export function ArticleImagesSection() {
               {(image.bleed?.bottom || image.bleed?.left || image.bleed?.right) && (
                 <p className="hint">Bleed crops the artwork; the caption remains on the selected columns.</p>
               )}
+              </details>
               <button type="button" className="add-btn" disabled={loading} onClick={() => chooseFile(image.id)}>
                 {loading && pendingReplace.current === image.id ? <MagazooLoader variant="inline" label="Optimising image…" /> : 'Replace image'}
               </button>
             </div>
-            <RowButtons onRemove={() => remove(image.id)} />
           </div>
         );
       })}

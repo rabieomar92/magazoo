@@ -9,6 +9,20 @@ import { usePdfPreferences } from '../store/pdfPreferences';
 
 vi.mock('../lib/pdfExport', () => ({ exportPreviewPdf: vi.fn().mockResolvedValue(undefined) }));
 
+it('keeps the sidebar toggle in the toolbar, with a stable accessible state',()=>{
+  const onToggle=vi.fn();
+  const before=useDoc.getState().doc;
+  act(()=>root.render(<Toolbar onPreviewToolsHost={()=>undefined} onToggleSidebar={onToggle} sidebarCollapsed={false}/>));
+  const button=host.querySelector<HTMLButtonElement>('[aria-label="Collapse sidebar"]')!;
+  expect(button.closest('.toolbar')).not.toBeNull();
+  expect(button.getAttribute('aria-controls')).toBe('editor-panel');
+  expect(button.getAttribute('aria-expanded')).toBe('true');
+  act(()=>button.click());expect(onToggle).toHaveBeenCalledOnce();
+  act(()=>root.render(<Toolbar onPreviewToolsHost={()=>undefined} onToggleSidebar={onToggle} sidebarCollapsed/>));
+  expect(host.querySelector('[aria-label="Expand sidebar"]')?.getAttribute('aria-expanded')).toBe('false');
+  expect(useDoc.getState().doc).toBe(before);
+});
+
 let host: HTMLDivElement;
 let root: ReturnType<typeof createRoot>;
 beforeEach(() => {

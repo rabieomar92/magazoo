@@ -1,6 +1,7 @@
 import { DEFAULT_TOP_BAR_OFFSET, type Design } from '../schema/document';
 import type { Pagination, Piece } from './paginate';
 import { grid } from './geometry';
+import { articleHeaderWidth } from './articleHeaderWidth';
 
 /**
  * paper-2 keeps the shared column grid of `geometry.ts` untouched — same column
@@ -26,7 +27,7 @@ export function paper2VerticalVars(d: Design): Record<string, string> {
   const start = Math.max(Math.max(barBottom, d.showTopBar === false ? d.margin : 0) + d.gutter, d.firstPageTopMargin ?? 0);
   return {
     '--p2-start': `${start}mm`,
-    '--p2-hero-lift': `${d.showHero === false ? 0 : start - barBottom}mm`,
+    '--p2-hero-lift': `${d.showHero === false || articleHeaderWidth(d) !== undefined ? 0 : start - barBottom}mm`,
   };
 }
 

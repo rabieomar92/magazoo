@@ -1,6 +1,7 @@
 import { DEFAULT_TOP_BAR_OFFSET, type Design, type TemplateId } from '../schema/document';
 import { pageDimensions } from './pageFormat';
 import { TOP_BAR_HEIGHT_MM } from './topBar';
+import { articleHeaderWidth } from './articleHeaderWidth';
 
 export const ARTICLE_LAYOUTS = {
   'paper-4': { name: 'Immersive Bleed', rank: 1, referencePage: 19, heroHeight: 154, titleTop: 126, titleCols: 2, bodyTop: 179, dark: true, fade: true },
@@ -36,6 +37,7 @@ export function articleGeometry(id: ReferenceArticleId, design: Design, measured
   const col = (width - 2 * margin - (columns - 1) * gutter) / columns;
   const span = (count: number) => col * count + gutter * (count - 1);
   const titleCols = Math.max(1, Math.min(columns, Math.round(layout.titleCols * columns / 4)));
+  const titleWidth = articleHeaderWidth({...design, margin, gutter}) ?? span(titleCols);
   const heroHeight = design.showHero === false ? 0 : Math.max(0, Math.min(160, design.heroHeight));
   const delta = heroHeight - layout.heroHeight;
   const inset = id === 'paper-8';
@@ -63,8 +65,8 @@ export function articleGeometry(id: ReferenceArticleId, design: Design, measured
   const insetCaptionSpace = captionHeight > 0 ? 1 + captionHeight : 0;
   const starts = Array.from({ length: columns }, (_, i) => !bottomHero && inset && i >= imageColumn && i < imageColumn + heroColumns && heroHeight > 0
     ? bodyTop + heroHeight + insetCaptionSpace + gutter
-    : i < titleCols ? bodyTop : titleTop);
-  return { layout, width, height, margin, gutter, columns, col, span, titleCols, titleTop, bodyTop, bottom, image, starts, bottomHero, bottomBleed, contentTop };
+    : i * (col + gutter) < titleWidth - .01 ? bodyTop : titleTop);
+  return { layout, width, height, margin, gutter, columns, col, span, titleCols, titleWidth, titleTop, bodyTop, bottom, image, starts, bottomHero, bottomBleed, contentTop };
 }
 
 /** Split each column top-to-bottom around placed photographs, then advance

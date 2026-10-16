@@ -1,0 +1,70 @@
+/* UI-only refinement. Never style .page, publication text, or export frames. */
+.app .panel-workspace-heading { display:flex; align-items:center; justify-content:space-between; flex:none; padding:14px 16px 0; color:#172338; font:650 13px/1.4 system-ui,sans-serif; }
+.app .panel-workspace-context { font-size:11px; font-weight:500; color:#64748b; }
+.app .panel { background:#f8fafc; }
+.app .panel-tabs { margin:10px 12px 0; padding:3px; background:#eaf0f6; border:1px solid #e2e8f0; box-shadow:none; }
+.app .panel-tab { min-width:0; min-height:36px; padding:6px 5px; font-size:12px; }
+.app .panel .template-switch-compact { padding:12px; background:#f8fafc; }
+.app .panel .template-switch-field { gap:8px; }
+.app .panel .template-switch-field select { height:36px; min-width:0; padding-block:5px; font-size:12px; }
+.app .panel .panel-scroll { min-height:0; padding:4px 12px 24px; background:#f8fafc; scrollbar-gutter:stable; overscroll-behavior:contain; }
+.app .panel .section,
+.app .panel .panel-design-pane > .section { margin:8px 0; padding:14px; border:1px solid #e2e8f0; border-radius:10px; background:#fff; box-shadow:0 1px 2px #0f172a03; }
+.app .panel .section-title { margin:0 0 14px; font-size:12px; line-height:1.4; color:#27364b; font-weight:650; }
+.app .panel .section--disclosure,.app .panel .panel-design-pane > .section--disclosure { padding:0; }
+.app .panel .section-summary { display:flex; align-items:center; gap:12px; justify-content:space-between; padding:13px 14px; cursor:pointer; list-style:none; border-radius:9px; }
+.app .panel .section-summary::-webkit-details-marker { display:none; }
+.app .panel .section-summary .section-title { margin:0; }
+.app .panel .section-summary:hover { background:#f8fafc; }
+.app .panel .section-chevron { width:6px; height:6px; flex:none; border-right:1.5px solid #64748b; border-bottom:1.5px solid #64748b; transform:rotate(-45deg); margin-right:3px; }
+.app .panel .section--disclosure[open] > summary .section-chevron { transform:rotate(45deg); }
+.app .panel .section--disclosure[open] > summary { border-bottom:1px solid #edf2f7; border-radius:9px 9px 0 0; }
+.app .panel .section-body { padding:14px; min-width:0; }
+.app .panel .field { gap:7px; margin-bottom:12px; }
+.app .panel .field-label { color:#475569; font-size:12px; line-height:1.4; margin:0; }
+.app .panel .field-input { min-width:0; min-height:36px; padding:7px 9px; color:#233047; font-size:13px; line-height:1.5; border-color:#dbe3ee; border-radius:7px; }
+.app .panel .field-input--num { width:86px; flex:0 0 86px; font-variant-numeric:tabular-nums; }
+.app .panel .field--inline:not(:has(> select)) { gap:8px; align-items:center; }
+.app .panel .field--inline > .field-label { flex:1 1 100px; }
+.app .panel .field--inline:has(> .segment) { display:grid; grid-template-columns:minmax(0,1fr); gap:7px; }
+.app .panel .segment { display:flex; width:max-content; max-width:100%; flex-wrap:wrap; height:auto; padding:2px; gap:2px; border:1px solid #e2e8f0; background:#f1f5f9; }
+.app .panel .segment-btn { min-height:32px; padding:5px 9px; color:#475569; font-size:12px; white-space:normal; }
+.app .panel .segment-btn.is-active { background:#fff; color:#4338ca; box-shadow:0 1px 3px #0f172a10; }
+.app .panel .hint { margin:8px 0 12px; color:#596b82; font-size:11px; line-height:1.6; overflow-wrap:anywhere; }
+.app .panel .hint--warn { color:#865215; }
+.app .panel .control-disclosure { min-width:0; margin:8px 0; border-top:1px solid #e8edf4; }
+.app .panel .control-disclosure > summary { display:list-item; padding:11px 0; color:#43536a; cursor:pointer; font-size:12px; font-weight:600; list-style-position:inside; }
+.app .panel .control-disclosure > summary::marker { color:#7d8ba0; font-size:10px; }
+.app .panel .control-disclosure[open] > summary { color:#4338ca; }
+.app .panel .hero-thumb { max-height:144px; min-height:80px; border-radius:7px; }
+.app .panel .hero-actions { display:flex; align-items:center; gap:8px; margin:10px 0 14px; }
+.app .panel .figure-thumb { height:120px; max-height:120px; border-radius:7px; overflow:hidden; }
+.app .panel .figure-thumb img { width:100%; height:100%; object-fit:contain; background:#f1f5f9; }
+.app .panel .image-card-heading { display:flex; align-items:center; justify-content:space-between; gap:8px; width:100%; color:#334155; font-size:12px; font-weight:650; }
+.app .panel .list-item--stack:has(.image-card-heading) { display:flex; flex-direction:column; align-items:stretch; gap:10px; padding:12px; margin:12px 0; background:#fff; border-color:#dfe6ef; border-radius:9px; }
+.app .panel .figure-edit { width:100%; gap:9px; padding:0; background:transparent; border:0; }
+.app .panel .add-btn { min-height:34px; font-size:12px; color:#3c4a62; background:#f8fafc; border-color:#dbe3ee; }
+.app .panel .hero-upload { border-style:dashed; color:#4338ca; background:#f6f7ff; }
+.app .panel .icon-btn { width:32px; height:32px; min-height:32px; }
+.app .panel .toggle input { width:17px; height:17px; accent-color:#4f46e5; }
+.app .panel .range-input { accent-color:#4f46e5; }
+.app .sidebar-toggle.tool-btn { display:inline-flex; flex:0 0 34px; width:34px; min-width:34px; height:34px; padding:6px; border-color:#dfe6ef; color:#475569; background:#fff; }
+.app .sidebar-toggle:hover { color:#4338ca; background:#eef2ff; }
+.app .splitter { width:5px; border:0; background:#e7ecf3; }
+.app .splitter:hover,.app .splitter.is-dragging { background:#a5b4fc; }
+.app .workspace.is-collapsed > .splitter { display:none; }
+.app .editing-access--active { min-height:30px; padding:4px 16px; background:#f0f8f5; color:#265b4c; font-size:11px; }
+.app .editing-access--active button { min-height:26px; padding:3px 10px; }
+.app .panel :is(summary,button,input,select,textarea):focus-visible,
+.app .sidebar-toggle:focus-visible { outline:2px solid #6366f1; outline-offset:2px; }
+.app .panel-scroll:focus-visible { outline:2px solid #a5b4fc; outline-offset:-2px; }
+@media (max-width:720px) {
+  .app .panel-workspace-heading { padding-top:12px; }
+  .app .panel-tab { min-height:40px; }
+  .app .panel .field-input,.app .panel .segment-btn { min-height:40px; }
+  .app .panel .control-disclosure > summary { padding-block:13px; }
+  .app .editing-access--active { padding:6px 10px; }
+  .app .workspace > .splitter { pointer-events:none; }
+}
+@media (prefers-reduced-motion:reduce) { .app .panel * { scroll-behavior:auto; transition:none; } }
+@media print { .panel-workspace-heading { display:none; } }

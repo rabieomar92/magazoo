@@ -394,6 +394,9 @@ export interface Design {
   imageTheme?: boolean;
   /** Body columns on page 1. Page 2 turns the sidebar slot into a text column. */
   bodyCols: 2 | 3 | 4;
+  /** Optional article heading span on a four-column page grid. Missing keeps
+   * the template's original title/subtitle/byline composition. */
+  headerWidthCols?: 1 | 2 | 3 | 4;
   /** Body paragraph alignment. Absent = 'justify' (v1 files kept their look). */
   bodyAlign?: 'left' | 'center' | 'right' | 'justify';
   /**

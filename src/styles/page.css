@@ -336,6 +336,8 @@
 }
 
 .header {
+  width: var(--article-header-width, auto);
+  max-width: 100%;
   margin-top: var(--gutter);
   /* RTL (Design panel's Text direction): the title/subtitle/byline are running
      text like the body, so they read right-to-left too. `direction` is

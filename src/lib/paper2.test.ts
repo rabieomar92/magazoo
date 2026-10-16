@@ -19,4 +19,7 @@ describe('Physics Letter hero alignment', () => {
     expect(vars['--p2-start']).toBe('45mm');
     expect(vars['--p2-hero-lift']).toBe('45mm');
   });
+  it.each([1,2,3,4] as const)('does not lift the hero into the optional %s-column heading row',headerWidthCols=>{
+    expect(paper2VerticalVars({...emptyDoc().design,headerWidthCols,firstPageTopMargin:40})['--p2-hero-lift']).toBe('0mm');
+  });
 });

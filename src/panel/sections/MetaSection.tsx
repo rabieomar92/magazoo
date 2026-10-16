@@ -1,6 +1,8 @@
 import { useDoc } from '../../store/useDoc';
 import { familyOf } from '../../schema/document';
-import { LabeledColor, LabeledInput, LabeledTextarea, Section } from '../Field';
+import { LabeledColor, LabeledInput, LabeledSelect, LabeledTextarea, Section } from '../Field';
+import { supportsArticleHeaderWidth } from '../../lib/articleHeaderWidth';
+import type { Design } from '../../schema/document';
 
 export function MetaSection() {
   const meta = useDoc((s) => s.doc.meta);
@@ -12,6 +14,8 @@ export function MetaSection() {
   const isBoard = useDoc(s => s.doc.templateId === 'frontmatter-board');
   const showAuthor = useDoc(s => s.doc.templateId !== 'frontmatter-contents' && s.doc.templateId !== 'frontmatter-board' && s.doc.templateId !== 'news-briefs');
   const update = useDoc((s) => s.update);
+  const headerWidth = useDoc(s => s.doc.design.headerWidthCols);
+  const hasHeaderWidth = useDoc(s => supportsArticleHeaderWidth(s.doc.templateId));
 
   const set = (key: keyof typeof meta) => (v: string) =>
     update((d) => {
@@ -24,7 +28,17 @@ export function MetaSection() {
     });
 
   return (
-    <Section title={isGallery ? 'Header' : isNews ? 'Page header (optional)' : isBoard ? 'Editorial page text' : 'Title & Author'}>
+    <Section title={isGallery ? 'Header' : isNews ? 'Page header (optional)' : isBoard ? 'Editorial page text' : 'Title & Author'} collapsible defaultOpen={false}>
+      {hasHeaderWidth && <>
+        <LabeledSelect label="Heading box width" value={headerWidth === undefined ? 'template' : String(headerWidth)} options={[
+          {value:'template',label:'Template default'},
+          ...[1,2,3,4].map(n=>({value:String(n),label:`${n} column${n===1?'':'s'}`})),
+        ]} onChange={value=>update(d=>{
+          if(value==='template') delete d.design.headerWidthCols;
+          else d.design.headerWidthCols=Number(value) as Design['headerWidthCols'];
+        })}/>
+        <p className="hint">Title, subtitle, author and affiliation share this width on a four-column page grid. Text reflows at its existing font size. Template default restores the original composition.</p>
+      </>}
       <LabeledInput
         label="Top bar text"
         editorTarget="meta-masthead"

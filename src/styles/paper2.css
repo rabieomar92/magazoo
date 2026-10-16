@@ -8,7 +8,7 @@
   /* Height of everything below the band. The two region boxes and their hidden
      measuring twins subtract from this same number, so the break is measured
      against the box the text really lands in. */
-  --p2-body-h: calc(var(--page-h) - var(--bottom-margin, var(--margin)) - var(--p2-start));
+  --p2-body-h: calc(var(--page-h) - var(--bottom-margin, var(--margin)) - var(--p2-start) - var(--p2-shared-head-h, 0px));
 }
 
 /* The bar itself lives in page.css (.tag-bar). Here it only bleeds sideways
@@ -21,7 +21,7 @@
 
 .p2-cols {
   position: absolute;
-  top: var(--p2-start);
+  top: calc(var(--p2-start) + var(--p2-shared-head-h, 0px));
   left: var(--margin);
   right: var(--margin);
   display: flex;
@@ -29,6 +29,9 @@
   gap: var(--gutter);
   height: var(--p2-body-h);
 }
+
+.p2-shared-heading { position:absolute; top:var(--p2-start); left:var(--margin); right:var(--margin); }
+.p2-shared-heading .p2-head { margin:0; padding-bottom:var(--gutter); overflow-wrap:anywhere; }
 
 /* Keep the original region geometry and pagination; only exchange their
    physical positions. This avoids a second, divergent Paper 2 flow engine. */

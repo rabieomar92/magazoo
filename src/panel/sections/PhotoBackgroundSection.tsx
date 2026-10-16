@@ -86,7 +86,7 @@ export function PhotoBackgroundSection() {
     sampleAt({ x: Math.max(0, Math.min(1, point.x + direction[0] * step)), y: Math.max(0, Math.min(1, point.y + direction[1] * step)) });
   };
 
-  return <Section title="Match page colour to a photo" editorTarget="photo-background-colour">
+  return <Section title="Match page colour to a photo" editorTarget="photo-background-colour" collapsible defaultOpen={false}>
     <p className="hint">Pick a background area, not the subject. This sets a solid base colour on every page, without putting the photograph behind your text. Existing full-bleed photos stay visible above the base colour.</p>
     {!choices.length ? <p className="hint">Add a photo in Images, then return here to pick its background colour.</p> : <>
       <LabeledSelect label="Source photo" value={assetId ?? ''} options={choices} onChange={setSelection} />

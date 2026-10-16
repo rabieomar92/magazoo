@@ -56,6 +56,7 @@ import { PreviewReadOnly, PreviewPreserveSourceAnchors } from './PreviewReadOnly
 import { footerBottomMargin } from '../lib/pageFooter';
 import { TOP_BAR_HEIGHT_MM } from '../lib/topBar';
 import {useHeroCaptionLayout} from './useHeroCaptionLayout';
+import { articleHeaderWidth, articleHeaderWidthVars } from '../lib/articleHeaderWidth';
 
 type PreviewPagination = Pagination & { layoutRevision: number };
 const EMPTY: PreviewPagination = { pages: [], fill: 0, spill: 0, layoutRevision: 0 };
@@ -601,7 +602,9 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
 
       const root = hl.closest<HTMLElement>('.measure-root');
       if (root) {
-        root.style.setProperty('--p2-head-h', `${headH}px`);
+        const sharedHeading = articleHeaderWidth(doc.design) !== undefined;
+        root.style.setProperty('--p2-head-h', `${sharedHeading ? 0 : headH}px`);
+        root.style.setProperty('--p2-shared-head-h', `${sharedHeading ? headH : 0}px`);
         root.style.setProperty('--p2-heroblock-h', `${heroH}px`);
         root.style.setProperty('--footer-h', '0mm');
       }
@@ -955,6 +958,7 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
 
   const vars = {
     ...baseVars,
+    ...articleHeaderWidthVars(doc.design),
     ...paper2VerticalVars(doc.design),
     '--header-h': `${headerPx}px`,
     '--footer-h': '0mm',
@@ -973,7 +977,8 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
       doc.design.margin,
       (doc.design.topBarOffset ?? DEFAULT_TOP_BAR_OFFSET) + TOP_BAR_HEIGHT_MM + doc.design.gutter,
     )}mm`,
-    '--p2-head-h': `${p2HeadPx}px`,
+    '--p2-head-h': `${articleHeaderWidth(doc.design) !== undefined ? 0 : p2HeadPx}px`,
+    '--p2-shared-head-h': `${articleHeaderWidth(doc.design) !== undefined ? p2HeadPx : 0}px`,
     '--p2-heroblock-h': `${p2HeroPx}px`,
     '--p2-left-w': `${p2.leftW}mm`,
     '--p2-hero-w': `${p2.heroW}mm`,

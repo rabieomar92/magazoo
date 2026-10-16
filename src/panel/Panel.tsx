@@ -20,6 +20,7 @@ import { DirectionSection } from './sections/DirectionSection';
 import { PhotoBackgroundSection } from './sections/PhotoBackgroundSection';
 import { TopBarSection } from './sections/TopBarSection';
 import './editor-refinements.css';
+import './workspace-polish.css';
 import {
   blockEditorId,
   editorTargetId,
@@ -128,7 +129,8 @@ export function Panel() {
   }, [isGate]);
 
   return (
-    <aside className="panel">
+    <aside className="panel" id="editor-panel" aria-label="Editing controls">
+      <div className="panel-workspace-heading"><span>Editor</span><span className="panel-workspace-context">{TABS.find(t=>t.id===tab)?.label}</span></div>
       <nav className="panel-tabs" role="tablist" aria-label="Editor sections">
         {TABS.filter(t => !(isFrontMatter || isNews || isBackCover) || t.id !== 'highlights').map((t) => (
           <button
@@ -183,7 +185,7 @@ export function Panel() {
         </div>}
       </div>
 
-      <div className="panel-scroll">
+      <div className="panel-scroll" tabIndex={0} aria-label="Editor options">
         {tab === 'content' && (
           <>
             {isBackCover ? <BackCoverContent /> : isGate ? <div className="section"><p className="hint">Cover text and its appearance now live together under Cover & design.</p><button type="button" className="add-btn" onClick={() => setTab('design')}>Edit cover text & design</button></div> : <><MetaSection /><FooterSection /></>}
@@ -207,7 +209,8 @@ export function Panel() {
         )}
         <div className="panel-design-pane" hidden={tab !== 'design'}>
           <p className="typography-relocated-note">Font and text styling controls are in the top toolbar. Page layout, backgrounds and object positioning stay here.</p>
-          <DirectionSection /><PhotoBackgroundSection />{isBackCover ? <BackCoverDesign /> : isFrontMatter || isNews ? <FrontMatterDesign /> : <DesignSection />}
+          {isBackCover ? <BackCoverDesign /> : isFrontMatter || isNews ? <FrontMatterDesign /> : <DesignSection />}
+          <PhotoBackgroundSection /><DirectionSection />
           {templateId !== 'frontmatter-board' && <TopBarSection />}
           <PageMarginTextSection />
         </div>

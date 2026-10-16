@@ -26,7 +26,7 @@ export function PageMarginTextSection() {
   }, []);
 
   const text = settings.mode === 'all' ? doc.marginText?.text ?? '' : doc.marginText?.pages?.[String(page)] ?? '';
-  return <Section title="Page margin text">
+  return <Section title="Page margin text" collapsible defaultOpen={false}>
     <Toggle label="Show vertical margin text" checked={settings.enabled} onChange={v => set('enabled', v)} />
     <p className="hint">Optional small vertical text for a copyright notice, photo credit or source. It sits outside the text columns.</p>
     {settings.enabled && <>

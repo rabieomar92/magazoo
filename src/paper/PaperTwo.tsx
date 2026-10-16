@@ -9,6 +9,7 @@ import { PlacedImages } from './PlacedImages';
 import { FramedImage } from '../components/FramedImage';
 import { PageArtwork } from '../components/PageArtwork';
 import { HeroCaption } from './HeroCaption';
+import { articleHeaderWidth } from '../lib/articleHeaderWidth';
 
 interface Props {
   doc: Doc;
@@ -30,23 +31,26 @@ export function PaperTwoPage({
   const { meta, hero, design } = doc;
   const heroAsset = hero.assetId ? doc.assets[hero.assetId] : null;
   const { rail } = paper2Grid(design);
+  const sharedHeader = articleHeaderWidth(design) !== undefined;
+  const heading = <header className="header p2-head">
+    <p className="eyebrow" data-editor-tab="content" data-editor-target="meta-category">{meta.categoryLabel}</p>
+    <h1 className="title" data-editor-tab="content" data-editor-target="meta-title">{meta.title}</h1>
+    {meta.subtitle && <p className="subtitle" data-editor-tab="content" data-editor-target="meta-subtitle">{meta.subtitle}</p>}
+    <p className="byline">
+      <span data-editor-tab="content" data-editor-target="meta-author">{meta.author}</span>
+      {meta.affiliation && <span className="affiliation" data-editor-tab="content" data-editor-target="meta-affiliation"> · {meta.affiliation}</span>}
+    </p>
+  </header>;
 
   return (
-    <div className="page page--p2" style={{ ...vars, ...paper2VerticalVars(design) }}>
+    <div className={`page page--p2${sharedHeader ? ' page--p2-shared-heading' : ''}`} style={{ ...vars, ...paper2VerticalVars(design) }}>
       <PageArtwork doc={doc} />
       <TagBar doc={doc} pageIndex={0} />
+      {sharedHeader && <div className="p2-shared-heading">{heading}</div>}
 
       <div className={`p2-cols${(design.heroSide ?? (design.textDirection === 'rtl' ? 'left' : 'right')) === 'left' ? ' p2-cols--hero-left' : ''}`}>
         <div className="p2-left">
-          <header className="header p2-head">
-            <p className="eyebrow" data-editor-tab="content" data-editor-target="meta-category">{meta.categoryLabel}</p>
-            <h1 className="title" data-editor-tab="content" data-editor-target="meta-title">{meta.title}</h1>
-            {meta.subtitle && <p className="subtitle" data-editor-tab="content" data-editor-target="meta-subtitle">{meta.subtitle}</p>}
-            <p className="byline">
-              <span data-editor-tab="content" data-editor-target="meta-author">{meta.author}</span>
-              {meta.affiliation && <span className="affiliation" data-editor-tab="content" data-editor-target="meta-affiliation"> · {meta.affiliation}</span>}
-            </p>
-          </header>
+          {!sharedHeader && heading}
           <div data-flow-host className="body-cols p2-flow-l">
             {/* The header owns this column's top; nothing owns its bottom. */}
             <Flow

@@ -19,7 +19,11 @@ const SAVE_LABEL: Record<SaveState, string> = {
 const undo = () => useDoc.temporal.getState().undo();
 const redo = () => useDoc.temporal.getState().redo();
 
-export function Toolbar({ onPreviewToolsHost }: { onPreviewToolsHost: (host: HTMLDivElement | null) => void }) {
+export function Toolbar({ onPreviewToolsHost, onToggleSidebar, sidebarCollapsed = false }: {
+  onPreviewToolsHost: (host: HTMLDivElement | null) => void;
+  onToggleSidebar?: (event: React.MouseEvent<HTMLButtonElement>) => void;
+  sidebarCollapsed?: boolean;
+}) {
   const canUndo = useStore(useDoc.temporal, (s) => s.pastStates.length > 0);
   const canRedo = useStore(useDoc.temporal, (s) => s.futureStates.length > 0);
   const saveState = useSaveStatus((s) => s.status);
@@ -77,6 +81,11 @@ export function Toolbar({ onPreviewToolsHost }: { onPreviewToolsHost: (host: HTM
   return (
     <header className="toolbar">
       <div className="toolbar-identity" title={project.message}>
+        {onToggleSidebar && <button type="button" className="tool-btn sidebar-toggle" onClick={onToggleSidebar}
+          aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'} aria-expanded={!sidebarCollapsed} aria-controls="editor-panel"
+          title={sidebarCollapsed ? 'Show editing controls' : 'Hide editing controls'}>
+          <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><rect x="2.5" y="3" width="15" height="14" rx="2"/><path d="M8 3v14M4.5 6h1.5M4.5 9h1.5"/></svg>
+        </button>}
         <Wordmark className="toolbar-brand" />
         <span className={`project-save-status${project.status==='error'||project.status==='conflict' ? ' is-error':''}`} role="status" aria-label={project.message}>{projectStatus}</span>
         {saveState === 'error' && <span className="toolbar-save-error">Autosave failed</span>}

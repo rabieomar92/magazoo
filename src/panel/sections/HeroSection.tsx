@@ -166,16 +166,16 @@ export function ImagePicker({ slot, title, blurb, fit = 'cover', thumbAspectRati
               onChange={value => update(d => { d.meta[captionKey] = value; })} />
             {!caption.trim() && <p className="hint hint--warn" role="status">This image has no caption yet. Add a description before publishing.</p>}
             <p className="hint">Drag this caption anywhere on its page. Arrow keys move it by 1 mm; hold Shift for 5 mm. Its font controls remain in the top toolbar.</p>
-            {placement&&<>
+            {placement&&<details className="control-disclosure"><summary>Caption position & width</summary>
               <div className="image-boundary-coordinates">
                 <LabeledNumber label="Caption X" unit="mm" min={0} max={dimensions.width} step={.5} value={placement.x} onChange={x=>update(d=>{d.design[placementKey]={...placement,x};})}/>
                 <LabeledNumber label="Caption Y" unit="mm" min={0} max={dimensions.height} step={.5} value={placement.y} onChange={y=>update(d=>{d.design[placementKey]={...placement,y};})}/>
                 <LabeledNumber label="Caption width" unit="mm" min={5} max={dimensions.width} step={.5} value={placement.widthMm} onChange={widthMm=>update(d=>{d.design[placementKey]={...placement,widthMm};})}/>
               </div>
               <button type="button" className="add-btn" onClick={()=>update(d=>{delete d.design[placementKey];})}>Reset caption position</button>
-            </>}
+            </details>}
           </>}
-          {framing && <><LabeledRange label="Shift horizontally" value={frame.offsetX} min={-50} max={50} step={1} format={(v) => `${v}%`} onChange={setKey('offsetX')} />
+          {framing && <details className="control-disclosure"><summary>Crop & framing</summary><LabeledRange label="Shift horizontally" value={frame.offsetX} min={-50} max={50} step={1} format={(v) => `${v}%`} onChange={setKey('offsetX')} />
           <LabeledRange label="Shift vertically" value={frame.offsetY} min={-50} max={50} step={1} format={(v) => `${v}%`} onChange={setKey('offsetY')} />
           <LabeledRange label="Zoom" value={frame.scale} min={0.5} max={3} step={0.05} format={(v) => `${v.toFixed(2)}×`} onChange={setKey('scale')} />
           <p className="hint">{fit === 'contain' ? '1× shows the complete image; zoom above 1× only when you want a tighter logo crop.' : 'Below 1× reveals more of the image; 1× fills the frame.'}</p>
@@ -186,7 +186,7 @@ export function ImagePicker({ slot, title, blurb, fit = 'cover', thumbAspectRati
           >
             Reset image framing
           </button>
-          </>}
+          </details>}
         </>
       ) : (
         <button type="button" className="add-btn hero-upload" disabled={loading} onClick={() => fileRef.current?.click()}>

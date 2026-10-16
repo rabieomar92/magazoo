@@ -100,6 +100,7 @@ export function DesignSection() {
   const generalSettings = (
     <Section title="Page layout & spacing">
       {isReference && <>
+        <details className="control-disclosure"><summary>Template defaults & reference</summary>
         <p className="hint">{ARTICLE_LAYOUTS[templateId].name} · inspired by RIKEN Research, December 2025, page {ARTICLE_LAYOUTS[templateId].referencePage}. Four columns reproduce the reference grid. All five layouts share these controls.</p>
         <LabeledSelect label="Page proportions" value={design.articlePageSize ?? 'reference'} options={[
           { value: 'reference', label: 'Reference trim · 210 × 276 mm' }, { value: 'a4', label: 'A4 · 210 × 297 mm' },
@@ -107,6 +108,7 @@ export function DesignSection() {
         <p className="hint">This source trim is used for A4 and B5 output. Choosing Magazine in the top toolbar reflows the preview natively at 203 × 267 mm, without added fit borders. Your copy and font sizes stay unchanged; page breaks may change.</p>
         <button type="button" className="btn" onClick={() => update(d => { d.design = referenceArticleDesign(templateId, d.design); })}>Apply reference design defaults</button>
         <p className="hint">Resets fonts, sizes, colours and grid spacing. Your text and images stay unchanged; Undo restores your design.</p>
+        </details>
         <TypographyControl group="body" order={48} property="lineHeight"><LabeledNumber label="Line spacing" value={design.articleLeading ?? 1.28} min={1} max={2.5} step={.02} onChange={v => set('articleLeading', v)}/></TypographyControl>
         <TypographyControl group="heroCaption" order={10} property="fontFamily"><LabeledSelect label="Caption font" value={design.articleCaptionFont ?? 'Avenir Next LT Pro'} options={fontOptions()} onChange={v => set('articleCaptionFont',v)}/></TypographyControl>
         <TypographyControl group="heroCaption" order={20} property="fontSize"><LabeledNumber label="Caption size" unit="pt" value={design.articleCaptionSize ?? 7} min={5} max={18} step={.5} onChange={v => set('articleCaptionSize',v)}/></TypographyControl>
@@ -116,6 +118,7 @@ export function DesignSection() {
         ]} onChange={v => set('articleCaptionAlign',v)}/></TypographyControl>
       </>}
       {(templateId === 'paper-3' || isReference) && <>
+        <details className="control-disclosure"><summary>Hero colour & edge treatment</summary>
         <Toggle label="Match colours to hero image" checked={imageThemeEnabled} onChange={v => set('imageTheme', v)} />
         <p className="hint">The photo fades into a solid, image-matched page colour with contrasting text. Turn this off to use your manual palette. Individual text colour overrides remain editable.</p>
         <Toggle label="Photograph rises from the foot of the page" checked={design.heroAtBottom === true} onChange={v => set('heroAtBottom', v)} />
@@ -124,8 +127,9 @@ export function DesignSection() {
           <Toggle label="Bleed hero image to bottom edge" checked={design.heroBottomBleed === true} onChange={v => set('heroBottomBleed', v)} />
           <p className="hint">Runs the photo to the page’s bottom trim without a blank footer band. The page number and footer remain readable over the image. Text and captions stay inside the page.</p>
         </>}
+        </details>
       </>}
-      <p className="group-label">Layout</p>
+      <details className="control-disclosure" open><summary>Columns & highlights</summary>
       <SegmentField<Design['bodyCols']>
         label="Text columns"
         value={design.bodyCols}
@@ -175,8 +179,9 @@ export function DesignSection() {
         <p className="hint">This layout prints no highlights box, so the switch has nothing to hide here. It applies to the Paper and Magazine templates.</p>
       )}
       {cpl && <p className="hint hint--warn">{cpl}</p>}
+      </details>
 
-      <p className="group-label">Spacing (mm)</p>
+      <details className="control-disclosure"><summary>Margins & spacing</summary>
       <LabeledNumber label="Margin" unit="mm" value={design.margin} min={8} max={30} step={1} onChange={(v) => set('margin', v)} />
       <LabeledNumber label="Gutter" unit="mm" value={design.gutter} min={2} max={12} step={0.5} onChange={(v) => set('gutter', v)} />
       {family !== 'gallery' && !isGate && (
@@ -225,7 +230,8 @@ export function DesignSection() {
       <TypographyControl group="author" order={10} property="fontFamily"><LabeledSelect label="Author" value={design.fontAuthor ?? design.fontBody} options={fontOptions(ALL_FONTS)} onChange={(v) => set('fontAuthor', v)} /></TypographyControl>
       <TypographyControl group="affiliation" order={10} property="fontFamily"><LabeledSelect label="Affiliation" value={design.fontAffiliation ?? design.fontBody} options={fontOptions(ALL_FONTS)} onChange={(v) => set('fontAffiliation', v)} /></TypographyControl></>}
 
-      <p className="group-label">Colors</p>
+      </details>
+      <details className="control-disclosure"><summary>Page colours</summary>
       {(templateId === 'paper-3' || isReference) && imageThemeEnabled && <p className="hint">These are your saved manual colours. Turn off “Match colours to hero image” above to apply them.</p>}
       <LabeledColor label="Page color (all pages)" value={design.paperBg ?? '#ffffff'} onChange={(v) => set('paperBg', v)} />
       <LabeledColor label="Hero" value={design.colors.hero} onChange={setColor('hero')} />
@@ -263,9 +269,10 @@ export function DesignSection() {
           onChange={(v) => set('showHero', v)}
         />
       )}
+      </details>
 
       {templateId !== 'paper-3' && <div id="editor-target-design-background">
-      <p className="group-label">First-page background graphic</p>
+      <details className="control-disclosure"><summary>First-page background graphic</summary>
       <input
         ref={backgroundFileRef}
         type="file"
@@ -308,11 +315,12 @@ export function DesignSection() {
         </button>
       )}
       {backgroundError && <p className="hint hint--warn" role="alert">{backgroundError}</p>}
+      </details>
       </div>}
 
       {hasBarSide && !isGate && (
         <div id="editor-target-design-topbar">
-          <p className="group-label">Top bar</p>
+          <details className="control-disclosure"><summary>Top bar appearance</summary>
           <SegmentField<'left' | 'right'>
             label="Masthead side"
             value={design.barSide ?? 'left'}
@@ -338,16 +346,18 @@ export function DesignSection() {
               <TypographyControl group="masthead" order={40} property="color"><LabeledColor label="Bar text ink" value={design.barTagInk ?? '#111418'} onChange={(v) => set('barTagInk', v)} /></TypographyControl>
             </>
           )}
+          </details>
         </div>
       )}
 
-      <p className="group-label">Custom CSS</p>
+      <details className="control-disclosure"><summary>Advanced · Custom CSS</summary>
       <LabeledTextarea
         label="Injected into preview as-is"
         value={design.customCss}
         onChange={(v) => set('customCss', v)}
         placeholder=".title { letter-spacing: -0.02em; }"
       />
+      </details>
     </Section>
   );
 

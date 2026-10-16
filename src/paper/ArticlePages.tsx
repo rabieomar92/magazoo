@@ -189,7 +189,7 @@ export function ArticlePages({ doc, vars, onStatus, readOnly = false }: { doc: D
       let free: PlacedHighlights | undefined;
       const leadObstacles: ArticleObstacle[] = [
         ...(geometry.image.height > 0 ? [{page:0,left:geometry.image.x,top:geometry.image.y,width:geometry.image.width,height:geometry.image.height+(id==='paper-8'&&!geometry.bottomBleed?captionHeight+1:0)}] : []),
-        {page:0,left:geometry.margin,top:geometry.titleTop,width:geometry.span(geometry.titleCols),height:headerHeight},
+        {page:0,left:geometry.margin,top:geometry.titleTop,width:geometry.titleWidth,height:headerHeight},
       ];
       if (hasCallout && placement === 'free') {
         const stored = doc.highlightBox ?? defaultPlacedHighlights(gridDesign, geometry.height);
@@ -294,7 +294,7 @@ export function ArticlePages({ doc, vars, onStatus, readOnly = false }: { doc: D
         </figure>}
         {id === 'paper-8' && !g.bottomBleed && hasImage && captionText && <HeroCaption doc={doc} as="div" className="article-inset-caption article-hero-caption" readOnly={readOnly}
           style={{ left: `${g.image.x}mm`, top: `${g.image.y + g.image.height + 1}mm`, width: `${g.image.width}mm` }}/>}
-        <div data-callout-obstacle className="article-header-position" style={{ left: `${g.margin}mm`, top: `${g.titleTop}mm`, width: `${g.span(g.titleCols)}mm` }}><ArticleHeader doc={doc}/></div>
+        <div data-callout-obstacle className="article-header-position" style={{ left: `${g.margin}mm`, top: `${g.titleTop}mm`, width: `${g.titleWidth}mm` }}><ArticleHeader doc={doc}/></div>
       </>}
       <TagBar doc={doc} pageIndex={page}/>
       {layout.regions.filter(r => r.region.page === page).map(({ region, pieces }, index) => <div
@@ -308,7 +308,7 @@ export function ArticlePages({ doc, vars, onStatus, readOnly = false }: { doc: D
       <PlacedImages doc={renderDoc} pageIndex={page} pageHeight={g.height} readOnly={readOnly}/>
     </div>)}
     <div className={`article-measure${g.layout.dark ? ' article-page--dark' : ''}`} ref={measure} aria-hidden="true" style={measureStyles}>
-      <div ref={header} style={{ width: `${g.span(g.titleCols)}mm` }}><ArticleHeader doc={doc}/></div>
+      <div ref={header} style={{ width: `${g.titleWidth}mm` }}><ArticleHeader doc={doc}/></div>
       <div ref={caption} className="article-inset-caption article-hero-caption" style={{ position: 'static', width: `${g.image.width}mm` }}>{captionText}</div>
       <div ref={callout} className="article-callout hl-col" style={{ width: `${calloutWidth}mm` }}><HighlightsBody doc={doc}/></div>
       <div ref={probes}/>
