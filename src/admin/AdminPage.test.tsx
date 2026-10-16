@@ -9,15 +9,41 @@ const projects=[{id:'p',name:'Physics',items:[]}];
 let request:ReturnType<typeof vi.fn>;
 beforeEach(()=>{
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT',true);
+  vi.spyOn(HTMLMediaElement.prototype,'play').mockResolvedValue();vi.spyOn(HTMLMediaElement.prototype,'pause').mockImplementation(()=>{});
   request=vi.fn(async(url:string,options:RequestInit)=>({ok:true,json:async()=>url.endsWith('auth/session')?{csrf:'test-csrf'}:url.endsWith('projects')&&options.method==='POST'?{id:'new'}:projects}));
   vi.stubGlobal('fetch',request);
   host=document.createElement('div');document.body.append(host);root=createRoot(host);
 });
-afterEach(()=>{act(()=>root.unmount());host.remove();vi.unstubAllGlobals();});
+afterEach(()=>{act(()=>root.unmount());host.remove();vi.restoreAllMocks();vi.unstubAllGlobals();});
 const render=()=>act(async()=>root.render(<AdminPage/>));
 const click=(text:string)=>act(async()=>[...host.querySelectorAll('button')].find(b=>b.textContent===text)!.click());
 const fill=(field:HTMLInputElement,value:string)=>act(()=>{Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value')!.set!.call(field,value);field.dispatchEvent(new Event('input',{bubbles:true}));});
 const submit=(form:HTMLFormElement)=>act(async()=>{form.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));});
+it('shows only the logo, sign-in form and editor link without the old top bar or marketing introduction',async()=>{
+  request.mockImplementation(async()=>({ok:false,json:async()=>({error:'Sign in required.'})}));
+  await render();
+  expect(host.querySelector('.admin-header')).toBeNull();expect(host.querySelector('.admin-intro')).toBeNull();
+  expect(host.querySelector('.admin-footnote')).toBeNull();expect(host.textContent).not.toContain('Good stories start here');
+  const card=host.querySelector('.admin-login')!;
+  expect(card.querySelector('img[alt="Magazoo!"]')).not.toBeNull();expect(card.querySelector('h1')!.textContent).toBe('Sign in');
+  expect(card.querySelector('a')!.getAttribute('href')).toBe('/#editor');
+  expect(host.querySelector('.admin-page--signin')).not.toBeNull();
+});
+it('preserves the existing sign-in request and switches to the normal library after successful login',async()=>{
+  request.mockImplementation(async(url:string)=>({ok:!url.endsWith('auth/session'),json:async()=>url.endsWith('auth/session')?{error:'Sign in required.'}:url.endsWith('auth/login')?{csrf:'test-csrf'}:projects}));
+  await render();const form=host.querySelector('form')!;
+  fill(form.querySelector('input')!,'Local-test-only');await submit(form);
+  const login=request.mock.calls.find(([url])=>url.endsWith('auth/login'))!;
+  expect(login[1].method).toBe('POST');expect(JSON.parse(String(login[1].body))).toEqual({password:'Local-test-only'});
+  expect(host.querySelector('.admin-login')).toBeNull();expect(host.querySelector('video')).toBeNull();
+  expect(host.querySelector('.admin-header')).not.toBeNull();expect(host.querySelector('h1')!.textContent).toBe('Article library');
+});
+it('keeps a failed sign-in inside the card and preserves the entered password for correction',async()=>{
+  request.mockImplementation(async(url:string)=>({ok:false,json:async()=>({error:url.endsWith('auth/login')?'Incorrect admin password.':'Sign in required.'})}));
+  await render();const form=host.querySelector('form')!;fill(form.querySelector('input')!,'Local-test-only');await submit(form);
+  expect(host.querySelector('.admin-login [role=alert]')?.textContent).toBe('Incorrect admin password.');
+  expect(form.querySelector('input')!.value).toBe('Local-test-only');expect(host.querySelector('.admin-login-editor')).not.toBeNull();
+});
 it('shows the library first, with creation forms closed and no API mutations',async()=>{
   await render();
   expect(host.querySelector('h1')!.textContent).toBe('Article library');

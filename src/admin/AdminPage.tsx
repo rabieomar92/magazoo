@@ -7,6 +7,7 @@ import RenameProjectDialog from './RenameProjectDialog';
 import { AdminIcon } from './AdminIcon';
 import { Wordmark } from '../components/Wordmark';
 import { MagazooLoader } from '../components/MagazooLoader';
+import {LoginBackground} from './LoginBackground';
 const IssueWorkspace = lazy(() => import('../issue/IssueWorkspace'));
 
 const api = async (path: string, csrf: string, method = 'GET', data?: unknown) => {
@@ -76,25 +77,27 @@ export default function AdminPage() {
   };
   const count = projects.reduce((total, project) => total + project.items.length, 0);
   if (csrf && compilingProject) return <Suspense fallback={<MagazooLoader label="Opening issue studio…" detail="Preparing the issue compiler and saved arrangement." />}><IssueWorkspace projectId={compilingProject} csrf={csrf} onClose={() => { setCompilingProject(null); void run(() => refresh()); }} /></Suspense>;
-  return <main className="admin-page">
-    {(!checked || busy) && <div className="admin-loading"><MagazooLoader variant="banner" label={!checked ? 'Loading your workspace…' : 'Working… Please wait.'} /></div>}
-    <header className="admin-header">
+  return <main className={`admin-page${!csrf?' admin-page--signin':''}`}>
+    {csrf&&busy && <div className="admin-loading"><MagazooLoader variant="banner" label="Working… Please wait." /></div>}
+    {csrf&&<header className="admin-header">
       <div className="admin-header-identity"><a className="admin-brand" href={`${import.meta.env.BASE_URL}#admin`} aria-label="Magazoo admin home"><Wordmark /></a><span className="admin-header-divider"/><div className="admin-workspace-name"><strong>Editorial workspace</strong><span>Magazoo! Studio</span></div></div>
       <nav aria-label="Workspace"><a href={`${import.meta.env.BASE_URL}#editor`}>Open editor<AdminIcon name="arrow"/></a>{csrf && <><span className="admin-role"><span/>Administrator</span><button disabled={busy} onClick={() => void run(async () => { await api('auth/logout', csrf, 'POST'); setCsrf(''); setProjects([]); setCreator(null); })}>Log out</button></>}</nav>
-    </header>
-    <div className="admin-content">
-      <div className="admin-intro">
-        <div><p className="admin-eyebrow"><AdminIcon name="grid"/>{csrf ? 'Your publication workspace' : 'Private admin access'}</p><h1>{csrf ? 'Article library' : 'Good stories start here.'}</h1><p>{csrf ? 'A little more organised. A lot more room for your ideas.' : 'Your articles, your projects, your next great issue — all in one place.'}</p></div>
+    </header>}
+    <div className={`admin-content${!csrf?' admin-content--signin':''}`}>
+      {csrf&&<div className="admin-intro">
+        <div><p className="admin-eyebrow"><AdminIcon name="grid"/>Your publication workspace</p><h1>Article library</h1><p>A little more organised. A lot more room for your ideas.</p></div>
         {csrf && <div className="admin-intro-actions"><button disabled={busy} aria-expanded={creator === 'project'} aria-controls="admin-create-panel" onClick={e => { creatorTrigger.current = e.currentTarget; setCreator('project'); }}><AdminIcon name="folder"/>New project</button><button className="primary" disabled={busy || !projects.length} aria-expanded={creator === 'article'} aria-controls="admin-create-panel" onClick={e => { creatorTrigger.current = e.currentTarget; setCreator('article'); }}><AdminIcon name="plus"/>Add article</button></div>}
-      </div>
-      {error && <div className="admin-alert" role="alert">{error}</div>}{notice && <div className="admin-notice" role="status">{notice}</div>}
-      {!checked ? <p role="status">Checking admin session…</p> : !csrf ? <section className="admin-card admin-login">
-        <span className="admin-empty-icon"><AdminIcon name="shield"/></span><h2>Welcome back</h2><p>Sign in to manage your publication library.</p>
-        <form onSubmit={e => { e.preventDefault(); void run(async () => { const data = await api('auth/login', '', 'POST', {password}); setPassword(''); setCsrf(data.csrf); await refresh(data.csrf); setNotice('Signed in.'); }); }}>
+      </div>}
+      {csrf&&error && <div className="admin-alert" role="alert">{error}</div>}{csrf&&notice && <div className="admin-notice" role="status">{notice}</div>}
+      {!csrf ? <><section className="admin-card admin-login" aria-labelledby="admin-login-title">
+        <div className="admin-login-brand"><Wordmark/></div><h1 id="admin-login-title">Sign in</h1><p>Administrator access</p>
+        {error&&<div className="admin-alert" role="alert">{error}</div>}
+        <div className="admin-login-auth" aria-busy={!checked||busy}>{!checked?<p className="admin-login-check" role="status">Checking admin session…</p>:<form onSubmit={e => { e.preventDefault(); void run(async () => { const data = await api('auth/login', '', 'POST', {password}); setPassword(''); setCsrf(data.csrf); await refresh(data.csrf); setNotice('Signed in.'); }); }}>
           <label>Administrator password<input type="password" required minLength={8} maxLength={512} value={password} onChange={e => setPassword(e.target.value)} autoComplete="current-password" autoFocus /></label>
           <button className="primary" disabled={busy || password.length < 8}>{busy ? 'Signing in…' : 'Sign in to workspace'}<AdminIcon name="arrow"/></button>
-        </form><p className="admin-login-note">Use the administrator password configured on your server. It is not stored in this page.</p>
-      </section> : <>
+        </form>}</div>
+        <a className="admin-login-editor" href={`${import.meta.env.BASE_URL}#editor`}>Open editor<AdminIcon name="arrow"/></a>
+      </section><LoginBackground/></> : <>
         <div className="admin-overview" aria-label="Library overview">
           <div><span className="admin-stat-icon"><AdminIcon name="article"/></span><div><strong>{count}</strong><span>{count === 1 ? 'Article' : 'Articles'} in your library</span></div></div>
           <div><span className="admin-stat-icon"><AdminIcon name="folder"/></span><div><strong>{projects.length}</strong><span>{projects.length === 1 ? 'Project' : 'Projects'} to organise your work</span></div></div>
@@ -113,7 +116,7 @@ export default function AdminPage() {
         <AdminLibrary projects={projects} busy={busy} onDelete={setDeleting} onRename={setRenaming} onCompile={setCompilingProject} link={sharedLink} onCopy={item => void run(async () => { await navigator.clipboard.writeText(sharedLink(item.token)); setNotice(`Private editing link copied for ${item.name}.`); })} />
         <aside className="admin-sharing-note"><AdminIcon name="shield"/><p>Share thoughtfully. Anyone with a private link can access that article; only one person can edit it at a time. Keep links with your editorial team.</p></aside>
       </>}
-      <footer className="admin-footnote"><span>Magazoo! · Made for editorial work.</span><span>Keep regular server backups. Deleting a project revokes its article links.</span></footer>
+      {csrf&&<footer className="admin-footnote"><span>Magazoo! · Made for editorial work.</span><span>Keep regular server backups. Deleting a project revokes its article links.</span></footer>}
     </div>
     {deleting && <DeleteDialog target={deleting} close={() => setDeleting(null)} remove={() => run(async () => { await api(deleting.path, csrf, 'DELETE', {confirmation:deleting.name}); setDeleting(null); await refresh(); setNotice('Deleted. Affected editing links have been revoked.'); })} />}
     {renaming && <RenameProjectDialog name={renaming.name} close={() => setRenaming(null)} rename={async name => { await api(`projects/${renaming.id}`, csrf, 'PATCH', {name, previousName:renaming.name}); setRenaming(null); await run(async () => { await refresh(); setNotice('Project renamed. Existing editing links are unchanged.'); }); }} />}

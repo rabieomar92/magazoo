@@ -4,6 +4,7 @@ import { resolve, extname, sep } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { createAuth } from './passwordAuth.mjs';
 import { imageResponse } from './heroPreview.mjs';
+import {serveVideo} from './staticVideo.mjs';
 
 const fail=(status,message)=>{throw Object.assign(new Error(message),{status});};
 const MAX_BODY=64*1024*1024;
@@ -50,9 +51,12 @@ export function createApp({storage,origin,passwordHash,staticDir,authOptions={},
         const dist=resolve(staticDir);let file=resolve(dist,`.${decodeURIComponent(path)}`);
         if(!file.startsWith(`${dist}${sep}`) && file!==dist)fail(404,'Not found.');
         if(path==='/' || path==='/index.html')file=resolve(dist,'index.html');
-        if(!(await stat(file).catch(()=>null))?.isFile())fail(404,'Not found.');
+        const info=await stat(file).catch(()=>null);
+        if(!info?.isFile())fail(404,'Not found.');
         const types={'.html':'text/html; charset=utf-8','.js':'text/javascript','.css':'text/css','.json':'application/json','.woff2':'font/woff2','.otf':'font/otf','.ttf':'font/ttf','.svg':'image/svg+xml','.png':'image/png','.jpg':'image/jpeg','.webp':'image/webp','.ico':'image/x-icon'};
         res.setHeader('Content-Security-Policy',"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https:; worker-src 'self'; frame-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'");
+        if(path==='/media/login-network.mp4'||path==='/media/login-network-poster.jpg')res.setHeader('Cache-Control','public, max-age=86400');
+        if(extname(file)==='.mp4'){serveVideo(req,res,file,info.size);return;}
         res.setHeader('Content-Type',types[extname(file)]??'application/octet-stream');res.end(req.method==='HEAD'?undefined:await readFile(file));return;
       }
       if(!['GET','HEAD'].includes(req.method) && req.headers.origin!==url.origin)fail(403,'Origin not allowed.');
