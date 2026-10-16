@@ -62,7 +62,9 @@ export function FramedImage({ asset, frame, fit = 'cover', className, style }: P
       image.removeEventListener('load', apply);
       observer?.disconnect();
     };
-  }, [asset.naturalHeight, asset.naturalWidth, fit, resolved]);
+  // normalizeImageFrame returns a new object. Depending on that object used to
+  // measure every photograph and recreate its observer on every text edit.
+  }, [asset.naturalHeight, asset.naturalWidth, fit, resolved.scale, resolved.offsetX, resolved.offsetY]);
 
   return (
     <img

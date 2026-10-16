@@ -6,7 +6,6 @@ import { fitEquation } from '../lib/mathfit';
 import { HighlightsBody } from './Sidebar';
 import { MagSplitAside } from './MagSplitHead';
 import { exclusionGradient, mergeExclusions, type ColumnExclusion } from '../lib/columnFill';
-import { canExpandParagraphGap, fullColumnsForLevelling, type FullColumnMetric } from '../lib/fullColumnLevel';
 import { requestBlockEditorFocus } from '../lib/editorNavigation';
 import { quoteFlowHtml } from '../lib/decorativeQuote';
 import { ContourFloat } from './ContourFloat';
@@ -280,165 +279,6 @@ function InlineColumnFigure({ piece, doc }: { piece: FigurePiece; doc: Doc }) {
   );
 }
 
-type MeasuredFullColumn = FullColumnMetric & {
-  column: HTMLElement;
-  container: HTMLElement;
-  lastParagraph: HTMLElement;
-};
-
-/**
- * Align only columns that are already full. A full column has less than one
- * complete line left before the page's writable bottom; short columns never
- * participate. Corrections are bounded by that sub-line remainder and are
- * distributed exclusively through existing paragraph-to-paragraph gaps.
- * Line-height, paragraph position, and the figure-wrap geometry are untouched.
- */
-function useFullColumnParagraphLevelling(
-  gridRef: RefObject<HTMLDivElement | null>,
-  layoutSignal: unknown,
-  mode: 'text' | 'image' = 'text',
-) {
-  useLayoutEffect(() => {
-    const grid = gridRef.current;
-    if (!grid) return;
-    if(grid.querySelector('[data-tight-contour]'))return;
-    let frame = 0;
-    let disposed = false;
-
-    const restoreOwnedGaps = () => {
-      grid.querySelectorAll<HTMLElement>('[data-full-column-gap]').forEach((paragraph) => {
-        const original = paragraph.dataset.fullColumnOriginalMargin ?? '';
-        if (original) paragraph.style.marginBottom = original;
-        else paragraph.style.removeProperty('margin-bottom');
-        delete paragraph.dataset.fullColumnGap;
-        delete paragraph.dataset.fullColumnOriginalMargin;
-      });
-    };
-
-    const align = () => {
-      if (disposed) return;
-      restoreOwnedGaps();
-      const host = grid.closest<HTMLElement>('[data-flow-host]');
-      if (!host) return;
-      const columnSelector =
-        mode === 'image' ? ':scope > .flow-image-grid-col' : ':scope > .flow-textgrid-col';
-      const columns = Array.from(grid.querySelectorAll<HTMLElement>(columnSelector));
-      if (columns.length < 2) return;
-
-      const renderedScale = grid.offsetWidth
-        ? grid.getBoundingClientRect().width / grid.offsetWidth
-        : 1;
-      const scale = renderedScale || 1;
-      const hostBottom = host.getBoundingClientRect().bottom;
-
-      const measured = columns.flatMap<MeasuredFullColumn>((column) => {
-        let container = column;
-        let usableBottom = hostBottom;
-
-        if (mode === 'image') {
-          const segments = Array.from(
-            column.querySelectorAll<HTMLElement>(':scope > .flow-image-segment'),
-          );
-          const finalSegment = segments.at(-1);
-          if (!finalSegment) return [];
-          const segmentBottom = finalSegment.getBoundingClientRect().bottom;
-          // If an image owns the foot of this column, its text does not reach
-          // the page bottom and therefore cannot be a full-column candidate.
-          if (Math.abs(segmentBottom - grid.getBoundingClientRect().bottom) > 1 * scale) return [];
-          container = finalSegment;
-          usableBottom = segmentBottom;
-        }
-
-        const children = Array.from(container.children).filter(
-          (child): child is HTMLElement =>
-            child instanceof HTMLElement && !child.classList.contains('flow-column-shape'),
-        );
-        const lastContent = children.at(-1);
-        if (!lastContent || lastContent.tagName !== 'P' || !lastContent.textContent?.trim()) return [];
-        // Moving paragraph gaps around an inline figure would change its wrap
-        // relationship. Such columns stay exactly as the figure engine placed
-        // them and are never levelled here.
-        if (children.some((child) => child.tagName !== 'P')) return [];
-
-        const computed = getComputedStyle(lastContent);
-        const parsedLineHeight = parseFloat(computed.lineHeight);
-        const parsedFontSize = parseFloat(computed.fontSize);
-        const lineHeight = Number.isFinite(parsedLineHeight)
-          ? parsedLineHeight
-          : Math.max(1, parsedFontSize * 1.2);
-        return [
-          {
-            column,
-            container,
-            lastParagraph: lastContent,
-            contentBottom: lastContent.getBoundingClientRect().bottom,
-            usableBottom,
-            lineHeight: lineHeight * scale,
-          },
-        ];
-      });
-
-      const fullColumns = fullColumnsForLevelling(measured);
-      if (!fullColumns.length) return;
-      const targetBottom = Math.max(...fullColumns.map((column) => column.contentBottom));
-
-      for (const { container, lastParagraph, usableBottom } of fullColumns) {
-        const naturalBottom = lastParagraph.getBoundingClientRect().bottom;
-        const desiredCorrection = Math.min(
-          targetBottom - naturalBottom,
-          usableBottom - naturalBottom,
-        );
-        if (desiredCorrection <= 0.1) continue;
-
-        const children = Array.from(container.children).filter(
-          (child): child is HTMLElement => child instanceof HTMLElement,
-        );
-        const gaps: HTMLElement[] = [];
-        for (let index = 0; index < children.length - 1; index += 1) {
-          if (children[index].tagName === 'P' && children[index + 1].tagName === 'P'
-            && canExpandParagraphGap(parseFloat(getComputedStyle(children[index]).marginBottom))) {
-            gaps.push(children[index]);
-          }
-        }
-        // No legal paragraph gap means no correction. Never substitute line
-        // height, letter spacing, transforms, or paragraph positioning.
-        if (!gaps.length) continue;
-
-        for (const paragraph of gaps) {
-          paragraph.dataset.fullColumnGap = 'true';
-          paragraph.dataset.fullColumnOriginalMargin = paragraph.style.marginBottom;
-        }
-        for (let pass = 0; pass < 4; pass += 1) {
-          const remaining = targetBottom - lastParagraph.getBoundingClientRect().bottom;
-          if (Math.abs(remaining) <= 0.05) break;
-          const perGap = remaining / scale / gaps.length;
-          for (const paragraph of gaps) {
-            const current = parseFloat(getComputedStyle(paragraph).marginBottom) || 0;
-            paragraph.style.marginBottom = `${Math.max(0, current + perGap)}px`;
-          }
-        }
-      }
-    };
-
-    const schedule = () => {
-      if (disposed) return;
-      cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(align);
-    };
-    align();
-    frame = requestAnimationFrame(align);
-    grid.addEventListener('load', schedule, true);
-    document.fonts?.addEventListener('loadingdone', schedule);
-    void document.fonts?.ready.then(schedule);
-    return () => {
-      disposed = true;
-      cancelAnimationFrame(frame);
-      grid.removeEventListener('load', schedule, true);
-      document.fonts?.removeEventListener('loadingdone', schedule);
-      restoreOwnedGaps();
-    };
-  }, [gridRef, layoutSignal, mode]);
-}
 
 function ExplicitFlowColumns({
   pieces,
@@ -448,7 +288,8 @@ function ExplicitFlowColumns({
   doc: Doc;
 }) {
   const gridRef = useRef<HTMLDivElement>(null);
-  useFullColumnParagraphLevelling(gridRef, pieces);
+  // Keep authored spacing and the baseline grid. Never stretch paragraph gaps
+  // by fractional pixels merely to level the bottoms of neighbouring columns.
   const columns: ColumnPiece[][] = [];
   for (const piece of pieces) {
     if (piece.colBreak && columns.length) columns.push([]);
@@ -495,7 +336,6 @@ function ColumnImageShape({ exclusions }: { exclusions: ColumnExclusion[] }) {
 
 function ImageColumnsFlow({ piece }: { piece: Extract<Piece, { kind: 'image-columns' }> }) {
   const gridRef = useRef<HTMLDivElement>(null);
-  useFullColumnParagraphLevelling(gridRef, piece, 'image');
   let opened = false;
   return (
     <div

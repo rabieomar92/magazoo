@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { paginate, type FlowItem } from './paginate';
+import { paginate, paginateHosts, type FlowItem } from './paginate';
 import {runsToHtml} from './richtext';
 
 const words = (s: string) => s.trim().split(/\s+/).filter(Boolean);
@@ -8,6 +8,13 @@ const text = (t: string): FlowItem => ({ kind: 'text', text: t });
 const budgetOverflow = (budget: number) => (el: HTMLElement) => (el.textContent?.length ?? 0) > budget;
 
 describe('paginate', () => {
+  it('keeps the exact single-column result with far fewer whole-paragraph measurements',()=>{
+    const items=Array.from({length:35},(_,i)=>text(`Paragraph ${i} carries ten ordinary words for this measured test.`));
+    let slowCalls=0,fastCalls=0;
+    const slow=paginateHosts([document.createElement('div')],items,el=>{slowCalls++;return words(el.textContent??'').length>35;},{deferUnfit:true});
+    const fast=paginateHosts([document.createElement('div')],items,el=>{fastCalls++;return words(el.textContent??'').length>35;},{deferUnfit:true,fastTextPrefix:true});
+    expect(fast.pages).toEqual(slow.pages);expect(fastCalls).toBeLessThan(slowCalls*.7);
+  });
   it('fits styled fragment heads in their final bold font, not an unclosed plain-text prefix',()=>{
     const source='**one two three four five six seven eight nine**';
     const result=paginate(document.createElement('div'),document.createElement('div'),[text(source)],host=>{

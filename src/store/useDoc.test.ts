@@ -110,6 +110,19 @@ describe('cloneDocForUpdate', () => {
 });
 
 describe('document history', () => {
+  it('preserves unrelated subscriptions and history while editing one paragraph',()=>{
+    const source=cloneDocForUpdate(emptyDoc());
+    source.blocks=[{type:'paragraph',id:'one',text:'Before'},{type:'paragraph',id:'two',text:'Unchanged'}];
+    useDoc.getState().load(source);
+    useDoc.getState().update(d=>{if(d.blocks[0].type==='paragraph')d.blocks[0].text='After';});
+    const changed=useDoc.getState().doc;
+    expect(changed.design).toBe(source.design);expect(changed.assets).toBe(source.assets);
+    expect(changed.images).toBe(source.images);expect(changed.blocks[1]).toBe(source.blocks[1]);
+    const past=useDoc.temporal.getState().pastStates.length;
+    useDoc.getState().update(()=>{});
+    expect(useDoc.getState().doc).toBe(changed);expect(useDoc.temporal.getState().pastStates).toHaveLength(past);
+    useDoc.temporal.getState().undo();expect(useDoc.getState().doc).toBe(source);
+  });
   it('starts a clean undo session when loading a different document', () => {
     useDoc.getState().load(emptyDoc());
     useDoc.getState().update(doc => { doc.meta.title = 'Old issue'; });

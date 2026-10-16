@@ -6,12 +6,17 @@ import {
   fillColumnsAroundImages,
   fillInlineColumns,
   mergeExclusions,
+  writableSegments,
   overflowsY,
   type FilledImageColumn,
 } from './columnFill';
 import { emptyDoc } from '../schema/document';
 
 const words = (s: string) => s.trim().split(/\s+/).filter(Boolean);
+it('resumes below images and floating captions only on full baseline steps',()=>{
+  const segments=writableSegments([{top:25.3,bottom:58.4},{top:84.8,bottom:103.6}],150,15);
+  expect(segments).toEqual([{top:0,bottom:15},{top:60,bottom:75},{top:105,bottom:150}]);
+});
 const text = (t: string) => ({ kind: 'text' as const, text: t });
 
 const budgetOverflow = (budget: number) => (el: HTMLElement) => (el.textContent?.length ?? 0) > budget;
@@ -188,7 +193,8 @@ describe('image-shaped columns', () => {
     const band={top:60,bottom:150,outline:{points:[{x:0,y:60},{x:70,y:110},{x:0,y:150}],gap:0}};
     const result=fillColumnsAroundImages([source],probe,[[band]],250,el=>words(el.textContent??'').length>Math.floor(parseFloat(el.style.height)/10));
     expect(result.columns[0].segments[0].top).toBe(0);
-    expect(result.columns[0].segments[0].bottom).toBe(58);
+    // The clear area ends at 58 px; reserve complete 10 px text lines only.
+    expect(result.columns[0].segments[0].bottom).toBe(50);
     expect(result.columns[0].segments[0].contour).toBeUndefined();
     expect(result.columns[0].segments[1].contour).toBeDefined();
     expect(result.columns[0].segments[1].pieces[0].cont).toBe(true);

@@ -1,9 +1,10 @@
-import { useDeferredValue, useMemo, useState, type RefObject } from 'react';
+import { memo, useDeferredValue, useMemo, useState, type RefObject } from 'react';
 import { checkWriting, type WritingLanguage } from '../lib/writingCheck';
+import {requestBlockEditorFocus} from '../lib/editorNavigation';
 import './writing-guide.css';
 
 /** Advisory only: no automatic replacements and no network requests. */
-export function WritingGuide({text,editorId,editorRef,onFormat,label='Paragraph'}:{text:string;editorId?:string;editorRef?:RefObject<HTMLTextAreaElement|null>;onFormat?:()=>void;label?:string}) {
+export const WritingGuide=memo(function WritingGuide({text,editorId,editorRef,onFormat,formatBlockId,label='Paragraph'}:{text:string;editorId?:string;editorRef?:RefObject<HTMLTextAreaElement|null>;onFormat?:()=>void;formatBlockId?:string;label?:string}) {
  const [language,setLanguage]=useState<WritingLanguage>('auto');const deferred=useDeferredValue(text);
  const result=useMemo(()=>checkWriting(deferred,language),[deferred,language]);
  const paragraphs=useMemo(()=>deferred.split(/\n\s*\n/).filter(p=>p.trim()).map(p=>checkWriting(p,language)),[deferred,language]);
@@ -20,7 +21,7 @@ export function WritingGuide({text,editorId,editorRef,onFormat,label='Paragraph'
  return <div className="writing-guide" aria-label={`${label} writing guide`}>
   <div className="writing-guide-summary">
    <span className={`writing-pace${!short&&result.average<=20?' is-comfortable':''}`} title="An editorial sentence-length guide, not a reading-age or grammar grade.">{short?'Short sample':result.longSentences?'Try a shorter sentence':result.average<=20?'Comfortable sentence length':'Consider shorter sentences'}</span>
-   {onFormat&&<button type="button" className="writing-format" onClick={onFormat}>Format text ↗</button>}
+   {(onFormat||formatBlockId)&&<button type="button" className="writing-format" onClick={onFormat??(()=>requestBlockEditorFocus(formatBlockId!))}>Format text ↗</button>}
   </div>
   <div className="writing-metrics"><span>{result.words} words</span><span>{result.sentences} sentences</span><span>{result.average.toFixed(1)} words / sentence</span></div>
   <details className="writing-review">
@@ -43,4 +44,4 @@ export function WritingGuide({text,editorId,editorRef,onFormat,label='Paragraph'
    <p className="writing-limits">Private, on-device checks for common punctuation, formatting and grammar patterns. Not comprehensive grammar or spelling checking. Malay and English use separate rules; choose the language manually for mixed-language text. Nothing is changed automatically.</p>
   </details>
  </div>;
-}
+});

@@ -13,7 +13,7 @@ import { GalleryVerticalPosition } from '../GalleryVerticalPosition';
 import { TOKEN, wrapSelection, type Mark } from '../../lib/richtext';
 import { setActiveEditor } from '../../lib/activeEditor';
 import { normalizeInlineContinuations, removeArticleBlock } from '../../lib/inlineFigure';
-import { blockEditorId, requestBlockEditorFocus } from '../../lib/editorNavigation';
+import { blockEditorId } from '../../lib/editorNavigation';
 import { WritingGuide } from '../WritingGuide';
 import { galleryTextPosition } from '../../lib/galleryTextPosition';
 
@@ -366,7 +366,7 @@ export function BodySection({ allowEquations = true }: { allowEquations?: boolea
                   label={`Paragraph ${viewIndex + 1} vertical position`}
                   onChange={value => setCardVerticalPosition(block.id, value)} />
               )}
-              <WritingGuide text={block.text} editorId={blockEditorId(block.id)} label={`Paragraph ${viewIndex+1}`} onFormat={()=>requestBlockEditorFocus(block.id)}/>
+              <WritingGuide text={block.text} editorId={blockEditorId(block.id)} label={`Paragraph ${viewIndex+1}`} formatBlockId={block.id}/>
               {!isFrontCover && <div className="paragraph-indent">
                 <TypographyControl group={`block:${block.id}`} label={`${block.type === "paragraph" ? "Paragraph" : "Equation"} ${viewIndex + 1}`} order={50}><SegmentField<'default' | 'on' | 'off'>
                   label="Indent"

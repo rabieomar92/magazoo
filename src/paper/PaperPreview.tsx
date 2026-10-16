@@ -57,6 +57,7 @@ import { footerBottomMargin } from '../lib/pageFooter';
 import { TOP_BAR_HEIGHT_MM } from '../lib/topBar';
 import {useHeroCaptionLayout} from './useHeroCaptionLayout';
 import { articleHeaderWidth, articleHeaderWidthVars } from '../lib/articleHeaderWidth';
+import {lineGridUp} from '../lib/lineGrid';
 
 type PreviewPagination = Pagination & { layoutRevision: number };
 const EMPTY: PreviewPagination = { pages: [], fill: 0, spill: 0, layoutRevision: 0 };
@@ -232,7 +233,9 @@ export function PaperPreview({ toolbarHost }: { toolbarHost: HTMLElement | null 
       active instanceof HTMLTextAreaElement ||
       (active instanceof HTMLInputElement &&
         ['text', 'number', 'search', 'url', 'email'].includes(active.type));
-    const timer = window.setTimeout(() => setPreviewDoc(liveDoc), typedField ? 140 : 0);
+    // Give normal sentence entry a quiet interval. Repagination is measured
+    // synchronously by the browser and must not start between ordinary keys.
+    const timer = window.setTimeout(() => setPreviewDoc(liveDoc), typedField ? 400 : 0);
     return () => window.clearTimeout(timer);
   }, [liveDoc]);
 
@@ -363,6 +366,7 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
   const [splitHeadPx, setSplitHeadPx] = useState(0);
   const [p2HeadPx, setP2HeadPx] = useState(0);
   const [p2HeroPx, setP2HeroPx] = useState(0);
+  const [p2BaselinePx,setP2BaselinePx]=useState(0);
   const [fontEpoch, setFontEpoch] = useState(0);
   // Invalidates delayed real-page safety checks from an older document/layout
   // commit. Without this guard, a timer created while (for example) the design
@@ -597,15 +601,29 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
 
       const headH = scroll.querySelector<HTMLElement>('.p2-head')?.offsetHeight ?? 0;
       const heroH = scroll.querySelector<HTMLElement>('.p2-heroblock')?.offsetHeight ?? 0;
+      const sharedHeading = articleHeaderWidth(doc.design) !== undefined;
+      const sample=document.createElement('p');sample.dataset.sourceBlockId='';sample.textContent='Ag';hl.append(sample);
+      const leading=Number.parseFloat(getComputedStyle(sample).lineHeight);sample.remove();
+      const lift=Number.parseFloat(paper2VerticalVars(doc.design)['--p2-hero-lift'])*MM_PX;
+      const rightStart=heroH+doc.design.gutter*MM_PX-lift;
+      let baselineGap=lineGridUp(rightStart,leading,sharedHeading?0:headH)-rightStart;
+      const page=scroll.querySelector<HTMLElement>('.pages > .page--p2');
+      const left=page?.querySelector<HTMLElement>('.p2-flow-l'),right=page?.querySelector<HTMLElement>('.p2-flow-r');
+      if(page&&left&&right){
+        const scale=page.getBoundingClientRect().width/Number.parseFloat(getComputedStyle(page).width);
+        const previousGap=Number.parseFloat(getComputedStyle(page).getPropertyValue('--p2-baseline-gap'))||0;
+        if(scale>0){const delta=(right.getBoundingClientRect().top-left.getBoundingClientRect().top)/scale-previousGap;baselineGap=lineGridUp(delta,leading)-delta;}
+      }
       setP2HeadPx(headH);
       setP2HeroPx(heroH);
+      setP2BaselinePx(baselineGap);
 
       const root = hl.closest<HTMLElement>('.measure-root');
       if (root) {
-        const sharedHeading = articleHeaderWidth(doc.design) !== undefined;
         root.style.setProperty('--p2-head-h', `${sharedHeading ? 0 : headH}px`);
         root.style.setProperty('--p2-shared-head-h', `${sharedHeading ? headH : 0}px`);
         root.style.setProperty('--p2-heroblock-h', `${heroH}px`);
+        root.style.setProperty('--p2-baseline-gap',`${baselineGap}px`);
         root.style.setProperty('--footer-h', '0mm');
       }
 
@@ -980,6 +998,7 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
     '--p2-head-h': `${articleHeaderWidth(doc.design) !== undefined ? 0 : p2HeadPx}px`,
     '--p2-shared-head-h': `${articleHeaderWidth(doc.design) !== undefined ? p2HeadPx : 0}px`,
     '--p2-heroblock-h': `${p2HeroPx}px`,
+    '--p2-baseline-gap': `${p2BaselinePx}px`,
     '--p2-left-w': `${p2.leftW}mm`,
     '--p2-hero-w': `${p2.heroW}mm`,
     '--p2-right-w': `${p2.rightW}mm`,

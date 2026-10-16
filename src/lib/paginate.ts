@@ -20,6 +20,7 @@ import { runsToHtml, openMarkers, renderTex, fittedRichTextHead } from './richte
 import { fitEquation } from './mathfit';
 import { fillColumns } from './columnFill';
 import { quoteFlowHtml } from './decorativeQuote';
+import { fittingPrefix } from './fittingPrefix';
 
 export const overflows = (el: HTMLElement) =>
   el.scrollWidth > el.clientWidth + 1 || el.scrollHeight > el.clientHeight + 1;
@@ -367,6 +368,7 @@ function fillOne(
   host: HTMLElement,
   src: PaintItem[],
   isOverflowing: (el: HTMLElement) => boolean,
+  fastTextPrefix=false,
 ): { placed: PaintItem[]; rest: PaintItem[] } {
   /**
    * A requested edge bleed is only safe when the figure is at a page boundary.
@@ -450,7 +452,9 @@ function fillOne(
   if (!isOverflowing(host)) return keepBleedAtPageEdge(src, []);
 
   let n = src.length;
-  while (n > 0) {
+  if(fastTextPrefix&&src.every(item=>item.kind==='text')) {
+    n=fittingPrefix(src.length,count=>{paint(host,src.slice(0,count));return !isOverflowing(host);});
+  } else while (n > 0) {
     n--;
     paint(host, src.slice(0, n));
     if (!isOverflowing(host)) break;
@@ -610,7 +614,7 @@ export function paginateHosts(
   hosts: HTMLElement[],
   items: FlowItem[],
   isOverflowing: (el: HTMLElement) => boolean = overflows,
-  options: { deferUnfit?: boolean } = {},
+  options: { deferUnfit?: boolean; fastTextPrefix?:boolean } = {},
 ): Pagination {
   const src: PaintItem[] = items.filter((it) => it.kind !== 'text' || it.text.trim() !== '');
   if (!src.length) return { pages: [], fill: 0, spill: 0 };
@@ -621,7 +625,7 @@ export function paginateHosts(
   let rest = src;
 
   while (rest.length) {
-    let { placed, rest: next } = fillOne(hostAt(pages.length), rest, isOverflowing);
+    let { placed, rest: next } = fillOne(hostAt(pages.length), rest, isOverflowing,options.fastTextPrefix);
     // Progress guard: a single item taller than a whole page fits nowhere.
     // Force it onto its own page (clipped by overflow:hidden) rather than loop.
     if (placed.length === 0 && !(options.deferUnfit && pages.length < hosts.length - 1)) {

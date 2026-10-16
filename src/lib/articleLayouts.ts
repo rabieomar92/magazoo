@@ -2,6 +2,7 @@ import { DEFAULT_TOP_BAR_OFFSET, type Design, type TemplateId } from '../schema/
 import { pageDimensions } from './pageFormat';
 import { TOP_BAR_HEIGHT_MM } from './topBar';
 import { articleHeaderWidth } from './articleHeaderWidth';
+import { lineGridUp, lineGridDown } from './lineGrid';
 
 export const ARTICLE_LAYOUTS = {
   'paper-4': { name: 'Immersive Bleed', rank: 1, referencePage: 19, heroHeight: 154, titleTop: 126, titleCols: 2, bodyTop: 179, dark: true, fade: true },
@@ -71,7 +72,7 @@ export function articleGeometry(id: ReferenceArticleId, design: Design, measured
 
 /** Split each column top-to-bottom around placed photographs, then advance
  * to the next column. No text jumps over a photo and then doubles back. */
-export function articleRegions(g: ReturnType<typeof articleGeometry>, throughPage: number, obstacles: ArticleObstacle[] = [], rtl = false): ArticleRegion[] {
+export function articleRegions(g: ReturnType<typeof articleGeometry>, throughPage: number, obstacles: ArticleObstacle[] = [], rtl = false, lineHeightMm=0): ArticleRegion[] {
   const result: ArticleRegion[] = [];
   for (let page = 0; page <= throughPage; page++) {
     for (let logical = 0; logical < g.columns; logical++) {
@@ -89,7 +90,12 @@ export function articleRegions(g: ReturnType<typeof articleGeometry>, throughPag
       if (cursor < g.bottom - 8) result.push({ page, column, x, y: cursor, width: g.col, height: g.bottom - cursor });
     }
   }
-  return result.filter(r => r.height >= 8);
+  return result.map(region=>{
+    const origin=region.page===0?g.bodyTop:g.contentTop;
+    const top=lineGridUp(region.y,lineHeightMm,origin);
+    const bottom=lineGridDown(region.y+region.height,lineHeightMm,origin);
+    return {...region,y:top,height:Math.max(0,bottom-top)};
+  }).filter(r => r.height >= 8);
 }
 
 /** Explicit reset, never applied silently to an existing document on switch. */

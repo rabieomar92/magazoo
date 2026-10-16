@@ -107,7 +107,7 @@
   gap: var(--gutter);
   flex: 1;
   min-height: 0;
-  margin-top: var(--gutter);
+  margin-top: calc(var(--gutter) + var(--p2-baseline-gap, 0px));
 }
 
 /* ---- The two text regions ------------------------------------------------ */
@@ -161,7 +161,7 @@
   width: var(--p2-right-w);
   column-count: var(--p2-cols-right);
   --fcols: var(--p2-cols-right);
-  height: calc(var(--p2-body-h) + var(--p2-hero-lift, 0mm) - var(--p2-heroblock-h) - var(--gutter));
+  height: calc(var(--p2-body-h) + var(--p2-hero-lift, 0mm) - var(--p2-heroblock-h) - var(--gutter) - var(--p2-baseline-gap, 0px));
   overflow: hidden;
 }
 

@@ -34,6 +34,8 @@ import { quoteFlowHtml } from './decorativeQuote';
 import type { Piece } from './paginate';
 import type { Doc } from '../schema/document';
 import { tightContour, measureContour, contourOpening, offsetContourBands, type ContourBand, type TightContour } from './tightContour';
+import { lineGridUp, lineGridDown } from './lineGrid';
+import { fittingPrefix } from './fittingPrefix';
 
 type TextPiece = Extract<Piece, { kind: 'text' }>;
 type FigurePiece = Extract<Piece, { kind: 'figure' }>;
@@ -388,17 +390,18 @@ export interface FilledImageColumn {
 export function writableSegments(
   exclusions: ColumnExclusion[],
   columnHeight: number,
+  lineHeight=0,
 ): { top: number; bottom: number }[] {
   const segments: { top: number; bottom: number }[] = [];
   let cursor = 0;
   for (const exclusion of mergeExclusions(exclusions)) {
     const top = Math.min(columnHeight, Math.max(0, exclusion.top));
     const bottom = Math.min(columnHeight, Math.max(top, exclusion.bottom));
-    if (top > cursor) segments.push({ top: cursor, bottom: top });
-    cursor = Math.max(cursor, bottom);
+    if (top > cursor) segments.push({ top: cursor, bottom: lineGridDown(top,lineHeight) });
+    cursor = lineGridUp(Math.max(cursor, bottom),lineHeight);
   }
   if (cursor < columnHeight) segments.push({ top: cursor, bottom: columnHeight });
-  return segments;
+  return segments.filter(segment=>segment.bottom>segment.top);
 }
 
 /** Fill one ordinary rectangular text region. Unlike fillColumns(), a region
@@ -414,12 +417,7 @@ function fillTextRegion(
   paintText(probe, items, opener);
   if (!isOverflowing(probe)) return { placed: items, remainder: [] };
 
-  let count = items.length;
-  while (count > 0) {
-    count -= 1;
-    paintText(probe, items.slice(0, count), opener);
-    if (!isOverflowing(probe)) break;
-  }
+  const count=fittingPrefix(items.length,n=>{paintText(probe,items.slice(0,n),opener);return !isOverflowing(probe);});
   const straddle = items[count];
   if (!straddle) return { placed: [], remainder: items };
   const { placed, tail } = splitTextRegion(
@@ -465,8 +463,12 @@ export function fillColumnsAroundImages(
   // in Arabic/Jawi, joining marks) at an image boundary. Keep a tiny fraction
   // of one real line in reserve. Injected-layout unit tests have no computed
   // line-height, so their deterministic capacity remains unchanged.
-  const computed = getComputedStyle(probe);
+  const sample=document.createElement('p');sample.dataset.sourceBlockId='';sample.textContent='Ag';probe.append(sample);
+  // Shared typography targets paragraph text, not its containing frame.
+  const computed = getComputedStyle(sample);
   const lineHeight = Number.parseFloat(computed.lineHeight);
+  const bodyFontSize=Number.parseFloat(computed.fontSize)||12;
+  sample.remove();
   const segmentSafety =
     (Number.isFinite(lineHeight) ? Math.min(4, Math.max(2, lineHeight * 0.16)) : 0) +
     Math.max(0, safetyBoost);
@@ -476,14 +478,15 @@ export function fillColumnsAroundImages(
     const width=Number.parseFloat(probe.style.width)||probe.clientWidth;
     let start=0;
     let bands=exclusionsByColumn[columnIndex];
-    let contour=tightContour(bands,width,columnHeight,(Number.parseFloat(computed.fontSize)||12)*9);
+    let contour=tightContour(bands,width,columnHeight,bodyFontSize*3,lineHeight);
     if(contour) {
       if(!opened&&rest[0]&&!rest[0].cont&&!rest[0].decorativeQuote&&!probe.closest('.drop-caps-off')) {
         paintText(probe,[rest[0]],true);
         const first=probe.querySelector('p')!,style=getComputedStyle(first);
         const leading=Number.parseFloat(style.lineHeight);
         if(Number.isFinite(leading)) {
-          const opening=contourOpening(bands,width,columnHeight,3*leading+(Number.parseFloat(style.paddingTop)||0)+segmentSafety);
+          const clear=contourOpening(bands,width,columnHeight,3*leading+(Number.parseFloat(style.paddingTop)||0)+segmentSafety);
+          const opening=clear?{top:lineGridUp(clear.top,lineHeight),bottom:lineGridDown(clear.bottom,lineHeight)}:undefined;
           if(!opening)continue;
           probe.style.height=`${opening.bottom-opening.top-segmentSafety}px`;
           const head=fillTextRegion(rest,probe,isOverflowing,true);
@@ -492,7 +495,7 @@ export function fillColumnsAroundImages(
           start=opening.bottom;
           if(start>=columnHeight||!rest.length)continue;
           bands=offsetContourBands(bands,start);
-          contour=tightContour(bands,width,columnHeight-start,(Number.parseFloat(computed.fontSize)||12)*9);
+          contour=tightContour(bands,width,columnHeight-start,bodyFontSize*3,lineHeight);
         }
       }
       probe.style.height=`${Math.max(0,columnHeight-start-segmentSafety)}px`;
@@ -502,7 +505,7 @@ export function fillColumnsAroundImages(
       rest=filled.remainder;if(filled.placed.length)opened=true;
       continue;
     }
-    const segments = writableSegments(mergedByColumn[columnIndex], columnHeight);
+    const segments = writableSegments(mergedByColumn[columnIndex], columnHeight,lineHeight);
     for (const bounds of segments) {
       const height = bounds.bottom - bounds.top;
       if (height <= 0) continue;

@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { temporal } from 'zundo';
 import { emptyDoc, type Doc, type TemplateId } from '../schema/document';
 import { makeBackCover } from './backCover';
+import { shareUnchanged } from '../lib/structuralSharing';
 
 // Session identity changes only on load, not on a normal immutable edit.
 // Async image decoding must not confuse typing with opening another article.
@@ -99,7 +100,8 @@ export const useDoc = create<State>()(
         set((s) => {
           const next = cloneDocForUpdate(s.doc);
           fn(next);
-          return { doc: next };
+          const doc = shareUnchanged(s.doc, next);
+          return doc === s.doc ? s : { doc };
         }),
       load: (doc) => {
         documentSession+=1;

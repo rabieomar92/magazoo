@@ -38,14 +38,16 @@ export function TypographyProvider({ children }: { children: ReactNode }) {
   const [host, setHost] = useState<HTMLDivElement | null>(null);
   const [active, select] = useState<string | null>('body');
   const [registered, setRegistered] = useState<Record<string, Group>>({});
-  const currentDoc = useDoc(state => state.doc);
-  const templateId = currentDoc.templateId;
+  const templateId = useDoc(state => state.doc.templateId);
+  // Group labels depend on object identities/order, not their authored text.
+  // Keep the context stable while typing rather than refreshing every portal.
+  const extraGroupsKey = useDoc(state => JSON.stringify(extraTextGroups(state.doc)));
   const register = useCallback((id: string, group: Group) => {
     setRegistered(current => ({ ...current, [id]: group }));
     return () => setRegistered(current => { const next = { ...current }; delete next[id]; return next; });
   }, []);
   const controls = useMemo(() => Object.values(registered), [registered]);
-  const groups = useMemo(() => [...new Map([...extraTextGroups(currentDoc), ...controls].map(group => [group.group, group])).values()], [controls, currentDoc]);
+  const groups = useMemo(() => [...new Map([...(JSON.parse(extraGroupsKey) as Group[]), ...controls].map(group => [group.group, group])).values()], [controls, extraGroupsKey]);
 
   useEffect(() => { select(templateId === 'magazine-4' ? 'title' : templateId === 'backcover-1' ? 'brand' : 'body'); }, [templateId]);
   useEffect(() => {
@@ -211,7 +213,10 @@ export function TypographyToolbar() {
   const groups = context?.groups;
   useEffect(() => {
     if (!host) return;
-    const measure = () => setOverflow({ left: host.scrollLeft > 1, right: host.scrollLeft + host.clientWidth < host.scrollWidth - 1 });
+    const measure = () => {
+      const left = host.scrollLeft > 1, right = host.scrollLeft + host.clientWidth < host.scrollWidth - 1;
+      setOverflow(current => current.left === left && current.right === right ? current : { left, right });
+    };
     measure();
     host.addEventListener('scroll', measure, { passive: true });
     const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure);

@@ -3,6 +3,14 @@ import {tightContour,measureContour,contourOpening,offsetContourBands,type Conto
 const triangle:ContourBand={top:20,bottom:100,outline:{points:[{x:0,y:20},{x:80,y:60},{x:0,y:100}],gap:0}};
 const vertices=(path:string)=>[...path.matchAll(/([\d.-]+)px ([\d.-]+)px/g)].map(m=>({x:Number(m[1]),y:Number(m[2])}));
 describe('line-by-line image boundaries',()=>{
+  it('uses whole line bands without excluding a usable gap close to the outline',()=>{
+    const band:ContourBand={top:23.7,bottom:96.1,outline:{points:[{x:0,y:23.7},{x:94,y:23.7},{x:94,y:96.1},{x:0,y:96.1}],gap:0}};
+    const shape=tightContour([band],160,143,36,15.84)!;
+    const points=vertices(shape.path);
+    expect(points.some(p=>p.x===96&&p.y>30&&p.y<90)).toBe(true);
+    for(const p of points.filter(p=>p.y<143))expect(p.y/15.84).toBeCloseTo(Math.round(p.y/15.84),3);
+    expect(points.length).toBeLessThan(25);
+  });
   it.each(['left','right'] as const)('rejects an unreadable %s-side strip while retaining a genuinely readable lane',side=>{
     const band=(edge:number):ContourBand=>({top:20,bottom:100,outline:{points:[{x:0,y:20},{x:edge,y:20},{x:edge,y:100},{x:0,y:100}].map(p=>({x:side==='left'?p.x:160-p.x,y:p.y})),gap:0}});
     // A 64 px remainder in a 160 px column used to be accepted by the 5 em

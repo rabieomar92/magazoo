@@ -137,7 +137,7 @@
   box-sizing: border-box;
   max-height: var(--page-h);
   margin: 0;
-  padding: 0 0.8em 0.75em;
+  padding: 0.75em 0.8em;
   overflow: hidden;
   pointer-events: auto;
   cursor: grab;
@@ -1002,7 +1002,7 @@
      accent stripe belongs on the box's reading-start edge in either
      direction, same as a printed callout would place it. */
   border-inline-start: 3px solid var(--accent);
-  padding: 0 0.6em 0.8em;
+  padding: 0.8em 0.6em;
   font-family: var(--sans);
   font-size: calc(var(--fs-body) * 0.9);
   /* direction alone flips reading order, but `.page` sets a PHYSICAL
@@ -1065,7 +1065,7 @@
      (1em), but put it above the panel where it visibly separates the callout
      from the last line of article copy. */
   margin: max(1.2em, 3mm) 0 0;
-  padding: 0 0.9em 0.7em;
+  padding: 0.7em 0.9em;
   background: var(--accent-soft);
   border-inline-start: 3px solid var(--accent);
   font-family: var(--sans);
@@ -1091,7 +1091,7 @@
   break-inside: avoid;
   box-sizing: border-box;
   margin: 0.2em 0 0;
-  padding: 0 0.6em 0.8em;
+  padding: 0.8em 0.6em;
   background: var(--accent-soft);
   border-inline-start: 3px solid var(--accent);
   font-family: var(--sans);

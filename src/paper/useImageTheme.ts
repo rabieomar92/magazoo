@@ -30,8 +30,8 @@ export function useImageTheme(source: Doc): Doc {
     return () => { cancelled = true; image.onload = null; };
   }, [src, bottom]);
   const palette = sample && sample.src === src && sample.bottom === bottom ? sample.palette : null;
-  return useMemo(() => {
-    if (!supported) return source;
+  const design = useMemo(() => {
+    if (!supported) return source.design;
     // Paper 3 deliberately never paints a photograph behind the article text.
     const design = { ...source.design, ...(source.templateId === 'paper-3' ? {pageBackgroundAssetId: undefined} : {}) };
     if (enabled && palette) {
@@ -42,6 +42,7 @@ export function useImageTheme(source: Doc): Doc {
         accentSoft: isReferenceArticle(source.templateId) ? palette.background : palette.soft };
       // Explicit per-object choices still win over the generated theme.
     }
-    return { ...source, design };
-  }, [source, supported, enabled, palette]);
+    return design;
+  }, [source.design, source.templateId, supported, enabled, palette]);
+  return useMemo(() => design === source.design ? source : { ...source, design }, [source, design]);
 }

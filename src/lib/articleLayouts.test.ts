@@ -90,6 +90,19 @@ describe('reference article compositions', () => {
     expect(affected.map(r => r.column)).toEqual([1,1,2,2]);
   });
 
+  it.each(ids)('%s keeps neighbouring columns on whole lines around every image size',id=>{
+    const g=articleGeometry(id,presetFor(id).design,23.7,7.3),step=4.191;
+    for(const height of [1,23.73,95.18,180])for(const rtl of [false,true]){
+      const regions=articleRegions(g,2,[{page:1,left:g.margin,top:65.17,width:g.span(2),height}],rtl,step);
+      for(const r of regions){
+        const origin=r.page===0?g.bodyTop:g.contentTop;
+        expect((r.y-origin)/step).toBeCloseTo(Math.round((r.y-origin)/step),5);
+        expect(r.height/step).toBeCloseTo(Math.round(r.height/step),5);
+        if(r.page===1&&r.column<2)expect(r.y+r.height<=63.17+.001||r.y>=67.17+height-.001).toBe(true);
+      }
+    }
+  });
+
   it('uses right-to-left reading order on first and continuation pages', () => {
     const g = articleGeometry('paper-7', presetFor('paper-7').design);
     const regions = articleRegions(g, 1, [], true);

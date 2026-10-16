@@ -45,7 +45,7 @@ function strip(points:TightOutline['points'], boundary:number, keepBelow:boolean
  * Shapes then chooses the available width for EVERY line of type. Rectangular
  * captions/other objects are unioned into the same profile. Points are local
  * unscaled CSS pixels, so print and preview use precisely the same boundary. */
-export function tightContour(bands:ContourBand[],width:number,height:number,minLineWidth=48):TightContour|undefined {
+export function tightContour(bands:ContourBand[],width:number,height:number,minLineWidth=48,lineHeight=0):TightContour|undefined {
   if(!(width>0&&height>0&&Number.isFinite(width)&&Number.isFinite(height)))return;
   const outlines=bands.filter(b=>{
     const o=b.outline;
@@ -61,11 +61,14 @@ export function tightContour(bands:ContourBand[],width:number,height:number,minL
   });
   const side=metadata.reduce((a,b)=>a.area>=b.area?a:b).side;
   const rects=bands.filter(b=>!b.outline);
-  const rows=Math.min(512,Math.max(1,Math.ceil(height/2))),step=height/rows;
+  // One conservative profile per actual line box. A blocked line resumes at
+  // the next baseline, not at an arbitrary two-pixel contour vertex.
+  const step=lineHeight>0&&Number.isFinite(lineHeight)?Math.max(2,lineHeight):height/Math.min(512,Math.max(1,Math.ceil(height/2)));
+  const rows=Math.max(1,Math.ceil(height/step));
   const points:{x:number;y:number}[]=[];
   const outer=side==='left'?0:width;
   for(let row=0;row<rows;row++) {
-    const top=row*step,bottom=(row+1)*step;
+    const top=row*step,bottom=Math.min(height,(row+1)*step);
     let edge=outer;
     if(rects.some(b=>b.top<bottom&&b.bottom>top))edge=side==='left'?width:0;
     for(const {band,side:objectSide} of metadata) {
@@ -83,7 +86,8 @@ export function tightContour(bands:ContourBand[],width:number,height:number,minL
     const available=side==='left'?width-edge:edge;
     // A geometric gap is not necessarily a usable editorial text lane. Avoid
     // ladders of hyphenated half-words beside a large cutout: reserve the line
-    // until at least nine body ems (or 75% of this fixed column) are clear.
+    // until a minimum readable word lane is clear. Callers use three body ems;
+    // a former nine-em limit left large usable gaps beside hand-drawn borders.
     // Never widen a column or alter the author's outline to obtain that room.
     if(available>0&&available<Math.min(width*.75,Math.max(0,minLineWidth)))edge=side==='left'?width:0;
     points.push({x:edge,y:top},{x:edge,y:bottom});

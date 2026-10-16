@@ -19,6 +19,7 @@ import { TagBar } from './TagBar';
 import { PlacedImages } from './PlacedImages';
 import {HeroCaption} from './HeroCaption';
 import {useHeroCaptionLayout} from './useHeroCaptionLayout';
+import {lineGridUp,lineGridDown} from '../lib/lineGrid';
 import '../styles/article-layouts.css';
 
 const MM = 96 / 25.4;
@@ -47,8 +48,10 @@ export function ArticlePages({ doc, vars, onStatus, readOnly = false }: { doc: D
   const callout = useRef<HTMLDivElement>(null);
   const probes = useRef<HTMLDivElement>(null);
   const [layout, setLayout] = useState<Layout>({ regions: [], pages: 1, header: 0, caption: 0, overflow: false, callouts: [] });
-  const [fitSafety,setFitSafety]=useState<{source:Doc;value:number}|null>(null);
-  const safety=fitSafety?.source===doc?fitSafety.value:2;
+  const [fitSafety,setFitSafety]=useState<{design:Doc['design'];value:number}|null>(null);
+  // Retain an already measured line reserve while editing copy. Resetting it
+  // for every character reran the entire document up to nine times per key.
+  const safety=fitSafety?.design===doc.design?fitSafety.value:2;
   const placement = doc.design.highlightsPlacement ?? 'page1';
   const hasCallout = doc.design.sidebar && (doc.highlights.some(h => h.trim()) || doc.references.length > 0);
   const gridDesign = useMemo(() => articleGridDesign(doc.design), [doc.design]);
@@ -123,6 +126,10 @@ export function ArticlePages({ doc, vars, onStatus, readOnly = false }: { doc: D
         items.push({ kind: 'figure', id: HIGHLIGHTS_BLOCK_ID, aspect: (callout.current?.offsetHeight ?? 0) / (geometry.col * MM), hasCaption: false, widthBasis: 1 });
       }
       const root = probes.current;
+      const lineSample=document.createElement('div');lineSample.className='body-cols article-column';
+      const lineParagraph=document.createElement('p');lineParagraph.dataset.sourceBlockId='';lineParagraph.textContent='Ag';lineSample.append(lineParagraph);root.append(lineSample);
+      const lineHeight=Number.parseFloat(getComputedStyle(lineParagraph).lineHeight);
+      lineSample.remove();
       const calloutHeight = (callout.current?.offsetHeight ?? 0) / MM;
       const rail = hasCallout && (placement === 'page1' || placement === 'all');
       const railObstacle = (page: number): ArticleObstacle => ({ page, left: geometry.margin + (geometry.columns-1)*(geometry.col+geometry.gutter),
@@ -134,9 +141,9 @@ export function ArticlePages({ doc, vars, onStatus, readOnly = false }: { doc: D
             return {top:Math.min(...points.map(p=>p.y)),bottom:Math.max(...points.map(p=>p.y)),outline:{points,gap:o.gap*MM}};
           });
         const shaped = (region:ArticleRegion):ShapedRegion => ({...region,
-          contour:tightContour(regionBands(region),region.width*MM,region.height*MM,doc.design.sizes.body*96/72*9)});
+          contour:tightContour(regionBands(region),region.width*MM,region.height*MM,doc.design.sizes.body*96/72*3,lineHeight)});
         const rails = rail ? Array.from({length: placement === 'all' ? through+2 : 1}, (_,page) => railObstacle(page)) : [];
-        let regions = articleRegions(geometry, through, [...obstacles,...extra,...rails], doc.design.textDirection === 'rtl').map(shaped);
+        let regions = articleRegions(geometry, through, [...obstacles,...extra,...rails], doc.design.textDirection === 'rtl',lineHeight/MM).map(shaped);
         const first=items[0];
         if(dropCapEnabled(doc.design,id)&&first?.kind==='text'&&!first.cont&&!first.decorativeQuote&&regions[0]?.contour) {
           const sample=document.createElement('div');sample.className='body-cols article-column';
@@ -147,8 +154,9 @@ export function ArticlePages({ doc, vars, onStatus, readOnly = false }: { doc: D
             const minimum=3*leading+(first.topPadding??0)+safety;
             for(let index=0;index<regions.length;index++) {
               const region=regions[index];
-              const opening=region.contour?contourOpening(regionBands(region),region.width*MM,region.height*MM,minimum)
+              const clear=region.contour?contourOpening(regionBands(region),region.width*MM,region.height*MM,minimum)
                 :region.height*MM>=minimum?{top:0,bottom:region.height*MM}:undefined;
+              const opening=clear?{top:lineGridUp(clear.top,lineHeight),bottom:lineGridDown(clear.bottom,lineHeight)}:undefined;
               if(!opening)continue;
               const head={...region,y:region.y+opening.top/MM,height:(opening.bottom-opening.top)/MM,contour:undefined};
               const remaining=region.height-opening.bottom/MM;
@@ -158,7 +166,7 @@ export function ArticlePages({ doc, vars, onStatus, readOnly = false }: { doc: D
           }
         }
         // A clean continuation prototype supplies identical columns thereafter.
-        const continuation = articleRegions(geometry, through+1, rails, doc.design.textDirection === 'rtl').filter(r => r.page === through+1).map(shaped);
+        const continuation = articleRegions(geometry, through+1, rails, doc.design.textDirection === 'rtl',lineHeight/MM).filter(r => r.page === through+1).map(shaped);
         const all = [...regions,...continuation];
         root.replaceChildren();
         const shapes = new Map<HTMLElement,TightContour>();
@@ -174,7 +182,7 @@ export function ArticlePages({ doc, vars, onStatus, readOnly = false }: { doc: D
         const result = paginateHosts(hosts, items, el => {
           const contour=shapes.get(el);if(contour)measureContour(el,contour);
           return overflows(el) || hasClippedTextLine(el);
-        }, { deferUnfit: true });
+        }, { deferUnfit: true, fastTextPrefix:true });
         return result.pages.map((pieces, index): RegionContent => {
         const repeated = index - regions.length;
         const region = index < regions.length ? regions[index] : {
@@ -248,7 +256,8 @@ export function ArticlePages({ doc, vars, onStatus, readOnly = false }: { doc: D
     };
     calculate();
     document.fonts?.addEventListener('loadingdone', calculate);
-    void document.fonts?.ready.then(calculate);
+    // A resolved fonts.ready promise used to repeat every full pagination
+    // immediately after every edit. loadingdone already covers fonts in flight.
     measure.current?.addEventListener('load', calculate, true);
     const element = measure.current;
     return () => { disposed = true; document.fonts?.removeEventListener('loadingdone', calculate); element?.removeEventListener('load', calculate, true); };
@@ -270,7 +279,7 @@ export function ArticlePages({ doc, vars, onStatus, readOnly = false }: { doc: D
       // CSS Shapes occasionally settles a line differently in a transformed
       // visible column (especially pull quotes). Refit from original blocks
       // with a bounded reserve; never leave that line crossing a caption.
-      if(clippedFlow&&safety<66){setFitSafety({source:doc,value:safety+8});return;}
+      if(clippedFlow&&safety<66){setFitSafety({design:doc.design,value:safety+8});return;}
       setLayout(previous => ({ ...previous, overflow: true }));
       onStatus({ pages: layout.pages, overflow: true });
     }
