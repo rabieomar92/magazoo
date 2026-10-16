@@ -15,12 +15,13 @@ describe('bundled TeX Gyre webfonts',()=>{
       expect(css).toContain(`url('../assets/fonts/tex-gyre/${filename}')`);
     });
   }
-  it('loads the GUI font before the lazy editor, without changing publication defaults',()=>{
+  it('makes the new publication fonts available without changing the original GUI font',()=>{
     const index=readFileSync(resolve('src/index.css'),'utf8');
     expect(index).toContain("@import './styles/fonts.css'");
-    expect(index).toContain("--magazoo-ui-font: 'TeX Gyre Schola'");
+    expect(index).toContain("font: 14px/1.4 system-ui");
+    expect(index).not.toContain('--magazoo-ui-font');
     expect(index).not.toMatch(/\.page\s*\{/);
-    for(const path of ['src/styles/admin.css','src/issue/issue.css'])expect(readFileSync(resolve(path),'utf8')).toContain('--ui:var(--magazoo-ui-font)');
+    for(const path of ['src/styles/admin.css','src/issue/issue.css'])expect(readFileSync(resolve(path),'utf8')).not.toContain('TeX Gyre');
     expect(readFileSync(resolve('src/assets/fonts/tex-gyre/GUST-FONT-LICENSE.txt'),'utf8')).toContain('LaTeX Project Public License');
   });
 });

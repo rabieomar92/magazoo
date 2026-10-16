@@ -1,7 +1,7 @@
 /* Admin-only design system. Keep selectors scoped: editor and print pages
    share this bundle, and must not inherit library button/type treatments. */
 .admin-page {
-  --ui:var(--magazoo-ui-font);
+  --ui:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,Arial,sans-serif;
   --ink:#182033; --ink-2:#556176; --ink-3:#68758a;
   --line:#dde3ec; --line-2:#edf0f5;
   --surface:#fff; --surface-2:#f8f9fc; --canvas:#f6f7fb;

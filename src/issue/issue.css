@@ -20,7 +20,7 @@
   --shadow-2:0 6px 18px -8px rgba(16,23,40,.18),0 1px 3px rgba(16,23,40,.06);
   --shadow-3:0 24px 48px -22px rgba(16,23,40,.35);
 
-  --ui:var(--magazoo-ui-font);
+  --ui:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,Arial,sans-serif;
   height:100dvh; display:flex; flex-direction:column; overflow:hidden;
   background:var(--canvas); color:var(--ink);
   font:14px/1.5 var(--ui);
@@ -128,7 +128,7 @@
 .field.swatch { align-content:start; }
 .field.swatch input[type=color] { width:100%; height:32px; padding:2px; border:1px solid var(--line); border-radius:var(--r-xs); background:var(--surface-2); cursor:pointer; }
 .field.range { grid-template-columns:1fr auto; align-items:center; gap:4px 8px; }
-.field.range b { font:600 11.5px/1 var(--ui); color:var(--ink); font-variant-numeric:tabular-nums; }
+.field.range b { font:600 11.5px/1 ui-monospace,SFMono-Regular,Menlo,monospace; color:var(--ink); font-variant-numeric:tabular-nums; }
 .field.range input[type=range] { grid-column:1 / -1; width:100%; accent-color:var(--brand); }
 
 .switch { display:flex; align-items:center; gap:9px; margin:10px 0; font:500 12.5px/1.3 var(--ui); color:var(--ink); cursor:pointer; }
@@ -151,7 +151,7 @@
 .entry-card.is-open { border-color:var(--brand-line); box-shadow:var(--shadow-2); }
 .entry-summary { display:flex; align-items:center; gap:10px; width:100%; padding:9px 11px; background:transparent; border:0; box-shadow:none; text-align:start; border-radius:var(--r); }
 .entry-summary:hover:not(:disabled) { background:var(--surface-2); color:inherit; }
-.entry-index { flex:none; font:700 10.5px/1 var(--ui); color:var(--brand-ink); background:var(--brand-wash); padding:5px 6px; border-radius:5px; }
+.entry-index { flex:none; font:700 10.5px/1 ui-monospace,SFMono-Regular,Menlo,monospace; color:var(--brand-ink); background:var(--brand-wash); padding:5px 6px; border-radius:5px; }
 .entry-summary-copy { flex:1; min-width:0; display:grid; gap:2px; }
 .entry-summary-copy strong { font:600 12.5px/1.35 var(--ui); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .entry-summary-copy small { font-size:10.5px; color:var(--ink-3); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -178,7 +178,7 @@
 .crop-controls { display:flex; align-items:center; gap:10px; margin-top:8px; max-width:264px; }
 .crop-zoom { flex:1; display:flex; align-items:center; gap:7px; font:600 11px/1 var(--ui); color:var(--ink-2); }
 .crop-zoom input[type=range] { flex:1; min-width:0; accent-color:var(--brand); }
-.crop-zoom b { font:600 11px/1 var(--ui); color:var(--ink); font-variant-numeric:tabular-nums; }
+.crop-zoom b { font:600 11px/1 ui-monospace,SFMono-Regular,Menlo,monospace; color:var(--ink); font-variant-numeric:tabular-nums; }
 
 /* --- reading order ---------------------------------------------------- */
 .issue-order,.issue-order-list { list-style:none; padding:0; margin:8px 0 0; max-height:540px; overflow:auto; scrollbar-width:thin; overscroll-behavior:contain; }
@@ -224,7 +224,7 @@
 .studio .zoom button { background:transparent; border:0; box-shadow:none; color:#c3cbdb; min-height:26px; padding:3px 9px; border-radius:999px; font-size:12px; }
 .studio .zoom button:hover:not(:disabled) { background:#28304180; color:#fff; }
 .studio .zoom button.is-active { background:var(--brand); color:#fff; }
-.zoom span { font:600 11px/1 var(--ui); color:#98a3b8; min-width:38px; text-align:center; font-variant-numeric:tabular-nums; }
+.zoom span { font:600 11px/1 ui-monospace,SFMono-Regular,Menlo,monospace; color:#98a3b8; min-width:38px; text-align:center; font-variant-numeric:tabular-nums; }
 .stage-scroll { flex:1; min-height:0; overflow:auto; overscroll-behavior:contain; padding:20px; scrollbar-width:thin; scrollbar-color:#3a4357 #151a24; }
 
 .stage-progress { max-width:470px; margin:9vh auto; text-align:center; color:#aab3c6; }

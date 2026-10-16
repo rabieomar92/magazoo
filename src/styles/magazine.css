@@ -1018,7 +1018,7 @@
 
 .gate-layout-warning {
   position: absolute; z-index: 20; bottom: var(--bottom-margin, 14mm); left: 14mm; right: 14mm;
-  padding: 8px; background: #fff3cd; color: #664d03; font: 12px/1.4 var(--magazoo-ui-font);
+  padding: 8px; background: #fff3cd; color: #664d03; font: 12px/1.4 Arial, sans-serif;
 }
 @media print { .gate-layout-warning { display: none !important; } }
 
