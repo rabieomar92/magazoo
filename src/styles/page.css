@@ -263,7 +263,7 @@
     transform:translate(-50%,-50%) scale(var(--canvas-control-scale,1));
     opacity:0; transition:opacity .12s;
   }
-  .placed-image-tools button { display:flex; align-items:center; gap:5px; white-space:nowrap; min-height:29px; padding:5px 8px; margin:0; border:0; border-radius:5px; background:#fff; color:#312e81; font:600 12px/1.2 system-ui,sans-serif; letter-spacing:normal; text-transform:none; cursor:pointer; touch-action:none; }
+  .placed-image-tools button { display:flex; align-items:center; gap:5px; white-space:nowrap; min-height:29px; padding:5px 8px; margin:0; border:0; border-radius:5px; background:#fff; color:#312e81; font:700 12px/1.2 var(--magazoo-ui-font); letter-spacing:normal; text-transform:none; cursor:pointer; touch-action:none; }
   .placed-image-tools button:hover { background:#eef2ff; }
   .placed-image-tools .placed-image-move { cursor:grab; }
   .placed-image:is(:hover,:focus-within,[data-dragging]) > .placed-image-tools { opacity:1; }
@@ -280,7 +280,7 @@
   figcaption:has(> .caption-resize):is(:hover,:focus-within) { outline:1px dashed #818cf8; outline-offset:2px; }
   .caption-resize:focus-visible { outline:2px solid #312e81; outline-offset:3px; }
   .placed-image > figcaption[data-caption-unplaced="true"] { outline:2px solid #d33; }
-  .placed-image > figcaption[data-caption-unplaced="true"]::after { content:'Caption cannot fit here. Reduce its width/size or move the image.'; position:absolute; left:0; top:100%; display:block; color:#a00; background:#fff; font:11px/1.3 sans-serif; }
+  .placed-image > figcaption[data-caption-unplaced="true"]::after { content:'Caption cannot fit here. Reduce its width/size or move the image.'; position:absolute; left:0; top:100%; display:block; color:#a00; background:#fff; font:11px/1.3 var(--magazoo-ui-font); }
 }
 @media print { [data-editor-only] { display:none !important; } }
 
@@ -1197,7 +1197,7 @@
   margin-bottom: 16px;
   padding: 4px 10px;
   border-radius: 999px;
-  font: 11px/1.4 system-ui, sans-serif;
+  font: 11px/1.4 var(--magazoo-ui-font);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1309,7 +1309,7 @@
   border: 0;
   background: none;
   border-radius: 6px;
-  font: 13px/1 Georgia, serif;
+  font: 13px/1 var(--magazoo-ui-font);
   color: #333;
   cursor: pointer;
 }
@@ -1383,7 +1383,7 @@
   background: none;
   padding: 4px 9px;
   border-radius: 6px;
-  font: 11px/1 system-ui, sans-serif;
+  font: 11px/1 var(--magazoo-ui-font);
   color: #333;
   cursor: pointer;
 }
@@ -1400,7 +1400,7 @@
 .zoom-val {
   min-width: 46px;
   text-align: center;
-  font: 11px/1 system-ui, sans-serif;
+  font: 11px/1 var(--magazoo-ui-font);
   color: #555;
   font-variant-numeric: tabular-nums;
 }
@@ -1483,7 +1483,7 @@
   background: none;
   padding: 4px 10px;
   border-radius: 6px;
-  font: 11px/1 system-ui, sans-serif;
+  font: 11px/1 var(--magazoo-ui-font);
   color: #333;
   cursor: pointer;
 }

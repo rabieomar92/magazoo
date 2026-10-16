@@ -85,7 +85,7 @@ export default function AdminPage() {
     </header>}
     <div className={`admin-content${!csrf?' admin-content--signin':''}`}>
       {csrf&&<div className="admin-intro">
-        <div><p className="admin-eyebrow"><AdminIcon name="grid"/>Your publication workspace</p><h1>Article library</h1><p>A little more organised. A lot more room for your ideas.</p></div>
+        <div><h1>Article library</h1></div>
         {csrf && <div className="admin-intro-actions"><button disabled={busy} aria-expanded={creator === 'project'} aria-controls="admin-create-panel" onClick={e => { creatorTrigger.current = e.currentTarget; setCreator('project'); }}><AdminIcon name="folder"/>New project</button><button className="primary" disabled={busy || !projects.length} aria-expanded={creator === 'article'} aria-controls="admin-create-panel" onClick={e => { creatorTrigger.current = e.currentTarget; setCreator('article'); }}><AdminIcon name="plus"/>Add article</button></div>}
       </div>}
       {csrf&&error && <div className="admin-alert" role="alert">{error}</div>}{csrf&&notice && <div className="admin-notice" role="status">{notice}</div>}
@@ -99,12 +99,12 @@ export default function AdminPage() {
         <a className="admin-login-editor" href={`${import.meta.env.BASE_URL}#editor`}>Open editor<AdminIcon name="arrow"/></a>
       </section><LoginBackground/></> : <>
         <div className="admin-overview" aria-label="Library overview">
-          <div><span className="admin-stat-icon"><AdminIcon name="article"/></span><div><strong>{count}</strong><span>{count === 1 ? 'Article' : 'Articles'} in your library</span></div></div>
-          <div><span className="admin-stat-icon"><AdminIcon name="folder"/></span><div><strong>{projects.length}</strong><span>{projects.length === 1 ? 'Project' : 'Projects'} to organise your work</span></div></div>
-          <div className="admin-overview-note"><AdminIcon name="shield"/><div><strong>One editor at a time</strong><span>Private links. Protected edits.</span></div></div>
+          <div><span className="admin-stat-icon"><AdminIcon name="article"/></span><div><strong>{count}</strong><span>{count === 1 ? 'Article' : 'Articles'}</span></div></div>
+          <div><span className="admin-stat-icon"><AdminIcon name="folder"/></span><div><strong>{projects.length}</strong><span>{projects.length === 1 ? 'Project' : 'Projects'}</span></div></div>
+          <div className="admin-overview-note"><AdminIcon name="shield"/><div><strong>One editor at a time</strong><span>Other visitors have read-only access.</span></div></div>
         </div>
         <section id="admin-create-panel" ref={creatorRef} className="admin-card admin-create-panel" hidden={!creator} aria-labelledby="admin-create-title">
-          <header><div><p className="admin-eyebrow">Build your library</p><h2 id="admin-create-title">{creator === 'project' ? 'Create a project' : 'Add an article'}</h2><p>{creator === 'project' ? 'Give your next issue a place to grow.' : 'Start with a blank document, or import a Magazoo JSON file.'}</p></div><button className="admin-icon-button" disabled={busy} aria-label="Close create panel" onClick={closeCreator}><AdminIcon name="close"/></button></header>
+          <header><div><h2 id="admin-create-title">{creator === 'project' ? 'Create a project' : 'Add an article'}</h2><p>{creator === 'project' ? 'Group articles in a named project.' : 'Create a blank document or import a Magazoo JSON file.'}</p></div><button className="admin-icon-button" disabled={busy} aria-label="Close create panel" onClick={closeCreator}><AdminIcon name="close"/></button></header>
           <form hidden={creator !== 'project'} onSubmit={e => { e.preventDefault(); void run(async () => { const created = await api('projects', csrf, 'POST', {name}); setName(''); await refresh(); setProjectId(created.id); closeCreator(); setNotice('Project created. Add an article when you are ready.'); }); }}>
             <fieldset disabled={busy}><label>Project name<input required maxLength={120} value={name} onChange={e => setName(e.target.value)} placeholder="School magazine · September 2026" /></label><button className="primary" disabled={busy || !name.trim()}><AdminIcon name="plus"/>Create project</button></fieldset>
           </form>
@@ -112,11 +112,11 @@ export default function AdminPage() {
             <fieldset disabled={busy}><div className="admin-create-fields"><label>Project<select required value={projectId} onChange={e => setProjectId(e.target.value)}><option value="">Choose a project</option>{projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select></label><label>File name<input required value={itemName} maxLength={115} onChange={e => setItemName(e.target.value)} placeholder="research-highlights.json" /></label><label className="admin-upload">Import existing JSON <span className="admin-optional">Optional · up to 64 MB</span><input ref={importInput} type="file" accept=".json,application/json" onChange={e => { const f = e.target.files?.[0]; setUpload(null); if (!f) return; void run(async () => { if (f.size > 64 * 1024 * 1024) throw new Error('File exceeds 64 MB.'); setUpload(migrate(JSON.parse(await f.text()))); if (!itemName) setItemName(f.name); }); }} /></label></div><button className="primary" disabled={busy || !projectId || !itemName.trim()}><AdminIcon name="plus"/>Create document &amp; link</button></fieldset>
           </form>
         </section>
-        <div className="admin-library-title"><div><h2>All articles</h2><p>Find a story. Pick up where you left off.</p></div><button disabled={busy} onClick={() => void run(() => refresh())}><AdminIcon name="refresh"/>Refresh</button></div>
+        <div className="admin-library-title"><div><h2>All articles</h2></div><button disabled={busy} onClick={() => void run(() => refresh())}><AdminIcon name="refresh"/>Refresh</button></div>
         <AdminLibrary projects={projects} busy={busy} onDelete={setDeleting} onRename={setRenaming} onCompile={setCompilingProject} link={sharedLink} onCopy={item => void run(async () => { await navigator.clipboard.writeText(sharedLink(item.token)); setNotice(`Private editing link copied for ${item.name}.`); })} />
         <aside className="admin-sharing-note"><AdminIcon name="shield"/><p>Share thoughtfully. Anyone with a private link can access that article; only one person can edit it at a time. Keep links with your editorial team.</p></aside>
       </>}
-      {csrf&&<footer className="admin-footnote"><span>Magazoo! · Made for editorial work.</span><span>Keep regular server backups. Deleting a project revokes its article links.</span></footer>}
+      {csrf&&<footer className="admin-footnote"><span>Keep regular server backups. Deleting a project revokes its article links.</span></footer>}
     </div>
     {deleting && <DeleteDialog target={deleting} close={() => setDeleting(null)} remove={() => run(async () => { await api(deleting.path, csrf, 'DELETE', {confirmation:deleting.name}); setDeleting(null); await refresh(); setNotice('Deleted. Affected editing links have been revoked.'); })} />}
     {renaming && <RenameProjectDialog name={renaming.name} close={() => setRenaming(null)} rename={async name => { await api(`projects/${renaming.id}`, csrf, 'PATCH', {name, previousName:renaming.name}); setRenaming(null); await run(async () => { await refresh(); setNotice('Project renamed. Existing editing links are unchanged.'); }); }} />}

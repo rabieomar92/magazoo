@@ -7,6 +7,8 @@ export const ALL_FONTS = [
   'Arial',
   'Avenir Next LT Pro Light',
   'Avenir Next LT Pro',
+  'TeX Gyre Schola',
+  'TeX Gyre Pagella',
 ];
 
 export const SERIF_FONTS = ALL_FONTS;
@@ -15,6 +17,8 @@ export const fontOptions = (fonts: string[] = ALL_FONTS) =>
   fonts.map((font) => ({ value: font, label: font }));
 
 const STACKS: Record<string, string> = {
+  'TeX Gyre Schola': '"TeX Gyre Schola", "Century Schoolbook", Georgia, serif',
+  'TeX Gyre Pagella': '"TeX Gyre Pagella", "Palatino Linotype", Palatino, Georgia, serif',
   'Source Serif 4': '"Source Serif 4", Georgia, "Times New Roman", serif',
   'Playfair Display': '"Playfair Display", Georgia, "Times New Roman", serif',
   'Bebas Neue': '"Bebas Neue", "Arial Narrow", Arial, sans-serif',

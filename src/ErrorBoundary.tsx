@@ -35,7 +35,7 @@ export class ErrorBoundary extends Component<Props, State> {
             padding: '2rem',
             maxWidth: '600px',
             margin: '4rem auto',
-            fontFamily: 'system-ui, -apple-system, sans-serif',
+            fontFamily: 'var(--magazoo-ui-font)',
             background: '#ffffff',
             borderRadius: '8px',
             boxShadow: '0 4px 20px rgba(0,0,0,0.1)',

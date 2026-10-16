@@ -93,5 +93,15 @@ it('requires a project before adding an article',async()=>{
   request.mockImplementation(async(url:string)=>({ok:true,json:async()=>url.endsWith('auth/session')?{csrf:'test-csrf'}:[]}));
   await render();
   expect([...host.querySelectorAll('button')].find(b=>b.textContent==='Add article')!.disabled).toBe(true);
-  expect(host.textContent).toContain('Your next issue starts here');
+  expect(host.textContent).toContain('No projects yet.');
+});
+
+it('keeps dashboard copy functional without promotional taglines',async()=>{
+  await render();
+  for(const phrase of ['A little more organised','A lot more room','Pick up where you left off','Made for editorial work','place to grow','blank canvas for your next issue'])expect(host.textContent).not.toContain(phrase);
+  expect(host.querySelector('.admin-intro p')).toBeNull();
+  expect(host.querySelector('.admin-library-title p')).toBeNull();
+  await click('New project');
+  expect(host.textContent).toContain('Group articles in a named project.');
+  expect(request.mock.calls.every(([,options])=>options.method==='GET')).toBe(true);
 });

@@ -610,7 +610,7 @@
 
 /* Monospace for the LaTeX equation editor — operators/braces read clearly. */
 .field-mono {
-  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-family: var(--magazoo-ui-font);
 }
 
 /* ---- List items (paragraphs, highlights, references) ---------------------- */

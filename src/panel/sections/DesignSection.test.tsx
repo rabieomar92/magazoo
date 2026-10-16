@@ -6,8 +6,8 @@ import { useDoc } from '../../store/useDoc';
 import { DesignSection } from './DesignSection';
 
 describe('DesignSection font choices', () => {
-  const allowedFonts = ['Helvetica', 'Playfair Display', 'Bebas Neue', 'Arial', 'Avenir Next LT Pro Light', 'Avenir Next LT Pro'];
-  it('offers exactly the six requested fonts in every standard font selector', () => {
+  const allowedFonts = ['Helvetica', 'Playfair Display', 'Bebas Neue', 'Arial', 'Avenir Next LT Pro Light', 'Avenir Next LT Pro', 'TeX Gyre Schola', 'TeX Gyre Pagella'];
+  it('offers all eight fonts in every standard font selector', () => {
     const host = document.createElement('div');
     const root = createRoot(host);
     act(() => {

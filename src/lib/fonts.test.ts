@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { emptyDoc } from '../schema/document';
 import { cssVars } from './geometry';
 import { ALL_FONTS, fontStack } from './fonts';
+import {pageFooter} from './pageFooter';
+import {marginTextSettings} from './pageMarginText';
 
 describe('font stacks', () => {
   it('exposes only the approved publication font list, in product order', () => {
@@ -12,7 +14,22 @@ describe('font stacks', () => {
       'Arial',
       'Avenir Next LT Pro Light',
       'Avenir Next LT Pro',
+      'TeX Gyre Schola',
+      'TeX Gyre Pagella',
     ]);
+  });
+
+  it.each(['TeX Gyre Schola','TeX Gyre Pagella'])('resolves %s consistently for publication text and footers',name=>{
+    const doc=emptyDoc(),design=doc.design;
+    design.fontBody=name;design.fontDisplay=name;
+    expect(fontStack(name)).toContain(`"${name}"`);
+    expect(fontStack(name)).toMatch(/serif$/);
+    expect(cssVars(design)['--sans']).toBe(fontStack(name));
+    expect(cssVars(design)['--serif']).toBe(fontStack(name));
+    doc.footer={...doc.footer,fontFamily:name};
+    doc.marginText={...doc.marginText,fontFamily:name};
+    expect(pageFooter(doc,0).fontFamily).toBe(name);
+    expect(marginTextSettings(doc).fontFamily).toBe(name);
   });
 
   it('uses a geometric sans-serif fallback for Avenir Next, never a serif', () => {

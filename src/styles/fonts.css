@@ -141,3 +141,61 @@
     U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
     U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
 }
+/* TeX Gyre: full character sets, locally bundled under the GUST Font License.
+   Static regular/bold and true italic faces; no remote font dependency. */
+@font-face {
+  font-family: 'TeX Gyre Schola';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../assets/fonts/tex-gyre/texgyreschola-regular.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'TeX Gyre Schola';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../assets/fonts/tex-gyre/texgyreschola-italic.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'TeX Gyre Schola';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('../assets/fonts/tex-gyre/texgyreschola-bold.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'TeX Gyre Schola';
+  font-style: italic;
+  font-weight: 700;
+  font-display: swap;
+  src: url('../assets/fonts/tex-gyre/texgyreschola-bolditalic.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'TeX Gyre Pagella';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../assets/fonts/tex-gyre/texgyrepagella-regular.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'TeX Gyre Pagella';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../assets/fonts/tex-gyre/texgyrepagella-italic.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'TeX Gyre Pagella';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('../assets/fonts/tex-gyre/texgyrepagella-bold.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'TeX Gyre Pagella';
+  font-style: italic;
+  font-weight: 700;
+  font-display: swap;
+  src: url('../assets/fonts/tex-gyre/texgyrepagella-bolditalic.woff2') format('woff2');
+}

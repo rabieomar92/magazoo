@@ -63,7 +63,7 @@ it('keeps empty project actions, disables mutations while busy, and never prints
   act(()=>root.render(<AdminLibrary {...props} projects={[projects[1]]} onCompile={onCompile}/>));
   const compile=[...host.querySelectorAll('button')].find(b=>b.textContent==='Compile issue')!;
   expect(compile.disabled).toBe(true);
-  expect(host.textContent).toContain('A blank canvas');
+  expect(host.textContent).toContain('No articles yet');
   act(()=>root.render(<AdminLibrary {...props} projects={[{...projects[0],items:[{...projects[0].items[0],token:'private-token-never-visible'}]}]} busy onCompile={onCompile}/>));
   expect(host.querySelector<HTMLButtonElement>('[aria-label="Delete story-0.json"]')!.disabled).toBe(true);
   expect(host.querySelector<HTMLButtonElement>('[aria-label="Copy private link for story-0.json"]')!.disabled).toBe(true);
