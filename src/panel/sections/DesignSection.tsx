@@ -5,7 +5,6 @@ import { useDoc } from '../../store/useDoc';
 import {
   DEFAULT_TOP_BAR_OFFSET,
   assetIsReferenced,
-  defaultSubtitleGap,
   familyOf,
   uid,
   type Design,
@@ -16,7 +15,7 @@ import { ALL_FONTS, SANS_FONTS, SERIF_FONTS, fontOptions } from '../../lib/fonts
 import { FrontCoverDesignSection } from './FrontCoverDesignSection';
 import { HeadingTextEditor } from './HeadingTextEditor';
 import { GateDesignSection } from './GateDesignSection';
-import { SUBTITLE_GAP } from '../../lib/spacing';
+import { SUBTITLE_GAP, setSubtitleGap, subtitleGapValue } from '../../lib/spacing';
 import { MagazooLoader } from '../../components/MagazooLoader';
 import {
   LabeledColor,
@@ -191,11 +190,11 @@ export function DesignSection({pageOnly=false}:{pageOnly?:boolean}) {
           <LabeledNumber
             label="Title to subtitle gap"
             unit="mm"
-            value={design.subtitleGap ?? defaultSubtitleGap(templateId)}
+            value={subtitleGapValue(useDoc.getState().doc)}
             min={SUBTITLE_GAP.min}
             max={SUBTITLE_GAP.max}
             step={0.5}
-            onChange={(v) => set('subtitleGap', v)}
+            onChange={(v) => update(d=>setSubtitleGap(d,v))}
           />
           <p className="hint">Negative subtitle gaps pull the subtitle up; small adjustments can tighten the layout. Large negative values can overlap the title.</p>
           <LabeledNumber

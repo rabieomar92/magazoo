@@ -1,7 +1,6 @@
 import { TypographyControl } from '../TypographyToolbar';
 import {
   DEFAULT_TOP_BAR_OFFSET,
-  defaultSubtitleGap,
   type FrontCoverDesign,
   type FrontCoverTextRole,
   type FrontCoverTextStyle,
@@ -13,7 +12,7 @@ import {
   FRONT_COVER_TEXT_ROLES,
 } from '../../lib/frontCoverDesign';
 import { useDoc } from '../../store/useDoc';
-import { COVER_STORY_GAP, SUBTITLE_GAP } from '../../lib/spacing';
+import { COVER_STORY_GAP, SUBTITLE_GAP, setSubtitleGap, subtitleGapValue } from '../../lib/spacing';
 import { LabeledInput } from '../Field';
 const coverCopyFields: Partial<Record<FrontCoverTextRole, keyof Doc['meta']>> = {
   masthead:'masthead', strapline:'affiliation', kicker:'categoryLabel', title:'title',
@@ -185,11 +184,11 @@ export function FrontCoverDesignSection() {
         <LabeledNumber
           label="Title to subtitle gap"
           unit="mm"
-          value={design.subtitleGap ?? defaultSubtitleGap('magazine-4')}
+          value={subtitleGapValue(useDoc.getState().doc)}
           min={SUBTITLE_GAP.min}
           max={SUBTITLE_GAP.max}
           step={0.5}
-          onChange={(value) => update((doc) => { doc.design.subtitleGap = value; if(doc.design.frontCover?.text?.subtitle)delete doc.design.frontCover.text.subtitle.spaceBefore; })}
+          onChange={(value) => update(doc=>setSubtitleGap(doc,value))}
         />
         <p className="hint">Negative subtitle gaps tighten the space above the subtitle and may overlap the headline.</p>
         <LabeledNumber

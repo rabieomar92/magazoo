@@ -49,7 +49,7 @@
   text-transform: none;
 }
 .fm-subtitle {
-  margin: 4mm 0 0;
+  margin: var(--subtitle-gap,4mm) 0 0;
   max-width: 150mm;
   font: 400 var(--fs-subtitle)/1.5 var(--font-subtitle);
 }
@@ -227,7 +227,7 @@
   text-transform: none;
 }
 .fm-board-list-header p {
-  margin: 1.2mm 0 0;
+  margin: var(--subtitle-gap,1.2mm) 0 0;
   color: color-mix(in srgb,var(--ink) 72%,transparent);
   font: 400 var(--fs-subtitle)/1.32 var(--font-subtitle);
 }
