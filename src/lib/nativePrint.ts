@@ -44,7 +44,7 @@ export function registerPublicationPrint({ source, size, issue = false, shortcut
     try {
       const current = source();
       if (!current || current.closest<HTMLElement>('.paper-scroll')?.dataset.previewPending === 'true'
-        || current.querySelector('[data-preview-pending="true"],.page[data-layout-overflow="true"],[data-outline-editing="true"],[data-image-avoidance="unresolved"],[data-caption-unplaced="true"]')
+        || current.querySelector('[data-preview-pending="true"],.page[data-layout-overflow="true"],[data-outline-editing="true"],[data-dragging="true"],[data-image-avoidance="unresolved"],[data-caption-unplaced="true"]')
         || document.fonts?.status === 'loading'
         || [...current.querySelectorAll('img')].some(image => !image.complete || !image.naturalWidth)) {
         throw new Error('The publication is still updating or has a layout warning. Close this dialog, wait for the canvas to settle and use Export PDF.');

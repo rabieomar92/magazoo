@@ -33,6 +33,12 @@ describe('one publication print path',()=>{
     expect(document.querySelector('[data-native-print-root]')?.textContent).toContain('use Export PDF');
     expect(document.querySelector('[data-native-print-root] .page')).toBeNull();
   });
+  it('does not print a transient image-drag preview',()=>{
+    const source=document.createElement('div');source.innerHTML='<div class="page"><figure data-dragging="true">Transient image position</figure></div>';document.body.append(source);
+    cleanups.push(registerPublicationPrint({source:()=>source,size:'magazine',shortcut:()=>{}}));window.dispatchEvent(new Event('beforeprint'));
+    expect(document.querySelector('[data-native-print-root]')?.textContent).toContain('use Export PDF');
+    expect(document.querySelector('[data-native-print-root] .page')).toBeNull();
+  });
   it('maintains issue reading order, language, counters and cross-article page breaks',()=>{
     const source=document.createElement('section');source.innerHTML='<article><div class="pages" lang="ms"><div class="page">One<ol class="references"><li>Source one</li></ol></div></div></article><article><div class="pages"><div class="page">Two</div></div></article>';document.body.append(source);const before=source.outerHTML;
     cleanups.push(registerPublicationPrint({source:()=>source,size:'a4',issue:true,shortcut:()=>{}}));window.dispatchEvent(new Event('beforeprint'));

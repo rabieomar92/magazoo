@@ -85,6 +85,29 @@ test('preview fallback and malformed assets do not block the library or change s
   assert.equal((await admin('projects')).status, 200);
 });
 
+test('small versioned tile previews cache privately, revalidate after authentication, and preserve original JSON',async t=>{
+  const {storage,request,admin,cookie}=await fixture(t);
+  const {default:sharp}=await import('sharp');
+  const image=await sharp({create:{width:1800,height:1200,channels:3,background:'#325588'}}).png().toBuffer();
+  const project=storage.createProject('Thumbnails');
+  const item=storage.createDocument(project.id,'tile.json',JSON.stringify({...doc,hero:{assetId:'hero'},assets:{hero:{src:`data:image/png;base64,${image.toString('base64')}`}}}));
+  const before=storage.read(item.token),route=`documents/${item.id}/hero?v=1&thumbnail=1`;
+  assert.equal((await request(route)).status,401);
+  const result=await admin(route);assert.equal(result.status,200);
+  assert.equal(result.headers.get('cache-control'),'private, no-cache');assert.equal(result.headers.get('vary'),'Cookie');
+  assert.equal(result.headers.get('content-type'),'image/webp');
+  const bytes=Buffer.from(await result.arrayBuffer()),metadata=await sharp(bytes).metadata();
+  assert.equal(metadata.width,600);assert.equal(metadata.height,400);assert.ok(bytes.length<image.length);
+  const etag=result.headers.get('etag');
+  assert.equal((await request(route,{headers:{Cookie:cookie,'If-None-Match':etag}})).status,304);
+  assert.equal((await request(route,{headers:{'If-None-Match':etag}})).status,401);
+  assert.deepEqual(storage.read(item.token),before);
+  const leaseId='a'.repeat(43);storage.editLease(item.token,'acquire',leaseId);assert.equal(storage.update(item.token,1,JSON.stringify(doc),leaseId),true);
+  const changed=await admin(route,{headers:{'If-None-Match':etag}});assert.equal(changed.status,204);assert.notEqual(changed.headers.get('etag'),etag);
+  const saved=storage.read(item.token);storage.editLease(item.token,'release',leaseId);storage.removeDocument(item.id,saved.name);
+  assert.equal((await admin(route,{headers:{'If-None-Match':etag}})).status,404);
+});
+
 test('SVG previews are inert and web image redirects do not expose the session or sharing token', async t => {
   const { storage, admin } = await fixture(t);
   const project = storage.createProject('Preview sources');

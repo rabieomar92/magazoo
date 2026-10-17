@@ -1,4 +1,5 @@
 import { fitPdfSheets, PDF_PAGE_SIZES, pdfPageDimensions, type PdfPageSize } from './pdfPageSize';
+import { freezeParagraphLines } from './pdfTextLines';
 
 const PRINT_FRAME_CLASS = 'pdf-print-frame';
 const RESOURCE_TIMEOUT_MS = 20_000;
@@ -366,6 +367,7 @@ export function clonePages(source: HTMLElement, targetDocument: Document, { free
   });
 
   if (freezeColumns) freezeColumnLayout(source, pages);
+  if (freezeColumns) freezeParagraphLines(source,pages);
 
   // Structured templates carry hidden measuring sheets beside their visible
   // pages. Keep source/clone node indices matched until any geometry freeze is
@@ -532,6 +534,7 @@ export async function exportIssuePdf(title: string, root: HTMLElement, size: Pdf
  */
 export async function waitForPreviewResources(source: HTMLElement) {
   if(source.querySelector('[data-outline-editing="true"]'))throw new Error('Apply or cancel the image border before exporting.');
+  if(source.querySelector('[data-dragging="true"]'))throw new Error('Finish moving the image before exporting.');
   await waitForFonts(document);
   await Promise.all([
     ...Array.from(source.querySelectorAll<HTMLImageElement>('img')).map(waitForImage),

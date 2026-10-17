@@ -20,6 +20,10 @@ describe('PDF export layout contract', () => {
     const source=document.createElement('div');source.innerHTML='<figure data-outline-editing="true"></figure>';
     await expect(waitForPreviewResources(source)).rejects.toThrow('Apply or cancel the image border');
   });
+  it('requires the author to finish moving an image before exporting',async()=>{
+    const source=document.createElement('div');source.innerHTML='<figure data-dragging="true"></figure>';
+    await expect(waitForPreviewResources(source)).rejects.toThrow('Finish moving the image');
+  });
   it('removes canvas-only move controls after cloning without changing publication text',()=>{
     const source=document.createElement('div');source.className='pages';
     source.innerHTML='<div class="page"><figure><button data-editor-only="true">Move image</button><figcaption>Exact caption</figcaption></figure><p>Exact article</p></div>';

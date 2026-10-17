@@ -4,6 +4,7 @@ import { resolve, extname, sep } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { createAuth } from './passwordAuth.mjs';
 import { imageResponse } from './heroPreview.mjs';
+import { createHeroThumbnails } from './heroThumbnails.mjs';
 import {serveVideo} from './staticVideo.mjs';
 
 const fail=(status,message)=>{throw Object.assign(new Error(message),{status});};
@@ -32,6 +33,7 @@ export function createApp({storage,origin,passwordHash,staticDir,authOptions={},
   const rootPath=url.pathname.replace(/\/$/,'');
   const secure=url.protocol==='https:';
   const auth=createAuth({passwordHash,...authOptions});
+  const thumbnails=createHeroThumbnails({readVersion:id=>storage.heroVersion(id),readSource:id=>storage.readHeroRecord(id),decode:source=>imageResponse(source,origin)});
   const cookie=(name,value,age)=>`${name}=${value}; HttpOnly; SameSite=Strict; Path=${rootPath||'/'}; Max-Age=${age}${secure?'; Secure':''}`;
   const server=createServer(async(req,res)=>{
     res.setHeader('X-Content-Type-Options','nosniff');res.setHeader('Referrer-Policy','no-referrer');
@@ -122,9 +124,20 @@ export function createApp({storage,origin,passwordHash,staticDir,authOptions={},
         if(!['GET','HEAD'].includes(req.method))fail(405,'Method not allowed.');
         operation='article-preview';
         if(typeof storage.readHero!=='function')fail(503,'Deploy the complete server folder and restart the application to show article previews.');
-        const source=storage.readHero(hero[1]);
-        if(source===undefined)fail(404,'Document not found.');
-        const preview=imageResponse(source,origin);
+        let preview;
+        if(new URL(req.url,origin).searchParams.get('thumbnail')==='1'&&typeof storage.heroVersion==='function'&&typeof storage.readHeroRecord==='function'){
+          const result=await thumbnails.get(hero[1],req.headers['if-none-match']);
+          if(!result)fail(404,'Document not found.');
+          res.setHeader('Cache-Control','private, no-cache');
+          res.setHeader('Vary','Cookie');
+          res.setHeader('ETag',result.etag);
+          if(result.notModified){res.writeHead(304);res.end();return;}
+          preview=result.preview;
+        }else{
+          const source=storage.readHero(hero[1]);
+          if(source===undefined)fail(404,'Document not found.');
+          preview=imageResponse(source,origin);
+        }
         if(!preview){res.writeHead(204);res.end();return;}
         res.setHeader('Cross-Origin-Resource-Policy','same-origin');
         if(preview.location){res.writeHead(302,{Location:preview.location});res.end();return;}

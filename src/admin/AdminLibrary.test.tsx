@@ -49,14 +49,15 @@ it('keeps card edit links and actions attached to their exact document', () => {
 it('loads versioned hero previews and recovers cleanly when an image is missing', () => {
   render();
   const preview=host.querySelector<HTMLImageElement>('.admin-article-hero img')!;
-  expect(preview.getAttribute('src')).toBe('/api/documents/0/hero?v=1');
+  expect(preview.getAttribute('src')).toBe('/api/documents/0/hero?v=1&thumbnail=1');
+  expect(preview.getAttribute('width')).toBe('600');
   expect(preview.getAttribute('loading')).toBe('lazy');
   expect(preview.closest('a')?.getAttribute('href')).toBe('#edit=0');
   act(()=>preview.dispatchEvent(new Event('error')));
   expect(host.querySelector('.admin-article-hero')?.textContent).toContain('No hero image');
   expect(host.querySelector('.admin-article-hero')?.querySelector('img')).toBeNull();
   render([{...projects[0],items:[{...projects[0].items[0],version:2}]}]);
-  expect(host.querySelector('.admin-article-hero img')?.getAttribute('src')).toBe('/api/documents/0/hero?v=2');
+  expect(host.querySelector('.admin-article-hero img')?.getAttribute('src')).toBe('/api/documents/0/hero?v=2&thumbnail=1');
 });
 it('keeps empty project actions, disables mutations while busy, and never prints private tokens', () => {
   const onCompile=vi.fn();

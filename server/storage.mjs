@@ -158,6 +158,11 @@ export function openStorage(filename, lockOptions) {
       const row = db.prepare('SELECT body FROM documents WHERE id=?').get(id);
       return row ? heroSource(row.body) : undefined;
     },
+    heroVersion(id) { return db.prepare('SELECT version FROM documents WHERE id=?').get(id)?.version; },
+    readHeroRecord(id) {
+      const row=db.prepare('SELECT body,version FROM documents WHERE id=?').get(id);
+      return row?{version:row.version,source:heroSource(row.body)}:undefined;
+    },
     lockStatus(secret) { return locks.status(sharedRow(secret).id); },
     editLease(secret, action, leaseId) {
       return transaction(true, () => {
