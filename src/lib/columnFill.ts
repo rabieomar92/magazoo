@@ -478,6 +478,22 @@ export function fillColumnsAroundImages(
     const width=Number.parseFloat(probe.style.width)||probe.clientWidth;
     let start=0;
     let bands=exclusionsByColumn[columnIndex];
+    // A full-width rectangular obstacle must be a real flow boundary. Chromium
+    // can let inline text cross a fully closed row inside a CSS shape float.
+    // Keep contours for image edges, but split around captions/callout boxes.
+    if (bands.some(b=>b.outline) && bands.some(b=>!b.outline)) {
+      for (const bounds of writableSegments(mergeExclusions(bands.filter(b=>!b.outline)),columnHeight,lineHeight)) {
+        const local=offsetContourBands(bands.filter(b=>b.outline),bounds.top);
+        const filled=fillColumnsAroundImages(rest,probe,[local],bounds.bottom-bounds.top,isOverflowing,safetyBoost);
+        for(const segment of filled.columns[0].segments) columns[columnIndex].segments.push({
+          ...segment,top:segment.top+bounds.top,bottom:segment.bottom+bounds.top,order:segmentOrder++,
+        });
+        rest=filled.remainder;
+        if(filled.columns[0].segments.some(segment=>segment.pieces.length))opened=true;
+        if(!rest.length)break;
+      }
+      continue;
+    }
     let contour=tightContour(bands,width,columnHeight,bodyFontSize*3,lineHeight);
     if(contour) {
       if(!opened&&rest[0]&&!rest[0].cont&&!rest[0].decorativeQuote&&!probe.closest('.drop-caps-off')) {

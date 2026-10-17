@@ -78,19 +78,21 @@ export default function AdminPage() {
     try { await fn(); } catch (e) { setError(e instanceof Error ? e.message : 'Request failed.'); }
     finally { setBusy(false); }
   };
-  const count = projects.reduce((total, project) => total + project.items.length, 0);
   if (csrf && compilingProject) return <Suspense fallback={<MagazooLoader label="Opening issue studio…" detail="Preparing the issue compiler and saved arrangement." />}><IssueWorkspace projectId={compilingProject} csrf={csrf} onClose={() => { setCompilingProject(null); void run(() => refresh()); }} /></Suspense>;
   return <main className={`admin-page${!csrf?' admin-page--signin':''}`}>
     {csrf&&busy && <div className="admin-loading"><MagazooLoader variant="banner" label="Working… Please wait." /></div>}
     {csrf&&<header className="admin-header">
       <div className="admin-header-identity"><a className="admin-brand" href={`${import.meta.env.BASE_URL}#admin`} aria-label="Magazoo admin home"><Wordmark /></a><span className="admin-header-divider"/><div className="admin-workspace-name"><strong>Editorial workspace</strong><span>Magazoo! Studio</span></div></div>
-      <nav aria-label="Workspace"><a href={`${import.meta.env.BASE_URL}#editor`}>Open editor<AdminIcon name="arrow"/></a>{csrf && <><span className="admin-role"><span/>Administrator</span><button disabled={busy} onClick={()=>setPasswordSettings(true)}>Change password</button><button disabled={busy} onClick={() => void run(async () => { await api('auth/logout', csrf, 'POST'); setCsrf(''); setProjects([]); setCreator(null); })}>Log out</button></>}</nav>
+      <nav aria-label="Workspace" className="admin-flat-navigation">
+        <button title="New project" disabled={busy} aria-expanded={creator==='project'} aria-controls="admin-create-panel" onClick={e=>{creatorTrigger.current=e.currentTarget;setCreator('project');}}><AdminIcon name="folder"/><span className="admin-sr-only">New project</span></button>
+        <button title="Add article" disabled={busy||!projects.length} aria-expanded={creator==='article'} aria-controls="admin-create-panel" onClick={e=>{creatorTrigger.current=e.currentTarget;setCreator('article');}}><AdminIcon name="plus"/><span className="admin-sr-only">Add article</span></button>
+        <button title="Refresh library" disabled={busy} onClick={()=>void run(()=>refresh())}><AdminIcon name="refresh"/><span className="admin-sr-only">Refresh</span></button>
+        <a title="Open editor" href={`${import.meta.env.BASE_URL}#editor`}><AdminIcon name="arrow"/><span className="admin-sr-only">Open editor</span></a>
+        <button title="Change password" disabled={busy} onClick={()=>setPasswordSettings(true)}><AdminIcon name="key"/><span className="admin-sr-only">Change password</span></button>
+        <button title="Log out" disabled={busy} onClick={()=>void run(async()=>{await api('auth/logout',csrf,'POST');setCsrf('');setProjects([]);setCreator(null);})}><AdminIcon name="logout"/><span className="admin-sr-only">Log out</span></button>
+      </nav>
     </header>}
     <div className={`admin-content${!csrf?' admin-content--signin':''}`}>
-      {csrf&&<div className="admin-intro">
-        <div><h1>Article library</h1></div>
-        {csrf && <div className="admin-intro-actions"><button disabled={busy} aria-expanded={creator === 'project'} aria-controls="admin-create-panel" onClick={e => { creatorTrigger.current = e.currentTarget; setCreator('project'); }}><AdminIcon name="folder"/>New project</button><button className="primary" disabled={busy || !projects.length} aria-expanded={creator === 'article'} aria-controls="admin-create-panel" onClick={e => { creatorTrigger.current = e.currentTarget; setCreator('article'); }}><AdminIcon name="plus"/>Add article</button></div>}
-      </div>}
       {csrf&&error && <div className="admin-alert" role="alert">{error}</div>}{csrf&&notice && <div className="admin-notice" role="status">{notice}</div>}
       {!csrf ? <div className="admin-login-layout"><LoginBackground enabled={checked}/><section className="admin-card admin-login" aria-labelledby="admin-login-title">
         <div className="admin-login-brand"><Wordmark/></div><h1 id="admin-login-title">Sign in</h1><p>Administrator access</p>
@@ -101,11 +103,6 @@ export default function AdminPage() {
         </form>}</div>
         <a className="admin-login-editor" href={`${import.meta.env.BASE_URL}#editor`}>Open editor<AdminIcon name="arrow"/></a>
       </section></div> : <>
-        <div className="admin-overview" aria-label="Library overview">
-          <div><span className="admin-stat-icon"><AdminIcon name="article"/></span><div><strong>{count}</strong><span>{count === 1 ? 'Article' : 'Articles'}</span></div></div>
-          <div><span className="admin-stat-icon"><AdminIcon name="folder"/></span><div><strong>{projects.length}</strong><span>{projects.length === 1 ? 'Project' : 'Projects'}</span></div></div>
-          <div className="admin-overview-note"><AdminIcon name="shield"/><div><strong>One editor at a time</strong><span>Other visitors have read-only access.</span></div></div>
-        </div>
         <section id="admin-create-panel" ref={creatorRef} className="admin-card admin-create-panel" hidden={!creator} aria-labelledby="admin-create-title">
           <header><div><h2 id="admin-create-title">{creator === 'project' ? 'Create a project' : 'Add an article'}</h2><p>{creator === 'project' ? 'Group articles in a named project.' : 'Create a blank document or import a Magazoo JSON file.'}</p></div><button className="admin-icon-button" disabled={busy} aria-label="Close create panel" onClick={closeCreator}><AdminIcon name="close"/></button></header>
           <form hidden={creator !== 'project'} onSubmit={e => { e.preventDefault(); void run(async () => { const created = await api('projects', csrf, 'POST', {name}); setName(''); await refresh(); setProjectId(created.id); closeCreator(); setNotice('Project created. Add an article when you are ready.'); }); }}>
@@ -115,7 +112,7 @@ export default function AdminPage() {
             <fieldset disabled={busy}><div className="admin-create-fields"><label>Project<select required value={projectId} onChange={e => setProjectId(e.target.value)}><option value="">Choose a project</option>{projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select></label><label>File name<input required value={itemName} maxLength={115} onChange={e => setItemName(e.target.value)} placeholder="research-highlights.json" /></label><label className="admin-upload">Import existing JSON <span className="admin-optional">Optional · up to 64 MB</span><input ref={importInput} type="file" accept=".json,application/json" onChange={e => { const f = e.target.files?.[0]; setUpload(null); if (!f) return; void run(async () => { if (f.size > 64 * 1024 * 1024) throw new Error('File exceeds 64 MB.'); setUpload(migrate(JSON.parse(await f.text()))); if (!itemName) setItemName(f.name); }); }} /></label></div><button className="primary" disabled={busy || !projectId || !itemName.trim()}><AdminIcon name="plus"/>Create document &amp; link</button></fieldset>
           </form>
         </section>
-        <div className="admin-library-title"><div><h2>All articles</h2></div><button disabled={busy} onClick={() => void run(() => refresh())}><AdminIcon name="refresh"/>Refresh</button></div>
+        <div className="admin-library-title"><h1 className="admin-library-heading">Article library</h1></div>
         <AdminLibrary projects={projects} busy={busy} onDelete={setDeleting} onRename={setRenaming} onCompile={setCompilingProject} link={sharedLink} onCopy={item => void run(async () => { await navigator.clipboard.writeText(sharedLink(item.token)); setNotice(`Private editing link copied for ${item.name}.`); })} />
         <aside className="admin-sharing-note"><AdminIcon name="shield"/><p>Share thoughtfully. Anyone with a private link can access that article; only one person can edit it at a time. Keep links with your editorial team.</p></aside>
       </>}

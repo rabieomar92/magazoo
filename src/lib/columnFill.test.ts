@@ -365,6 +365,16 @@ describe('image-shaped columns', () => {
     expect(imageWordsInReadingOrder(columns)).toEqual(words(source.text));
   });
 
+  it('splits real flow regions around rectangular callouts even when image contours are present',()=>{
+    const probe=document.createElement('div');probe.style.width='120px';
+    const source=text('one two three four five six seven eight nine ten eleven twelve');
+    const outline={top:10,bottom:90,outline:{points:[{x:0,y:10},{x:50,y:40},{x:0,y:90}],gap:0}};
+    const filled=fillColumnsAroundImages([source],probe,[[outline,{top:40,bottom:60}]],100,el=>words(el.textContent??'').length>3);
+    expect(filled.columns[0].segments.every(s=>s.bottom<=40||s.top>=60)).toBe(true);
+    expect(filled.columns[0].segments.some(s=>s.top>=60)).toBe(true);
+    expect([...imageWordsInReadingOrder(filled.columns),...words(filled.remainder.map(p=>p.text).join(' '))]).toEqual(words(source.text));
+  });
+
   it('retains one native shaped host per column and all copy in reading order',()=>{
     const probe=document.createElement('div');probe.style.width='120px';
     const source=text('one two three four five six seven eight nine ten eleven twelve');

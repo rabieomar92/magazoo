@@ -315,3 +315,9 @@
 .admin-page:not(.admin-page--signin) .admin-library-controls{padding:0;border:0;border-radius:0;background:transparent;gap:12px;}
 .admin-page:not(.admin-page--signin) :is(.admin-file-icon,.admin-version,.admin-project-icon,.admin-project-empty,.admin-sharing-note){border-radius:0;}
 .admin-page:not(.admin-page--signin) .admin-file-icon{background:transparent;border-color:var(--line);color:var(--ink-2);}
+.admin-sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0;}
+.admin-page .admin-header .admin-flat-navigation{gap:6px;width:auto;justify-content:flex-end;}
+.admin-page .admin-header .admin-flat-navigation :is(button,a){width:40px;height:40px;min-height:40px;padding:10px;border:0;background:transparent;box-shadow:none;color:var(--ink-2);}
+.admin-page .admin-header .admin-flat-navigation :is(button,a):hover:not(:disabled){background:var(--line-2);color:var(--ink);}
+.admin-page .admin-library-heading{margin:0;font-size:20px;font-weight:600;letter-spacing:-.02em;}
+@media(max-width:520px){.admin-page .admin-header .admin-flat-navigation{width:100%;justify-content:flex-start;}.admin-header-identity{gap:12px;}}

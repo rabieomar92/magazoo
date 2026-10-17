@@ -1,9 +1,11 @@
 import type { ReactNode } from 'react';
-type IconName = 'search' | 'article' | 'folder' | 'plus' | 'arrow' | 'link' | 'trash' | 'refresh' | 'close' | 'shield' | 'grid' | 'upload';
+type IconName = 'search' | 'article' | 'folder' | 'plus' | 'arrow' | 'link' | 'trash' | 'refresh' | 'close' | 'shield' | 'grid' | 'upload' | 'key' | 'logout';
 
 /** Small, local UI icons; no network assets or icon-library dependency. */
 export function AdminIcon({ name }: { name: IconName }) {
   const paths: Record<IconName, ReactNode> = {
+    key:<><circle cx="8" cy="9" r="5"/><path d="m12 13 8 8m-4-4 3-3m-6 0 3-3"/></>,
+    logout:<><path d="M9 4H4v16h5M13 7l5 5-5 5M8 12h10"/></>,
     search: <><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></>,
     article: <path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9zM14 3v6h6M8 13h8M8 17h5"/>,
     folder: <path d="M3 7V5a2 2 0 0 1 2-2h5l2 3h7a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/>,

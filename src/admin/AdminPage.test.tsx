@@ -63,6 +63,17 @@ it('shows the library first, with creation forms closed and no API mutations',as
   expect(host.querySelector<HTMLElement>('#admin-create-panel')!.hidden).toBe(true);
   expect(request.mock.calls.every(([,options])=>options.method==='GET')).toBe(true);
 });
+it('keeps library actions in accessible icon navigation without the large summary strip',async()=>{
+  await render();
+  expect(host.querySelector('.admin-overview')).toBeNull();
+  expect(host.querySelector('.admin-intro')).toBeNull();
+  const nav=host.querySelector('.admin-flat-navigation')!;
+  for(const label of ['New project','Add article','Refresh','Change password','Log out']){
+    const action=[...nav.querySelectorAll('button')].find(b=>b.textContent===label)!;
+    expect(action).toBeDefined();expect(action.querySelector('svg')).not.toBeNull();
+    expect(action.querySelector('.admin-sr-only')).not.toBeNull();expect(action.title).toBeTruthy();
+  }
+});
 it('opens the requested form and preserves its draft when closed',async()=>{
   await render();await click('New project');
   const form=host.querySelector<HTMLFormElement>('form:not([hidden])')!;
