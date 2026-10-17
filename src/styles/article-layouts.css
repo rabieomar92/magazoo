@@ -1,8 +1,8 @@
 /* Reference compositions: isolated from every established page engine. */
 .page.article-page { position:relative; padding:0; color:var(--ink); background:var(--paper-bg); }
 .article-page > .article-hero { position:absolute; margin:0; overflow:hidden; background:var(--hero); }
-.article-hero--fade::after { content:''; position:absolute; inset:0; background:linear-gradient(180deg,transparent 50%,var(--paper-bg) 100%); pointer-events:none; }
-.article-hero--fade.article-hero--bottom::after { background:linear-gradient(0deg,transparent 50%,var(--paper-bg) 100%); }
+.article-hero--fade::after { content:''; position:absolute; inset:0; background:linear-gradient(180deg,transparent 50%,var(--paper-bg) 99.5%,var(--paper-bg) 100%); pointer-events:none; }
+.article-hero--fade.article-hero--bottom::after { background:linear-gradient(0deg,transparent 50%,var(--paper-bg) 99.5%,var(--paper-bg) 100%); }
 .article-hero-caption { font:var(--article-caption-size,7pt)/1.3 var(--article-caption-font,var(--sans)); white-space:pre-wrap; letter-spacing:normal; text-align:var(--article-caption-align,left); }
 .article-hero > .article-hero-caption { position:absolute; z-index:1; top:31mm; left:var(--margin); width:37mm; margin:0; padding:2mm; color:var(--article-caption-color,#fff); background:#0006; }
 .article-page--paper-5 .article-hero > .article-hero-caption { top:auto; bottom:15mm; }

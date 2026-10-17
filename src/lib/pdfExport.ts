@@ -1,5 +1,6 @@
 import { fitPdfSheets, PDF_PAGE_SIZES, pdfPageDimensions, type PdfPageSize } from './pdfPageSize';
 import { freezeParagraphLines } from './pdfTextLines';
+import { compositePrintHeroFades } from './pdfHeroFade';
 
 const PRINT_FRAME_CLASS = 'pdf-print-frame';
 const RESOURCE_TIMEOUT_MS = 20_000;
@@ -509,6 +510,7 @@ export async function exportIssuePdf(title: string, root: HTMLElement, size: Pdf
     await waitForStyles(printDocument);
     await waitForFonts(printDocument);
     await Promise.all(Array.from(printDocument.images).map(waitForImage));
+    await compositePrintHeroFades(printDocument);
     fitPdfSheets(printDocument, size);
     await nextPaint(printWindow);
     await nextPaint(printWindow);
@@ -590,6 +592,7 @@ export async function exportPreviewPdf(title: string, suppliedSource?: HTMLEleme
     await waitForStyles(printDocument);
     await waitForFonts(printDocument);
     await Promise.all(Array.from(printDocument.images).map(waitForImage));
+    await compositePrintHeroFades(printDocument);
     fitPdfSheets(printDocument, size);
     await nextPaint(printWindow);
     await nextPaint(printWindow);

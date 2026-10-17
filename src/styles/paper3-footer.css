@@ -5,7 +5,7 @@
   inset: 55% 0 0;
   z-index: 3;
   pointer-events: none;
-  background: linear-gradient(to bottom, transparent, var(--paper-bg));
+  background: linear-gradient(to bottom, transparent, var(--paper-bg) 99.5%, var(--paper-bg));
 }
 .page--paper3 .hero--hidden::after { display: none; }
 
@@ -29,7 +29,7 @@
 /* Now the photograph fades upward into the page colour instead of downward. */
 .page--paper3.page--hero-bottom .hero::after {
   inset: 0 0 55%;
-  background: linear-gradient(to top, transparent, var(--paper-bg));
+  background: linear-gradient(to top, transparent, var(--paper-bg) 99.5%, var(--paper-bg));
 }
 /* The masthead belongs at the head of the page, so it stays there on its own
    instead of travelling with the picture, and the header clears it. */

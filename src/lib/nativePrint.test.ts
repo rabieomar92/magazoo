@@ -39,6 +39,13 @@ describe('one publication print path',()=>{
     expect(document.querySelector('[data-native-print-root]')?.textContent).toContain('use Export PDF');
     expect(document.querySelector('[data-native-print-root] .page')).toBeNull();
   });
+  it('routes faded photographs to resource-checked export instead of printing a zoom-unstable transparency',()=>{
+    const source=document.createElement('div');source.innerHTML='<div class="page"><figure class="article-hero--fade"><img src="data:image/png;base64,test"></figure></div>';document.body.append(source);
+    const image=source.querySelector('img')!;Object.defineProperty(image,'complete',{value:true});Object.defineProperty(image,'naturalWidth',{value:100});
+    cleanups.push(registerPublicationPrint({source:()=>source,size:'magazine',shortcut:()=>{}}));window.dispatchEvent(new Event('beforeprint'));
+    expect(document.querySelector('[data-native-print-root]')?.textContent).toContain('use Export PDF or Ctrl/Command+P');
+    expect(document.querySelector('[data-native-print-root] .page')).toBeNull();expect(source.querySelector('img')).toBe(image);
+  });
   it('maintains issue reading order, language, counters and cross-article page breaks',()=>{
     const source=document.createElement('section');source.innerHTML='<article><div class="pages" lang="ms"><div class="page">One<ol class="references"><li>Source one</li></ol></div></div></article><article><div class="pages"><div class="page">Two</div></div></article>';document.body.append(source);const before=source.outerHTML;
     cleanups.push(registerPublicationPrint({source:()=>source,size:'a4',issue:true,shortcut:()=>{}}));window.dispatchEvent(new Event('beforeprint'));

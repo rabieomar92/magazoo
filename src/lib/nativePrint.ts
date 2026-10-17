@@ -50,6 +50,11 @@ export function registerPublicationPrint({ source, size, issue = false, shortcut
         throw new Error('The publication is still updating or has a layout warning. Close this dialog, wait for the canvas to settle and use Export PDF.');
       }
       const containers = issue ? issuePageContainers(current) : [current];
+      // beforeprint is synchronous: it cannot wait for a composited PNG to
+      // decode. Never silently bypass the prepared export's stable photo fade.
+      if(containers.some(container=>container.querySelector('.article-hero--fade > img, .page--paper3 .hero:not(.hero--hidden) > img'))){
+        throw new Error('This photograph needs its fade prepared before printing. Close this dialog and use Export PDF or Ctrl/Command+P.');
+      }
       const sheets = containers.flatMap(container => [...container.children].filter((child): child is HTMLElement => child instanceof HTMLElement && child.classList.contains('page')));
       if (!sheets.length) throw new Error('Compile or open the publication, then use Export PDF.');
       const restore = sheets.map(resolveReferenceCounters);
