@@ -22,8 +22,34 @@ export type Mark = 'b' | 'i' | 'u';
 
 /** Render one TeX fragment to an HTML string. Never throws — a syntax error shows
  *  as KaTeX's inline red error instead of breaking the whole page. */
-export const renderTex = (tex: string, display = false): string =>
-  katex.renderToString(tex, { throwOnError: false, displayMode: display });
+const texCache=new Map<string,string>();
+export const renderTex = (tex: string, display = false): string => {
+  const key=`${display?'display':'inline'}:${tex}`,cached=texCache.get(key);
+  if(cached!==undefined)return cached;
+  const html=katex.renderToString(tex, { throwOnError: false, displayMode: display, trust:false });
+  if(texCache.size>=512)texCache.delete(texCache.keys().next().value!);
+  texCache.set(key,html);return html;
+};
+
+export function mathSpans(text:string){
+  const pattern=/(?<!\\)(\$\$)([\s\S]+?)\$\$|(?<!\\)\$([^$\n]+?)\$|\\\(([\s\S]+?)\\\)|\\\[([\s\S]+?)\\\]/g;
+  return Array.from(text.matchAll(pattern),m=>({start:m.index!,end:m.index!+m[0].length,tex:m[2]??m[3]??m[4]??m[5]}));
+}
+
+/** Whitespace inside a formula is TeX syntax, not a legal page-break point. */
+export function mathAwareWords(text:string):string[]{
+  const spans=mathSpans(text),words:string[]=[];let at=0;
+  while(at<text.length){
+    if(/\s/u.test(text[at])){at++;continue;}
+    const start=at;
+    while(at<text.length&&!/\s/u.test(text[at])){
+      const math=spans.find(span=>span.start===at);
+      at=math?math.end:at+1;
+    }
+    words.push(text.slice(start,at));
+  }
+  return words;
+}
 
 /** Longest tokens first so `**` wins over `*`, `__` over a lone `_`. */
 export const DELIMS: { tok: string; mark: Mark }[] = [
@@ -74,12 +100,14 @@ export function parseRuns(src: string): Run[] {
   while (k < src.length) {
     // Inline math wins over every B/I/U marker: a `$…$` span is captured whole
     // and its TeX kept verbatim, so markers/operators inside never parse.
-    if (src[k] === '$') {
-      const close = src.indexOf('$', k + 1);
+    const opener=src[k-1]!=='\\' ? ['$$','$','\\(','\\['].find(token=>src.startsWith(token,k)) : undefined;
+    if (opener) {
+      const closer=opener==='\\('? '\\)':opener==='\\['?'\\]':opener;
+      const close = src.indexOf(closer, k + opener.length);
       if (close !== -1) {
         flush();
-        runs.push({ text: src.slice(k + 1, close), b: false, i: false, u: false, math: true });
-        k = close + 1;
+        runs.push({ text: src.slice(k + opener.length, close), b: false, i: false, u: false, math: true });
+        k = close + closer.length;
         continue;
       }
       // Lone `$` with no closer — treat as literal text.
@@ -176,17 +204,12 @@ export function runsToHtml(src: string, dropCap = false): string {
  */
 export function openMarkers(s: string): string[] {
   const open: string[] = [];
+  const math=new Map(mathSpans(s).map(span=>[span.start,span.end]));
   let k = 0;
   while (k < s.length) {
     // Skip over a `$…$` math span whole — markers inside it are verbatim TeX and
     // must not count toward the B/I/U balance carried across a page break.
-    if (s[k] === '$') {
-      const close = s.indexOf('$', k + 1);
-      if (close !== -1) {
-        k = close + 1;
-        continue;
-      }
-    }
+    if(math.has(k)){k=math.get(k)!;continue;}
     let hit = false;
     for (const { tok } of DELIMS) {
       if (s.startsWith(tok, k)) {
@@ -211,15 +234,11 @@ export function splitRichTextAt(src: string, requestedOffset: number): { head: s
 
   // A figure cannot live inside a single TeX expression. If the caret is in
   // one, place it immediately after that expression instead.
-  let mathOpen = src.indexOf('$');
-  while (mathOpen !== -1) {
-    const mathClose = src.indexOf('$', mathOpen + 1);
-    if (mathClose === -1) break;
-    if (offset > mathOpen && offset <= mathClose) {
-      offset = mathClose + 1;
+  for(const span of mathSpans(src)) {
+    if (offset > span.start && offset < span.end) {
+      offset = span.end;
       break;
     }
-    mathOpen = src.indexOf('$', mathClose + 1);
   }
 
   // Never cut between the two characters of ** or __.

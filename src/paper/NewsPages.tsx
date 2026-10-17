@@ -1,3 +1,4 @@
+/** @jsxImportSource ../lib/mathJsx */
 import { useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import type { Doc } from '../schema/document';
 import { pageDimensions } from '../lib/pageFormat';

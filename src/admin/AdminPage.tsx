@@ -82,7 +82,7 @@ export default function AdminPage() {
   return <main className={`admin-page${!csrf?' admin-page--signin':''}`}>
     {csrf&&busy && <div className="admin-loading"><MagazooLoader variant="banner" label="Working… Please wait." /></div>}
     {csrf&&<header className="admin-header">
-      <div className="admin-header-identity"><a className="admin-brand" href={`${import.meta.env.BASE_URL}#admin`} aria-label="Magazoo admin home"><Wordmark /></a><span className="admin-header-divider"/><div className="admin-workspace-name"><strong>Editorial workspace</strong><span>Magazoo! Studio</span></div></div>
+      <div className="admin-header-identity"><a className="admin-brand" href={`${import.meta.env.BASE_URL}#admin`} aria-label="Magazoo admin home"><Wordmark /></a><span className="admin-header-divider"/><div className="admin-workspace-name"><h1 className="admin-library-heading">Article library</h1><span>Magazoo! Studio</span></div></div>
       <nav aria-label="Workspace" className="admin-flat-navigation">
         <button title="New project" disabled={busy} aria-expanded={creator==='project'} aria-controls="admin-create-panel" onClick={e=>{creatorTrigger.current=e.currentTarget;setCreator('project');}}><AdminIcon name="folder"/><span className="admin-sr-only">New project</span></button>
         <button title="Add article" disabled={busy||!projects.length} aria-expanded={creator==='article'} aria-controls="admin-create-panel" onClick={e=>{creatorTrigger.current=e.currentTarget;setCreator('article');}}><AdminIcon name="plus"/><span className="admin-sr-only">Add article</span></button>
@@ -93,7 +93,7 @@ export default function AdminPage() {
       </nav>
     </header>}
     <div className={`admin-content${!csrf?' admin-content--signin':''}`}>
-      {csrf&&error && <div className="admin-alert" role="alert">{error}</div>}{csrf&&notice && <div className="admin-notice" role="status">{notice}</div>}
+      {csrf&&error && <div className="admin-alert" role="alert">{error}</div>}{csrf&&notice&&notice!=='Signed in.' && <div className="admin-notice" role="status">{notice}</div>}
       {!csrf ? <div className="admin-login-layout"><LoginBackground enabled={checked}/><section className="admin-card admin-login" aria-labelledby="admin-login-title">
         <div className="admin-login-brand"><Wordmark/></div><h1 id="admin-login-title">Sign in</h1><p>Administrator access</p>
         {error&&<div className="admin-alert" role="alert">{error}</div>}
@@ -112,7 +112,6 @@ export default function AdminPage() {
             <fieldset disabled={busy}><div className="admin-create-fields"><label>Project<select required value={projectId} onChange={e => setProjectId(e.target.value)}><option value="">Choose a project</option>{projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select></label><label>File name<input required value={itemName} maxLength={115} onChange={e => setItemName(e.target.value)} placeholder="research-highlights.json" /></label><label className="admin-upload">Import existing JSON <span className="admin-optional">Optional · up to 64 MB</span><input ref={importInput} type="file" accept=".json,application/json" onChange={e => { const f = e.target.files?.[0]; setUpload(null); if (!f) return; void run(async () => { if (f.size > 64 * 1024 * 1024) throw new Error('File exceeds 64 MB.'); setUpload(migrate(JSON.parse(await f.text()))); if (!itemName) setItemName(f.name); }); }} /></label></div><button className="primary" disabled={busy || !projectId || !itemName.trim()}><AdminIcon name="plus"/>Create document &amp; link</button></fieldset>
           </form>
         </section>
-        <div className="admin-library-title"><h1 className="admin-library-heading">Article library</h1></div>
         <AdminLibrary projects={projects} busy={busy} onDelete={setDeleting} onRename={setRenaming} onCompile={setCompilingProject} link={sharedLink} onCopy={item => void run(async () => { await navigator.clipboard.writeText(sharedLink(item.token)); setNotice(`Private editing link copied for ${item.name}.`); })} />
         <aside className="admin-sharing-note"><AdminIcon name="shield"/><p>Share thoughtfully. Anyone with a private link can access that article; only one person can edit it at a time. Keep links with your editorial team.</p></aside>
       </>}

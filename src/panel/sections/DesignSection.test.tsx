@@ -34,7 +34,7 @@ describe('DesignSection font choices', () => {
     for (const select of selects) {
       expect([...select.options].map((option) => option.value)).toEqual(allowedFonts);
     }
-    expect(host.textContent).toContain('Title to subtitle gap');
+    expect(host.textContent).not.toContain('Title to subtitle gap');
     expect(host.textContent).toContain('Subtitle / lede');
     expect(host.textContent).toContain('Author bold');
     expect(host.textContent).toContain('Affiliation italic');
@@ -51,7 +51,7 @@ describe('DesignSection font choices', () => {
     });
 
     expect(host.textContent).toContain('Front cover layout');
-    expect(host.textContent).toContain('Title to subtitle gap');
+    expect(host.textContent).not.toContain('Title to subtitle gap');
     expect(host.textContent).toContain('Cover object styles');
     const fontSelects = [...host.querySelectorAll('select')].filter(
       (select) => select.closest('label')?.querySelector('.field-label')?.textContent === 'Font',

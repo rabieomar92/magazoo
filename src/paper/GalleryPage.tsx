@@ -1,3 +1,4 @@
+/** @jsxImportSource ../lib/mathJsx */
 import { Fragment, type CSSProperties, type ReactNode } from 'react';
 import type { Doc, Block } from '../schema/document';
 import { parseRuns, renderTex } from '../lib/richtext';

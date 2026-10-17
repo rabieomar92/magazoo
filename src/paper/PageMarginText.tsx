@@ -1,3 +1,4 @@
+/** @jsxImportSource ../lib/mathJsx */
 import type { CSSProperties } from 'react';
 import type { Doc } from '../schema/document';
 import { fontStack } from '../lib/fonts';

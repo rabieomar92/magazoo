@@ -6,7 +6,6 @@ import { gatePlacement, clampGate } from '../../lib/gatePlacement';
 import { LabeledColor, LabeledInput, LabeledNumber, Section, SegmentField, Toggle } from '../Field';
 import { GateTextEditor } from './GateTextEditor';
 import { FooterSection } from './FooterSection';
-import { clampSpacing, SUBTITLE_GAP } from '../../lib/spacing';
 import { pageDimensions } from '../../lib/pageFormat';
 import { usePdfPageSize } from '../../store/pdfPreferences';
 
@@ -60,8 +59,6 @@ export function GateDesignSection({headingsOnly=false}:{headingsOnly?:boolean}) 
       <summary>2 · Facing-page text<span>Subtitle, quote & position</span></summary>
       <div className="gate-control-stack">
         <GateTextEditor role="subtitle">
-          <LabeledNumber label="Space above subtitle" unit="mm" value={design.subtitleGap ?? 0} min={SUBTITLE_GAP.min} max={SUBTITLE_GAP.max} step={.5} onChange={v => update(d => { d.design.subtitleGap = clampSpacing(v, SUBTITLE_GAP); })} />
-          <p className="hint">This is the gap above the subtitle, not the block's position. While the block is centred it also re-centres as the gap changes, so the copy appears to move only half as far — drag the block instead to place it, and use this to tune the space.</p>
         </GateTextEditor>
         <GateTextEditor role="quote" />
         <GateTextEditor role="attribution" />

@@ -1,3 +1,4 @@
+/** @jsxImportSource ../lib/mathJsx */
 import { Fragment, useLayoutEffect, useRef, type CSSProperties, type ReactNode, type RefObject } from 'react';
 import type { Doc } from '../schema/document';
 import type { Piece } from '../lib/paginate';

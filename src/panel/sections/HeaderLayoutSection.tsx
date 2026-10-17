@@ -1,7 +1,5 @@
 import {useDoc} from '../../store/useDoc';
-import {defaultSubtitleGap} from '../../schema/document';
 import {articleGeometry,isReferenceArticle} from '../../lib/articleLayouts';
-import {SUBTITLE_GAP,setSubtitleGap,subtitleGapValue} from '../../lib/spacing';
 import {LabeledNumber,Section} from '../Field';
 export function HeaderLayoutSection(){
   const doc=useDoc(s=>s.doc),update=useDoc(s=>s.update);
@@ -11,8 +9,7 @@ export function HeaderLayoutSection(){
   </Section>;
   return <Section title="Heading layout & spacing" editorTarget="header-layout">
     <p className="hint">Font, weight, colour and character spacing follow the selected heading in the top formatting bar.</p>
-    <LabeledNumber label="Title to subtitle gap" unit="mm" min={SUBTITLE_GAP.min} max={SUBTITLE_GAP.max} step={.5} value={subtitleGapValue(doc)} onChange={value=>update(d=>setSubtitleGap(d,value))}/>
     <LabeledNumber label="Top to title" unit="mm" min={0} max={250} step={.5} value={isReferenceArticle(doc.templateId)?articleGeometry(doc.templateId,doc.design).titleTop:doc.design.firstPageTopMargin??0} onChange={value=>update(d=>{d.design.firstPageTopMargin=value;})}/>
-    <button type="button" className="add-btn" onClick={()=>update(d=>{delete d.design.firstPageTopMargin;setSubtitleGap(d,defaultSubtitleGap(d.templateId));})}>Reset heading spacing</button>
+    <button type="button" className="add-btn" onClick={()=>update(d=>{delete d.design.firstPageTopMargin;})}>Reset heading position</button>
   </Section>;
 }

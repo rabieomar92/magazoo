@@ -1,3 +1,4 @@
+/** @jsxImportSource ../lib/mathJsx */
 import {
   useLayoutEffect,
   useEffect,

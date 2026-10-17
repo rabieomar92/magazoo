@@ -15,7 +15,6 @@ import { ALL_FONTS, SANS_FONTS, SERIF_FONTS, fontOptions } from '../../lib/fonts
 import { FrontCoverDesignSection } from './FrontCoverDesignSection';
 import { HeadingTextEditor } from './HeadingTextEditor';
 import { GateDesignSection } from './GateDesignSection';
-import { SUBTITLE_GAP, setSubtitleGap, subtitleGapValue } from '../../lib/spacing';
 import { MagazooLoader } from '../../components/MagazooLoader';
 import {
   LabeledColor,
@@ -187,16 +186,6 @@ export function DesignSection({pageOnly=false}:{pageOnly?:boolean}) {
       <LabeledNumber label="Gutter" unit="mm" value={design.gutter} min={2} max={12} step={0.5} onChange={(v) => set('gutter', v)} />
       {!pageOnly && family !== 'gallery' && !isGate && (
         <>
-          <LabeledNumber
-            label="Title to subtitle gap"
-            unit="mm"
-            value={subtitleGapValue(useDoc.getState().doc)}
-            min={SUBTITLE_GAP.min}
-            max={SUBTITLE_GAP.max}
-            step={0.5}
-            onChange={(v) => update(d=>setSubtitleGap(d,v))}
-          />
-          <p className="hint">Negative subtitle gaps pull the subtitle up; small adjustments can tighten the layout. Large negative values can overlap the title.</p>
           <LabeledNumber
             label={templateId === 'paper-8' ? 'Top to title' : 'First-page top margin'}
             unit="mm"

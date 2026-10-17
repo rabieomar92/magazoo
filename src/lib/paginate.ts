@@ -16,7 +16,7 @@
  * its own paragraph continuation use the remaining page space, then advances
  * whole to the next valid position.
  */
-import { runsToHtml, openMarkers, renderTex, fittedRichTextHead } from './richtext';
+import { runsToHtml, openMarkers, renderTex, fittedRichTextHead, mathAwareWords } from './richtext';
 import { fitEquation } from './mathfit';
 import { fillColumns } from './columnFill';
 import { quoteFlowHtml } from './decorativeQuote';
@@ -25,7 +25,7 @@ import { fittingPrefix } from './fittingPrefix';
 export const overflows = (el: HTMLElement) =>
   el.scrollWidth > el.clientWidth + 1 || el.scrollHeight > el.clientHeight + 1;
 
-const words = (s: string) => s.trim().split(/\s+/).filter(Boolean);
+const words = mathAwareWords;
 
 /** Input item. Figures carry the geometry needed to measure their block.
  *  `widthBasis`: 1 = sits inside one flowing column (not a spanner); 2 | 3 | 4 =

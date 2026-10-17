@@ -1,3 +1,4 @@
+/** @jsxImportSource ../lib/mathJsx */
 import type { Doc } from '../schema/document';
 import { FramedImage } from '../components/FramedImage';
 import { TagBar } from './TagBar';

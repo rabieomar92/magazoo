@@ -1,3 +1,4 @@
+/** @jsxImportSource ../lib/mathJsx */
 import { useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import type { Doc, PlacedHighlights } from '../schema/document';
 import { articleGeometry, articleGridDesign, articleRegions, type ArticleRegion, type ArticleObstacle, type ReferenceArticleId } from '../lib/articleLayouts';

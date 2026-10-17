@@ -320,4 +320,5 @@
 .admin-page .admin-header .admin-flat-navigation :is(button,a){width:40px;height:40px;min-height:40px;padding:10px;border:0;background:transparent;box-shadow:none;color:var(--ink-2);}
 .admin-page .admin-header .admin-flat-navigation :is(button,a):hover:not(:disabled){background:var(--line-2);color:var(--ink);}
 .admin-page .admin-library-heading{margin:0;font-size:20px;font-weight:600;letter-spacing:-.02em;}
+.admin-page .admin-workspace-name .admin-library-heading{font-size:15px;line-height:1.25;letter-spacing:-.01em;}
 @media(max-width:520px){.admin-page .admin-header .admin-flat-navigation{width:100%;justify-content:flex-start;}.admin-header-identity{gap:12px;}}

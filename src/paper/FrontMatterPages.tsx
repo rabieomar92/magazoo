@@ -1,3 +1,4 @@
+/** @jsxImportSource ../lib/mathJsx */
 import { Fragment, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import type { Doc } from '../schema/document';
 import { emptyFrontMatter } from '../store/frontMatter';

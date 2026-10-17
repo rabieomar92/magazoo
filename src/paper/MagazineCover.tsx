@@ -1,4 +1,6 @@
+/** @jsxImportSource ../lib/mathJsx */
 import type { CSSProperties } from 'react';
+import {mathAwareWords} from '../lib/richtext';
 import type { Doc } from '../schema/document';
 import { PlacedImages } from './PlacedImages';
 import { FramedImage } from '../components/FramedImage';
@@ -15,7 +17,7 @@ export function MagazineCover({ doc, vars }: { doc: Doc; vars: CSSProperties }) 
   // set one, so their look is unchanged.
   const cover = doc.cover ?? doc.hero;
   const photo = doc.design.showHero !== false && cover.assetId ? assets[cover.assetId] : null;
-  const words = meta.title.trim().split(/\s+/).filter(Boolean);
+  const words = mathAwareWords(meta.title);
   const mag1 = doc.templateId === 'magazine-1';
   const style: CSSProperties = {
     ...vars,

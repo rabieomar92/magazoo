@@ -36,7 +36,7 @@ describe('signed optical spacing', () => {
         return fieldLabel && [...fieldLabel.childNodes].filter(n => n.nodeType === Node.TEXT_NODE).map(n => n.textContent).join('').trim() === label;
       })?.querySelector('input');
       const gap = labeled(template === 'magazine-3' ? 'Space above subtitle' : 'Title to subtitle gap');
-      expect(gap?.min).toBe('-40');
+      expect(gap).toBeUndefined();
       expect(labeled(template === 'magazine-3' ? 'Title size' : template === 'magazine-4' ? 'Size' : 'Title')?.min).not.toBe('-40');
       if (template === 'magazine-3') {
         expect(labeled('Space after subtitle')?.min).toBe('-100');

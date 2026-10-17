@@ -286,6 +286,8 @@ export interface FrontCoverTextStyle {
 
 /** Dedicated controls for the fixed one-sheet front-cover composition. */
 export interface FrontCoverDesign {
+  /** Optional canvas-resized teaser panel height, in millimetres. */
+  teaserHeight?: number;
   alignment?: 'left' | 'center' | 'right';
   /** Distance from the masthead to the main story, in millimetres. */
   storyTop?: number;

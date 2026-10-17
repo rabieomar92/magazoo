@@ -1,3 +1,4 @@
+/** @jsxImportSource ../lib/mathJsx */
 import { Fragment, useLayoutEffect, useState, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
 import type { Doc } from '../schema/document';

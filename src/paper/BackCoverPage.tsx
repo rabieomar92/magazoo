@@ -1,3 +1,4 @@
+/** @jsxImportSource ../lib/mathJsx */
 import type { CSSProperties, ReactNode } from 'react';
 import type { BackCover, BackCoverSocialLink, BackCoverSocialPlatform, BackCoverTextRole, Doc } from '../schema/document';
 import { emptyBackCover } from '../store/backCover';

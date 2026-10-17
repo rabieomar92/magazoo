@@ -5,6 +5,15 @@ import { extraTextGroups, textStyleSelector, textStylesCss } from './textStyles'
 import { presetFor, TEMPLATE_META } from '../store/presets';
 
 describe('component typography',()=>{
+  it('dedicated cover strapline font and size override shared affiliation defaults only on the cover',()=>{
+    const d=presetFor('magazine-4').design;
+    d.textStyles={affiliation:{fontFamily:'Arial',fontSize:8},strapline:{italic:true}};
+    d.frontCover={text:{strapline:{fontFamily:'Georgia',fontSize:17}}};
+    const css=textStylesCss(d,'cover');
+    const last=css.split('\n').find(line=>line.includes('.front-cover :is(.front-cover-strap)'))!;
+    expect(last).toContain('font-family:Georgia');expect(last).toContain('font-size:17pt');expect(last).toContain('font-style:italic');
+    expect(css.indexOf(last)).toBeGreaterThan(css.indexOf('font-size:8pt'));
+  });
   it.each(TEMPLATE_META.map(t=>[t.id]))('%s gives native object controls precedence over shared defaults in the same print-safe cascade',id=>{
     const doc=presetFor(id);doc.design.textStyles={body:{align:'left',fontSize:9,color:'#111111'},subtitle:{align:'left'},'block:one':{fontFamily:'Georgia'}};
     doc.blocks=[{id:'one',type:'paragraph',text:'Preserve this copy',align:'justify',fontSize:13,color:'#224466'}];

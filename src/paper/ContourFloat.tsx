@@ -1,3 +1,4 @@
+/** @jsxImportSource ../lib/mathJsx */
 import type {TightContour} from '../lib/tightContour';
 
 export function ContourFloat({contour}:{contour:TightContour}) {

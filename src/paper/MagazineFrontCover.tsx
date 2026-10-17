@@ -1,3 +1,4 @@
+/** @jsxImportSource ../lib/mathJsx */
 import { Fragment, type CSSProperties, type ReactNode } from 'react';
 import type { Block, Doc } from '../schema/document';
 import { parseRuns, renderTex } from '../lib/richtext';
@@ -14,6 +15,8 @@ import { useVerticalDrag } from './useVerticalDrag';
 import { CoverTextObject } from './CoverTextObject';
 import { TagBar } from './TagBar';
 import { HeroCaption } from './HeroCaption';
+import {CoverTeasersResize} from './CoverTeasersResize';
+import {pageDimensions} from '../lib/pageFormat';
 
 type Paragraph = Extract<Block, { type: 'paragraph' }>;
 
@@ -86,6 +89,7 @@ export function MagazineFrontCover({ doc, vars }: { doc: Doc; vars: CSSPropertie
     ...coverVars,
     backgroundColor: doc.design.colors.hero,
     '--front-teaser-count': String(Math.max(1, teasers.length)),
+    ...(Number.isFinite(coverDesign.teaserHeight)?{'--front-teasers-height':`${Math.max(12,Math.min(pageDimensions(doc.design).height-2*doc.design.margin-12,coverDesign.teaserHeight!))}mm`}:{}),
   };
 
   return (
@@ -141,6 +145,7 @@ export function MagazineFrontCover({ doc, vars }: { doc: Doc; vars: CSSPropertie
           {photo && <HeroCaption doc={doc} cover />}
           {teasers.length > 0 && (
             <div className="front-cover-teasers">
+              <CoverTeasersResize doc={doc}/>
               {teasers.map((teaser) => {
                 const { heading, description } = teaserParts(teaser);
                 const teaserOverrides: Record<string, string> = {};

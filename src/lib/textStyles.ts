@@ -40,6 +40,10 @@ export const TEXT_SELECTORS: Record<string, string> = {
 };
 
 export function textStyleSelector(key: string): string | undefined {
+  if(key.startsWith('cover-object:')){
+    const selector=TEXT_SELECTORS[key.slice(13)];
+    return selector?`.front-cover :is(${selector})`:undefined;
+  }
   if (key.startsWith('image-caption:')) return `[data-image-id=${cssQuote(key.slice(14))}] figcaption`;
   if (key.startsWith('fm-entry:')) {
     const [, id, role] = key.split(':');
@@ -59,6 +63,20 @@ export function textStylesCss(design: Design, scope: string, blocks:Doc['blocks'
   // Inline styles alone lose to the shared !important rules. Include native
   // values in the same scoped cascade used by preview, probes and print.
   const styles:Record<string,TextStyle>={...design.textStyles};
+  // Dedicated cover controls override shared heading defaults. For example,
+  // strapline uses affiliation as its fallback but is an independent object.
+  for(const [role,native] of Object.entries(design.frontCover?.text??{})){
+    if(!native)continue;
+    styles[`cover-object:${role}`]={
+      ...(native.fontFamily!==undefined?{fontFamily:native.fontFamily}:{}),
+      ...(native.fontSize!==undefined?{fontSize:native.fontSize}:{}),
+      ...(native.fontWeight!==undefined?{fontWeight:native.fontWeight}:{}),
+      ...(native.fontStyle!==undefined?{italic:native.fontStyle==='italic'}:{}),
+      ...(native.color!==undefined?{color:native.color}:{}),
+      ...(native.lineHeight!==undefined?{lineHeight:native.lineHeight}:{}),
+      ...design.textStyles?.[role],
+    };
+  }
   for(const block of blocks){
     const key=block.type==='paragraph'||block.type==='equation'?`block:${block.id}`:block.type==='figure'?`gallery-caption:${block.id}`:undefined;
     if(!key)continue;

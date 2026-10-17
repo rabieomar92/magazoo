@@ -1,4 +1,4 @@
-import { openMarkers } from './richtext';
+import { openMarkers,mathAwareWords } from './richtext';
 
 export interface FrontMatterUnit {
   id: string;
@@ -32,7 +32,7 @@ export function packFrontMatter(units: FrontMatterUnit[], capacity: number,
         columns.at(-1)!.push(unit); used += height + spacing; break;
       }
       if (used) { next(); continue; }
-      const words = unit.text.split(/\s+/).filter(Boolean);
+      const words = mathAwareWords(unit.text);
       let lo = 0, hi = words.length;
       while (lo < hi) {
         const middle = Math.ceil((lo + hi) / 2);
@@ -66,7 +66,7 @@ export function packFrontMatter(units: FrontMatterUnit[], capacity: number,
         previous.pop(); last.unshift(paragraph);
         if (!previous.length) columns.splice(columns.length - 2, 1);
       } else {
-        const words = paragraph.text.split(/\s+/).filter(Boolean);
+        const words = mathAwareWords(paragraph.text);
         // Keep at least two words on each side; try half the paragraph first,
         // then a shorter tail if the closing block takes more room.
         for (let split = Math.max(2, Math.floor(words.length / 2)); split <= words.length - 2; split++) {

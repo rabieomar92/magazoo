@@ -1,3 +1,4 @@
+/** @jsxImportSource ../lib/mathJsx */
 import {memo,useEffect,useRef,useState,type PointerEvent} from 'react';
 import {createPortal} from 'react-dom';
 import type {Asset,PlacedImage} from '../schema/document';

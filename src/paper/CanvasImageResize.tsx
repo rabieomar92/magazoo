@@ -1,3 +1,4 @@
+/** @jsxImportSource ../lib/mathJsx */
 import {useEffect,useLayoutEffect,useRef,useState,type RefObject,type PointerEvent as ReactPointerEvent} from 'react';
 import {createPortal} from 'react-dom';
 import type {Doc} from '../schema/document';

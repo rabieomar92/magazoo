@@ -50,6 +50,8 @@ it('preserves the existing sign-in request and switches to the normal library af
   expect(login[1].method).toBe('POST');expect(JSON.parse(String(login[1].body))).toEqual({password:'Local-test-only'});
   expect(host.querySelector('.admin-login')).toBeNull();expect(host.querySelector('video')).toBeNull();
   expect(host.querySelector('.admin-header')).not.toBeNull();expect(host.querySelector('h1')!.textContent).toBe('Article library');
+  expect(host.querySelector('.admin-header h1')?.textContent).toBe('Article library');
+  expect(host.querySelector('.admin-notice')).toBeNull();
 });
 it('keeps a failed sign-in inside the card and preserves the entered password for correction',async()=>{
   request.mockImplementation(async(url:string)=>({ok:false,json:async()=>({error:url.endsWith('auth/login')?'Incorrect admin password.':'Sign in required.'})}));
@@ -60,6 +62,7 @@ it('keeps a failed sign-in inside the card and preserves the entered password fo
 it('shows the library first, with creation forms closed and no API mutations',async()=>{
   await render();
   expect(host.querySelector('h1')!.textContent).toBe('Article library');
+  expect(host.querySelector('.admin-content h1')).toBeNull();
   expect(host.querySelector<HTMLElement>('#admin-create-panel')!.hidden).toBe(true);
   expect(request.mock.calls.every(([,options])=>options.method==='GET')).toBe(true);
 });

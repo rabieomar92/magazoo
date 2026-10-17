@@ -1,3 +1,4 @@
+/** @jsxImportSource ../lib/mathJsx */
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import { contentsDeck, DEFAULT_CONTENTS_DESIGN, type ContentsDensity, type ContentsDesign, type ContentsEntry } from './model';
 import { choosePictures, columnGap, mosaicSeed, packColumns, pictureRatios } from './mosaic';

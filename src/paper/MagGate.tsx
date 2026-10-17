@@ -1,4 +1,6 @@
+/** @jsxImportSource ../lib/mathJsx */
 import type { CSSProperties } from 'react';
+import {mathAwareWords} from '../lib/richtext';
 import type { Doc } from '../schema/document';
 import { pageDimensions } from '../lib/pageFormat';
 import { framedSpreadPhoto } from '../lib/magSplit';
@@ -40,7 +42,7 @@ export function MagGateA({ doc, vars }: { doc: Doc; vars: CSSProperties }) {
   const { meta } = doc;
   const photo = gatePhoto(doc);
   const geometry = gateGeometry(doc, 0);
-  const words = meta.title.trim().split(/\s+/).filter(Boolean);
+  const words = mathAwareWords(meta.title);
   const placement = useGatePlacement(doc, 'title', vars);
   const bleed = gateSpacingBleed(doc.design, 'title');
   const kickerColor = gateTypography(doc.design, 'kicker').color;

@@ -29,7 +29,7 @@
  * row-spanning object with different height accounting and remains outside
  * this pass; Flow.tsx balances the text bands around those rows separately.
  */
-import { runsToHtml, fittedRichTextHead, openMarkers } from './richtext';
+import { runsToHtml, fittedRichTextHead, openMarkers,mathAwareWords } from './richtext';
 import { quoteFlowHtml } from './decorativeQuote';
 import type { Piece } from './paginate';
 import type { Doc } from '../schema/document';
@@ -41,7 +41,7 @@ type TextPiece = Extract<Piece, { kind: 'text' }>;
 type FigurePiece = Extract<Piece, { kind: 'figure' }>;
 type InlinePiece = TextPiece | FigurePiece;
 
-const words = (s: string) => s.trim().split(/\s+/).filter(Boolean);
+const words = mathAwareWords;
 
 /** jsdom never computes layout — scrollHeight/clientHeight are always 0 there.
  *  Every function below takes `isOverflowing` as an injectable parameter

@@ -1,3 +1,4 @@
+/** @jsxImportSource ../lib/mathJsx */
 import type { Doc } from '../schema/document';
 import { barStartsRight } from '../lib/barSide';
 import { topBarVisible } from '../lib/topBar';

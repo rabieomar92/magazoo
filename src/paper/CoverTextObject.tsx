@@ -1,3 +1,4 @@
+/** @jsxImportSource ../lib/mathJsx */
 import type { CSSProperties, ReactNode } from 'react';
 import type { Doc, FrontCoverTextRole } from '../schema/document';
 import { useDoc } from '../store/useDoc';

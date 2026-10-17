@@ -12,7 +12,7 @@ import {
   FRONT_COVER_TEXT_ROLES,
 } from '../../lib/frontCoverDesign';
 import { useDoc } from '../../store/useDoc';
-import { COVER_STORY_GAP, SUBTITLE_GAP, setSubtitleGap, subtitleGapValue } from '../../lib/spacing';
+import { COVER_STORY_GAP } from '../../lib/spacing';
 import { LabeledInput } from '../Field';
 const coverCopyFields: Partial<Record<FrontCoverTextRole, keyof Doc['meta']>> = {
   masthead:'masthead', strapline:'affiliation', kicker:'categoryLabel', title:'title',
@@ -49,6 +49,7 @@ function CoverTextEditor({ role, label }: { role: FrontCoverTextRole; label: str
   const reset = () =>
     update((doc) => {
       if (doc.design.frontCover?.text) delete doc.design.frontCover.text[role];
+      if (doc.design.textStyles) delete doc.design.textStyles[role];
     });
 
   return (
@@ -105,6 +106,8 @@ function CoverTextEditor({ role, label }: { role: FrontCoverTextRole; label: str
             const headingRole = role === 'strapline' ? 'affiliation' : role === 'subtitle' ? 'subtitle' : 'author';
             delete doc.design[`${headingRole}Color`];
             if (doc.design.frontCover?.text?.[role]) delete doc.design.frontCover.text[role].color;
+            if(doc.design.textStyles?.[role])delete doc.design.textStyles[role].color;
+            if(doc.design.textStyles?.[headingRole])delete doc.design.textStyles[headingRole].color;
           })}>Use theme color</button></TypographyControl>
         )}
         <button type="button" className="add-btn cover-style-reset" onClick={reset}>
@@ -181,16 +184,6 @@ export function FrontCoverDesignSection() {
           step={1}
           onChange={(value) => setCover('storyWidth', value)}
         />
-        <LabeledNumber
-          label="Title to subtitle gap"
-          unit="mm"
-          value={subtitleGapValue(useDoc.getState().doc)}
-          min={SUBTITLE_GAP.min}
-          max={SUBTITLE_GAP.max}
-          step={0.5}
-          onChange={(value) => update(doc=>setSubtitleGap(doc,value))}
-        />
-        <p className="hint">Negative subtitle gaps tighten the space above the subtitle and may overlap the headline.</p>
         <LabeledNumber
           label="Teaser gap"
           unit="mm"

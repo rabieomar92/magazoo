@@ -1,3 +1,4 @@
+/** @jsxImportSource ../lib/mathJsx */
 import { memo, useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent as ReactMouseEvent } from 'react';
 import { textTrackingCss, trackingSelector } from '../lib/textTracking';
 import { textStylesCss, textStyleSelector } from '../lib/textStyles';
@@ -413,7 +414,7 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
   // sizes and the PDF are untouched.
   const [spread, setSpread] = useState(false);
   // Gallery is a two-page spread too — the fold image only reads right side-by-side.
-  const spreadOn = ((isMag && !isFrontCover) || isGallery) && spread;
+  const spreadOn = spread;
   const cols = spreadOn ? 2 : 1;
 
   useEffect(() => {
@@ -1425,7 +1426,7 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
         <span className="fit-badge-long">{fit.text}</span>
         <span className="fit-badge-short">{fitShort}</span>
       </span>
-      {((isMag && !isFrontCover) || isGallery) && (
+      {(
         <div className="view-bar">
           <button
             type="button"
