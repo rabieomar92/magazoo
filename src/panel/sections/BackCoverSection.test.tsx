@@ -16,6 +16,21 @@ const editNumber = (input: HTMLInputElement, value: string) => act(() => {
 });
 
 describe('BackCoverDesign', () => {
+  it('clears shared overrides as well as legacy values when resetting a cover object',()=>{
+    const host=document.createElement('div'),root=createRoot(host),doc=makeBackCover();
+    doc.design.textStyles={brand:{align:'right',color:'#123456',fontSize:40},website:{align:'center'}};
+    doc.design.backCover={...doc.design.backCover,text:{brand:{color:'#654321',fontSize:30}}};
+    act(()=>{useDoc.getState().load(doc);root.render(<BackCoverDesign/>);});
+    const group=host.querySelector('#editor-target-backcover-style-brand')!;
+    act(()=>[...group.querySelectorAll('button')].find(b=>b.textContent==='Use palette colour')!.click());
+    expect(useDoc.getState().doc.design.textStyles?.brand?.color).toBeUndefined();
+    expect(useDoc.getState().doc.design.backCover?.text?.brand?.color).toBeUndefined();
+    act(()=>[...group.querySelectorAll('button')].find(b=>b.textContent==='Reset this object')!.click());
+    expect(useDoc.getState().doc.design.textStyles?.brand).toBeUndefined();
+    expect(useDoc.getState().doc.design.backCover?.text?.brand).toBeUndefined();
+    expect(useDoc.getState().doc.design.textStyles?.website?.align).toBe('center');
+    act(()=>root.unmount());
+  });
   it('writes grouped controls only into the nested back-cover design object', () => {
     const host = document.createElement('div');
     const root = createRoot(host);

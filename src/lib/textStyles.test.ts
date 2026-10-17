@@ -5,6 +5,22 @@ import { extraTextGroups, textStyleSelector, textStylesCss } from './textStyles'
 import { presetFor, TEMPLATE_META } from '../store/presets';
 
 describe('component typography',()=>{
+  it.each(TEMPLATE_META.map(t=>[t.id]))('%s gives native object controls precedence over shared defaults in the same print-safe cascade',id=>{
+    const doc=presetFor(id);doc.design.textStyles={body:{align:'left',fontSize:9,color:'#111111'},subtitle:{align:'left'},'block:one':{fontFamily:'Georgia'}};
+    doc.blocks=[{id:'one',type:'paragraph',text:'Preserve this copy',align:'justify',fontSize:13,color:'#224466'}];
+    const before=JSON.stringify(doc),css=textStylesCss(doc.design,'audit',doc.blocks);
+    const rule=css.split('\n').find(line=>line.includes('data-source-block-id="one"'))!;
+    for(const property of ['text-align:justify !important','font-size:13pt !important','color:#224466 !important','font-family:Georgia'])expect(rule).toContain(property);
+    expect(css.indexOf('text-align:left')).toBeLessThan(css.indexOf('text-align:justify'));
+    expect(JSON.stringify(doc)).toBe(before);
+  });
+  it('retains explicit local overrides and gallery-caption alignment without touching authored data',()=>{
+    const doc=emptyDoc();doc.blocks=[{id:'p',type:'paragraph',text:'Text',align:'center'},{id:'f',type:'figure',assetId:'a',span:1,caption:'Caption',captionAlign:'justify'}];
+    doc.design.textStyles={'block:p':{align:'right'},subtitle:{align:'left'}};
+    const css=textStylesCss(doc.design,'audit',doc.blocks);
+    expect(css.split('\n').find(line=>line.includes('data-source-block-id="p"'))).toContain('text-align:right !important');
+    expect(css.split('\n').find(line=>line.includes('gallery-caption-f'))).toContain('text-align:justify !important');
+  });
   it('inherits an individual news headline font only within its own story',()=>{
     const design=emptyDoc().design;design.textStyles={'news:story-one:title':{fontFamily:'Helvetica'},'news:story-two:body':{fontFamily:'Arial'}};
     const css=textStylesCss(design,'proof');
@@ -13,6 +29,15 @@ describe('component typography',()=>{
   });
   it('keeps older files untouched until a style is explicitly edited',()=>{
     expect(textStylesCss(emptyDoc().design,'scope')).toBe('');
+  });
+  it('gives explicitly aligned cover text a usable frame without changing legacy defaults',()=>{
+    const d=emptyDoc().design;
+    d.textStyles={brand:{align:'right'},socialUrl:{align:'center'}};
+    const css=textStylesCss(d,'cover');
+    expect(css).toContain('align-self:stretch !important;width:100% !important');
+    expect(css).toContain('.back-cover-social-copy { flex:1; }');
+    d.textStyles={brand:{fontSize:24}};
+    expect(textStylesCss(d,'cover')).not.toContain('align-self');
   });
   it('persists independent styles and clones them for undo',()=>{
     const doc=emptyDoc();doc.design.textStyles={title:{fontWeight:700},'block:one':{fontFamily:'Georgia',italic:true,fontSize:12,underline:true,align:'right',lineHeight:1.4,color:'#102030'}};

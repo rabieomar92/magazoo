@@ -283,9 +283,11 @@ function BackCoverTextEditor({ role }: { role: BackCoverTextRole }) {
   });
   const reset = () => update(d => {
     if (d.design.backCover?.text) delete d.design.backCover.text[role];
+    if (d.design.textStyles) delete d.design.textStyles[role];
   });
   const usePalette = () => update(d => {
     if (d.design.backCover?.text?.[role]) delete d.design.backCover.text[role].color;
+    if (d.design.textStyles?.[role]) delete d.design.textStyles[role].color;
   });
   const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 

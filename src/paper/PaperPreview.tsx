@@ -1481,7 +1481,7 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
       {/* Escape hatch — raw CSS from the design panel, scoped by author intent. */}
       {doc.design.customCss && <style>{doc.design.customCss}</style>}
       <style>{textTrackingCss(doc.design, trackingScope, doc.templateId, key => trackingSelector(key) ?? textStyleSelector(key))}</style>
-      <style>{textStylesCss(doc.design, trackingScope)}</style>
+      <style>{textStylesCss(doc.design, trackingScope,doc.blocks)}</style>
 
       {!readOnly && (toolbarHost ? createPortal(previewControls, toolbarHost) : previewControls)}
 

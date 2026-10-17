@@ -137,7 +137,7 @@ export function BodySection({ allowEquations = true }: { allowEquations?: boolea
   ) =>
     update((doc) => {
       const block = doc.blocks[index];
-      if (block.type === 'paragraph') block.align = align;
+      if (block.type === 'paragraph') {block.align = align;delete doc.design.textStyles?.[`block:${block.id}`]?.align;}
     });
 
   const setParagraphStyle = (
@@ -152,10 +152,13 @@ export function BodySection({ allowEquations = true }: { allowEquations?: boolea
         delete block.fontSize;
         delete block.color;
         delete block.topPadding;
+        const style=doc.design.textStyles?.[`block:${block.id}`];if(style){delete style.fontSize;delete style.color;}
         return;
       }
       if (patch.fontSize !== undefined) block.fontSize = Math.min(72, Math.max(5, patch.fontSize));
       if (patch.color !== undefined) block.color = patch.color;
+      const style=doc.design.textStyles?.[`block:${block.id}`];
+      if(style){if(patch.fontSize!==undefined)delete style.fontSize;if(patch.color!==undefined)delete style.color;}
       if (patch.topPadding !== undefined) {
         block.topPadding = Math.min(200, Math.max(0, patch.topPadding));
       }
@@ -185,7 +188,7 @@ export function BodySection({ allowEquations = true }: { allowEquations?: boolea
   const setEquationAlign = (index: number, align: 'left' | 'center' | 'right') =>
     update((doc) => {
       const block = doc.blocks[index];
-      if (block.type === 'equation') block.align = align;
+      if (block.type === 'equation') {block.align = align;delete doc.design.textStyles?.[`block:${block.id}`]?.align;}
     });
 
   const remove = (index: number) => update((doc) => { removeArticleBlock(doc, index); });

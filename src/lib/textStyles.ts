@@ -54,8 +54,20 @@ export function textStyleSelector(key: string): string | undefined {
   return TEXT_SELECTORS[key] ?? trackingSelector(key);
 }
 
-export function textStylesCss(design: Design, scope: string): string {
-  return Object.entries(design.textStyles ?? {}).sort(([a],[b]) => Number(a.includes(':'))-Number(b.includes(':'))).flatMap(([key, style]) => {
+export function textStylesCss(design: Design, scope: string, blocks:Doc['blocks']=[]): string {
+  // Native per-object controls must beat shared typography defaults too.
+  // Inline styles alone lose to the shared !important rules. Include native
+  // values in the same scoped cascade used by preview, probes and print.
+  const styles:Record<string,TextStyle>={...design.textStyles};
+  for(const block of blocks){
+    const key=block.type==='paragraph'||block.type==='equation'?`block:${block.id}`:block.type==='figure'?`gallery-caption:${block.id}`:undefined;
+    if(!key)continue;
+    const native:TextStyle=block.type==='paragraph'?{...(block.align?{align:block.align}:{}),...(block.fontSize!==undefined?{fontSize:block.fontSize}:{}),...(block.color?{color:block.color}:{})}
+      :block.type==='equation'?{...(block.align?{align:block.align}:{})}
+      :block.type==='figure'?{...(block.captionAlign?{align:block.captionAlign}:{})}:{};
+    styles[key]={...native,...styles[key]};
+  }
+  return Object.entries(styles).sort(([a],[b]) => Number(a.includes(':'))-Number(b.includes(':'))).flatMap(([key, style]) => {
     const selector = textStyleSelector(key);
     if (!selector || !style || typeof style !== 'object') return [];
     const rules: string[] = [];
@@ -71,8 +83,16 @@ export function textStylesCss(design: Design, scope: string): string {
     if (typeof style.italic === 'boolean') rules.push(`font-style:${style.italic ? 'italic' : 'normal'}`);
     if (typeof style.underline === 'boolean') rules.push(`text-decoration-line:${style.underline ? 'underline' : 'none'}`);
     if (typeof style.color === 'string' && /^#[\da-f]{3,8}$/i.test(style.color)) rules.push(`color:${style.color}`);
-    if (['left','center','right','justify'].includes(style.align ?? '')) rules.push(`text-align:${style.align}`);
+    if (['left','center','right','justify'].includes(style.align ?? '')) {
+      rules.push(`text-align:${style.align}`);
+      // Cover flex children otherwise shrink to their text: alignment changes
+      // compute correctly but have no available horizontal space to act on.
+      if (['brand','tagline','website','qrLabel','footerText','imprint'].includes(key)) rules.push('align-self:stretch','width:100%','box-sizing:border-box');
+    }
     const output=rules.length ? [`[data-tracking-scope=${cssQuote(scope)}] :is(${selector}) { ${rules.map(rule=>`${rule} !important`).join(';')}; }`] : [];
+    if (['socialLabel','socialUrl'].includes(key) && ['left','center','right','justify'].includes(style.align ?? '')) {
+      output.push(`[data-tracking-scope=${cssQuote(scope)}] .back-cover-social-copy { flex:1; }`);
+    }
     if(key.startsWith('news:')&&key.endsWith(':title')&&typeof style.fontFamily==='string'&&/^[\p{L}\p{N} _-]{1,80}$/u.test(style.fontFamily)) {
       output.push(`[data-tracking-scope=${cssQuote(scope)}] [data-news-id=${cssQuote(key.slice(5,-6))}] { --drop-cap-font:${fontStack(style.fontFamily)}; }`);
     }

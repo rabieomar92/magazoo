@@ -1,7 +1,7 @@
 import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, describe, expect, it } from 'vitest';
-import { presetFor } from '../store/presets';
+import { presetFor,TEMPLATE_META } from '../store/presets';
 import { useDoc } from '../store/useDoc';
 import { Panel } from './Panel';
 import { IMAGE_LED_COMPOSITIONS } from '../lib/templateChoices';
@@ -12,6 +12,13 @@ describe('layout change warning', () => {
   afterEach(() => {
     if (root) act(() => root?.unmount());
     root = null;
+  });
+  it.each(TEMPLATE_META.map(t=>[t.id]))('%s opens every editor category without mutating the document',template=>{
+    const host=document.createElement('div');root=createRoot(host);const doc=presetFor(template),before=JSON.stringify(doc);
+    act(()=>{useDoc.getState().load(doc);root?.render(<Panel/>);});
+    const tabs=[...host.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
+    expect(tabs).toHaveLength(8);
+    for(const tab of tabs){act(()=>tab.click());expect(tab.getAttribute('aria-selected')).toBe('true');expect(JSON.stringify(useDoc.getState().doc)).toBe(before);}
   });
 
   it('does not change the renderer until the editor explicitly confirms', () => {

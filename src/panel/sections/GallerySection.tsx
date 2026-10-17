@@ -246,7 +246,7 @@ export function GallerySection() {
                     ]}
                     onChange={value => update(doc => {
                       const figure = doc.blocks.find(candidate => candidate.id === block!.id);
-                      if (figure?.type === 'figure') figure.captionAlign = value;
+                      if (figure?.type === 'figure') {figure.captionAlign = value;delete doc.design.textStyles?.[`gallery-caption:${figure.id}`]?.align;}
                     })} />
                 </TypographyControl>
                 <GalleryVerticalPosition caption label={`${s.label} description vertical position`}
