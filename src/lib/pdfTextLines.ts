@@ -59,7 +59,17 @@ export function freezeParagraphLines(source:HTMLElement,clone:HTMLElement) {
       const range=paragraph.ownerDocument.createRange();range.setStart(line.start.node,line.start.offset);range.setEnd(line.end.node,line.end.offset);
       const run=copy.ownerDocument.createElement('span');run.className='pdf-text-line';
       run.style.setProperty('white-space','nowrap','important');run.style.setProperty('hyphens','none','important');
-      run.append(copy.ownerDocument.importNode(range.cloneContents(),true));
+      // cloneContents includes children, not the common ancestor itself. If
+      // both endpoints are inside one <em>/<strong>/<span>, omitting that
+      // ancestor silently turns the middle lines of a question into plain text.
+      let content:Node=copy.ownerDocument.importNode(range.cloneContents(),true);
+      let ancestor=range.commonAncestorContainer.nodeType===Node.ELEMENT_NODE
+        ? range.commonAncestorContainer as Element : range.commonAncestorContainer.parentElement;
+      while(ancestor&&ancestor!==paragraph){
+        const wrapper=copy.ownerDocument.importNode(ancestor.cloneNode(false),false);
+        wrapper.appendChild(content);content=wrapper;ancestor=ancestor.parentElement;
+      }
+      run.append(content);
       const next=lines[lineIndex+1];
       // Preserve only a hyphen actually painted by the canvas. A URL, CJK
       // text or break-all line may divide adjacent letters with no hyphen.

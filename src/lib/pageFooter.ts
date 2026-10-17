@@ -15,12 +15,13 @@ export function footerBottomOffset(doc: Doc): number {
     : DEFAULT_FOOTER_BOTTOM_OFFSET;
 }
 
-/** Reserve the footer's 7pt line box, 2mm top padding and 1mm clearance.
- * Only the bottom margin changes; column widths and top positions stay put. */
+/** Reserve the footer line box, 2mm top padding and 1mm clearance. Horizontal
+ * page margins must not secretly add template-dependent blank space here.
+ * Line-grid rounding may leave less than one additional body line of air. */
 export function footerBottomMargin(doc: Doc): number {
   const size = pageFooter(doc, 0).fontSize;
   return doc.templateId === 'magazine-4' || doc.templateId === 'backcover-1' || doc.footer?.enabled === false ? doc.design.margin
-    : Math.max(doc.design.margin, footerBottomOffset(doc) + size * 25.4 / 72 + 3);
+    : footerBottomOffset(doc) + size * 25.4 / 72 + 3;
 }
 
 export function footerInk(background = '#ffffff') {

@@ -54,7 +54,7 @@ export function articleGeometry(id: ReferenceArticleId, design: Design, measured
   const titleTop = customInsetTop ? Math.max(contentTop, design.firstPageTopMargin!)
     : Math.max(26, contentTop, bottomHero ? 26 : (inset ? layout.titleTop : layout.titleTop + delta), design.firstPageTopMargin ?? 0);
   const bodyTop = Math.max(titleTop + measuredHeader + gutter, customInsetTop ? 0 : bottomHero ? 26 : inset ? layout.bodyTop : layout.bodyTop + delta);
-  const bottom = height - Math.max(margin, 18, footerReserve);
+  const bottom = height - (footerReserve > 0 ? footerReserve : margin);
   const imageBottom = bottomBleed ? height : bottom;
   const heroColumns = Math.max(1, Math.min(columns, 3, Math.round(design.heroWidthCols ?? columns - 1)));
   const imageColumn = imageLeft ? 0 : columns - heroColumns;

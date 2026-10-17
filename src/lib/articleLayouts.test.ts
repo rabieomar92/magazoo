@@ -18,7 +18,8 @@ describe('reference article compositions', () => {
     expect(regions).toHaveLength(12);
     expect(regions.every(r => r.width === 42.5)).toBe(true);
     expect(regions.slice(0,4).map(r => r.x)).toEqual([14,60.5,107,153.5]);
-    expect(regions.every(r => r.y >= 0 && r.y + r.height <= 258)).toBe(true);
+    expect(g.bottom).toBe(g.height-g.margin);
+    expect(regions.every(r => r.y >= 0 && r.y + r.height <= g.bottom)).toBe(true);
     const restored = migrate(JSON.parse(JSON.stringify(doc)));
     expect(restored.templateId).toBe(id);
     expect(restored.design.articlePageSize).toBe('reference');
@@ -66,7 +67,7 @@ describe('reference article compositions', () => {
     const regions = articleRegions(g, 2);
     expect(regions).toHaveLength(12);
     expect(regions.every(r => r.width === 40.75)).toBe(true);
-    expect(regions.every(r => r.x + r.width <= 189 && r.y + r.height <= 249)).toBe(true);
+    expect(regions.every(r => r.x + r.width <= 189 && r.y + r.height <= g.bottom)).toBe(true);
     expect(grid(articleGridDesign(doc.design)).col).toBe(g.col);
     expect(JSON.stringify(doc)).toBe(before);
   });

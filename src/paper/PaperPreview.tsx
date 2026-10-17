@@ -58,6 +58,7 @@ import { TOP_BAR_HEIGHT_MM } from '../lib/topBar';
 import {useHeroCaptionLayout} from './useHeroCaptionLayout';
 import { articleHeaderWidth, articleHeaderWidthVars } from '../lib/articleHeaderWidth';
 import {lineGridUp} from '../lib/lineGrid';
+import {CanvasImagePanning} from './CanvasImagePanning';
 
 type PreviewPagination = Pagination & { layoutRevision: number };
 const EMPTY: PreviewPagination = { pages: [], fill: 0, spill: 0, layoutRevision: 0 };
@@ -1579,6 +1580,7 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
       </div>
 
       <PageFooters doc={effectiveDoc} root={pagesRef} />
+      {!readOnly&&<CanvasImagePanning doc={doc} root={pagesRef}/>}
       {/* Hidden measuring rig — same box as the real body columns. */}
       <div data-tracking-scope={trackingScope} className={`measure-root${doc.design.textDirection === 'rtl' ? ' measure-root--rtl' : ''}${dropCapEnabled(doc.design,doc.templateId) ? '' : ' drop-caps-off'}`} lang={doc.design.textDirection === 'rtl' ? 'ar' : undefined} style={vars} aria-hidden>
         {isSplit ? (

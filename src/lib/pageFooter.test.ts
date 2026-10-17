@@ -4,6 +4,12 @@ import { pageFooter, footerBottomOffset, footerBottomMargin } from './pageFooter
 import { cloneDocForUpdate } from '../store/useDoc';
 import { presetFor, TEMPLATES } from '../store/presets';
 describe('shared running footer', () => {
+  it('keeps the same text-to-footer reserve independently of horizontal margins or article template',()=>{
+    for(const template of ['paper-1','paper-2','paper-3','paper-4','paper-5','paper-6','paper-7','paper-8','magazine-1','magazine-2'] as const){
+      const doc=presetFor(template);doc.footer={bottomOffset:8,fontSize:7};
+      for(const margin of [8,12,14,20,30]){doc.design.margin=margin;expect(footerBottomMargin(doc)).toBeCloseTo(13.4694,3);}
+    }
+  });
   it('defaults to 8mm and preserves zero, fractional and saved offsets', () => {
     const doc=emptyDoc();
     expect(footerBottomOffset(doc)).toBe(8);

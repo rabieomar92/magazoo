@@ -16,6 +16,6 @@ export function FooterSection({expanded=false}:{expanded?:boolean}) {
     <TypographyControl group="footer" order={10} property="fontFamily"><LabeledSelect editorTarget="footer-font" label="Footer font" value={footer.fontFamily} options={fontOptions(ALL_FONTS)} onChange={v => update(d => { d.footer = { ...d.footer, fontFamily: v }; })} /></TypographyControl>
     <TypographyControl group="footer" order={20} property="fontSize"><LabeledNumber editorTarget="footer-font-size" label="Footer size" unit="pt" value={footer.fontSize} min={5} max={18} step={0.5} onChange={v => update(d => { d.footer = { ...d.footer, fontSize: Math.max(5, Math.min(18, v)) }; })} /></TypographyControl>
     <LabeledSelect label="First masthead & footer side" value={doc.design.barSide ?? 'left'} options={[{ value: 'left', label: 'Left' }, { value: 'right', label: 'Right' }]} onChange={v => update(d => { d.design.barSide = v as 'left' | 'right'; })} />
-    <p className="hint">Numbers alternate with the masthead; magazine text sits opposite. Distance is measured below the footer text box. Increasing it moves both items up and reserves room below the content, without changing line spacing or column widths.</p>
+    <p className="hint">Numbers alternate with the masthead; magazine text sits opposite. Distance is measured below the footer text box. Body frames stop 1 mm above the footer’s padded box on every article template, rounded to full text lines. Short final columns end naturally; line spacing is never stretched.</p>
   </Section>;
 }

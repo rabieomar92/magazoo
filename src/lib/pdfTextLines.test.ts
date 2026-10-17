@@ -21,6 +21,24 @@ function measureRows(rowFor:(node:Text,offset:number)=>number,hyphenAt=-1){
   }});
 }
 describe('canvas line breaks in print-only paragraphs',()=>{
+  it('retains nested bold/italic wrappers on every line inside the same question',()=>{
+    const {source,clone,copy}=fixture('<em class="question"><strong>First second third</strong></em> Answer follows');
+    const before=source.outerHTML;
+    measureRows((node,offset)=>node.parentElement?.tagName==='STRONG'?Math.floor(offset/6):3);
+    freezeParagraphLines(source,clone);
+    const lines=[...copy.querySelectorAll('.pdf-text-line')];
+    expect(lines.length).toBeGreaterThan(2);
+    for(const line of lines.slice(0,3))expect(line.querySelector('em.question > strong')).not.toBeNull();
+    expect(lines.at(-1)?.querySelector('em')).toBeNull();expect(source.outerHTML).toBe(before);
+  });
+  it('keeps a styled common ancestor even when it contains multiple text nodes',()=>{
+    const {source,clone,copy}=fixture('<span style="font-size:12px;color:red"><em>One</em> two three</span> answer');
+    measureRows(node=>node.data.includes('three')?1:node.data.includes('answer')?2:0);
+    freezeParagraphLines(source,clone);
+    const styled=copy.querySelectorAll('.pdf-text-line > span[style]');
+    expect(styled.length).toBeGreaterThanOrEqual(2);expect(styled[0].getAttribute('style')).toContain('color:red');
+    expect(copy.querySelector('em')?.textContent).toBe('One');
+  });
   it('retains emphasis and source DOM while making the measured lines indivisible',()=>{
     const {source,clone,paragraph,copy}=fixture('One <strong>two</strong> three');
     const before=source.outerHTML;
