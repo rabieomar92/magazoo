@@ -75,7 +75,9 @@ export function ArticlePages({ doc, vars, onStatus, readOnly = false }: { doc: D
       if (disposed || !measure.current || !header.current || !probes.current) return;
       const headerHeight = header.current.offsetHeight / MM;
       const captionHeight = (caption.current?.offsetHeight ?? 0) / MM;
-      const geometry = articleGeometry(id, doc.design, headerHeight, captionHeight, footerBottomMargin(doc));
+      const title=header.current.querySelector<HTMLElement>('.title');
+      const titleOffset=title?(title.getBoundingClientRect().top-header.current.getBoundingClientRect().top)/MM:0;
+      const geometry = articleGeometry(id, doc.design, headerHeight, captionHeight, footerBottomMargin(doc),titleOffset);
       const obstacles: ArticleObstacle[] = [];
       const imageBounds: ArticleObstacle[] = [];
       const outlines: (TightOutline & { page:number })[] = [];

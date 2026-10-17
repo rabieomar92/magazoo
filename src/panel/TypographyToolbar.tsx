@@ -188,7 +188,7 @@ export function TypographyControl({ group, label, also = '', order = 50, childre
   const active = context.active;
   const localSelection = !!(active?.startsWith('block:') || active?.startsWith('news:') || active?.startsWith('gallery-caption:') || active === 'marginText');
   const captionShared = active?.startsWith('gallery-caption:') && group === 'subtitle';
-  const sharedFallback = !localSelection && group === 'body' && active !== null && !context.groups.some(item => item.group === active);
+  const sharedFallback = !localSelection && group === 'body' && active !== null && !textStyleSelector(active) && !context.groups.some(item => item.group === active);
   const pairedSocial = active === 'socialUrl' && group === 'socialLabel';
   // The publication-name field is shared by the masthead and footer brand.
   const coverShared = context.templateId === 'magazine-4' && active === 'masthead' && group === 'footerBrand';

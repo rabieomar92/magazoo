@@ -11,7 +11,11 @@ export function freezeParagraphLines(source:HTMLElement,clone:HTMLElement) {
   const copies=[...clone.querySelectorAll<HTMLElement>('p[data-source-block-id]')];
   sources.forEach((paragraph,index)=>{
     const copy=copies[index];
-    if(!copy||paragraph.querySelector('.katex,.tex,.decorative-quote-mark,br,svg,img')||paragraph.classList.contains('decorative-quote'))return;
+    if(!copy||paragraph.querySelector('.katex,.tex,.decorative-quote-mark,.drop-cap,br,svg,img')||paragraph.classList.contains('decorative-quote'))return;
+    // Native initial-letter reserves a different width for the first three
+    // lines. Wrapping its marker in an indivisible print-line span prevents
+    // that exclusion from flowing naturally, leaving holes or shifted words.
+    // Keep the original native paragraph, just as for justified/complex copy.
     const style=getComputedStyle(paragraph),leading=Number.parseFloat(style.lineHeight);
     // Justified paragraphs distribute word spacing per native line. Making a
     // line indivisible would suppress that distribution; leave it native.

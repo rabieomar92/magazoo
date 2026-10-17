@@ -63,7 +63,7 @@
 .p2-left .p2-head {
   flex: none;
   margin-top: 0;
-  padding-bottom: var(--gutter);
+  padding-bottom: calc(var(--gutter) + var(--p2-left-baseline-gap, 0px));
   /* The header is only a couple of columns wide here, not the full sheet, so a
      display-size word can be wider than its measure and would otherwise sail out
      of the box and under the hero. Containment beats a pretty break: `hyphens:

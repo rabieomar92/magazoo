@@ -2,6 +2,14 @@ import { DEFAULT_TOP_BAR_OFFSET, type Design } from '../schema/document';
 import type { Pagination, Piece } from './paginate';
 import { grid } from './geometry';
 import { articleHeaderWidth } from './articleHeaderWidth';
+import {lineGridUp} from './lineGrid';
+
+/** A vacant photo side opens level with the headline, not an unrelated hero
+ * gutter. The body below the header shares that same baseline origin. */
+export function paper2VacantTextStarts(headerHeight:number,titleOffset:number,lineHeight:number,gutter:number){
+  const headHeight=lineGridUp(headerHeight,lineHeight,titleOffset);
+  return{headHeight,leftGap:headHeight-headerHeight,baselineGap:titleOffset-gutter};
+}
 
 /**
  * paper-2 keeps the shared column grid of `geometry.ts` untouched — same column

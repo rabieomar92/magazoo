@@ -6,8 +6,20 @@ import { migrate } from '../schema/document';
 import { MagGateA, MagGateB } from '../paper/MagGate';
 import { gateQuoteRule, gateTypography } from './gateTypography';
 import { GateDesignSection } from '../panel/sections/GateDesignSection';
+import {textStyleSelector,textStylesCss} from './textStyles';
+import {fontStack} from './fonts';
 
 describe('Gatefold typography', () => {
+  it('connects every shared gate text control to the actual rendered text element',()=>{
+    const doc=presetFor('magazine-3');
+    const host=document.createElement('div');host.innerHTML=renderToStaticMarkup(<><MagGateA doc={doc} vars={{}}/><MagGateB doc={doc} vars={{}}/></>);
+    const roles={title:'.mag-gate-title',kicker:'.mag-kicker',subtitle:'.mag-gate-lede',quote:'.mag-gate-quote-text',attribution:'.mag-gate-quote-by',author:'.mag-gate-author',photoCredit:'[data-editor-target="meta-photo-credit"]'};
+    for(const [role,selector] of Object.entries(roles)){
+      const node=host.querySelector(selector)!;expect(node,role).not.toBeNull();expect(node.matches(textStyleSelector(role)!),role).toBe(true);
+      doc.design.textStyles={[role]:{fontFamily:'Georgia',fontSize:23,fontWeight:400,italic:false,underline:true,color:'#2468ac',lineHeight:1.7,align:'center'}};
+      const css=textStylesCss(doc.design,'gate');for(const property of [`font-family:${fontStack('Georgia')}`,'font-size:23pt','font-weight:400','font-style:normal','text-decoration-line:underline','color:#2468ac','line-height:1.7','text-align:center'])expect(css,role).toContain(property+' !important');
+    }
+  });
   it('keeps the legacy cover defaults, including existing colour and font overrides', () => {
     const doc = presetFor('magazine-3');
     doc.design.gateTitleSize = 52;

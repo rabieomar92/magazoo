@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
-import type { Doc, TextStyle } from '../schema/document';
+import type { Doc, TextStyle, GateTextRole } from '../schema/document';
 import { useDoc } from '../store/useDoc';
 import { ALL_FONTS, fontOptions } from '../lib/fonts';
 import { textStyleSelector } from '../lib/textStyles';
-import { LabeledSelect } from './Field';
+import { LabeledSelect, LabeledNumber } from './Field';
 import { LetterSpacingField } from './LetterSpacingField';
+import {gateTypography} from '../lib/gateTypography';
+import {trackingRoleSupported} from '../lib/textTracking';
 
 type Property = keyof TextStyle | 'tracking';
 const ORDER: Record<Property, number> = {fontFamily:10,fontSize:20,fontWeight:30,italic:31,underline:32,color:40,tracking:45,lineHeight:48,align:50};
@@ -30,6 +32,7 @@ function OptionalNumber({label,value,onChange,min,max,step,placeholder}: {label:
 export function TextStyleFields({group,existing,doc}: {group:string;existing:Property[];doc:Doc}) {
   const update = useDoc(s=>s.update);
   const style = doc.design.textStyles?.[group] ?? {};
+  const gateRole=doc.templateId==='magazine-3'&&['title','kicker','subtitle','quote','attribution','author','photoCredit'].includes(group)?group as GateTextRole:undefined;
   const [baseline,setBaseline] = useState({weight:400,italic:false,underline:false,size:'Template',line:'Template',color:'#111418'});
   useEffect(()=>{
     const selector=textStyleSelector(group);
@@ -69,7 +72,8 @@ export function TextStyleFields({group,existing,doc}: {group:string;existing:Pro
     {wrap('italic',boolean('italic','Italic',style.italic??baseline.italic))}
     {wrap('underline',boolean('underline','Underline',style.underline??baseline.underline))}
     {wrap('color',<label className="field field--inline"><span className="field-label">Text colour</span><span className="color-input"><input aria-label="Text colour" type="color" value={style.color??baseline.color} onChange={e=>set('color',e.target.value)} /><button type="button" className="style-reset-btn" title="Use template colour" onClick={()=>set('color',undefined)}>↺</button></span></label>)}
-    {wrap('tracking',<LetterSpacingField value={doc.design.textTracking?.[group]} onChange={value=>update(d=>{d.design.textTracking ??= {};if(value===undefined)delete d.design.textTracking[group];else d.design.textTracking[group]=value;})} />)}
+    {gateRole ? doc.design.textDirection!=='rtl'&&wrap('tracking',<LabeledNumber label="Letter spacing" unit="px" value={gateTypography(doc.design,gateRole).letterSpacing} min={-3} max={12} step={.1} onChange={value=>update(d=>{d.design.gateTypography??={};d.design.gateTypography[gateRole]={...d.design.gateTypography[gateRole],letterSpacing:Math.max(-3,Math.min(12,value))};})}/>)
+      : trackingRoleSupported(doc.templateId,group)&&wrap('tracking',<LetterSpacingField value={doc.design.textTracking?.[group]} onChange={value=>update(d=>{d.design.textTracking ??= {};if(value===undefined)delete d.design.textTracking[group];else d.design.textTracking[group]=value;})} />)}
     {wrap('lineHeight',<OptionalNumber label="Line spacing" value={style.lineHeight} min={.8} max={3} step={.05} placeholder={baseline.line} onChange={v=>set('lineHeight',v)} />)}
     {wrap('align',<LabeledSelect label="Text alignment" value={style.align??''} options={[{value:'',label:'Template alignment'},...['left','center','right','justify'].map(value=>({value,label:value[0].toUpperCase()+value.slice(1)}))]} onChange={v=>set('align',(v||undefined) as TextStyle['align'])} />)}
     {Object.keys(style).length>0 && <div className="typography-control" style={{order:91}}><button type="button" className="style-reset-btn text-style-reset" onClick={()=>update(d=>{delete d.design.textStyles?.[group];})}>Reset added styling</button></div>}

@@ -1,0 +1,6 @@
+/* Editorial aid only: no box height, pointer interception or print output. */
+.page>.footer-boundary-guide{display:none;}
+@media screen{
+  .page>.footer-boundary-guide{display:block;position:absolute;left:var(--margin,14mm);right:var(--margin,14mm);height:0;border-top:1px dotted rgba(125,140,160,.22);z-index:20;pointer-events:none;user-select:none;}
+}
+@media print{.footer-boundary-guide{display:none!important;}}

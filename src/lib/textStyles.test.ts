@@ -41,4 +41,11 @@ describe('component typography',()=>{
     host.innerHTML='<h1 data-editor-target="front-cover-style-title"></h1><main class="back-cover-brand-block"><h1></h1><h2></h2></main><div class="fm-page fm-page--board"><p class="fm-note-paragraph"></p><p class="fm-board-contact"></p></div><figure data-image-id="one"><figcaption></figcaption></figure><article data-news-id="two"><h2></h2><div class="news-copy"><p></p></div></article>';
     for(const key of ['title','brand','tagline','fmAbout','fmContact','image-caption:one','news:two:title','news:two:body'])expect(host.querySelector(textStyleSelector(key)!)).not.toBeNull();
   });
+  it('targets every editorial quote and attribution without styling their layout containers',()=>{
+    const host=document.createElement('div');
+    host.innerHTML=['mag','mag2','mag-gate'].map(prefix=>`<blockquote class="${prefix}-quote"><span class="${prefix}-quote-text">Quote</span><cite class="${prefix}-quote-by">Author</cite></blockquote>`).join('');
+    expect(host.querySelectorAll(textStyleSelector('quote')!)).toHaveLength(3);
+    expect(host.querySelectorAll(textStyleSelector('attribution')!)).toHaveLength(3);
+    for(const node of host.querySelectorAll(textStyleSelector('quote')!))expect(node.tagName).toBe('SPAN');
+  });
 });

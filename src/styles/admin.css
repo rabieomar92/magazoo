@@ -197,9 +197,9 @@
 .admin-page button.admin-compile {background:var(--brand-wash);color:var(--brand-ink);border-color:#dfd9fa;}
 .admin-page button.admin-compile:hover:not(:disabled) {background:#e5dffc;border-color:var(--brand-line);}
 .admin-article-grid {display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:12px;list-style:none;padding:0;margin:0;}
-.admin-article-card {display:flex;flex-direction:column;min-width:0;padding:12px 12px 0;border:1px solid var(--line);border-radius:12px;background:#fff;box-shadow:0 2px 3px #18203303;transition:border-color .15s,box-shadow .15s;}
-.admin-article-card:hover,.admin-article-card:focus-within {border-color:#b9b1ed;box-shadow:0 6px 20px #3730610b;}
-.admin-article-hero {position:relative;display:grid;place-items:center;aspect-ratio:5/2;max-height:144px;flex:none;margin:-12px -12px 10px;min-width:0;overflow:hidden;border-radius:11px 11px 0 0;background:linear-gradient(140deg,#edeaf8,#f5f7fb);text-decoration:none;}
+.admin-article-card {display:flex;flex-direction:column;min-width:0;padding:12px 12px 0;border:1px solid var(--line);border-radius:0;background:#fff;box-shadow:none;transition:border-color .15s;}
+.admin-article-card:hover,.admin-article-card:focus-within {border-color:#a1aabb;box-shadow:none;}
+.admin-article-hero {position:relative;display:grid;place-items:center;aspect-ratio:5/2;max-height:144px;flex:none;margin:-12px -12px 10px;min-width:0;overflow:hidden;border-radius:0;background:var(--surface-2);text-decoration:none;}
 .admin-article-hero img {position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:cover;opacity:0;}
 .admin-article-hero.is-ready img {opacity:1;}
 .admin-hero-placeholder {display:flex;align-items:center;gap:7px;color:#76718f;font:500 11px/1.4 var(--ui);}
@@ -303,3 +303,15 @@
   .admin-dialog {padding:22px;}
 }
 @media(prefers-reduced-motion:reduce) { .admin-page * {transition:none!important;scroll-behavior:auto!important;} }
+
+/* Quiet, square-cornered library. Keep the independent sign-in treatment. */
+.admin-page:not(.admin-page--signin){--r-xs:0px;--r-sm:0px;--r:0px;--r-lg:0px;--shadow-1:none;}
+.admin-page:not(.admin-page--signin) .admin-overview{margin-bottom:24px;border:0;border-bottom:1px solid var(--line);background:transparent;box-shadow:none;}
+.admin-page:not(.admin-page--signin) .admin-overview>div{padding:12px 16px;gap:10px;}
+.admin-page:not(.admin-page--signin) .admin-stat-icon{width:24px;height:24px;border:0;border-radius:0;background:transparent;}
+.admin-page:not(.admin-page--signin) .admin-overview strong{font-size:20px;}
+.admin-page:not(.admin-page--signin) .admin-overview .admin-overview-note{background:transparent;border-radius:0;}
+.admin-page:not(.admin-page--signin) .admin-overview-note strong{font-size:12px;line-height:1.5;}
+.admin-page:not(.admin-page--signin) .admin-library-controls{padding:0;border:0;border-radius:0;background:transparent;gap:12px;}
+.admin-page:not(.admin-page--signin) :is(.admin-file-icon,.admin-version,.admin-project-icon,.admin-project-empty,.admin-sharing-note){border-radius:0;}
+.admin-page:not(.admin-page--signin) .admin-file-icon{background:transparent;border-color:var(--line);color:var(--ink-2);}

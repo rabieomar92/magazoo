@@ -27,7 +27,7 @@ import {
 import { wrapAll } from '../lib/textWrap';
 import { applyMark, insertMath } from '../lib/activeEditor';
 import { MAG2_STRIP } from '../lib/magSplit';
-import { paper2Grid, paper2Fit, paper2VerticalVars } from '../lib/paper2';
+import { paper2Grid, paper2Fit, paper2VerticalVars, paper2VacantTextStarts } from '../lib/paper2';
 import { defaultPlacedHighlights } from '../lib/placedHighlights';
 import { placedImageContour, placedImagePolygon, placedImageWrapGap } from '../lib/placedImage';
 import { physicalPageFit, populatedPhysicalPages,hasObstacleColumns } from '../lib/physicalFlowPages';
@@ -368,6 +368,7 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
   const [p2HeadPx, setP2HeadPx] = useState(0);
   const [p2HeroPx, setP2HeroPx] = useState(0);
   const [p2BaselinePx,setP2BaselinePx]=useState(0);
+  const [p2LeftBaselinePx,setP2LeftBaselinePx]=useState(0);
   const [fontEpoch, setFontEpoch] = useState(0);
   // Invalidates delayed real-page safety checks from an older document/layout
   // commit. Without this guard, a timer created while (for example) the design
@@ -600,7 +601,8 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
       const h2p = host2Ref.current;
       if (!hl || !hr || !h2p) return;
 
-      const headH = scroll.querySelector<HTMLElement>('.p2-head')?.offsetHeight ?? 0;
+      const head = scroll.querySelector<HTMLElement>('.p2-head');
+      let headH = head?.offsetHeight ?? 0;
       const heroH = scroll.querySelector<HTMLElement>('.p2-heroblock')?.offsetHeight ?? 0;
       const sharedHeading = articleHeaderWidth(doc.design) !== undefined;
       const sample=document.createElement('p');sample.dataset.sourceBlockId='';sample.textContent='Ag';hl.append(sample);
@@ -610,7 +612,16 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
       let baselineGap=lineGridUp(rightStart,leading,sharedHeading?0:headH)-rightStart;
       const page=scroll.querySelector<HTMLElement>('.pages > .page--p2');
       const left=page?.querySelector<HTMLElement>('.p2-flow-l'),right=page?.querySelector<HTMLElement>('.p2-flow-r');
-      if(page&&left&&right){
+      let leftGap=0;
+      if(doc.design.showHero===false&&!sharedHeading&&head&&page){
+        const scale=page.getBoundingClientRect().width/Number.parseFloat(getComputedStyle(page).width);
+        const previousLeft=Number.parseFloat(getComputedStyle(page).getPropertyValue('--p2-left-baseline-gap'))||0;
+        const title=head.querySelector<HTMLElement>('.title');
+        const titleOffset=title&&scale>0?(title.getBoundingClientRect().top-head.getBoundingClientRect().top)/scale:0;
+        const naturalHeight=scale>0?head.getBoundingClientRect().height/scale:headH;
+        const aligned=paper2VacantTextStarts(naturalHeight-previousLeft,titleOffset,leading,doc.design.gutter*MM_PX);
+        headH=aligned.headHeight;leftGap=aligned.leftGap;baselineGap=aligned.baselineGap;
+      }else if(page&&left&&right){
         const scale=page.getBoundingClientRect().width/Number.parseFloat(getComputedStyle(page).width);
         const previousGap=Number.parseFloat(getComputedStyle(page).getPropertyValue('--p2-baseline-gap'))||0;
         if(scale>0){const delta=(right.getBoundingClientRect().top-left.getBoundingClientRect().top)/scale-previousGap;baselineGap=lineGridUp(delta,leading)-delta;}
@@ -618,6 +629,7 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
       setP2HeadPx(headH);
       setP2HeroPx(heroH);
       setP2BaselinePx(baselineGap);
+      setP2LeftBaselinePx(leftGap);
 
       const root = hl.closest<HTMLElement>('.measure-root');
       if (root) {
@@ -625,6 +637,7 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
         root.style.setProperty('--p2-shared-head-h', `${sharedHeading ? headH : 0}px`);
         root.style.setProperty('--p2-heroblock-h', `${heroH}px`);
         root.style.setProperty('--p2-baseline-gap',`${baselineGap}px`);
+        root.style.setProperty('--p2-left-baseline-gap',`${leftGap}px`);
         root.style.setProperty('--footer-h', '0mm');
       }
 
@@ -1005,6 +1018,7 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
     '--p2-shared-head-h': `${articleHeaderWidth(doc.design) !== undefined ? p2HeadPx : 0}px`,
     '--p2-heroblock-h': `${p2HeroPx}px`,
     '--p2-baseline-gap': `${p2BaselinePx}px`,
+    '--p2-left-baseline-gap': `${p2LeftBaselinePx}px`,
     '--p2-left-w': `${p2.leftW}mm`,
     '--p2-hero-w': `${p2.heroW}mm`,
     '--p2-right-w': `${p2.rightW}mm`,

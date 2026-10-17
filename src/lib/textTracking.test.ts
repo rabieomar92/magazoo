@@ -7,9 +7,9 @@ import { paginate } from './paginate';
 describe('saved letter spacing', () => {
   it('does not override the specialized cover/gate controls after switching templates', () => {
     const design = emptyDoc().design;
-    design.textTracking = { title:.4,category:.1,body:.02,'block:one':.06 };
+    design.textTracking = { title:.4,category:.1,kicker:.3,body:.02,'block:one':.06 };
     const css = textTrackingCss(design, 'one', 'magazine-3');
-    expect(css).not.toContain('0.4em'); expect(css).not.toContain('0.1em');
+    expect(css).not.toContain('0.4em'); expect(css).not.toContain('0.1em');expect(css).not.toContain('0.3em');
     expect(css).toContain('0.02em'); expect(css).toContain('0.06em');
     expect(trackingSelector('block:one')).toContain('.flow-eq');
     expect(trackingSelector('block:one')).toContain('.front-cover-teaser');

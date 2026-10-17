@@ -33,6 +33,17 @@ function group(value: string) {
 }
 
 describe('typography relocation', () => {
+  it('keeps an unmounted gate quote selected without exposing unrelated body defaults',()=>{
+    render('magazine-3');
+    act(()=>host.querySelector<HTMLButtonElement>('[role=tab][aria-label="Headers"]')!.click());group('quote');
+    act(()=>host.querySelector<HTMLButtonElement>('[role=tab][aria-label="Content"]')!.click());
+    expect(active()).toBe('quote');expect(visible().some(node=>node.dataset.typographyGroup==='body')).toBe(false);
+    expect(host.querySelector('[data-complete-property="fontFamily"] select')).not.toBeNull();
+    const spacing=host.querySelector<HTMLInputElement>('[data-complete-property="tracking"] input')!;
+    act(()=>{Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value')!.set!.call(spacing,'2.2');spacing.dispatchEvent(new Event('input',{bubbles:true}));});
+    expect(useDoc.getState().doc.design.gateTypography?.quote?.letterSpacing).toBe(2.2);
+    expect(useDoc.getState().doc.design.textTracking?.quote).toBeUndefined();
+  });
   it.each(TEMPLATE_META.map(meta=>[meta.id]))('adds missing font controls and a reversible top-bar option in %s',template=>{
     render(template);
     const before=structuredClone(useDoc.getState().doc);

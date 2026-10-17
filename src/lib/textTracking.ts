@@ -5,17 +5,17 @@ import type { Design, TemplateId } from '../schema/document';
 export const TRACKING_SELECTORS: Record<string, string> = {
   body: 'p[data-source-block-id], .fm-unit [data-fm-text], .fm-note-text, .fm-note-paragraph, .news-copy p, .g-card .g-desc',
   title: '.header .title, .mag-title, .mag2-title, .fm-header h1, .fm-board-list-header h1, .news-header h1, .g-title',
-  subtitle: '.header .subtitle, .mag-lede, .mag2-lede, .fm-subtitle, .g-desc',
+  subtitle: '.header .subtitle, .mag-lede, .mag2-lede, .mag-gate-lede, .fm-subtitle, .g-desc',
   category: '.eyebrow, .mag-kicker, .mag2-kicker, .fm-kicker, .news-kicker',
-  author: '.byline, .mag-author, .mag2-author, .fm-identity strong, .fm-signoff',
+  author: '.byline, .mag-author, .mag-cover-author, .mag-gate-author, .mag2-author, .fm-identity strong, .fm-signoff',
   affiliation: '.affiliation, .mag2-affil, .fm-identity span',
   masthead: '.tag-bar-tag, .tag-bar-detail, .mag-topbar',
   footer: '.page-folio, .page-folio-text, .page-folio-number',
   marginText: '.page-margin-text',
   storyTag: '.mag2-photo-tag, .mag-hero-tag',
   photoCredit: '.mag-hero-credit, .fm-credit, [data-editor-target="meta-photo-credit"]',
-  quote: '.mag-quote-text, .mag2-quote-text',
-  attribution: '.mag-quote-by, .mag2-quote-by',
+  quote: '.mag-quote-text, .mag2-quote-text, .mag-gate-quote-text',
+  attribution: '.mag-quote-by, .mag2-quote-by, .mag-gate-quote-by',
   caption: '.placed-image figcaption, .flow-fig figcaption, .flow-eq figcaption, .fm-board-caption',
   heroCaption: '.article-hero-caption, .p2-hero-cap, [data-editor-target="meta-hero-caption"]',
   coverCaption: '[data-editor-target="meta-cover-caption"]',
@@ -47,8 +47,8 @@ export function trackingSelector(key: string): string | undefined {
 }
 
 export function trackingRoleSupported(id: TemplateId | undefined, role: string): boolean {
-  const specialized = id === 'magazine-4' ? ['masthead','category','title','subtitle','author','storyTag','photoCredit']
-    : id === 'magazine-3' ? ['title','category','subtitle','quote','attribution','author','photoCredit'] : [];
+  const specialized = id === 'magazine-4' ? ['masthead','category','kicker','strapline','title','subtitle','author','storyTag','photoCredit','teaserTitle','teaserBody','footerBrand']
+    : id === 'magazine-3' ? ['title','category','kicker','subtitle','quote','attribution','author','photoCredit'] : [];
   return !specialized.includes(role);
 }
 

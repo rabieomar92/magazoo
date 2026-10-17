@@ -28,7 +28,7 @@ export interface ArticleObstacle { page: number; left: number; top: number; widt
 
 /** All dimensions are physical millimetres. A single grid is shared by the
  * opening composition, continuation pages and independent placed images. */
-export function articleGeometry(id: ReferenceArticleId, design: Design, measuredHeader = 0, captionHeight = 0, footerReserve = 0) {
+export function articleGeometry(id: ReferenceArticleId, design: Design, measuredHeader = 0, captionHeight = 0, footerReserve = 0, titleOffset = 0) {
   const layout = ARTICLE_LAYOUTS[id];
   const { width } = pageDimensions(design);
   const height = articlePageHeight(design);
@@ -54,6 +54,7 @@ export function articleGeometry(id: ReferenceArticleId, design: Design, measured
   const titleTop = customInsetTop ? Math.max(contentTop, design.firstPageTopMargin!)
     : Math.max(26, contentTop, bottomHero ? 26 : (inset ? layout.titleTop : layout.titleTop + delta), design.firstPageTopMargin ?? 0);
   const bodyTop = Math.max(titleTop + measuredHeader + gutter, customInsetTop ? 0 : bottomHero ? 26 : inset ? layout.bodyTop : layout.bodyTop + delta);
+  const titleTextTop=titleTop+Math.max(0,titleOffset);
   const bottom = height - (footerReserve > 0 ? footerReserve : margin);
   const imageBottom = bottomBleed ? height : bottom;
   const heroColumns = Math.max(1, Math.min(columns, 3, Math.round(design.heroWidthCols ?? columns - 1)));
@@ -66,8 +67,9 @@ export function articleGeometry(id: ReferenceArticleId, design: Design, measured
   const insetCaptionSpace = captionHeight > 0 ? 1 + captionHeight : 0;
   const starts = Array.from({ length: columns }, (_, i) => !bottomHero && inset && i >= imageColumn && i < imageColumn + heroColumns && heroHeight > 0
     ? bodyTop + heroHeight + insetCaptionSpace + gutter
-    : i * (col + gutter) < titleWidth - .01 ? bodyTop : titleTop);
-  return { layout, width, height, margin, gutter, columns, col, span, titleCols, titleWidth, titleTop, bodyTop, bottom, image, starts, bottomHero, bottomBleed, contentTop };
+    : i * (col + gutter) < titleWidth - .01 ? bodyTop : titleTextTop);
+  const gridOrigin=titleWidth<span(columns)-.01?titleTextTop:bodyTop;
+  return { layout, width, height, margin, gutter, columns, col, span, titleCols, titleWidth, titleTop, titleTextTop, gridOrigin, bodyTop, bottom, image, starts, bottomHero, bottomBleed, contentTop };
 }
 
 /** Split each column top-to-bottom around placed photographs, then advance
@@ -91,7 +93,7 @@ export function articleRegions(g: ReturnType<typeof articleGeometry>, throughPag
     }
   }
   return result.map(region=>{
-    const origin=region.page===0?g.bodyTop:g.contentTop;
+    const origin=region.page===0?g.gridOrigin:g.contentTop;
     const top=lineGridUp(region.y,lineHeightMm,origin);
     const bottom=lineGridDown(region.y+region.height,lineHeightMm,origin);
     return {...region,y:top,height:Math.max(0,bottom-top)};

@@ -96,12 +96,19 @@ describe('reference article compositions', () => {
     for(const height of [1,23.73,95.18,180])for(const rtl of [false,true]){
       const regions=articleRegions(g,2,[{page:1,left:g.margin,top:65.17,width:g.span(2),height}],rtl,step);
       for(const r of regions){
-        const origin=r.page===0?g.bodyTop:g.contentTop;
+        const origin=r.page===0?g.gridOrigin:g.contentTop;
         expect((r.y-origin)/step).toBeCloseTo(Math.round((r.y-origin)/step),5);
         expect(r.height/step).toBeCloseTo(Math.round(r.height/step),5);
         if(r.page===1&&r.column<2)expect(r.y+r.height<=63.17+.001||r.y>=67.17+height-.001).toBe(true);
       }
     }
+  });
+  it.each(ids)('%s aligns columns beside a narrow header to the measured headline, even when wrapping images',id=>{
+    const design={...presetFor(id).design,showHero:false,headerWidthCols:2 as const,bodyCols:4 as const};
+    const g=articleGeometry(id,design,39,0,14,6.4),step=4.2;
+    const regions=articleRegions(g,0,[{page:0,left:g.margin,top:g.bodyTop+24.3,width:g.span(1),height:35.7}],false,step);
+    for(const column of [2,3])expect(regions.find(r=>r.column===column)?.y).toBeCloseTo(g.titleTop+6.4,6);
+    for(const region of regions)expect((region.y-g.titleTextTop)/step).toBeCloseTo(Math.round((region.y-g.titleTextTop)/step),6);
   });
 
   it('uses right-to-left reading order on first and continuation pages', () => {

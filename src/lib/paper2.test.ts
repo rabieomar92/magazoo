@@ -1,8 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { emptyDoc } from '../schema/document';
-import { paper2VerticalVars } from './paper2';
+import { paper2VerticalVars, paper2VacantTextStarts } from './paper2';
 
 describe('Physics Letter hero alignment', () => {
+  it('aligns vacant-side text exactly to the headline while keeping the lower text on that line grid',()=>{
+    for(const titleOffset of [0,18.7,31.2])for(const head of [90,127.8,203])for(const line of [12,17.3,24]){
+      const result=paper2VacantTextStarts(head,titleOffset,line,18.9);
+      expect(18.9+result.baselineGap).toBeCloseTo(titleOffset,7);
+      expect(result.leftGap).toBeGreaterThanOrEqual(0);expect(result.leftGap).toBeLessThan(line);
+      expect((result.headHeight-titleOffset)/line).toBeCloseTo(Math.round((result.headHeight-titleOffset)/line),7);
+    }
+  });
   it.each([0, 10, 28])('sits directly under the bar at %s mm while preserving title spacing', offset => {
     const design = { ...emptyDoc().design, topBarOffset: offset, firstPageTopMargin: 55 };
     const vars = paper2VerticalVars(design);

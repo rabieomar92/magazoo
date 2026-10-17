@@ -86,12 +86,12 @@ describe('canvas line breaks in print-only paragraphs',()=>{
     measureRows((_node,offset)=>offset<4?0:offset<8?1:0);
     freezeParagraphLines(source,clone);expect(clone.outerHTML).toBe(before);
   });
-  it('keeps an initial-letter marker on the first body line even when its painted top is higher',()=>{
+  it('leaves native three-line drop-cap paragraphs intact instead of enclosing their float in a nowrap line',()=>{
     const {source,clone,copy}=fixture('<span class="drop-cap">T</span>iny atoms');
+    const before=copy.outerHTML;
     measureRows((node,offset)=>node.parentElement?.classList.contains('drop-cap')?-1:offset<4?0:1);
     freezeParagraphLines(source,clone);
-    expect(copy.dataset.pdfFixedLines).toBe('2');
-    expect(copy.querySelector('.pdf-text-line .drop-cap')?.textContent).toBe('T');
-    expect(copy.querySelector('.pdf-text-line')?.textContent).toBe('Tiny');
+    expect(copy.outerHTML).toBe(before);expect(copy.dataset.pdfFixedLines).toBeUndefined();
+    expect(copy.querySelector('.drop-cap')?.textContent).toBe('T');expect(copy.querySelector('.pdf-text-line')).toBeNull();
   });
 });
