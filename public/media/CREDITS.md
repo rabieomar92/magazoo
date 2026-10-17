@@ -1,5 +1,21 @@
 # Login background
 
+## Current login film
+
+`login-magazoo.mp4` uses the six-second Magazoo animation supplied by the
+workspace owner on 17 October 2026. It is not a Pexels clip. Source dimensions
+are 752 × 416 at 24 fps; the application preserves that resolution and aspect
+ratio in the asset (no claim of artificial HD enhancement). The H.264 rendition
+removes audio, attached thumbnail and source metadata, and uses fast-start
+metadata. `login-magazoo-poster.jpg` is a still from the same film.
+
+The film fills the login backdrop using CSS cover. A directional dark scrim
+keeps the floating sign-in form readable; there is no video blur filter or
+animated CSS treatment. Reduced-motion/data-saving visitors see the poster without
+downloading video until they explicitly choose Play. Hidden tabs pause.
+
+## Previous network background assets (not used by the login screen)
+
 “Abstract Network of Connection Nodes in Purple” by Nicola Narracci.
 
 Source: https://www.pexels.com/video/abstract-network-of-connection-nodes-in-purple-36245009/

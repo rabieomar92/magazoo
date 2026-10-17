@@ -19,7 +19,7 @@ const render=()=>act(async()=>root.render(<AdminPage/>));
 const click=(text:string)=>act(async()=>[...host.querySelectorAll('button')].find(b=>b.textContent===text)!.click());
 const fill=(field:HTMLInputElement,value:string)=>act(()=>{Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value')!.set!.call(field,value);field.dispatchEvent(new Event('input',{bubbles:true}));});
 const submit=(form:HTMLFormElement)=>act(async()=>{form.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));});
-it('shows only the logo, sign-in form and editor link without the old top bar or marketing introduction',async()=>{
+it('layers the supplied film separately from the sign-in form, without a top bar or marketing introduction',async()=>{
   request.mockImplementation(async()=>({ok:false,json:async()=>({error:'Sign in required.'})}));
   await render();
   expect(host.querySelector('.admin-header')).toBeNull();expect(host.querySelector('.admin-intro')).toBeNull();
@@ -27,7 +27,20 @@ it('shows only the logo, sign-in form and editor link without the old top bar or
   const card=host.querySelector('.admin-login')!;
   expect(card.querySelector('img[alt="Magazoo!"]')).not.toBeNull();expect(card.querySelector('h1')!.textContent).toBe('Sign in');
   expect(card.querySelector('a')!.getAttribute('href')).toBe('/#editor');
+  const layout=host.querySelector('.admin-login-layout')!;
+  expect(layout.children[0].className).toBe('admin-login-visual');expect(layout.children[1]).toBe(card);
+  expect(card.querySelector('video')).toBeNull(); // film never interferes with form input or readability.
   expect(host.querySelector('.admin-page--signin')).not.toBeNull();
+});
+it('lets the author reveal and conceal their password without submitting or changing it',async()=>{
+  request.mockImplementation(async()=>({ok:false,json:async()=>({error:'Sign in required.'})}));
+  await render();const field=host.querySelector<HTMLInputElement>('#admin-login-password')!;
+  fill(field,'Local-test-only');const requestsBefore=request.mock.calls.length;
+  const reveal=host.querySelector<HTMLButtonElement>('[aria-label="Show password"]')!;
+  await act(async()=>reveal.click());expect(field.type).toBe('text');expect(field.value).toBe('Local-test-only');
+  expect(reveal.getAttribute('aria-label')).toBe('Hide password');expect(reveal.getAttribute('aria-pressed')).toBe('true');
+  await act(async()=>reveal.click());expect(field.type).toBe('password');expect(field.value).toBe('Local-test-only');
+  expect(request.mock.calls.length).toBe(requestsBefore);expect(reveal.type).toBe('button');
 });
 it('preserves the existing sign-in request and switches to the normal library after successful login',async()=>{
   request.mockImplementation(async(url:string)=>({ok:!url.endsWith('auth/session'),json:async()=>url.endsWith('auth/session')?{error:'Sign in required.'}:url.endsWith('auth/login')?{csrf:'test-csrf'}:projects}));

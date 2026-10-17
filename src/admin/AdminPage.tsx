@@ -41,6 +41,7 @@ export default function AdminPage() {
   const [notice, setNotice] = useState('');
   const [busy, setBusy] = useState(false);
   const [password, setPassword] = useState('');
+  const [passwordVisible, setPasswordVisible] = useState(false);
   const [passwordSettings,setPasswordSettings]=useState(false);
   const [name, setName] = useState('');
   const [itemName, setItemName] = useState('');
@@ -91,15 +92,15 @@ export default function AdminPage() {
         {csrf && <div className="admin-intro-actions"><button disabled={busy} aria-expanded={creator === 'project'} aria-controls="admin-create-panel" onClick={e => { creatorTrigger.current = e.currentTarget; setCreator('project'); }}><AdminIcon name="folder"/>New project</button><button className="primary" disabled={busy || !projects.length} aria-expanded={creator === 'article'} aria-controls="admin-create-panel" onClick={e => { creatorTrigger.current = e.currentTarget; setCreator('article'); }}><AdminIcon name="plus"/>Add article</button></div>}
       </div>}
       {csrf&&error && <div className="admin-alert" role="alert">{error}</div>}{csrf&&notice && <div className="admin-notice" role="status">{notice}</div>}
-      {!csrf ? <><section className="admin-card admin-login" aria-labelledby="admin-login-title">
+      {!csrf ? <div className="admin-login-layout"><LoginBackground enabled={checked}/><section className="admin-card admin-login" aria-labelledby="admin-login-title">
         <div className="admin-login-brand"><Wordmark/></div><h1 id="admin-login-title">Sign in</h1><p>Administrator access</p>
         {error&&<div className="admin-alert" role="alert">{error}</div>}
-        <div className="admin-login-auth" aria-busy={!checked||busy}>{!checked?<p className="admin-login-check" role="status">Checking admin session…</p>:<form onSubmit={e => { e.preventDefault(); void run(async () => { const data = await api('auth/login', '', 'POST', {password}); setPassword(''); setCsrf(data.csrf); await refresh(data.csrf); setNotice('Signed in.'); }); }}>
-          <label>Administrator password<input type="password" required minLength={8} maxLength={512} value={password} onChange={e => setPassword(e.target.value)} autoComplete="current-password" autoFocus /></label>
+        <div className="admin-login-auth" aria-busy={!checked||busy}>{!checked?<p className="admin-login-check" role="status">Checking admin session…</p>:<form onSubmit={e => { e.preventDefault(); void run(async () => { const data = await api('auth/login', '', 'POST', {password}); setPassword(''); setPasswordVisible(false); setCsrf(data.csrf); await refresh(data.csrf); setNotice('Signed in.'); }); }}>
+          <label htmlFor="admin-login-password">Administrator password</label><div className="admin-login-password"><input id="admin-login-password" type={passwordVisible?'text':'password'} required minLength={8} maxLength={512} value={password} onChange={e => setPassword(e.target.value)} autoComplete="current-password" autoFocus disabled={busy}/><button className="admin-login-reveal" type="button" disabled={busy} aria-label={passwordVisible?'Hide password':'Show password'} aria-pressed={passwordVisible} onClick={()=>setPasswordVisible(value=>!value)}><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>{passwordVisible&&<path d="m3 3 18 18"/>}</svg></button></div>
           <button className="primary" disabled={busy || password.length < 8}>{busy ? 'Signing in…' : 'Sign in to workspace'}<AdminIcon name="arrow"/></button>
         </form>}</div>
         <a className="admin-login-editor" href={`${import.meta.env.BASE_URL}#editor`}>Open editor<AdminIcon name="arrow"/></a>
-      </section><LoginBackground enabled={checked}/></> : <>
+      </section></div> : <>
         <div className="admin-overview" aria-label="Library overview">
           <div><span className="admin-stat-icon"><AdminIcon name="article"/></span><div><strong>{count}</strong><span>{count === 1 ? 'Article' : 'Articles'}</span></div></div>
           <div><span className="admin-stat-icon"><AdminIcon name="folder"/></span><div><strong>{projects.length}</strong><span>{projects.length === 1 ? 'Project' : 'Projects'}</span></div></div>

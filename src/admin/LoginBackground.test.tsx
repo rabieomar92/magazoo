@@ -22,9 +22,11 @@ const render=()=>act(async()=>root.render(<LoginBackground/>));
 const click=()=>act(async()=>host.querySelector<HTMLButtonElement>('button')!.click());
 
 describe('lightweight decorative login video',()=>{
-  it('uses a small local HD desktop clip, with no player SDK or interactive video surface',async()=>{
+  it('presents the supplied clip at its native aspect ratio, without an interactive video surface',async()=>{
     await render();const video=host.querySelector('video')!;
-    expect(video.getAttribute('src')).toBe('/media/login-network-hd.mp4');expect(video.poster).toContain('login-network-hd-poster.jpg');
+    expect(video.getAttribute('src')).toBe('/media/login-magazoo.mp4');expect(video.poster).toContain('login-magazoo-poster.jpg');
+    expect(video.width).toBe(752);expect(video.height).toBe(416);
+    expect(host.querySelector('aside[aria-label="Magazoo animation"]')).not.toBeNull();
     expect(video.muted).toBe(true);expect(video.loop).toBe(true);expect(video.playsInline).toBe(true);expect(video.preload).toBe('none');
     expect(video.controls).toBe(false);expect(video.tabIndex).toBe(-1);expect(video.closest('[aria-hidden=true]')).not.toBeNull();
     expect(play).toHaveBeenCalled();expect(host.querySelector('button')!.textContent).toBe('Pause animation');
@@ -34,8 +36,8 @@ describe('lightweight decorative login video',()=>{
     if(preference==='save-data')connection.saveData=true;
     if(preference==='slow-network')connection.effectiveType='2g';
     await render();expect(host.querySelector('video')!.hasAttribute('src')).toBe(false);expect(play).not.toHaveBeenCalled();
-    expect(host.querySelector('.admin-login-background')!.getAttribute('style')).toContain('login-network-hd-poster.jpg');
-    await click();expect(host.querySelector('video')!.getAttribute('src')).toBe(preference==='slow-network'?'/media/login-network.mp4':'/media/login-network-hd.mp4');expect(play).toHaveBeenCalled();
+    expect(host.querySelector('.admin-login-background')!.getAttribute('style')).toContain('login-magazoo-poster.jpg');
+    await click();expect(host.querySelector('video')!.getAttribute('src')).toBe('/media/login-magazoo.mp4');expect(play).toHaveBeenCalled();
   });
   it('pauses hidden tabs, resumes visible tabs, and keeps a manual pause across tab switches',async()=>{
     await render();const started=play.mock.calls.length;
@@ -66,5 +68,18 @@ describe('lightweight decorative login video',()=>{
     play.mockImplementation(function(this:HTMLMediaElement){this.dispatchEvent(new Event('play'));return Promise.resolve();});
     await click();expect(host.querySelector('button')!.textContent).toBe('Pause animation');
     const calls=pause.mock.calls.length;await act(async()=>root.render(<div/>));expect(pause.mock.calls.length).toBeGreaterThan(calls);
+  });
+  it('does not download or play the film while the session is being checked',async()=>{
+    await act(async()=>root.render(<LoginBackground enabled={false}/>));
+    expect(host.querySelector('video')!.hasAttribute('src')).toBe(false);expect(play).not.toHaveBeenCalled();
+    await click();expect(host.querySelector('video')!.hasAttribute('src')).toBe(false);
+    await render();expect(host.querySelector('video')!.getAttribute('src')).toBe('/media/login-magazoo.mp4');
+  });
+  it('keeps one source across screen sizes instead of reloading a blurry mobile rendition',async()=>{
+    await render();const video=host.querySelector('video')!;
+    await act(async()=>{window.dispatchEvent(new Event('resize'));});
+    expect(host.querySelector('video')).toBe(video);expect(video.getAttribute('src')).toBe('/media/login-magazoo.mp4');
+    expect(host.querySelector('button')!.getAttribute('aria-pressed')).toBe('true');
+    await click();expect(host.querySelector('button')!.getAttribute('aria-pressed')).toBe('false');
   });
 });
