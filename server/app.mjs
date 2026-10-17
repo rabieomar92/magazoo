@@ -32,7 +32,8 @@ export function createApp({storage,origin,passwordHash,staticDir,authOptions={},
   if(url.protocol!=='https:' && !local)throw new Error('Online projects require an HTTPS origin.');
   const rootPath=url.pathname.replace(/\/$/,'');
   const secure=url.protocol==='https:';
-  const auth=createAuth({passwordHash,...authOptions});
+  const auth=createAuth({passwordHash,readPasswordHash:()=>storage.adminPasswordHash?.(),
+    writePasswordHash:storage.changeAdminPasswordHash?.bind(storage),...authOptions});
   const thumbnails=createHeroThumbnails({readVersion:id=>storage.heroVersion(id),readSource:id=>storage.readHeroRecord(id),decode:source=>imageResponse(source,origin)});
   const cookie=(name,value,age)=>`${name}=${value}; HttpOnly; SameSite=Strict; Path=${rootPath||'/'}; Max-Age=${age}${secure?'; Secure':''}`;
   const server=createServer(async(req,res)=>{
@@ -57,7 +58,7 @@ export function createApp({storage,origin,passwordHash,staticDir,authOptions={},
         if(!info?.isFile())fail(404,'Not found.');
         const types={'.html':'text/html; charset=utf-8','.js':'text/javascript','.css':'text/css','.json':'application/json','.woff2':'font/woff2','.otf':'font/otf','.ttf':'font/ttf','.svg':'image/svg+xml','.png':'image/png','.jpg':'image/jpeg','.webp':'image/webp','.ico':'image/x-icon'};
         res.setHeader('Content-Security-Policy',"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https:; worker-src 'self'; frame-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'");
-        if(path==='/media/login-network.mp4'||path==='/media/login-network-poster.jpg')res.setHeader('Cache-Control','public, max-age=86400');
+        if(/^\/media\/login-network(?:-hd)?(?:-poster\.jpg|\.mp4)$/.test(path))res.setHeader('Cache-Control','public, max-age=86400');
         if(extname(file)==='.mp4'){serveVideo(req,res,file,info.size);return;}
         res.setHeader('Content-Type',types[extname(file)]??'application/octet-stream');res.end(req.method==='HEAD'?undefined:await readFile(file));return;
       }
@@ -92,6 +93,11 @@ export function createApp({storage,origin,passwordHash,staticDir,authOptions={},
       const session=auth.session(jar.magazoo_admin);if(!session)fail(401,'Admin login required.');
       if(!['GET','HEAD'].includes(req.method) && req.headers['x-csrf-token']!==session.csrf)fail(403,'Reload the admin page and try again.');
       if(path==='/api/auth/session' && req.method==='GET')return send(200,{csrf:session.csrf});
+      if(path==='/api/auth/password'&&req.method==='POST'){
+        operation='password-change';const data=await body(req,8192);
+        const renewed=auth.changePassword(data?.currentPassword,data?.newPassword,data?.confirmation,req.socket.remoteAddress??'unknown');
+        res.setHeader('Set-Cookie',cookie('magazoo_admin',renewed.secret,8*3600));return send(200,{csrf:renewed.csrf});
+      }
       if(path==='/api/auth/logout' && req.method==='POST'){auth.logout(jar.magazoo_admin);res.setHeader('Set-Cookie',cookie('magazoo_admin','',0));return send(200,{ok:true});}
       if(path==='/api/projects' && req.method==='GET')return send(200,storage.list());
       if(path==='/api/projects' && req.method==='POST'){const data=await body(req,4096);return send(201,storage.createProject(projectName(data.name)));}

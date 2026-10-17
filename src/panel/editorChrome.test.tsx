@@ -44,7 +44,7 @@ describe('editor chrome', () => {
     host.innerHTML = renderToStaticMarkup(<Panel />);
 
     const tabs = [...host.querySelectorAll('[role="tab"]')];
-    expect(tabs).toHaveLength(4);
+    expect(tabs).toHaveLength(8);
     expect(tabs.every((tab) => tab.classList.contains('panel-tab'))).toBe(true);
 
     const selects = [...host.querySelectorAll('select')];

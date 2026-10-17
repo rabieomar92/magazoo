@@ -36,6 +36,7 @@ describe('typography relocation', () => {
   it.each(TEMPLATE_META.map(meta=>[meta.id]))('adds missing font controls and a reversible top-bar option in %s',template=>{
     render(template);
     const before=structuredClone(useDoc.getState().doc);
+    act(()=>host.querySelector<HTMLButtonElement>('[role=tab][aria-label="Top bar"]')!.click());
     const toggle=[...host.querySelectorAll<HTMLLabelElement>('label')].find(label=>label.querySelector('.field-label')?.textContent==='Show top bar')!.querySelector<HTMLInputElement>('input')!;
     act(()=>toggle.click());
     expect(useDoc.getState().doc.design.showTopBar).toBe(toggle.checked);
@@ -127,11 +128,12 @@ describe('typography relocation', () => {
   it('shows title controls on focus without switching the sidebar or changing copy', () => {
     render('paper-1');
     const before = JSON.stringify(useDoc.getState().doc);
+    act(()=>host.querySelector<HTMLButtonElement>('[role=tab][aria-label="Headers"]')!.click());
     act(() => host.querySelector<HTMLTextAreaElement>('#editor-target-meta-title textarea')!.focus());
     expect(active()).toBe('title');
     expect(visible().some(el => el.textContent?.includes('Display'))).toBe(true);
     expect(visible().some(el => el.dataset.typographyGroup === 'title' && el.querySelector('input[type=number]'))).toBe(true);
-    expect(host.querySelector('[role=tab][aria-selected=true]')?.textContent).toBe('Content');
+    expect(host.querySelector('[role=tab][aria-selected=true]')?.getAttribute('aria-label')).toBe('Headers');
     expect(JSON.stringify(useDoc.getState().doc)).toBe(before);
   });
 
@@ -181,7 +183,7 @@ describe('typography relocation', () => {
     act(() => requestEditorTargetFocus('design', 'front-cover-style-title'));
     expect(active()).toBe('title');
     expect(visible().map(el => el.textContent).join(' ')).toContain('Letter spacing');
-    expect(host.querySelector('[role=tab][aria-selected=true]')?.textContent).toBe('Design');
+    expect(host.querySelector('[role=tab][aria-selected=true]')?.textContent).toBe('Page & design');
     act(() => requestEditorTargetFocus('images', 'image-cover'));
     expect(active()).toBe('');
     expect(visible()).toHaveLength(0);

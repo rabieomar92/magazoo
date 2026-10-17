@@ -18,6 +18,10 @@ import { FreeformImageEditor } from '../FreeformImageEditor';
 import { wrappedHeroImage } from '../../lib/wrappedHero';
 import { pageDimensions } from '../../lib/pageFormat';
 import {requestImageOutline} from '../../lib/imageCanvas';
+import {ImagePanControls,ImagePanPreview} from '../ImagePanControls';
+import {FramedImage} from '../../components/FramedImage';
+import {usePdfPreferences} from '../../store/pdfPreferences';
+import {ImageDeck} from '../ImageDeck';
 
 const DEFAULT_FRAME = { scale: 1, offsetX: 0, offsetY: 0 };
 const imageDesign = (doc: Doc) => isReferenceArticle(doc.templateId) ? articleGridDesign(doc.design) : doc.design;
@@ -57,6 +61,8 @@ export function ArticleImagesSection() {
   const images = useDoc((state) => state.doc.images ?? []);
   const assets = useDoc((state) => state.doc.assets);
   const sourceDoc = useDoc((state) => state.doc);
+  const pdfSize=usePdfPreferences(s=>s.size);
+  const previewDoc={...sourceDoc,design:{...sourceDoc.design,pageFormat:pdfSize}};
   const design = imageDesign(sourceDoc);
   const update = useDoc((state) => state.update);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -165,11 +171,12 @@ export function ArticleImagesSection() {
         }}
       />
 
-      {images.map((image) => {
+      <ImageDeck label="Page image" names={images.map((image,index)=>`${index+1} · Page ${image.anchor.page}${image.caption?' · '+image.caption.slice(0,45):''}`)}>{images.map((image) => {
         const asset = assets[image.assetId];
         const selectedWidth = Math.min(image.widthCols, maxWidth) as PlacedImage['widthCols'];
         const contour = placedImageContour({ ...image, widthCols: selectedWidth });
         const height = asset ? imageGeometry(image, asset, sourceDoc).height : image.heightMm ?? 1;
+        const previewGeometry=asset?imageGeometry(image,asset,previewDoc):null;
         const changeHeight = (heightMm: number) => change(image.id, (current, doc) => {
           current.heightMm = heightMm;
           const currentAsset = doc.assets[current.assetId];
@@ -183,9 +190,11 @@ export function ArticleImagesSection() {
           >
             <div className="image-card-heading"><span>Page image {images.indexOf(image)+1}</span><RowButtons onRemove={() => remove(image.id)} /></div>
             <div className="figure-edit">
-              <div className="figure-thumb">
-                {asset ? <img src={asset.src} alt="" /> : <span className="figure-missing">Image missing</span>}
-              </div>
+              {asset ? <ImagePanPreview key={image.assetId} label={`Page image ${images.indexOf(image)+1} crop preview`} frame={image.frame}
+                aspectRatio={previewGeometry!.visualWidth/previewGeometry!.visualHeight} background={sourceDoc.design.paperBg}
+                onChange={pan=>change(image.id,current=>{current.frame={...DEFAULT_FRAME,...current.frame,...pan};})}>
+                {preview=><FramedImage asset={asset} frame={preview}/>}
+              </ImagePanPreview> : <span className="figure-missing">Image missing</span>}
               <input
                 className="field-input"
                 dir="auto"
@@ -338,7 +347,9 @@ export function ArticleImagesSection() {
                 </div>
               )}
               </details>
-              <details className="control-disclosure"><summary>Crop & framing</summary><LabeledRange
+              <details className="control-disclosure"><summary>Crop & framing</summary>
+              <ImagePanControls frame={image.frame} onChange={pan=>change(image.id,current=>{current.frame={...DEFAULT_FRAME,...current.frame,...pan};})}/>
+              <LabeledRange
                 label="Image zoom"
                 value={image.frame?.scale ?? 1}
                 min={0.5}
@@ -450,7 +461,7 @@ export function ArticleImagesSection() {
             </div>
           </div>
         );
-      })}
+      })}</ImageDeck>
 
       <button type="button" className="add-btn hero-upload" disabled={loading} onClick={() => chooseFile()}>
         {loading && pendingReplace.current === null ? <MagazooLoader variant="inline" label="Optimising image…" /> : '+ Add page image'}

@@ -1,0 +1,3 @@
+import type {EditorTab} from '../lib/editorNavigation';
+const paths:Record<EditorTab,string>={content:'M4 4h16M4 9h16M4 14h10M4 19h13',images:'M3 3h18v18H3zM3 16l5-5 4 4 3-3 6 6M15 7h.01',highlights:'M4 4h16v16H4zM8 8h8M8 12h8M8 16h4',headers:'M4 5h16M8 5v14M16 5v14M8 12h8',footers:'M3 3h18v18H3zM3 16h18M7 19h4M17 19h.01',topbar:'M3 3h18v18H3zM3 9h18M6 6h7',sidetext:'M3 3h18v18H3zM8 3v18M5.5 7v10',design:'M3 3h18v18H3zM10 3v18M10 10h11'};
+export function EditorSectionIcon({name}:{name:EditorTab}){return <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={paths[name]}/></svg>;}

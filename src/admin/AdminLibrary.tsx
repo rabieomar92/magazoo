@@ -1,7 +1,7 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { AdminIcon } from './AdminIcon';
 import { ArticleHero } from './ArticleHero';
-import { articleLabel, libraryRows, type LibraryItem, type LibraryProject, type LibrarySort } from './libraryModel';
+import { articleLabel, articleCategory, libraryRows, type LibraryItem, type LibraryProject, type LibrarySort } from './libraryModel';
 
 export interface DeleteTarget { name: string; path: string; project: boolean }
 
@@ -58,7 +58,7 @@ export default function AdminLibrary({ projects, busy, onDelete, onCopy, link, o
         const validDate = Number.isFinite(date.getTime());
         return <li className="admin-article-card" key={item.id}>
           <ArticleHero key={`${item.id}:${item.version}`} item={item} href={link(item.token)}/>
-          <div className="admin-article-top"><span className="admin-file-icon"><AdminIcon name="article"/></span><span className="admin-file-kind">JSON document</span><span className="admin-version" title={`Saved version ${item.version}`}>v{item.version}</span></div>
+          <div className="admin-article-top"><span className="admin-file-icon"><AdminIcon name="article"/></span><span className="admin-file-kind" title={articleCategory(item)}>{articleCategory(item)}</span><span className="admin-version" title={`Saved version ${item.version}`}>v{item.version}</span></div>
           <h4><a href={link(item.token)} target="_blank" rel="noreferrer" title={item.name}>{articleLabel(item.name)}</a></h4>
           <p className="admin-filename" title={item.name}>{item.name}</p>
           <div className="admin-article-meta"><span className="admin-private"><AdminIcon name="shield"/>Private link</span><span title={validDate ? date.toLocaleString() : undefined}>Updated {validDate ? <time dateTime={date.toISOString()}>{date.toLocaleDateString(undefined, {day:'numeric',month:'short',year:'numeric'})}</time> : '—'}</span></div>

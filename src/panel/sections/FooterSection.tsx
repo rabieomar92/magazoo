@@ -4,11 +4,11 @@ import { pageFooter, footerBottomOffset, MAX_FOOTER_BOTTOM_OFFSET } from '../../
 import { Section, Toggle, LabeledInput, LabeledNumber, LabeledSelect } from '../Field';
 import { ALL_FONTS, fontOptions } from '../../lib/fonts';
 
-export function FooterSection() {
+export function FooterSection({expanded=false}:{expanded?:boolean}) {
   const doc = useDoc(s => s.doc);
   const update = useDoc(s => s.update);
   const footer = pageFooter(doc, 0);
-  return <Section title="Page footer" collapsible defaultOpen={false}>
+  return <Section title="Page footer" collapsible defaultOpen={expanded}>
     <Toggle label="Show page footer" checked={footer.enabled} onChange={v => update(d => { d.footer = { ...d.footer, enabled: v }; })} />
     <LabeledInput editorTarget="footer-text" label="Footer text / magazine name" value={footer.text} onChange={v => update(d => { d.footer = { ...d.footer, text: v }; })} />
     <LabeledNumber editorTarget="footer-number" label="Starting page number" value={footer.number} min={0} max={99999} onChange={v => update(d => { d.footer = { ...d.footer, startNumber: Math.max(0, Math.min(99999, Math.round(v))) }; })} />

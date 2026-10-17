@@ -2,6 +2,9 @@ export interface ImageFrame {
   scale: number;
   offsetX: number;
   offsetY: number;
+  /** Free translation in percent of the frame, independent of legacy crop focus. */
+  panX?: number;
+  panY?: number;
 }
 
 export interface FramedImageGeometry {
@@ -21,8 +24,14 @@ export function normalizeImageFrame(frame?: Partial<ImageFrame>): ImageFrame {
     scale: clamp(Number.isFinite(frame?.scale) ? frame!.scale! : 1, 0.5, 3),
     offsetX: clamp(Number.isFinite(frame?.offsetX) ? frame!.offsetX! : 0, -50, 50),
     offsetY: clamp(Number.isFinite(frame?.offsetY) ? frame!.offsetY! : 0, -50, 50),
+    ...(frame?.panX !== undefined ? {panX: imagePan(frame.panX)} : {}),
+    ...(frame?.panY !== undefined ? {panY: imagePan(frame.panY)} : {}),
   };
 }
+
+/** Finite, bounded coordinates keep malformed imports out of CSS geometry. */
+export const imagePan = (value?:number) => clamp(Number.isFinite(value) ? value! : 0,-1000,1000);
+export const hasImagePan = (frame?:Partial<ImageFrame>) => frame?.panX !== undefined || frame?.panY !== undefined;
 
 /**
  * Position one axis without ever introducing an accidental uncovered edge.
@@ -59,7 +68,7 @@ export function framedImageGeometry(
   return {
     width,
     height,
-    left: framedAxis(containerWidth, width, resolved.offsetX),
-    top: framedAxis(containerHeight, height, resolved.offsetY),
+    left: framedAxis(containerWidth, width, resolved.offsetX) + containerWidth * (resolved.panX ?? 0) / 100,
+    top: framedAxis(containerHeight, height, resolved.offsetY) + containerHeight * (resolved.panY ?? 0) / 100,
   };
 }

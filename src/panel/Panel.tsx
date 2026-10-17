@@ -19,11 +19,16 @@ import { BackCoverContent, BackCoverImages, BackCoverDesign } from './sections/B
 import { DirectionSection } from './sections/DirectionSection';
 import { PhotoBackgroundSection } from './sections/PhotoBackgroundSection';
 import { TopBarSection } from './sections/TopBarSection';
+import {HeaderLayoutSection} from './sections/HeaderLayoutSection';
+import {GateDesignSection} from './sections/GateDesignSection';
+import {EditorSectionIcon} from './EditorSectionIcon';
+import {ImageDeck,REVEAL_IMAGE_CONTROL} from './ImageDeck';
 import './editor-refinements.css';
 import './workspace-polish.css';
 import {
   blockEditorId,
   editorTargetId,
+  editorTabForTarget,
   FOCUS_BLOCK_EDITOR_EVENT,
   FOCUS_EDITOR_TARGET_EVENT,
   type EditorTab,
@@ -32,11 +37,15 @@ import {
 
 type TabId = EditorTab;
 
-const TABS: { id: TabId; label: string }[] = [
+const TABS: { id: TabId; label: string;short?:string }[] = [
   { id: 'content', label: 'Content' },
   { id: 'images', label: 'Images' },
-  { id: 'highlights', label: 'Highlights' },
-  { id: 'design', label: 'Design' },
+  { id: 'highlights', label: 'Highlights & references',short:'Highlights' },
+  { id: 'headers', label: 'Headers' },
+  { id: 'footers', label: 'Footers' },
+  { id: 'topbar', label: 'Top bar' },
+  { id: 'sidetext', label: 'Side text' },
+  { id: 'design', label: 'Page & design' },
 ];
 
 const TEMPLATE_GROUPS: { family: TemplateFamily; label: string }[] = [
@@ -58,6 +67,7 @@ const LAYOUT_CHOICES = templateChoices(TEMPLATE_META);
  */
 export function Panel() {
   const [tab, setTab] = useState<TabId>('content');
+  const [marginPage,setMarginPage]=useState(1);
   const [pendingTemplate, setPendingTemplate] = useState<TemplateId | null>(null);
   const sidebarCount = useDoc(
     (s) => s.doc.highlights.filter((h) => h.trim()).length + s.doc.references.length,
@@ -70,15 +80,17 @@ export function Panel() {
   const isFrontMatter = familyOf(templateId) === 'frontmatter';
   const isNews = familyOf(templateId) === 'news';
   const isBackCover = familyOf(templateId) === 'backcover';
-  useEffect(() => {
-    if ((isFrontMatter || isNews || isBackCover) && tab === 'highlights') setTab('content');
-  },[isFrontMatter,isNews,isBackCover,tab]);
 
   useEffect(() => {
     const reveal = (id: string, attempts = 0) => {
       const destination = document.getElementById(id);
       if (!destination) {
         if (attempts < 8) requestAnimationFrame(() => reveal(id, attempts + 1));
+        return;
+      }
+      if(destination.closest('.image-deck-item[hidden]')){
+        window.dispatchEvent(new CustomEvent(REVEAL_IMAGE_CONTROL,{detail:{target:id.replace(/^editor-target-/,'')}}));
+        if(attempts<8)requestAnimationFrame(()=>reveal(id,attempts+1));
         return;
       }
 
@@ -116,8 +128,8 @@ export function Panel() {
     const onFocusTarget = (event: Event) => {
       const detail = (event as CustomEvent<EditorTargetDetail>).detail;
       if (!detail?.tab || !detail.target) return;
-      const imageCaption = /^meta-(hero|cover)-caption$/.test(detail.target);
-      setTab(imageCaption ? 'images' : isGate && /^(meta-|footer-)/.test(detail.target) ? 'design' : detail.tab);
+      const margin=detail.target.match(/^page-margin-text-(\d+)$/);if(margin)setMarginPage(Number(margin[1]));
+      setTab(editorTabForTarget(detail.tab,detail.target));
       requestAnimationFrame(() => reveal(editorTargetId(detail.target)));
     };
     window.addEventListener(FOCUS_BLOCK_EDITOR_EVENT, onFocusBlock);
@@ -132,17 +144,21 @@ export function Panel() {
     <aside className="panel" id="editor-panel" aria-label="Editing controls">
       <div className="panel-workspace-heading"><span>Editor</span><span className="panel-workspace-context">{TABS.find(t=>t.id===tab)?.label}</span></div>
       <nav className="panel-tabs" role="tablist" aria-label="Editor sections">
-        {TABS.filter(t => !(isFrontMatter || isNews || isBackCover) || t.id !== 'highlights').map((t) => (
+        {TABS.map((t,index) => (
           <button
             key={t.id}
             type="button"
             role="tab"
             aria-selected={tab === t.id}
+            aria-label={t.label}
+            title={t.label}
+            tabIndex={tab===t.id?0:-1}
             className={`panel-tab${tab === t.id ? ' is-active' : ''}`}
             onClick={() => setTab(t.id)}
+            onKeyDown={event=>{if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End'].includes(event.key))return;event.preventDefault();const next=event.key==='Home'?0:event.key==='End'?TABS.length-1:(index+(event.key==='ArrowLeft'?-1:event.key==='ArrowRight'?1:event.key==='ArrowUp'?-4:4)+TABS.length)%TABS.length;setTab(TABS[next].id);event.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>('[role="tab"]')[next]?.focus();}}
           >
-            {isGate && t.id === 'content' ? 'Article' : isGate && t.id === 'design' ? 'Cover & design' : t.label}
-            {t.id === 'highlights' && sidebarCount > 0 && <span className="badge">{sidebarCount}</span>}
+            <EditorSectionIcon name={t.id}/><span>{t.short??t.label}</span>
+            {t.id === 'highlights' && sidebarCount > 0 && <span className="badge" aria-hidden="true">{sidebarCount}</span>}
           </button>
         ))}
       </nav>
@@ -185,10 +201,10 @@ export function Panel() {
         </div>}
       </div>
 
-      <div className="panel-scroll" tabIndex={0} aria-label="Editor options">
+      <div className="panel-scroll" tabIndex={0} aria-label="Editor options" data-editor-category={tab}>
         {tab === 'content' && (
           <>
-            {isBackCover ? <BackCoverContent /> : isGate ? <div className="section"><p className="hint">Cover text and its appearance now live together under Cover & design.</p><button type="button" className="add-btn" onClick={() => setTab('design')}>Edit cover text & design</button></div> : <><MetaSection /><FooterSection /></>}
+            {isBackCover ? <BackCoverContent part="content" /> : isGate ? <div className="section"><p className="hint">Cover headings and positioning are in Headers.</p><button type="button" className="add-btn" onClick={() => setTab('headers')}>Edit cover headings</button></div> : null}
             {isBackCover ? null : isNews ? <NewsContent /> : isFrontMatter ? <FrontMatterContent /> : <BodySection />}
           </>
         )}
@@ -197,22 +213,27 @@ export function Panel() {
             <GallerySection />
           ) : (
             <>
-              <HeroSection />
-              {!isCoverOnly && <ArticleImagesSection />}
+              <ImageDeck label="Image group" names={isCoverOnly?['Cover image']:['Hero & cover','Page images']}>
+                <HeroSection />
+                {!isCoverOnly && <ArticleImagesSection />}
+              </ImageDeck>
             </>
           ))}
         {tab === 'highlights' && (
           <>
+            {(isGallery||isCoverOnly||isFrontMatter||isNews||isBackCover)&&<p className="hint">This layout does not print an article highlights box. These notes remain available when switching to an article layout.</p>}
             <HighlightsSection />
             <ReferencesSection />
           </>
         )}
+        {tab==='headers'&&<>{isGate?<GateDesignSection headingsOnly/>:isBackCover?<BackCoverContent part="headers"/>:isGallery?<p className="hint">Gallery image headings and descriptions are in Images. The running masthead is in Top bar.</p>:<><MetaSection headingOnly/>{(!isFrontMatter&&!isNews||templateId==='frontmatter-dean')&&<HeaderLayoutSection/>}</>}</>}
+        {tab==='footers'&&<><FooterSection expanded/>{isBackCover&&<BackCoverContent part="footers"/>}</>}
+        {tab==='topbar'&&<TopBarSection complete/>}
+        {tab==='sidetext'&&<PageMarginTextSection expanded initialPage={marginPage}/>}
         <div className="panel-design-pane" hidden={tab !== 'design'}>
           <p className="typography-relocated-note">Font and text styling controls are in the top toolbar. Page layout, backgrounds and object positioning stay here.</p>
-          {isBackCover ? <BackCoverDesign /> : isFrontMatter || isNews ? <FrontMatterDesign /> : <DesignSection />}
+          {isBackCover ? <BackCoverDesign /> : isFrontMatter || isNews ? <FrontMatterDesign pageOnly/> : <DesignSection pageOnly/>}
           <PhotoBackgroundSection /><DirectionSection />
-          {templateId !== 'frontmatter-board' && <TopBarSection />}
-          <PageMarginTextSection />
         </div>
       </div>
       {pendingTemplate && <div className="template-warning-backdrop" role="presentation">

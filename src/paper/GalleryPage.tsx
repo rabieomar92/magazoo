@@ -2,6 +2,7 @@ import { Fragment, type CSSProperties, type ReactNode } from 'react';
 import type { Doc, Block } from '../schema/document';
 import { parseRuns, renderTex } from '../lib/richtext';
 import { galleryFrameGeometry } from '../lib/galleryFrame';
+import {hasImagePan} from '../lib/imageFrame';
 import { galleryImageTarget, GALLERY_TWO_SLOTS } from '../lib/gallerySlots';
 import { galleryTextPosition } from '../lib/galleryTextPosition';
 import { galleryTileText } from '../lib/galleryText';
@@ -80,7 +81,7 @@ function ImageCell({ doc, block, area, slot }: { doc: Doc; block?: Block; area: 
       data-editor-tab="images"
       data-editor-target={galleryImageTarget(block, slot)}
     >
-      {asset ? <img src={asset.src} alt="" style={imgStyle} /> : <span className="g-img-empty" />}
+      {asset ? <img src={asset.src} alt="" style={imgStyle} data-image-free-pan={hasImagePan(fr)?'true':undefined}/> : <span className="g-img-empty" />}
       <ImageCaption block={block} />
     </figure>
   );
@@ -113,7 +114,7 @@ function FoldCell({ doc, block, area, half, slot }: { doc: Doc; block?: Block; a
       data-editor-tab="images"
       data-editor-target={galleryImageTarget(block, slot)}
     >
-      {asset && <img src={asset.src} alt="" style={imgStyle} />}
+      {asset && <img src={asset.src} alt="" style={imgStyle} data-image-free-pan={hasImagePan(fr)?'true':undefined}/>}
       {/* Caption only on the left half (page 1) so it isn't printed twice. */}
       {half === 'left' && <ImageCaption block={block} />}
     </figure>

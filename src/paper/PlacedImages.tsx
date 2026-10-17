@@ -422,6 +422,9 @@ function PlacedHighlightsItem({ doc, design, pageHeight, readOnly }: { doc: Doc;
     const element = elementRef.current;
     const page = element?.closest<HTMLElement>('.page');
     if (!element || !page) return;
+    // ArticlePages already chose a safe position and paginated around that
+    // exact box. Relocating it again here invalidates its text exclusions.
+    if(isReferenceArticle(doc.templateId))return;
     // Persist the design default even while the preview is hidden or has not
     // received a measurable width yet. Without this early commit, a loaded
     // free-placement document could be autosaved before its first layout and
@@ -448,7 +451,7 @@ function PlacedHighlightsItem({ doc, design, pageHeight, readOnly }: { doc: Doc;
     // Without this, a box that had never been dragged existed only as a
     // computed fallback and could disappear or move after an autosave/reload.
     if (canCommit && (!doc.highlightBox || Math.abs(rounded - placement.anchor.y) > 0.05)) commitAnchor(measured.column, rounded);
-  }, [commitAnchor, doc.assets, doc.design, doc.highlightBox, doc.highlights, doc.images, doc.references, placement, design, pageHeight, readOnly, preserveSourceAnchors]);
+  }, [commitAnchor, doc.assets, doc.design, doc.templateId, doc.highlightBox, doc.highlights, doc.images, doc.references, placement, design, pageHeight, readOnly, preserveSourceAnchors]);
 
   const onPointerDown = (event: ReactPointerEvent<HTMLElement>) => {
     if (readOnly || event.button !== 0) return;

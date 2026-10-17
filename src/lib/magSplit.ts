@@ -20,7 +20,7 @@ export interface SplitPhoto {
   /** Painted photo size, mm — 'cover' over the strip+sheet region, computed. */
   w: number;
   h: number;
-  /** Top-left of the photo relative to the region's top-left (≤ 0), mm. */
+  /** Top-left relative to the region, mm; free pan may uncover either edge. */
   x: number;
   y: number;
 }
@@ -34,7 +34,7 @@ export function framedSpreadPhoto(
   frame?: Partial<PhotoFrame>,
 ): SplitPhoto {
   const safeAr = Number.isFinite(ar) && ar > 0 ? ar : 16 / 9;
-  const { scale, offsetX, offsetY } = normalizeImageFrame(frame);
+  const { scale, offsetX, offsetY, panX=0, panY=0 } = normalizeImageFrame(frame);
   const baseW = Math.max(regionW, regionH * safeAr);
   const baseH = baseW / safeAr;
   const w = baseW * scale;
@@ -42,8 +42,8 @@ export function framedSpreadPhoto(
   return {
     w,
     h,
-    x: framedAxis(regionW, w, offsetX),
-    y: framedAxis(regionH, h, offsetY),
+    x: framedAxis(regionW, w, offsetX) + regionW * panX / 100,
+    y: framedAxis(regionH, h, offsetY) + regionH * panY / 100,
   };
 }
 

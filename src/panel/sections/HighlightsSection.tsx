@@ -3,7 +3,7 @@ import { grid } from '../../lib/geometry';
 import { articleGridDesign, articlePageHeight, isReferenceArticle } from '../../lib/articleLayouts';
 import { defaultPlacedHighlights, placedHighlightsGeometry } from '../../lib/placedHighlights';
 import { familyOf, type PlacedHighlights } from '../../schema/document';
-import { LabeledColor, LabeledInput, LabeledNumber, RowButtons, Section, SegmentField, Toggle } from '../Field';
+import { LabeledColor, LabeledInput,LabeledSelect, LabeledNumber, RowButtons, Section, SegmentField, Toggle } from '../Field';
 import {highlightBorderEnabled} from '../../lib/highlightBorder';
 
 export function HighlightsSection() {
@@ -65,6 +65,10 @@ export function HighlightsSection() {
     <Section title="Highlights" editorTarget="highlights">
       <Toggle label="Show highlights box" checked={design.sidebar} onChange={visible => update(d => { d.design.sidebar = visible; })} />
       <p className="hint">Hide or show the highlights and references box. Your saved text and position are kept.</p>
+      <LabeledSelect label="Highlights position" value={design.highlightsPlacement??'page1'} options={[
+        {value:'page1',label:'Right sidebar (page 1)'},{value:'page1-flow',label:'Sidebar, text fills the gap'},
+        {value:'all',label:'Sidebar (every page)'},{value:'below',label:'Below article'},{value:'free',label:'Free on page (drag)'},
+      ]} onChange={value=>update(d=>{d.design.highlightsPlacement=value as typeof design.highlightsPlacement;if(value==='free')d.highlightBox??=defaultPlacedHighlights(geometryDesign,pageHeight);})}/>
       <details className="control-disclosure"><summary>Box appearance</summary>
         <Toggle label="Show highlight border" checked={borderVisible} onChange={visible=>update(d=>{d.design.highlightBorder=visible;})}/>
         {borderVisible&&<>

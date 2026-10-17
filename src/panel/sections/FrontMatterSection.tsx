@@ -7,6 +7,7 @@ import { LabeledInput, LabeledTextarea, LabeledNumber, LabeledColor, LabeledSele
 import { ImagePicker } from './HeroSection';
 import { BodySection } from './BodySection';
 import { SignatureSection } from './SignatureSection';
+import {ImageDeck} from '../ImageDeck';
 
 export function FrontMatterContent() {
   const doc = useDoc(s => s.doc);
@@ -54,7 +55,7 @@ export function FrontMatterImages() {
   const aboutParagraphs = (doc.frontMatter?.about ?? '').split(/\n\s*\n/u);
   const logoPosition = Math.max(0,Math.min(aboutParagraphs.length,doc.frontMatter?.logoAfterParagraph ?? Math.max(0,aboutParagraphs.length-1)));
   const logoWrap = doc.frontMatter?.logoWrap ?? 'end';
-  return <>
+  return <ImageDeck label="Publication image" names={dean?['Dean’s portrait','Magazine front cover','Signature']:contents?['Feature image','Second feature image']:['Bleed hero image','School logo','Logo placement']}>
     {dean && <ImagePicker slot="hero" title="Dean’s portrait" blurb="An optional portrait beside the dean’s name. Upload your own photograph." thumbAspectRatio="20 / 27" />}
     <ImagePicker slot="cover" title={dean ? 'Magazine front cover' : board ? 'Bleed hero image' : 'Feature image'} fit={dean ? 'contain' : 'cover'} blurb={dean ? 'Shown beneath “In this issue” in the right column. At 1× the complete cover is visible.' : board ? 'The main editorial photograph runs to both page edges. Zoom and shift adjust its framing.' : 'Replace the sample science artwork with your own photograph. Zoom and shift adjust its framing.'} />
     {dean && <SignatureSection />}
@@ -78,18 +79,18 @@ export function FrontMatterImages() {
         onChange={value=>update(d=>{d.frontMatter ??= emptyFrontMatter(); d.frontMatter.logoAlign=value;})} />}
       <p className="hint">Start and end follow the reading direction, so the same setting remains correct in Arabic.</p>
     </Section>}
-  </>;
+  </ImageDeck>;
 }
 
-export function FrontMatterDesign() {
+export function FrontMatterDesign({pageOnly=false}:{pageOnly?:boolean}) {
   const doc = useDoc(s => s.doc);
   const update = useDoc(s => s.update);
   const board = doc.templateId === 'frontmatter-board';
   const dean = doc.templateId === 'frontmatter-dean';
   return <>
-    <Section title="Page layout" editorTarget="design-topbar">
+    <Section title="Page layout" editorTarget={pageOnly?undefined:'design-topbar'}>
       <p className="hint">{board ? 'The photograph reaches the top and both side trim edges. The masthead floats over it without creating a gap.' : 'A dedicated editorial grid. Longer copy creates continuation pages; line spacing is never stretched to fill a page.'}</p>
-      {board && <Toggle
+      {!pageOnly&&board && <Toggle
         label="Show top bar"
         checked={doc.design.showTopBar !== false}
         onChange={visible => update(d => { d.design.showTopBar = visible; })}
@@ -105,23 +106,23 @@ export function FrontMatterDesign() {
         onChange={columns => update(d => { d.design.frontMatterAboutColumns = columns; })}
       />}
       {board && <p className="hint">Choose fewer columns for longer lines and easier reading. The editorial roles keep their separate compact grid.</p>}
-      {dean && <>
+      {!pageOnly&&dean && <>
         <LabeledNumber label="Gap above category" unit="mm" min={0} max={40} step={0.5} value={doc.design.deanCategoryTopGap ?? 0}
           onChange={value=>update(d=>{d.design.deanCategoryTopGap=Math.max(0,Math.min(40,value));})} />
         <LabeledNumber label="Gap below title" unit="mm" min={0} max={35} step={0.5} value={doc.design.deanTitleBottomGap ?? (doc.meta.subtitle ? 4 : 8)}
           onChange={value=>update(d=>{d.design.deanTitleBottomGap=Math.max(0,Math.min(35,value));})} />
         <p className="hint">These controls preserve the category, headline and identity hierarchy while allowing vertical adjustment.</p>
       </>}
-      <LabeledNumber label="Top bar margin" unit="mm" min={0} max={25} value={doc.design.topBarOffset ?? 10} onChange={v => update(d => {d.design.topBarOffset = Math.max(0,Math.min(25,v));})} />
+      {!pageOnly&&<LabeledNumber label="Top bar margin" unit="mm" min={0} max={25} value={doc.design.topBarOffset ?? 10} onChange={v => update(d => {d.design.topBarOffset = Math.max(0,Math.min(25,v));})} />}
       <LabeledNumber label="Page margin" unit="mm" min={10} max={22} value={doc.design.margin} onChange={v => update(d => {d.design.margin = Math.max(10,Math.min(22,v));})} />
       {!dean && <LabeledNumber label={board ? 'Bleed image height' : 'Image height'} unit="mm" min={25} max={board ? 180 : 90} value={doc.design.heroHeight} onChange={v => update(d => {d.design.heroHeight = Math.max(25,Math.min(board ? 180 : 90,v));})} />}
-      <SegmentField<'left' | 'right'>
+      {!pageOnly&&<><SegmentField<'left' | 'right'>
         label="Masthead & footer side"
         value={doc.design.barSide ?? 'left'}
         options={[{ value: 'left', label: 'Left' }, { value: 'right', label: 'Right' }]}
         onChange={v => update(d => { d.design.barSide = v; })}
       />
-      <p className="hint">The masthead and page number start on this side; the footer text sits opposite. Both alternate sides on later pages.</p>
+      <p className="hint">The masthead and page number start on this side; the footer text sits opposite. Both alternate sides on later pages.</p></>}
       <TypographyControl group="title" also="subtitle" order={10} property="fontFamily"><LabeledSelect label="Display font" value={doc.design.fontDisplay} options={fontOptions(ALL_FONTS)} onChange={v => update(d => {d.design.fontDisplay=v;})} /></TypographyControl>
       <TypographyControl group="body" also="subtitle" order={10} property="fontFamily"><LabeledSelect label="Body font" value={doc.design.fontBody} options={fontOptions(ALL_FONTS)} onChange={v => update(d => {d.design.fontBody=v; d.design.fontSubtitle=v;})} /></TypographyControl>
       {(['title','subtitle','body'] as const).map(key => {
@@ -134,9 +135,9 @@ export function FrontMatterDesign() {
       <LabeledColor label="Paper" value={doc.design.paperBg ?? '#ffffff'} onChange={v => update(d=>{d.design.paperBg=v;})} />
       <TypographyControl group="theme" order={40} property="color"><LabeledColor label="Text" value={doc.design.colors.ink} onChange={v => update(d=>{d.design.colors.ink=v;})} /></TypographyControl>
       <LabeledColor label="Accent" value={doc.design.colors.accent} onChange={v => update(d=>{d.design.colors.accent=v;})} />
-      <LabeledColor label="Top bar" value={doc.design.barColor ?? doc.design.colors.accent} onChange={v => update(d=>{d.design.barColor=v;})} />
+      {!pageOnly&&<><LabeledColor label="Top bar" value={doc.design.barColor ?? doc.design.colors.accent} onChange={v => update(d=>{d.design.barColor=v;})} />
       <LabeledColor label="Masthead background" value={doc.design.barTagColor ?? '#bfbfbf'} onChange={v => update(d=>{d.design.barTagColor=v;})} />
-      <TypographyControl group="masthead" order={40} property="color"><LabeledColor label="Masthead text" value={doc.design.barTagInk ?? '#111418'} onChange={v => update(d=>{d.design.barTagInk=v;})} /></TypographyControl>
+      <TypographyControl group="masthead" order={40} property="color"><LabeledColor label="Masthead text" value={doc.design.barTagInk ?? '#111418'} onChange={v => update(d=>{d.design.barTagInk=v;})} /></TypographyControl></>}
     </Section>
   </>;
 }

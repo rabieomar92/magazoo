@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import { articleLabel, libraryRows, type LibraryProject } from './libraryModel';
+import { articleLabel,articleCategory, libraryRows, type LibraryProject } from './libraryModel';
 const data: LibraryProject[]=[
   {id:'physics',name:'Physics · October',items:[
     {id:'a',name:'AI-takes_on-the-typhoon.json',token:'a',version:1,updated:200},
@@ -30,4 +30,9 @@ it('sorts a copy of each project without mutating the original order',()=>{
 it('uses readable card labels without losing the original filename',()=>{
   expect(articleLabel('AI-takes_on-the-typhoon.JSON')).toBe('AI takes on the typhoon');
   expect(articleLabel('.json')).toBe('.json');
+});
+it('labels and searches article categories rather than generic file-format labels',()=>{
+  const item={...data[0].items[0],category:'Computational physics',templateId:'paper-8'};
+  expect(articleCategory(item)).toBe('Computational physics');expect(libraryRows([{...data[0],items:[item]}],'computational','','recent')).toHaveLength(1);
+  expect(articleCategory({...item,category:'',templateId:'gallery-2'})).toBe('Photo essay');
 });

@@ -142,7 +142,7 @@ test('an editor save updates the preview without changing list payloads or docum
   const before = storage.read(item.token);
   assert.equal(await (await admin(`documents/${item.id}/hero?v=2`)).text(), 'changed');
   const listed = await (await admin('projects')).json();
-  assert.deepEqual(Object.keys(listed[0].items[0]).sort(), ['id', 'name', 'token', 'updated', 'version']);
+  assert.deepEqual(Object.keys(listed[0].items[0]).sort(), ['category','id', 'name','templateId', 'token', 'updated', 'version']);
   assert.deepEqual(storage.read(item.token), before);
 });
 

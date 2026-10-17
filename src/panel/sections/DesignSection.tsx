@@ -28,7 +28,7 @@ import {
   Toggle,
 } from '../Field';
 
-export function DesignSection() {
+export function DesignSection({pageOnly=false}:{pageOnly?:boolean}) {
   const design = useDoc((s) => s.doc.design);
   const backgroundAsset = useDoc((s) => {
     const id = s.doc.design.pageBackgroundAssetId;
@@ -152,7 +152,7 @@ export function DesignSection() {
       {/* Every template carries the switch. Only the families that actually
           print a highlights box also offer where to put it; the others say so
           rather than leaving a control that quietly does nothing. */}
-      <Toggle
+      {!pageOnly&&<><Toggle
         label="Show highlights"
         checked={design.sidebar}
         onChange={(v) => set('sidebar', v)}
@@ -175,13 +175,14 @@ export function DesignSection() {
       ) : (
         <p className="hint">This layout prints no highlights box, so the switch has nothing to hide here. It applies to the Paper and Magazine templates.</p>
       )}
+      </>}
       {cpl && <p className="hint hint--warn">{cpl}</p>}
       </details>
 
       <details className="control-disclosure"><summary>Margins & spacing</summary>
       <LabeledNumber label="Margin" unit="mm" value={design.margin} min={8} max={30} step={1} onChange={(v) => set('margin', v)} />
       <LabeledNumber label="Gutter" unit="mm" value={design.gutter} min={2} max={12} step={0.5} onChange={(v) => set('gutter', v)} />
-      {family !== 'gallery' && !isGate && (
+      {!pageOnly && family !== 'gallery' && !isGate && (
         <>
           <LabeledNumber
             label="Title to subtitle gap"
@@ -315,7 +316,7 @@ export function DesignSection() {
       </details>
       </div>}
 
-      {hasBarSide && !isGate && (
+      {!pageOnly && hasBarSide && !isGate && (
         <div id="editor-target-design-topbar">
           <details className="control-disclosure"><summary>Top bar appearance</summary>
           <SegmentField<'left' | 'right'>
@@ -359,7 +360,7 @@ export function DesignSection() {
   );
 
   return isGate ? <>
-    <GateDesignSection />
+    {!pageOnly&&<GateDesignSection />}
     <details className="gate-editor-group gate-general-settings">
       <summary>5 · Page & article settings<span>Page colours, columns, body text & advanced options</span></summary>
       <div className="gate-control-stack">{generalSettings}</div>

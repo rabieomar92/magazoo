@@ -7,6 +7,7 @@ import { BACK_COVER_TEXT_LABELS, backCoverLayout, backCoverTextStyle, defaultBac
 import { ALL_FONTS, fontOptions } from '../../lib/fonts';
 import { LabeledColor, LabeledInput, LabeledNumber, LabeledSelect, RowButtons, Section, SegmentField, Toggle } from '../Field';
 import { ImagePicker } from './HeroSection';
+import {ImageDeck} from '../ImageDeck';
 
 const SOCIAL_PLATFORM_OPTIONS: { value: BackCoverSocialPlatform; label: string }[] = [
   { value: 'facebook', label: 'Facebook' },
@@ -91,19 +92,19 @@ function usableSocialLinks(content: ReturnType<typeof emptyBackCover>): BackCove
 
 /** Copy controls for the fixed back-cover lock-up. Keeping the text in a
  * dedicated object prevents a back-cover edit from changing article metadata. */
-export function BackCoverContent() {
+export function BackCoverContent({part='all'}:{part?:'all'|'headers'|'content'|'footers'}) {
   const saved = useDoc(s => s.doc.backCover);
   const content = saved ?? emptyBackCover();
   const update = useDoc(s => s.update);
   const set = <K extends keyof typeof content>(key: K) => (value: typeof content[K]) =>
     update(d => { d.backCover ??= emptyBackCover(); d.backCover[key] = value; });
   return <>
-    <Section title="1 · Main brand" editorTarget="backcover-brand">
+    {(part==='all'||part==='headers')&&<Section title="1 · Main brand" editorTarget="backcover-brand">
       <p className="hint">Edit the publication identity here. Typography follows the focused text in the top toolbar; positioning and spacing stay in Design.</p>
       <LabeledInput editorTarget="backcover-brand" label="Brand name" value={content.brand} onChange={set('brand')} placeholder="THE PHYSICIST" />
       <LabeledInput editorTarget="backcover-tagline" label="Tagline" value={content.tagline} onChange={set('tagline')} placeholder="SCHOOL OF PHYSICS" />
-    </Section>
-    <Section title="2 · QR & website" editorTarget="backcover-website">
+    </Section>}
+    {(part==='all'||part==='content')&&<><Section title="2 · QR & website" editorTarget="backcover-website">
       <LabeledInput editorTarget="backcover-website" label="Website" value={content.website} onChange={set('website')} placeholder="www.physics.usm.my" />
       <LabeledInput editorTarget="backcover-qr-label" label="QR description" value={content.qrLabel} onChange={set('qrLabel')} placeholder="Scan for our website" />
     </Section>
@@ -111,10 +112,11 @@ export function BackCoverContent() {
       <p className="hint">Add a URL, choose its logo and assign a footer column. The label is optional; when blank, the platform name is used.</p>
       <SocialLinksEditor content={content} links={usableSocialLinks(content)} update={update} />
     </Section>
-    <Section title="4 · Footer credits" editorTarget="backcover-footer-text">
+    </>}
+    {(part==='all'||part==='footers')&&<Section title="4 · Footer credits" editorTarget="backcover-footer-text">
       <LabeledInput editorTarget="backcover-imprint" label="Issue mark" value={content.imprint} onChange={set('imprint')} placeholder="ISSUE 01 · 2026" />
       <LabeledInput editorTarget="backcover-footer-text" label="Centre footer text" value={content.footerText} onChange={set('footerText')} placeholder="SCHOOL OF PHYSICS · USM" />
-    </Section>
+    </Section>}
   </>;
 }
 
@@ -228,7 +230,7 @@ function SocialLinksEditor({
 }
 
 export function BackCoverImages() {
-  return <>
+  return <ImageDeck label="Back cover image" names={['QR code','Centre logo']}>
     <ImagePicker
       slot="backcover-qr"
       title="QR code"
@@ -243,7 +245,7 @@ export function BackCoverImages() {
       fit="contain"
       thumbAspectRatio="3 / 1"
     />
-  </>;
+  </ImageDeck>;
 }
 
 function DesignGroup({ number, title, summary, children, open = false }: {

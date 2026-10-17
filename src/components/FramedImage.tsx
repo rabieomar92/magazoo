@@ -1,8 +1,10 @@
 import { useLayoutEffect, useRef, type CSSProperties } from 'react';
 import type { Asset } from '../schema/document';
+import '../styles/image-pan.css';
 import {
   framedImageGeometry,
   normalizeImageFrame,
+  hasImagePan,
   type ImageFrame,
   type ImageFit,
 } from '../lib/imageFrame';
@@ -13,16 +15,18 @@ interface Props {
   fit?: ImageFit;
   className?: string;
   style?: CSSProperties;
+  alt?: string;
 }
 
 /**
  * A measured image layer shared by every fixed photo frame. It uses the real
- * source and container aspect ratios, so pan is bounded to crop/free space and
- * preview zoom cannot reveal a template colour by moving the image box away.
+ * source and container aspect ratios. Existing crop focus stays bounded;
+ * optional free pan can deliberately uncover the page background.
  */
-export function FramedImage({ asset, frame, fit = 'cover', className, style }: Props) {
+export function FramedImage({ asset, frame, fit = 'cover', className, style,alt='' }: Props) {
   const imageRef = useRef<HTMLImageElement>(null);
   const resolved = normalizeImageFrame(frame);
+  const {scale,offsetX,offsetY,panX,panY}=resolved;
 
   useLayoutEffect(() => {
     const image = imageRef.current;
@@ -38,7 +42,7 @@ export function FramedImage({ asset, frame, fit = 'cover', className, style }: P
         asset.naturalHeight,
         measuredWidth > 0 ? measuredWidth : container.clientWidth,
         measuredHeight > 0 ? measuredHeight : container.clientHeight,
-        resolved,
+        {scale,offsetX,offsetY,panX,panY},
         fit,
       );
       if (!geometry.width || !geometry.height) return;
@@ -64,18 +68,21 @@ export function FramedImage({ asset, frame, fit = 'cover', className, style }: P
     };
   // normalizeImageFrame returns a new object. Depending on that object used to
   // measure every photograph and recreate its observer on every text edit.
-  }, [asset.naturalHeight, asset.naturalWidth, fit, resolved.scale, resolved.offsetX, resolved.offsetY]);
+  }, [asset.naturalHeight, asset.naturalWidth, fit, scale,offsetX,offsetY,panX,panY]);
 
   return (
     <img
       ref={imageRef}
       className={`framed-image${className ? ` ${className}` : ''}`}
       src={asset.src}
-      alt=""
+      alt={alt}
       draggable={false}
       data-frame-scale={resolved.scale}
       data-frame-x={resolved.offsetX}
       data-frame-y={resolved.offsetY}
+      data-frame-pan-x={resolved.panX}
+      data-frame-pan-y={resolved.panY}
+      data-image-free-pan={hasImagePan(resolved) ? 'true' : undefined}
       data-image-fit={fit}
       style={{
         position: 'absolute',

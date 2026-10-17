@@ -22,9 +22,9 @@ const render=()=>act(async()=>root.render(<LoginBackground/>));
 const click=()=>act(async()=>host.querySelector<HTMLButtonElement>('button')!.click());
 
 describe('lightweight decorative login video',()=>{
-  it('uses the local silent low-resolution clip, with no player SDK or interactive video surface',async()=>{
+  it('uses a small local HD desktop clip, with no player SDK or interactive video surface',async()=>{
     await render();const video=host.querySelector('video')!;
-    expect(video.getAttribute('src')).toBe('/media/login-network.mp4');expect(video.poster).toContain('login-network-poster.jpg');
+    expect(video.getAttribute('src')).toBe('/media/login-network-hd.mp4');expect(video.poster).toContain('login-network-hd-poster.jpg');
     expect(video.muted).toBe(true);expect(video.loop).toBe(true);expect(video.playsInline).toBe(true);expect(video.preload).toBe('none');
     expect(video.controls).toBe(false);expect(video.tabIndex).toBe(-1);expect(video.closest('[aria-hidden=true]')).not.toBeNull();
     expect(play).toHaveBeenCalled();expect(host.querySelector('button')!.textContent).toBe('Pause animation');
@@ -34,8 +34,8 @@ describe('lightweight decorative login video',()=>{
     if(preference==='save-data')connection.saveData=true;
     if(preference==='slow-network')connection.effectiveType='2g';
     await render();expect(host.querySelector('video')!.hasAttribute('src')).toBe(false);expect(play).not.toHaveBeenCalled();
-    expect(host.querySelector('.admin-login-background')!.getAttribute('style')).toContain('login-network-poster.jpg');
-    await click();expect(host.querySelector('video')!.getAttribute('src')).toBe('/media/login-network.mp4');expect(play).toHaveBeenCalled();
+    expect(host.querySelector('.admin-login-background')!.getAttribute('style')).toContain('login-network-hd-poster.jpg');
+    await click();expect(host.querySelector('video')!.getAttribute('src')).toBe(preference==='slow-network'?'/media/login-network.mp4':'/media/login-network-hd.mp4');expect(play).toHaveBeenCalled();
   });
   it('pauses hidden tabs, resumes visible tabs, and keeps a manual pause across tab switches',async()=>{
     await render();const started=play.mock.calls.length;

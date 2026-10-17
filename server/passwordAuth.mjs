@@ -50,9 +50,19 @@ export function verifyPassword(password, encoded) {
 
 /** In-memory sessions and failed-login throttling. Restarting the process
  * invalidates sessions, while the password verifier remains in .env. */
-export function createAuth({ passwordHash, now = Date.now }) {
+export function createAuth({ passwordHash, now = Date.now, readPasswordHash=()=>undefined, writePasswordHash }) {
   const sessions = new Map();
   const attempts = new Map();
+  const activeHash=()=>readPasswordHash()??passwordHash;
+  const fingerprint=hash=>createHash('sha256').update(hash??'').digest('hex');
+  const throttle=ip=>{
+    const key=ip||'unknown',rate=attempts.get(key)??{count:0,expires:now()+600_000};
+    if(rate.expires<now()){rate.count=0;rate.expires=now()+600_000;}
+    rate.count++;attempts.set(key,rate);
+    if(rate.count>20)throw Object.assign(new Error('Too many password attempts. Try again later.'),{status:429});
+    return key;
+  };
+  const issue=()=>{const secret=token(),csrf=token();sessions.set(secret,{csrf,expires:now()+8*3_600_000,credential:fingerprint(activeHash())});return {secret,csrf};};
   const prune = () => {
     for (const map of [sessions, attempts]) {
       for (const [id, item] of map) if (item.expires < now()) map.delete(id);
@@ -64,23 +74,28 @@ export function createAuth({ passwordHash, now = Date.now }) {
     close() { clearInterval(timer); },
     async login(password, ip) {
       prune();
-      if (!passwordHash) throw Object.assign(new Error('Admin password is not configured. Set MAGAZOO_ADMIN_PASSWORD_HASH on the server.'), { status: 503 });
-      const key = ip || 'unknown';
-      const rate = attempts.get(key) ?? { count: 0, expires: now() + 600_000 };
-      if (rate.expires < now()) { rate.count = 0; rate.expires = now() + 600_000; }
-      rate.count += 1;
-      attempts.set(key, rate);
-      if (rate.count > 20) throw Object.assign(new Error('Too many login attempts. Try again later.'), { status: 429 });
-      if (!verifyPassword(password, passwordHash)) return null;
+      const hash=activeHash();
+      if (!hash) throw Object.assign(new Error('Admin password is not configured. Set MAGAZOO_ADMIN_PASSWORD_HASH on the server.'), { status: 503 });
+      const key=throttle(ip);
+      if (!verifyPassword(password, hash)) return null;
       attempts.delete(key);
-      const secret = token();
-      const csrf = token();
-      sessions.set(secret, { csrf, expires: now() + 8 * 3_600_000 });
-      return { secret, csrf };
+      return issue();
+    },
+    changePassword(current,next,confirmation,ip){
+      if(typeof current!=='string'||!current.length||current.length>512||typeof next!=='string'||next.length<15||next.length>512||next.trim().length<15)
+        throw Object.assign(new Error('Use a new password or passphrase of 15–512 characters.'),{status:400});
+      if(next!==confirmation)throw Object.assign(new Error('The new passwords do not match.'),{status:400});
+      const previous=readPasswordHash(),hash=previous??passwordHash,key=throttle(ip);
+      if(!verifyPassword(current,hash))throw Object.assign(new Error('Current password is incorrect.'),{status:401});
+      if(current===next)throw Object.assign(new Error('Choose a different new password.'),{status:400});
+      if(!writePasswordHash)throw Object.assign(new Error('Password storage is unavailable. Deploy the complete server folder.'),{status:503});
+      const replacement=hashPassword(next);
+      if(!writePasswordHash(previous,replacement))throw Object.assign(new Error('The password changed in another session. Sign in again.'),{status:409});
+      sessions.clear();attempts.delete(key);return issue();
     },
     session(secret) {
       const item = sessions.get(secret);
-      return item && item.expires >= now() ? item : null;
+      return item && item.expires >= now() && item.credential===fingerprint(activeHash()) ? item : null;
     },
     logout(secret) { sessions.delete(secret); },
   };

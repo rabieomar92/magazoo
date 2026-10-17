@@ -4,7 +4,7 @@ import { LabeledColor, LabeledInput, LabeledSelect, LabeledTextarea, Section } f
 import { supportsArticleHeaderWidth } from '../../lib/articleHeaderWidth';
 import type { Design } from '../../schema/document';
 
-export function MetaSection() {
+export function MetaSection({headingOnly=false}:{headingOnly?:boolean}) {
   const meta = useDoc((s) => s.doc.meta);
   const isMag = useDoc((s) => familyOf(s.doc.templateId) === 'magazine');
   const isGallery = useDoc((s) => familyOf(s.doc.templateId) === 'gallery');
@@ -28,7 +28,7 @@ export function MetaSection() {
     });
 
   return (
-    <Section title={isGallery ? 'Header' : isNews ? 'Page header (optional)' : isBoard ? 'Editorial page text' : 'Title & Author'} collapsible defaultOpen={false}>
+    <Section title={isGallery ? 'Header' : isNews ? 'Page header (optional)' : isBoard ? 'Editorial page text' : 'Title & Author'} collapsible defaultOpen={headingOnly}>
       {hasHeaderWidth && <>
         <LabeledSelect label="Heading box width" value={headerWidth === undefined ? 'template' : String(headerWidth)} options={[
           {value:'template',label:'Template default'},
@@ -39,16 +39,16 @@ export function MetaSection() {
         })}/>
         <p className="hint">Title, subtitle, author and affiliation share this width on a four-column page grid. Text reflows at its existing font size. Template default restores the original composition.</p>
       </>}
-      <LabeledInput
+      {!headingOnly&&<LabeledInput
         label="Top bar text"
         editorTarget="meta-masthead"
         value={meta.masthead ?? ''}
         onChange={set('masthead')}
         placeholder="Publication or section name"
-      />
+      />}
 
       {isGallery ? (
-        <LabeledColor editorTarget="design-topbar" label="Bar color" value={barColor} onChange={setBarColor} />
+        !headingOnly&&<LabeledColor editorTarget="design-topbar" label="Bar color" value={barColor} onChange={setBarColor} />
       ) : (
         <>
           <LabeledInput

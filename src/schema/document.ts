@@ -1,3 +1,5 @@
+import type { ImageFrame } from '../lib/imageFrame';
+
 export const SCHEMA_VERSION = 1;
 export const DEFAULT_TOP_BAR_OFFSET = 10;
 
@@ -158,7 +160,7 @@ export type Block =
        * reframe a photo without changing the tile size. Absent = fill (scale 1,
        * no shift). scale is 0.5–3; offsets are percent of the box.
        */
-      frame?: { scale: number; offsetX: number; offsetY: number };
+      frame?: ImageFrame;
     };
 
 export interface Asset {
@@ -186,7 +188,7 @@ export interface PlacedImage {
   /** Caption text alignment. Absent = left for old/imported images. */
   align?: 'left' | 'center' | 'right';
   /** Zoom/pan inside the placed rectangle. Absent = centred 1× fill. */
-  frame?: { scale: number; offsetX: number; offsetY: number };
+  frame?: ImageFrame;
   /**
    * Text normally avoids the image's complete rectangular box. `contour`
    * keeps the same page-image and pagination machinery, but lets each occupied
@@ -568,7 +570,7 @@ export interface FrontMatter {
   contact: string;
   /** Publication mark used by the editorial-board page. Kept separate from
    * the article hero/cover so changing templates can never replace either. */
-  logo?: { assetId: string | null; offsetX: number; offsetY: number; scale: number };
+  logo?: ImageFrame & { assetId: string | null };
   /** The publication mark participates in the About-copy flow instead of
    * being pinned to the page. Width is millimetres within the current column. */
   logoWidth?: number;
@@ -581,7 +583,7 @@ export interface FrontMatter {
    * editorial column so following copy wraps beside it; sides are RTL-aware. */
   logoWrap?: 'block' | 'start' | 'end';
   /** Optional handwritten signature, independent from all other image slots. */
-  signature?: { assetId: string | null; offsetX: number; offsetY: number; scale: number };
+  signature?: ImageFrame & { assetId: string | null };
   signatureWidth?: number;
   /** Non-destructive source crop in fractions (0–1). The embedded original is retained. */
   signatureCrop?: { x: number; y: number; width: number; height: number };
@@ -596,7 +598,7 @@ export interface FrontMatter {
 /** Content owned by the dedicated back-cover composition. Images are optional
  * so a new issue can be written before the final QR/logo artwork is available.
  * The two image frames are deliberately independent from hero/cover slots. */
-export interface BackCoverImage {
+export interface BackCoverImage extends ImageFrame {
   assetId: string | null;
   offsetX: number;
   offsetY: number;
@@ -700,7 +702,7 @@ export interface NewsStory {
    *  Missing entries mean no extra spacing. */
   paragraphTops?: number[];
   assetId?: string;
-  frame?: { scale: number; offsetX: number; offsetY: number };
+  frame?: ImageFrame;
   breakBefore?: boolean;
 }
 
@@ -780,13 +782,13 @@ export interface Doc {
   highlightBox?: PlacedHighlights;
   highlights: string[];
   references: Reference[];
-  hero: { assetId: string | null; offsetX: number; offsetY: number; scale: number };
+  hero: ImageFrame & { assetId: string | null };
   /**
    * Page-1 cover photo, distinct from the page-2 hero. Only magazine-1/-3/-4 read
    * it (their MagazineCover). Absent = fall back to `hero`, so v1 files and the
    * other templates keep their look — the cover only diverges once it's set.
    */
-  cover?: { assetId: string | null; offsetX: number; offsetY: number; scale: number };
+  cover?: ImageFrame & { assetId: string | null };
   assets: Record<string, Asset>;
   design: Design;
 }

@@ -8,6 +8,7 @@ import { AdminIcon } from './AdminIcon';
 import { Wordmark } from '../components/Wordmark';
 import { MagazooLoader } from '../components/MagazooLoader';
 import {LoginBackground} from './LoginBackground';
+import {PasswordDialog} from './PasswordDialog';
 const IssueWorkspace = lazy(() => import('../issue/IssueWorkspace'));
 
 const api = async (path: string, csrf: string, method = 'GET', data?: unknown) => {
@@ -40,6 +41,7 @@ export default function AdminPage() {
   const [notice, setNotice] = useState('');
   const [busy, setBusy] = useState(false);
   const [password, setPassword] = useState('');
+  const [passwordSettings,setPasswordSettings]=useState(false);
   const [name, setName] = useState('');
   const [itemName, setItemName] = useState('');
   const [projectId, setProjectId] = useState('');
@@ -81,7 +83,7 @@ export default function AdminPage() {
     {csrf&&busy && <div className="admin-loading"><MagazooLoader variant="banner" label="Working… Please wait." /></div>}
     {csrf&&<header className="admin-header">
       <div className="admin-header-identity"><a className="admin-brand" href={`${import.meta.env.BASE_URL}#admin`} aria-label="Magazoo admin home"><Wordmark /></a><span className="admin-header-divider"/><div className="admin-workspace-name"><strong>Editorial workspace</strong><span>Magazoo! Studio</span></div></div>
-      <nav aria-label="Workspace"><a href={`${import.meta.env.BASE_URL}#editor`}>Open editor<AdminIcon name="arrow"/></a>{csrf && <><span className="admin-role"><span/>Administrator</span><button disabled={busy} onClick={() => void run(async () => { await api('auth/logout', csrf, 'POST'); setCsrf(''); setProjects([]); setCreator(null); })}>Log out</button></>}</nav>
+      <nav aria-label="Workspace"><a href={`${import.meta.env.BASE_URL}#editor`}>Open editor<AdminIcon name="arrow"/></a>{csrf && <><span className="admin-role"><span/>Administrator</span><button disabled={busy} onClick={()=>setPasswordSettings(true)}>Change password</button><button disabled={busy} onClick={() => void run(async () => { await api('auth/logout', csrf, 'POST'); setCsrf(''); setProjects([]); setCreator(null); })}>Log out</button></>}</nav>
     </header>}
     <div className={`admin-content${!csrf?' admin-content--signin':''}`}>
       {csrf&&<div className="admin-intro">
@@ -97,7 +99,7 @@ export default function AdminPage() {
           <button className="primary" disabled={busy || password.length < 8}>{busy ? 'Signing in…' : 'Sign in to workspace'}<AdminIcon name="arrow"/></button>
         </form>}</div>
         <a className="admin-login-editor" href={`${import.meta.env.BASE_URL}#editor`}>Open editor<AdminIcon name="arrow"/></a>
-      </section><LoginBackground/></> : <>
+      </section><LoginBackground enabled={checked}/></> : <>
         <div className="admin-overview" aria-label="Library overview">
           <div><span className="admin-stat-icon"><AdminIcon name="article"/></span><div><strong>{count}</strong><span>{count === 1 ? 'Article' : 'Articles'}</span></div></div>
           <div><span className="admin-stat-icon"><AdminIcon name="folder"/></span><div><strong>{projects.length}</strong><span>{projects.length === 1 ? 'Project' : 'Projects'}</span></div></div>
@@ -118,6 +120,7 @@ export default function AdminPage() {
       </>}
       {csrf&&<footer className="admin-footnote"><span>Keep regular server backups. Deleting a project revokes its article links.</span></footer>}
     </div>
+    {csrf&&passwordSettings&&<PasswordDialog close={()=>setPasswordSettings(false)} save={async data=>{const renewed=await api('auth/password',csrf,'POST',data);setCsrf(renewed.csrf);setNotice('Password changed. Other administrator sessions have been signed out.');}}/>}
     {deleting && <DeleteDialog target={deleting} close={() => setDeleting(null)} remove={() => run(async () => { await api(deleting.path, csrf, 'DELETE', {confirmation:deleting.name}); setDeleting(null); await refresh(); setNotice('Deleted. Affected editing links have been revoked.'); })} />}
     {renaming && <RenameProjectDialog name={renaming.name} close={() => setRenaming(null)} rename={async name => { await api(`projects/${renaming.id}`, csrf, 'PATCH', {name, previousName:renaming.name}); setRenaming(null); await run(async () => { await refresh(); setNotice('Project renamed. Existing editing links are unchanged.'); }); }} />}
   </main>;

@@ -50,7 +50,7 @@ export function MagSplitCover({ doc, vars, pieces }: Props) {
       </div>
       {photo && (
         <div className="mag2-strip" data-editor-tab="images" data-editor-target="image-hero">
-          <SpreadPhotoImage asset={photo} geometry={stripGeometry} />
+          <SpreadPhotoImage asset={photo} geometry={stripGeometry} frame={doc.hero}/>
           {doc.meta.photoCredit && <span className="mag2-strip-credit" data-editor-tab="content" data-editor-target="meta-photo-credit">PHOTO — {doc.meta.photoCredit}</span>}
         </div>
       )}
@@ -84,7 +84,7 @@ export function MagPhotoPage({
       data-editor-tab={photo ? 'images' : undefined}
       data-editor-target={photo ? 'image-hero' : undefined}
     >
-      {photo && <SpreadPhotoImage asset={photo} geometry={photoGeometry} behind />}
+      {photo && <SpreadPhotoImage asset={photo} geometry={photoGeometry} frame={doc.hero} behind />}
       {!photo && <MagTopBar doc={doc} pageIndex={pageIndex} fullBleed={false} />}
       {photo && <div className="mag2-photo-captions">
         {doc.meta.location && <span className="mag2-photo-tag" data-editor-tab="content" data-editor-target="meta-location">{doc.meta.location}</span>}

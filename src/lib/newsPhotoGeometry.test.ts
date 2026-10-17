@@ -27,6 +27,13 @@ describe('news image print geometry', () => {
     expect(brief.height).toBe(44);
     expect(newsPhotoFrameMetrics(story, asset, design, 3).width).toBe(134);
   });
+  it('accounts for contained-image zoom only after free framing is explicitly enabled', () => {
+    const frame={scale:2,offsetX:0,offsetY:0};
+    const legacy=newsPhotoFrameMetrics({...story,photoHeight:88,photoFit:'contain',frame},asset,design);
+    const panned=newsPhotoFrameMetrics({...story,photoHeight:88,photoFit:'contain',frame:{...frame,panX:30,panY:-20}},asset,design);
+    expect(panned.width).toBe(legacy.width);expect(panned.height).toBe(legacy.height);
+    expect(panned.ppi).toBeCloseTo(legacy.ppi!/2);
+  });
   it('does not claim pixel resolution for vector artwork', () => {
     expect(newsPhotoFrameMetrics(story, { ...asset, src: 'data:image/svg+xml;charset=utf-8,%3Csvg' }, design).ppi).toBeNull();
   });

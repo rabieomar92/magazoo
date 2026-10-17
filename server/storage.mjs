@@ -48,6 +48,7 @@ export function openStorage(filename, lockOptions) {
   // never recreate a table or reset an existing arrangement or document.
   const issueColumns = db.prepare('PRAGMA table_info(project_issues)').all();
   if (!issueColumns.some(column => column.name === 'finalized')) db.exec('ALTER TABLE project_issues ADD COLUMN finalized TEXT');
+  db.exec('CREATE TABLE IF NOT EXISTS app_settings (key TEXT PRIMARY KEY,value TEXT NOT NULL)');
   const locks = editLocks(db, lockOptions);
   const sharedRow = secret => {
     const row = db.prepare('SELECT id,name,body,version FROM documents WHERE token=?').get(secret);
@@ -56,10 +57,16 @@ export function openStorage(filename, lockOptions) {
   };
   const listProjects=db.prepare('SELECT id,name,created FROM projects ORDER BY created DESC');
   const listDocuments=db.prepare('SELECT projectId,id,name,token,version,updated FROM documents ORDER BY name');
+  const labels=new Map();
+  const readLabel=db.prepare("SELECT CASE WHEN json_valid(body) THEN json_extract(body,'$.meta.categoryLabel') END AS category, CASE WHEN json_valid(body) THEN json_extract(body,'$.templateId') END AS templateId FROM documents WHERE id=?");
   const list=()=>{
     const projects=listProjects.all().map(project=>({...project,items:[]}));
     const byId=new Map(projects.map(project=>[project.id,project]));
-    for(const {projectId,...item} of listDocuments.all())byId.get(projectId)?.items.push(item);
+    for(const {projectId,...item} of listDocuments.all()){
+      let label=labels.get(item.id);
+      if(label?.version!==item.version){const row=readLabel.get(item.id);label={version:item.version,category:typeof row?.category==='string'?row.category.slice(0,160):'',templateId:typeof row?.templateId==='string'?row.templateId:''};if(labels.size>512)labels.clear();labels.set(item.id,label);}
+      byId.get(projectId)?.items.push({...item,category:label.category,templateId:label.templateId});
+    }
     return projects;
   };
   const transaction = (write, run) => {
@@ -100,6 +107,15 @@ export function openStorage(filename, lockOptions) {
     return { snapshot, plan: validateIssuePlan(plan, snapshot.items) };
   };
   return {close:()=>db.close(),list,
+    adminPasswordHash(){return db.prepare("SELECT value FROM app_settings WHERE key='admin-password-hash'").get()?.value;},
+    changeAdminPasswordHash(expected,replacement){
+      return transaction(true,()=>{
+        const current=db.prepare("SELECT value FROM app_settings WHERE key='admin-password-hash'").get()?.value;
+        if(current!==expected)return false;
+        db.prepare("INSERT INTO app_settings(key,value) VALUES('admin-password-hash',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value").run(replacement);
+        return true;
+      });
+    },
     readIssue(projectId) { return transaction(false, () => issueSnapshot(projectId)); },
     saveIssue(projectId, version, plan) {
       return transaction(true, () => {

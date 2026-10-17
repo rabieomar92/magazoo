@@ -7,10 +7,11 @@ import { ALL_FONTS, fontOptions } from '../../lib/fonts';
 import { LabeledColor, LabeledInput, LabeledNumber, LabeledSelect, Section, Toggle } from '../Field';
 import { TypographyControl } from '../TypographyToolbar';
 
-export function PageMarginTextSection() {
+export function PageMarginTextSection({expanded=false,initialPage=1}:{expanded?:boolean;initialPage?:number}) {
   const doc = useDoc(s => s.doc);
   const update = useDoc(s => s.update);
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(initialPage);
+  useEffect(()=>setPage(initialPage),[initialPage]);
   const settings = marginTextSettings(doc);
   const set = <K extends keyof PageMarginTextSettings>(key: K, value: PageMarginTextSettings[K]) =>
     update(d => { d.marginText = { ...d.marginText, [key]: value }; });
@@ -26,7 +27,7 @@ export function PageMarginTextSection() {
   }, []);
 
   const text = settings.mode === 'all' ? doc.marginText?.text ?? '' : doc.marginText?.pages?.[String(page)] ?? '';
-  return <Section title="Page margin text" collapsible defaultOpen={false}>
+  return <Section title="Page margin text" collapsible defaultOpen={expanded}>
     <Toggle label="Show vertical margin text" checked={settings.enabled} onChange={v => set('enabled', v)} />
     <p className="hint">Optional small vertical text for a copyright notice, photo credit or source. It sits outside the text columns.</p>
     {settings.enabled && <>

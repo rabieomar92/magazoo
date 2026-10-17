@@ -1,6 +1,10 @@
 import { familyOf, type TemplateId } from '../schema/document';
 import { fitMessage, type Pagination, type Piece } from './paginate';
 
+/** Obstacle columns are a complete derived layout, not spliceable paragraphs.
+ * A legacy tail repair must not push a neighbouring paragraph into this grid. */
+export const hasObstacleColumns=(pages:Piece[][])=>pages.some(pieces=>pieces.some(piece=>piece.kind==='image-columns'));
+
 /** Fullness belongs to the last flow region; the count must include physical
  * cover/photo sheets and separately placed content as the preview does. */
 export function physicalPageFit(pagination: Pagination, physicalCount: number) {

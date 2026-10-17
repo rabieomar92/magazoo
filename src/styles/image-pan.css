@@ -1,0 +1,18 @@
+/* UI previews only; photo geometry and clipping remain real HTML in print. */
+.image-pan-preview {position:relative;flex:none;max-height:none;min-height:0;margin:0 auto 8px;overflow:hidden;border:1px solid #cbd5e1;border-radius:8px;cursor:grab;touch-action:none;user-select:none;outline-offset:3px;}
+.image-pan-preview:focus-visible {outline:2px solid #5344ec;}
+.image-pan-preview[data-panning] {cursor:grabbing;}
+.image-pan-preview[aria-disabled="true"] {cursor:default;}
+.image-pan-controls {border:0;padding:0;margin:0;min-width:0;}
+.image-pan-preview img {pointer-events:none;max-width:none;max-height:none;}
+.image-pan-preview-hint {position:absolute;right:7px;bottom:7px;padding:4px 7px;border-radius:5px;background:#152033d9;color:white;font:600 10px/1.3 system-ui,sans-serif;pointer-events:none;}
+.image-pan-coordinates {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
+.image-pan-coordinates .field {align-items:stretch;flex-direction:column;gap:4px;}
+.image-pan-coordinates .field-input {width:100%;}
+.app .panel .image-pan-coordinates .field {display:grid;grid-template-columns:minmax(0,1fr);align-items:start;gap:5px;margin:0;}
+.app .panel .image-pan-coordinates .field-label {flex:none;min-height:0;}
+.app .panel .image-pan-coordinates .field-input--num {flex:none;width:100%;height:36px;min-height:36px;max-height:36px;}
+/* New free-pan adjustments reveal the actual sheet, not a grey tile or a
+   template's old hero placeholder colour. Untouched legacy crops stay intact. */
+.page :has(>img[data-image-free-pan="true"]) {background:transparent!important;}
+.page:has(>img[data-image-free-pan="true"]) {background-color:var(--paper-bg,#fff)!important;}

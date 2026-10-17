@@ -13,6 +13,7 @@ import {
   type NewsColumnCount,
 } from '../../lib/newsLayout';
 import { NewsImageEditor } from './NewsImageEditor';
+import {ImageDeck} from '../ImageDeck';
 import { NewsOverview } from './NewsOverview';
 import { useNewsProof } from '../../store/newsProof';
 import {
@@ -356,7 +357,7 @@ export function NewsImages() {
     () => new Set(stories[0] ? [stories[0].id] : []),
   );
   return <>{stories.length
-    ? <div className="news-editor-list">{stories.map((story, index) => <StoryImage key={story.id}
+    ? <ImageDeck label="News image" names={stories.map((story,index)=>`${index+1} · ${story.title||'Untitled brief'}`)}>{stories.map((story, index) => <StoryImage key={story.id}
       story={story} index={index} open={openStories.has(story.id)} onOpenChange={isOpen => {
         setOpenStories(current => {
           if (current.has(story.id) === isOpen) return current;
@@ -365,6 +366,6 @@ export function NewsImages() {
           else next.delete(story.id);
           return next;
         });
-      }} />)}</div>
+      }} />)}</ImageDeck>
     : <p className="hint">Add a brief in Content first.</p>}</>;
 }

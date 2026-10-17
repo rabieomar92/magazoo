@@ -2,6 +2,7 @@ import type { CSSProperties } from 'react';
 import type { Asset, NewsStory } from '../schema/document';
 import { newsCustomPhotoHeight } from '../lib/newsPhotoGeometry';
 import { FramedImage } from './FramedImage';
+import {hasImagePan} from '../lib/imageFrame';
 
 interface Props {
   story: NewsStory;
@@ -27,9 +28,9 @@ export function NewsPhoto({ story, asset, preview = false }: Props) {
   return <div className="news-photo" style={style} data-news-photo-fit={fit}
     role={fit === 'cover' && story.photoAlt ? 'img' : undefined}
     aria-label={fit === 'cover' && story.photoAlt ? story.photoAlt : undefined}>
-    {fit === 'contain'
+    {fit === 'contain'&&!hasImagePan(story.frame)
       ? <img src={asset.src} alt={story.photoAlt ?? ''} draggable={false}
         style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain', objectPosition: 'center', display: 'block' }} />
-      : <FramedImage asset={asset} frame={story.frame} />}
+      : <FramedImage asset={asset} frame={story.frame} fit={fit} alt={story.photoAlt??''}/>}
   </div>;
 }

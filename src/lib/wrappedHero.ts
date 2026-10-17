@@ -3,6 +3,7 @@ import { grid } from './geometry';
 import { articleGridDesign, articlePageHeight, isReferenceArticle } from './articleLayouts';
 import { pageDimensions } from './pageFormat';
 import { heroCaptionText } from './heroCaption';
+import { normalizeImageFrame } from './imageFrame';
 
 /** Reuse the existing asset/crop; changing image placement never rewrites or
  * recompresses the source photograph, caption or authored body copy. */
@@ -14,6 +15,6 @@ export function wrappedHeroImage(doc: Doc, id: string): PlacedImage | null {
   return { id,assetId:doc.hero.assetId,caption:heroCaptionText(doc),
     widthCols:Math.min(2,grid(design).totalCols) as PlacedImage['widthCols'],
     heightMm:Math.min(Math.max(20,design.heroHeight),pageHeight-y-design.margin),
-    anchor:{page:1,column:0,y},frame:{scale:doc.hero.scale,offsetX:doc.hero.offsetX,offsetY:doc.hero.offsetY},
+    anchor:{page:1,column:0,y},frame:normalizeImageFrame(doc.hero),
     wrapShape:'polygon',wrapPolygon:[{x:0,y:0},{x:100,y:0},{x:100,y:100},{x:0,y:100}],align:'left' };
 }

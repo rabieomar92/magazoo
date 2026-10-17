@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react';
 import type { Asset } from '../schema/document';
 import type { SplitPhoto } from '../lib/magSplit';
+import {hasImagePan,type ImageFrame} from '../lib/imageFrame';
 
 interface Props {
   asset: Asset;
@@ -8,6 +9,7 @@ interface Props {
   className?: string;
   /** Shift this full-page image below artwork/content layers, like a CSS background. */
   behind?: boolean;
+  frame?: Partial<ImageFrame>;
 }
 
 /**
@@ -19,7 +21,7 @@ interface Props {
  * Explicit millimetre geometry preserves the exact old crop and seam while a
  * real <img> gives the browser (and PDF readiness checks) a reliable resource.
  */
-export function SpreadPhotoImage({ asset, geometry, className, behind = false }: Props) {
+export function SpreadPhotoImage({ asset, geometry, className, behind = false,frame }: Props) {
   const style: CSSProperties = {
     position: 'absolute',
     left: `${geometry.x}mm`,
@@ -41,6 +43,7 @@ export function SpreadPhotoImage({ asset, geometry, className, behind = false }:
       className={`spread-photo-image${className ? ` ${className}` : ''}`}
       src={asset.src}
       alt=""
+      data-image-free-pan={hasImagePan(frame)?'true':undefined}
       draggable={false}
       decoding="async"
       style={style}

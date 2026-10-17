@@ -1,16 +1,19 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { NewsPhoto } from '../../components/NewsPhoto';
 import { assetIsReferenced, uid, type NewsStory } from '../../schema/document';
-import { normalizeImageFrame } from '../../lib/imageFrame';
+import { hasImagePan,normalizeImageFrame } from '../../lib/imageFrame';
 import { loadImage, ImageLoadError } from '../../lib/loadImage';
 import { newsPhotoPosition, newsStoryWidth, pairsWithPrevious, type NewsColumnCount } from '../../lib/newsLayout';
 import { newsCustomPhotoHeight, newsPhotoFrameMetrics } from '../../lib/newsPhotoGeometry';
 import { useDoc } from '../../store/useDoc';
 import { LabeledInput, LabeledNumber, LabeledRange, LabeledTextarea, SegmentField } from '../Field';
 import { MagazooLoader } from '../../components/MagazooLoader';
+import {ImagePanControls,ImagePanPreview} from '../ImagePanControls';
+import {usePdfPreferences} from '../../store/pdfPreferences';
 
 export function NewsImageEditor({ story }: { story: NewsStory }) {
   const doc = useDoc(state => state.doc);
+  const pdfSize=usePdfPreferences(s=>s.size);
   const update = useDoc(state => state.update);
   const asset = story.assetId ? doc.assets[story.assetId] : undefined;
   const fileRef = useRef<HTMLInputElement>(null);
@@ -35,7 +38,8 @@ export function NewsImageEditor({ story }: { story: NewsStory }) {
   const photo = newsPhotoPosition(story, storyColumns);
   const frame = normalizeImageFrame(story.frame);
   const fit = story.photoFit ?? 'cover';
-  const metrics = asset ? newsPhotoFrameMetrics(story, asset, doc.design, storyColumns) : null;
+  const cropFrame=fit==='contain'&&!hasImagePan(story.frame)?{...frame,scale:1,offsetX:0,offsetY:0}:frame;
+  const metrics = asset ? newsPhotoFrameMetrics(story, asset, {...doc.design,pageFormat:pdfSize}, storyColumns) : null;
   const heightMode = story.photoHeight === 0 ? 'natural' : story.photoHeight === undefined ? 'theme' : 'custom';
 
   const upload = async (file?: File) => {
@@ -81,9 +85,12 @@ export function NewsImageEditor({ story }: { story: NewsStory }) {
     <input type="file" ref={fileRef} accept="image/*" hidden
       onChange={event => { void upload(event.target.files?.[0]); event.target.value = ''; }} />
     {asset && metrics && <>
-      <div className="news-photo-preview" style={{ '--news-photo-aspect': metrics.aspectRatio } as CSSProperties}>
-        <NewsPhoto story={story} asset={asset} preview />
-      </div>
+      <ImagePanPreview key={story.assetId} label="News image crop preview" frame={cropFrame} aspectRatio={metrics.aspectRatio} background={doc.design.paperBg}
+        onChange={pan=>change(item=>{item.frame={...cropFrame,...pan};})}>
+        {preview=><div className="news-photo-preview" style={{ '--news-photo-aspect': metrics.aspectRatio,background:'transparent',height:'100%' } as CSSProperties}>
+          <NewsPhoto story={{...story,frame:preview}} asset={asset} preview/>
+        </div>}
+      </ImagePanPreview>
       <p className="hint news-image-dimensions">
         {metrics.vector ? 'Vector image' : `${asset.naturalWidth.toLocaleString()} × ${asset.naturalHeight.toLocaleString()} pixels`}
         {' · '}{metrics.width.toFixed(1)} × {metrics.height.toFixed(1)} mm in print
@@ -127,15 +134,18 @@ export function NewsImageEditor({ story }: { story: NewsStory }) {
         })} />
       {heightMode === 'custom' && <LabeledNumber label="Printed frame height" unit="mm" value={newsCustomPhotoHeight(story.photoHeight!)}
         min={15} max={220} step={1} onChange={value => change(item => { item.photoHeight = newsCustomPhotoHeight(value); })} />}
-      {fit === 'cover' && <div className="news-photo-crop-controls">
-        <LabeledRange label="Image zoom" value={frame.scale} min={.5} max={3} step={.05} format={value => `${Math.round(value * 100)}%`}
-          onChange={value => change(item => { item.frame = { ...normalizeImageFrame(item.frame), scale: value }; })} />
+      <div className="news-photo-crop-controls">
+        <ImagePanControls frame={cropFrame} onChange={pan=>change(item=>{item.frame={...cropFrame,...pan};})}/>
+        <LabeledRange label="Image zoom" value={cropFrame.scale} min={.5} max={3} step={.05} format={value => `${Math.round(value * 100)}%`}
+          onChange={value => change(item => { item.frame = { ...cropFrame, scale: value,panX:cropFrame.panX??0,panY:cropFrame.panY??0 }; })} />
+        {fit==='cover'&&<details className="control-disclosure"><summary>Crop focus</summary>
         <LabeledRange label="Move horizontally" value={frame.offsetX} min={-50} max={50} step={1}
           onChange={value => change(item => { item.frame = { ...normalizeImageFrame(item.frame), offsetX: value }; })} />
         <LabeledRange label="Move vertically" value={frame.offsetY} min={-50} max={50} step={1}
           onChange={value => change(item => { item.frame = { ...normalizeImageFrame(item.frame), offsetY: value }; })} />
+        </details>}
         <button type="button" className="add-btn" onClick={() => change(item => { item.frame = { scale: 1, offsetX: 0, offsetY: 0 }; })}>Reset crop</button>
-      </div>}
+      </div>
     </>}
     <LabeledTextarea writingGuide label="Caption" editorTarget={`news-caption-${story.id}`} value={story.caption} rows={3}
       placeholder="Explain what the image shows."

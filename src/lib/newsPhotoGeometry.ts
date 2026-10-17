@@ -1,6 +1,6 @@
 import type { Asset, Design, NewsStory } from '../schema/document';
 import { pageDimensions } from './pageFormat';
-import { normalizeImageFrame } from './imageFrame';
+import { hasImagePan,normalizeImageFrame } from './imageFrame';
 import { newsPhotoPosition, newsPhotoSpan, newsStoryWidth } from './newsLayout';
 
 export function newsCustomPhotoHeight(height: number): number {
@@ -30,7 +30,7 @@ export function newsPhotoFrameMetrics(
       : Math.max(.1, legacyHeight);
   const fit = story.photoFit ?? 'cover';
   const scale = fit === 'contain'
-    ? Math.min(width / sourceWidth, height / sourceHeight)
+    ? Math.min(width / sourceWidth, height / sourceHeight)*(hasImagePan(story.frame)?normalizeImageFrame(story.frame).scale:1)
     : Math.max(width / sourceWidth, height / sourceHeight) * normalizeImageFrame(story.frame).scale;
   const vector = /^data:image\/svg\+xml(?:[;,]|$)/iu.test(asset.src);
   // Pixels per inch refers to the printed pixels after fitting and zooming,

@@ -12,6 +12,8 @@ import { editorTargetId, requestEditorTargetFocus } from '../../lib/editorNaviga
 import { splitCaption, joinCaption } from '../../lib/galleryCaption';
 import { MagazooLoader } from '../../components/MagazooLoader';
 import { WritingGuide } from '../WritingGuide';
+import {ImagePanControls,ImagePanPreview} from '../ImagePanControls';
+import {ImageDeck} from '../ImageDeck';
 
 const DEFAULT_FRAME = { scale: 1, offsetX: 0, offsetY: 0 };
 
@@ -163,7 +165,7 @@ export function GallerySection() {
       <p className="gallery-slot-hint">Upload to any image slot in any order. Other empty slots can stay empty.</p>
       <p className="gallery-slot-hint">Use Enter or <code>{'\\n'}</code> for a new line in descriptions. Focus a title or description for its text-alignment controls in the top toolbar.</p>
       {imageError && <p className="hint hint--warn" role="alert">{imageError}</p>}
-      {SLOTS.map((s, index) => {
+      <ImageDeck label="Gallery image" names={SLOTS.map(s=>`${s.label} · ${s.hint}`)}>{SLOTS.map((s, index) => {
         const n = s.slot ?? index;
         const bi = figIndex[n];
         const block = bi === undefined ? undefined : blocks[bi];
@@ -171,7 +173,6 @@ export function GallerySection() {
         const caption = block && block.type === 'figure' ? block.caption : '';
         const { title, desc } = splitCaption(caption);
         const frame = (block && block.type === 'figure' && block.frame) || DEFAULT_FRAME;
-        const frameGeometry = galleryFrameGeometry(frame);
         const canEditCaption = bi !== undefined && (!!asset || !!caption);
         const canFrame = bi !== undefined && !!asset;
         const isFold = n === FOLD_SLOT;
@@ -185,8 +186,11 @@ export function GallerySection() {
               <span className="gallery-slot-label">{s.label}</span>
               <span className="gallery-slot-hint">{s.hint}</span>
             </div>
-            <div className="figure-thumb gallery-slot-thumb">
+            <div>
               {asset ? (
+                <ImagePanPreview key={block?.type==='figure'?block.id+block.assetId:s.label} label={`${s.label} crop preview`} frame={frame} background={paperBg}
+                  onChange={pan=>update(d=>{const current=d.blocks[bi];if(current?.type==='figure')current.frame={...DEFAULT_FRAME,...current.frame,...pan};})}>
+                {preview=>{const frameGeometry=galleryFrameGeometry(preview);return (
                 <img
                   src={asset.src}
                   alt=""
@@ -199,7 +203,8 @@ export function GallerySection() {
                     objectFit: frameGeometry.objectFit,
                     objectPosition: `${frameGeometry.objectX}% ${frameGeometry.objectY}%`,
                   }}
-                />
+                />);}}
+                </ImagePanPreview>
               ) : (
                 <span className="figure-missing">No image</span>
               )}
@@ -257,6 +262,7 @@ export function GallerySection() {
             )}
             {canFrame && (
               <>
+                <ImagePanControls frame={frame} onChange={pan=>update(d=>{const current=d.blocks[bi];if(current?.type==='figure')current.frame={...DEFAULT_FRAME,...current.frame,...pan};})}/>
                 <LabeledRange label="Zoom" value={frame.scale} min={0.5} max={3} step={0.05} format={(v) => `${v.toFixed(2)}×`} onChange={setFrame(bi, 'scale')} />
                 <LabeledRange label="Shift horizontally" value={frame.offsetX} min={-50} max={50} step={1} format={(v) => `${v}%`} onChange={setFrame(bi, 'offsetX')} />
                 <LabeledRange label="Shift vertically" value={frame.offsetY} min={-50} max={50} step={1} format={(v) => `${v}%`} onChange={setFrame(bi, 'offsetY')} />
@@ -280,7 +286,7 @@ export function GallerySection() {
             )}
           </div>
         );
-      })}
+      })}</ImageDeck>
       {previousPhotos.length > 0 && <details className="gallery-previous-photos">
         <summary>Previous side photos ({previousPhotos.length})</summary>
         <p className="gallery-slot-hint">These photos are still saved, but are not printed in Gallery 2. Swap one into the tall slot to use it; the current tall photo is kept here instead.</p>

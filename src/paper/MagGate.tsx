@@ -57,7 +57,7 @@ export function MagGateA({ doc, vars }: { doc: Doc; vars: CSSProperties }) {
       data-editor-target={photo ? 'image-cover' : undefined}
     >
       <PageArtwork doc={doc} />
-      {photo && geometry && <SpreadPhotoImage asset={photo.asset} geometry={geometry} behind />}
+      {photo && geometry && <SpreadPhotoImage asset={photo.asset} geometry={geometry} frame={photo.frame} behind />}
       {photo && <div className="mag-gate-scrim mag-gate-scrim--a" />}
       <div className="mag-gate-inner" ref={placement.inner}>
         <TagBar doc={doc} pageIndex={0} detail={meta.volume} fullBleed />
@@ -105,7 +105,7 @@ export function MagGateB({ doc, vars }: { doc: Doc; vars: CSSProperties }) {
       data-editor-tab={photo ? 'images' : undefined}
       data-editor-target={photo ? 'image-cover' : undefined}
     >
-      {photo && geometry && <SpreadPhotoImage asset={photo.asset} geometry={geometry} behind />}
+      {photo && geometry && <SpreadPhotoImage asset={photo.asset} geometry={geometry} frame={photo.frame} behind />}
       {photo && <div className="mag-gate-scrim mag-gate-scrim--b" />}
       <div className="mag-gate-inner mag-gate-inner--b" ref={placement.inner}>
         {!photo && <MagTopBar doc={doc} pageIndex={1} />}

@@ -13,3 +13,8 @@ Pexels permits use and modification in websites and apps. No endorsement is impl
 
 These are application background assets, not an independent stock-media offering.
 The original high-resolution download is not part of the published application.
+
+Desktop HD rendition (17 October 2026): `login-network-hd.mp4` is 1920 × 1080,
+24 fps, silent H.264, fast-start, denoised and bitrate-capped; 1,848,598 bytes.
+Its 1080p poster is 193,827 bytes. Small screens and slower connections keep
+the 540p rendition. Reduced-motion/data-saving preferences use the still image.

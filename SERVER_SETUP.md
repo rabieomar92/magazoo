@@ -39,6 +39,20 @@ The password itself is never written to the project. Login sessions are
 HTTP-only, expire after eight hours, and are protected with CSRF tokens. Failed
 logins are throttled per client address.
 
+Administrators can choose **Change password** in the library header. It requires
+the current password and a confirmed new passphrase (15–512 characters), checks
+CSRF and origin, stores only a salted verifier in the existing SQLite database,
+and renews the current session while signing out other administrator sessions.
+It does not change article links or article JSON. Installing this update does
+not change the existing password: the environment verifier remains the fallback
+until an administrator explicitly changes it through the form.
+
+The data directory must remain persistent across deployments. Preserve the
+complete SQLite database in secure server backups: article-only JSON exports do
+not contain password settings. If hosting replaces the database, both articles
+and the saved password setting are lost, and login uses the environment verifier
+again. Never commit the database, password settings or `.env` to a new source push.
+
 ## Compile a complete magazine issue
 
 In the admin project library, choose **Compile issue** on a project. The issue

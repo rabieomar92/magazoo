@@ -37,7 +37,7 @@ function GatePositionEditor({ kind }: { kind: 'title' | 'text' }) {
   </Section>;
 }
 
-export function GateDesignSection() {
+export function GateDesignSection({headingsOnly=false}:{headingsOnly?:boolean}) {
   const doc = useDoc(s => s.doc);
   const update = useDoc(s => s.update);
   const { design, meta } = doc;
@@ -76,7 +76,7 @@ export function GateDesignSection() {
         <p className="hint">Credits stay at the foot of the facing page. Text positioning reserves space above them.</p>
       </div>
     </details>
-    <details className="gate-editor-group">
+    {!headingsOnly&&<details className="gate-editor-group">
       <summary>4 · Masthead & footer<span>Publication details, sides & edge distances</span></summary>
       <div className="gate-control-stack">
         <Section title="Masthead" editorTarget="design-topbar">
@@ -89,7 +89,7 @@ export function GateDesignSection() {
         </Section>
         <FooterSection />
       </div>
-    </details>
+    </details>}
     <p className="hint gate-editor-intro">Line height is a multiplier: 1.2 means 120% of the font size. Side insets mirror for Arabic. Large blocks move up if needed to protect credits and the footer.</p>
   </div>;
 }

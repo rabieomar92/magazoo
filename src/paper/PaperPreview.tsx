@@ -30,7 +30,7 @@ import { MAG2_STRIP } from '../lib/magSplit';
 import { paper2Grid, paper2Fit, paper2VerticalVars } from '../lib/paper2';
 import { defaultPlacedHighlights } from '../lib/placedHighlights';
 import { placedImageContour, placedImagePolygon, placedImageWrapGap } from '../lib/placedImage';
-import { physicalPageFit, populatedPhysicalPages } from '../lib/physicalFlowPages';
+import { physicalPageFit, populatedPhysicalPages,hasObstacleColumns } from '../lib/physicalFlowPages';
 import { requestEditorTargetFocus, type EditorTab } from '../lib/editorNavigation';
 import type { Mark } from '../lib/richtext';
 import { Page1 } from './Page1';
@@ -850,6 +850,11 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
       // offset by one.
       const pageOffset = isSplit ? 1 : 0;
       const src = pagination.pages;
+      // Complete, pre-paginated grids reserve obstacles at exact coordinates.
+      // Splicing a paragraph into a neighbouring grid moves that grid down and
+      // invalidates its exclusions. The glyph safety pass reflows these from
+      // source instead of using the legacy tail-paragraph repair.
+      if(hasObstacleColumns(src))return;
 
       const overflowIdx = boxes.findIndex(isBoxOverflowing);
       if (overflowIdx !== -1) {

@@ -11,6 +11,11 @@ import { emptyFrontMatter } from '../../store/frontMatter';
 import { emptyBackCover } from '../../store/backCover';
 import { MagazooLoader } from '../../components/MagazooLoader';
 import {heroCaptionPageDimensions} from '../../lib/heroCaptionPlacement';
+import {ImagePanControls,ImagePanPreview} from '../ImagePanControls';
+import {articleGeometry,isReferenceArticle} from '../../lib/articleLayouts';
+import {paper2Grid} from '../../lib/paper2';
+import {pageDimensions} from '../../lib/pageFormat';
+import {usePdfPreferences} from '../../store/pdfPreferences';
 
 type Frame = ImageFrame & { assetId: string | null };
 export type ImageSlot = 'hero' | 'cover' | 'frontmatter-logo' | 'frontmatter-signature' | 'backcover-qr' | 'backcover-logo';
@@ -49,6 +54,16 @@ export function ImagePicker({ slot, title, blurb, fit = 'cover', thumbAspectRati
   const placementKey=slot==='cover'&&!board?'coverCaptionPlacement':'heroCaptionPlacement';
   const placement=useDoc(s=>s.doc.design[placementKey]);
   const dimensions=heroCaptionPageDimensions(useDoc(s=>s.doc));
+  const doc=useDoc(s=>s.doc);
+  const pdfSize=usePdfPreferences(s=>s.size);
+  const previewDesign={...doc.design,pageFormat:pdfSize};
+  const page=pageDimensions(previewDesign);
+  const explicitRatio=thumbAspectRatio?.split('/').map(Number);
+  const printedHero=isReferenceArticle(doc.templateId)?articleGeometry(doc.templateId,previewDesign).image:null;
+  const previewRatio=explicitRatio?explicitRatio[0]/explicitRatio[1]:slot==='cover'?(doc.templateId==='magazine-3'?2:1)*page.width/page.height
+    :slot==='hero'&&doc.templateId==='magazine-2'?(page.width+45)/page.height
+    :slot==='hero'&&printedHero?printedHero.width/Math.max(1,printedHero.height)
+    :slot==='hero'?(doc.templateId==='paper-2'?paper2Grid(previewDesign).heroW:page.width)/Math.max(1,doc.design.heroHeight):1.5;
   const fileRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -146,9 +161,10 @@ export function ImagePicker({ slot, title, blurb, fit = 'cover', thumbAspectRati
 
       {asset ? (
         <>
-          {renderPreview ? renderPreview(asset) : <div className="hero-thumb" style={{ aspectRatio: thumbAspectRatio ?? (slot === 'cover' ? '210 / 297' : slot === 'backcover-qr' ? '1 / 1' : '16 / 7') }}>
-            <FramedImage asset={asset} frame={frame} fit={fit} />
-          </div>}
+          {renderPreview ? renderPreview(asset) : <ImagePanPreview key={frame.assetId} label={`${title} crop preview`} frame={frame} aspectRatio={previewRatio} background={doc.design.paperBg}
+            onChange={pan=>update(d=>setFrame(d,{...frameFor(d,slot),...pan}))}>
+            {preview=><FramedImage asset={asset} frame={preview} fit={fit}/>}
+          </ImagePanPreview>}
           <div className="hero-actions">
             <button type="button" className="add-btn" disabled={loading} onClick={() => fileRef.current?.click()}>
               {loading ? <MagazooLoader variant="inline" label="Optimising image…" /> : 'Replace image'}
@@ -175,14 +191,17 @@ export function ImagePicker({ slot, title, blurb, fit = 'cover', thumbAspectRati
               <button type="button" className="add-btn" onClick={()=>update(d=>{delete d.design[placementKey];})}>Reset caption position</button>
             </details>}
           </>}
-          {framing && <details className="control-disclosure"><summary>Crop & framing</summary><LabeledRange label="Shift horizontally" value={frame.offsetX} min={-50} max={50} step={1} format={(v) => `${v}%`} onChange={setKey('offsetX')} />
+          {framing && <details className="control-disclosure"><summary>Crop & framing</summary>
+          <ImagePanControls frame={frame} onChange={pan=>update(d=>setFrame(d,{...frameFor(d,slot),...pan}))}/>
+          <details className="control-disclosure"><summary>Crop focus</summary><LabeledRange label="Shift horizontally" value={frame.offsetX} min={-50} max={50} step={1} format={(v) => `${v}%`} onChange={setKey('offsetX')} />
           <LabeledRange label="Shift vertically" value={frame.offsetY} min={-50} max={50} step={1} format={(v) => `${v}%`} onChange={setKey('offsetY')} />
+          </details>
           <LabeledRange label="Zoom" value={frame.scale} min={0.5} max={3} step={0.05} format={(v) => `${v.toFixed(2)}×`} onChange={setKey('scale')} />
           <p className="hint">{fit === 'contain' ? '1× shows the complete image; zoom above 1× only when you want a tighter logo crop.' : 'Below 1× reveals more of the image; 1× fills the frame.'}</p>
           <button
             type="button"
             className="add-btn"
-            onClick={() => update((d) => setFrame(d, { ...frame, offsetX: 0, offsetY: 0, scale: 1 }))}
+            onClick={() => update((d) => setFrame(d, { ...frame, offsetX: 0, offsetY: 0, scale: 1,panX:undefined,panY:undefined }))}
           >
             Reset image framing
           </button>

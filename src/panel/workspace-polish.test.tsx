@@ -28,8 +28,12 @@ describe('progressive editor controls',()=>{
       act(()=>{useDoc.setState({doc});root.render(<Panel/>);});
       expect(host.querySelector('#editor-panel')).not.toBeNull();
       expect(host.querySelector('.panel-scroll')!.getAttribute('tabindex')).toBe('0');
-      const closed=Array.from(host.querySelectorAll<HTMLDetailsElement>('.section--disclosure')).filter(d=>!d.open).map(d=>d.querySelector('summary')!.textContent);
-      expect(closed).toContain('Title & Author');expect(closed).toContain('Page footer');
+      expect(host.querySelectorAll('[role=tab]')).toHaveLength(8);
+      expect(host.querySelector('#editor-target-meta-title')).toBeNull();
+      act(()=>host.querySelector<HTMLButtonElement>('[role=tab][aria-label="Headers"]')!.click());
+      expect(host.querySelector('#editor-target-meta-title')).not.toBeNull();
+      act(()=>host.querySelector<HTMLButtonElement>('[role=tab][aria-label="Footers"]')!.click());
+      expect(host.querySelector('#editor-target-footer-text')).not.toBeNull();
       act(()=>host.querySelector<HTMLButtonElement>('[role="tab"].panel-tab:nth-child(2)')!.click());
       const summaries=Array.from(host.querySelectorAll('.control-disclosure > summary')).map(s=>s.textContent);
       for(const label of ['Crop & framing','Fine size adjustment','Position & caption','Text wrapping & outline','Bleed to page edges'])expect(summaries).toContain(label);
