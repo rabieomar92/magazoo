@@ -365,6 +365,17 @@ describe('image-shaped columns', () => {
     expect(imageWordsInReadingOrder(columns)).toEqual(words(source.text));
   });
 
+  it('uses the complete final baseline at the page floor while retaining clearance at image edges',()=>{
+    const owner=document.createElement('div');owner.innerHTML='<style>.floor-probe p{font-size:10px;line-height:20px}</style>';
+    const probe=document.createElement('div');probe.className='floor-probe';probe.style.width='120px';owner.append(probe);document.body.append(owner);
+    try{
+      const source=text('one two three four five six seven eight nine ten');
+      const filled=fillColumnsAroundImages([source],probe,[[{top:0,bottom:40}]],100,el=>words(el.textContent??'').length>Math.floor(parseFloat(el.style.height)/20));
+      expect(words(filled.columns[0].segments[0].pieces.map(p=>p.text).join(' '))).toHaveLength(3);
+      expect(filled.columns[0].segments[0].bottom).toBe(100);
+    }finally{owner.remove();}
+  });
+
   it('splits real flow regions around rectangular callouts even when image contours are present',()=>{
     const probe=document.createElement('div');probe.style.width='120px';
     const source=text('one two three four five six seven eight nine ten eleven twelve');

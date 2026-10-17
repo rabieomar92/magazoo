@@ -32,6 +32,17 @@ beforeEach(() => {
 afterEach(() => { act(() => root.unmount()); host.remove(); useDoc.getState().load(emptyDoc()); });
 
 describe('page-image height controls', () => {
+  it.each(['paper-1','paper-2','paper-3','paper-4','paper-5','paper-6','paper-7','paper-8','magazine-1','magazine-2','magazine-3'] as const)('%s caption alignment overrides saved shared caption styling',template=>{
+    mount(template);
+    act(()=>useDoc.getState().update(doc=>{doc.design.textStyles={caption:{align:'left'}};}));
+    const control=host.querySelector('[aria-label="Caption align"]')!;
+    act(()=>([...control.querySelectorAll('button')].find(b=>b.textContent==='Right') as HTMLButtonElement).click());
+    const doc=useDoc.getState().doc;
+    expect(doc.images[0].align).toBe('right');
+    expect(doc.design.textStyles?.['image-caption:first']?.align).toBe('right');
+    expect(doc.design.textStyles?.caption?.align).toBe('left');
+    expect(doc.images[1].align).toBeUndefined();
+  });
   it.each(['paper-1','paper-2','paper-3','paper-4','paper-5','paper-6','paper-7','paper-8','magazine-1','magazine-2','magazine-3'] as const)('%s saves independent height, preserves framing and resets to natural proportions', template => {
     mount(template);
     expect(resetButton().disabled).toBe(true);

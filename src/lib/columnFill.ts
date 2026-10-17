@@ -518,7 +518,9 @@ export function fillColumnsAroundImages(
           contour=tightContour(bands,width,columnHeight-start,bodyFontSize*3,lineHeight);
         }
       }
-      probe.style.height=`${Math.max(0,columnHeight-start-segmentSafety)}px`;
+      // The page's bottom boundary is already a safe, measured text limit.
+      // Do not throw away a complete baseline for an unconditional 2px pad.
+      probe.style.height=`${Math.max(0,columnHeight-start-Math.max(0,safetyBoost))}px`;
       const shape=contour;
       const filled=fillTextRegion(rest,probe,el=>{if(shape)measureContour(el,shape);return isOverflowing(el);},!opened);
       columns[columnIndex].segments.push({top:start,bottom:columnHeight,order:segmentOrder++,pieces:filled.placed,contour});
@@ -529,7 +531,8 @@ export function fillColumnsAroundImages(
     for (const bounds of segments) {
       const height = bounds.bottom - bounds.top;
       if (height <= 0) continue;
-      probe.style.height = `${Math.max(0, height - segmentSafety)}px`;
+      const reserve=bounds.bottom>=columnHeight-.01?Math.max(0,safetyBoost):segmentSafety;
+      probe.style.height = `${Math.max(0, height - reserve)}px`;
       const filled = fillTextRegion(rest, probe, isOverflowing, !opened);
       columns[columnIndex].segments.push({ ...bounds, order: segmentOrder, pieces: filled.placed });
       segmentOrder += 1;

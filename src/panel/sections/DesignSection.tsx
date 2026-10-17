@@ -112,7 +112,11 @@ export function DesignSection({pageOnly=false}:{pageOnly?:boolean}) {
         <TypographyControl group="heroCaption" order={40} property="color"><LabeledColor label="Caption colour" value={design.articleCaptionColor ?? (templateId === 'paper-7' || templateId === 'paper-8' ? design.colors.ink : '#ffffff')} onChange={v => set('articleCaptionColor',v)}/></TypographyControl>
         <TypographyControl group="heroCaption" order={50} property="align"><SegmentField<NonNullable<Design['articleCaptionAlign']>> label="Caption alignment" value={design.articleCaptionAlign ?? 'left'} options={[
           {value:'left',label:'Left'},{value:'center',label:'Center'},{value:'right',label:'Right'},{value:'justify',label:'Justify'},
-        ]} onChange={v => set('articleCaptionAlign',v)}/></TypographyControl>
+        ]} onChange={v => update(doc=>{
+          doc.design.articleCaptionAlign=v;
+          doc.design.textStyles??={};
+          doc.design.textStyles.heroCaption={...doc.design.textStyles.heroCaption,align:v};
+        })}/></TypographyControl>
       </>}
       {(templateId === 'paper-3' || isReference) && <>
         <details className="control-disclosure"><summary>Hero colour & edge treatment</summary>

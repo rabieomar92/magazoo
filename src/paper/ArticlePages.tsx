@@ -51,7 +51,10 @@ export function ArticlePages({ doc, vars, onStatus, readOnly = false }: { doc: D
   const [fitSafety,setFitSafety]=useState<{design:Doc['design'];value:number}|null>(null);
   // Retain an already measured line reserve while editing copy. Resetting it
   // for every character reran the entire document up to nine times per key.
-  const safety=fitSafety?.design===doc.design?fitSafety.value:2;
+  // Start at the real grid boundary. A fixed 2px subtraction from an exact
+  // line-grid height discards an entire line, not merely 2px. The measured
+  // glyph-clipping guard below adds reserve only when actually necessary.
+  const safety=fitSafety?.design===doc.design?fitSafety.value:0;
   const placement = doc.design.highlightsPlacement ?? 'page1';
   const hasCallout = doc.design.sidebar && (doc.highlights.some(h => h.trim()) || doc.references.length > 0);
   const gridDesign = useMemo(() => articleGridDesign(doc.design), [doc.design]);

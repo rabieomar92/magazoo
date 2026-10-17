@@ -272,7 +272,13 @@ export function ArticleImagesSection() {
                   { value: 'center', label: 'Center' },
                   { value: 'right', label: 'Right' },
                 ]}
-                onChange={(align) => change(image.id, (current) => { current.align = align; })}
+                onChange={(align) => update(doc => {
+                  const current=doc.images.find(item=>item.id===image.id);
+                  if(current)current.align=align;
+                  doc.design.textStyles??={};
+                  const key=`image-caption:${image.id}`;
+                  doc.design.textStyles[key]={...doc.design.textStyles[key],align};
+                })}
               />
               </TypographyControl>
               <SegmentField<'attached'|'free'> label="Caption position" value={image.captionPlacement?'free':'attached'}

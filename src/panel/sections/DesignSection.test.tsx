@@ -6,6 +6,16 @@ import { useDoc } from '../../store/useDoc';
 import { DesignSection } from './DesignSection';
 
 describe('DesignSection font choices', () => {
+  it.each(['paper-4','paper-5','paper-6','paper-7','paper-8'] as const)('%s hero caption alignment updates saved typography as well as the native setting',template=>{
+    const host=document.createElement('div'),root=createRoot(host);
+    const doc=presetFor(template);doc.design.textStyles={heroCaption:{align:'left',fontSize:8}};
+    act(()=>{useDoc.getState().load(doc);root.render(<DesignSection/>);});
+    const control=host.querySelector('[aria-label="Caption alignment"]')!;
+    act(()=>([...control.querySelectorAll('button')].find(b=>b.textContent==='Center') as HTMLButtonElement).click());
+    expect(useDoc.getState().doc.design.articleCaptionAlign).toBe('center');
+    expect(useDoc.getState().doc.design.textStyles?.heroCaption).toEqual({align:'center',fontSize:8});
+    act(()=>root.unmount());
+  });
   const allowedFonts = ['Helvetica', 'Playfair Display', 'Bebas Neue', 'Arial', 'Avenir Next LT Pro Light', 'Avenir Next LT Pro', 'TeX Gyre Schola', 'TeX Gyre Pagella'];
   it('offers all eight fonts in every standard font selector', () => {
     const host = document.createElement('div');
