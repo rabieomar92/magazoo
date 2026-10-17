@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useStore } from 'zustand';
 import { useDoc } from '../store/useDoc';
 import { openProject, saveProject, saveProjectAs, useProjectFile } from '../store/projectFiles';
@@ -8,6 +8,7 @@ import { PDF_PAGE_SIZES, type PdfPageSize } from '../lib/pdfPageSize';
 import { usePdfPageSize } from '../store/pdfPreferences';
 import { Wordmark } from '../components/Wordmark';
 import { MagazooLoader } from '../components/MagazooLoader';
+import { registerPublicationPrint } from '../lib/nativePrint';
 
 const SAVE_LABEL: Record<SaveState, string> = {
   idle: 'Ready',
@@ -56,6 +57,10 @@ export function Toolbar({ onPreviewToolsHost, onToggleSidebar, sidebarCollapsed 
       setExporting(false);
     }
   };
+
+  const preparedExport=useRef(exportPdf);
+  useLayoutEffect(()=>{preparedExport.current=exportPdf;});
+  useEffect(() => registerPublicationPrint({source:()=>document.querySelector<HTMLElement>('.pages'),size:pdfSize,shortcut:()=>void preparedExport.current()}),[pdfSize]);
 
   // Keyboard: ⌘/Ctrl+Z undo, +Shift redo (or ⌘Y), ⌘S Save As.
   useEffect(() => {
@@ -145,7 +150,7 @@ export function Toolbar({ onPreviewToolsHost, onToggleSidebar, sidebarCollapsed 
         </div>
         <div className="toolbar-group toolbar-group--export" role="group" aria-label="PDF output">
           <select className="tool-btn select-control pdf-size-select" aria-label="PDF page size" value={pdfSize} disabled={exporting}
-            title={`Output: ${PDF_PAGE_SIZES[pdfSize].width} × ${PDF_PAGE_SIZES[pdfSize].height} mm. Magazine reflows the preview at its native size. This browser remembers your choice; your article JSON is unchanged.`}
+            title={`Canvas and output: ${PDF_PAGE_SIZES[pdfSize].width} × ${PDF_PAGE_SIZES[pdfSize].height} mm at 100%. This browser remembers your choice; your article JSON is unchanged.`}
             onChange={event => setPdfSize(event.target.value as PdfPageSize)}>
             {Object.entries(PDF_PAGE_SIZES).map(([key, size]) => <option key={key} value={key}>{size.label} · {size.width} × {size.height} mm</option>)}
           </select>

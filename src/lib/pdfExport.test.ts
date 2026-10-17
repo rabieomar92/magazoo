@@ -2,6 +2,20 @@ import { describe, expect, it, vi } from 'vitest';
 import { clonePages, cssImageUrls, PDF_EXPORT_CSS, pdfExportCss, waitForStablePreview,waitForPreviewResources } from './pdfExport';
 
 describe('PDF export layout contract', () => {
+  it('retains ancestor selectors, language and custom properties without copying editor UI or zoom boxes',()=>{
+    const shell=document.createElement('main');shell.id='editor-context';shell.className='workspace';shell.style.setProperty('--publication-font','Arial');
+    shell.innerHTML='<aside>Editor controls</aside><div class="paper-scroll" lang="ms"><div class="pages-frame" style="transform:scale(.6)"><div class="pages"><div class="page"><h1 class="title">Exact title</h1></div></div></div></div>';
+    document.body.append(shell);
+    const source=shell.querySelector<HTMLElement>('.pages')!,before=shell.outerHTML;
+    const target=document.implementation.createHTMLDocument('print');
+    clonePages(source,target);
+    expect(target.querySelector('#editor-context .paper-scroll .pages-frame .pages .title')?.textContent).toBe('Exact title');
+    expect(target.querySelector('#editor-context')?.getAttribute('style')).toContain('--publication-font: Arial');
+    expect(target.querySelector('.paper-scroll')?.getAttribute('lang')).toBe('ms');
+    expect(target.querySelector('aside')).toBeNull();
+    for(const context of target.querySelectorAll<HTMLElement>('.pdf-export-context')){expect(context.style.display).toBe('contents');expect(context.style.transform).toBe('none');}
+    expect(shell.outerHTML).toBe(before);shell.remove();
+  });
   it('requires the author to finish the canvas border draft before exporting',async()=>{
     const source=document.createElement('div');source.innerHTML='<figure data-outline-editing="true"></figure>';
     await expect(waitForPreviewResources(source)).rejects.toThrow('Apply or cancel the image border');

@@ -102,10 +102,7 @@ export function DesignSection() {
       {isReference && <>
         <details className="control-disclosure"><summary>Template defaults & reference</summary>
         <p className="hint">{ARTICLE_LAYOUTS[templateId].name} · inspired by RIKEN Research, December 2025, page {ARTICLE_LAYOUTS[templateId].referencePage}. Four columns reproduce the reference grid. All five layouts share these controls.</p>
-        <LabeledSelect label="Page proportions" value={design.articlePageSize ?? 'reference'} options={[
-          { value: 'reference', label: 'Reference trim · 210 × 276 mm' }, { value: 'a4', label: 'A4 · 210 × 297 mm' },
-        ]} onChange={v => set('articlePageSize', v as Design['articlePageSize'])}/>
-        <p className="hint">This source trim is used for A4 and B5 output. Choosing Magazine in the top toolbar reflows the preview natively at 203 × 267 mm, without added fit borders. Your copy and font sizes stay unchanged; page breaks may change.</p>
+        <p className="hint">Choose A4, B5 or Magazine in the top toolbar. The canvas uses that exact paper size, without added fit borders. Your copy and font sizes stay unchanged; page breaks may change.</p>
         <button type="button" className="btn" onClick={() => update(d => { d.design = referenceArticleDesign(templateId, d.design); })}>Apply reference design defaults</button>
         <p className="hint">Resets fonts, sizes, colours and grid spacing. Your text and images stay unchanged; Undo restores your design.</p>
         </details>

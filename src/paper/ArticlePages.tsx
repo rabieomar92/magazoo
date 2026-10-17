@@ -23,7 +23,7 @@ import {lineGridUp,lineGridDown} from '../lib/lineGrid';
 import '../styles/article-layouts.css';
 
 const MM = 96 / 25.4;
-type ShapedRegion = ArticleRegion & { contour?: TightContour };
+type ShapedRegion = ArticleRegion & { contour?: TightContour; seamlessContinuation?: boolean };
 type RegionContent = { region: ShapedRegion; pieces: Piece[] };
 type Layout = { regions: RegionContent[]; pages: number; header: number; caption: number; overflow: boolean; callouts: ArticleObstacle[]; free?: PlacedHighlights; source?:Doc; safety?:number };
 
@@ -158,7 +158,7 @@ export function ArticlePages({ doc, vars, onStatus, readOnly = false }: { doc: D
                 :region.height*MM>=minimum?{top:0,bottom:region.height*MM}:undefined;
               const opening=clear?{top:lineGridUp(clear.top,lineHeight),bottom:lineGridDown(clear.bottom,lineHeight)}:undefined;
               if(!opening)continue;
-              const head={...region,y:region.y+opening.top/MM,height:(opening.bottom-opening.top)/MM,contour:undefined};
+              const head={...region,y:region.y+opening.top/MM,height:(opening.bottom-opening.top)/MM,contour:undefined,seamlessContinuation:true};
               const remaining=region.height-opening.bottom/MM;
               regions=[head,...(remaining>.1?[shaped({...region,y:region.y+opening.bottom/MM,height:remaining})]:[]),...regions.slice(index+1)];
               break;
@@ -173,7 +173,10 @@ export function ArticlePages({ doc, vars, onStatus, readOnly = false }: { doc: D
         const hosts = all.map((region, index) => {
         const host = document.createElement('div');
         host.className = `body-cols article-column${index === 0 ? ' body-cols--p1' : ''}`;
-        host.style.cssText = `position:relative;width:${region.width}mm;height:${Math.max(0, region.height * MM - safety)}px`;
+        // A grid-aligned drop-cap seam joins the next region of the same
+        // paragraph. Keep its full line capacity; the following contour and
+        // the real glyph-overflow check provide the image clearance.
+        host.style.cssText = `position:relative;width:${region.width}mm;height:${Math.max(0, region.height * MM - (region.seamlessContinuation ? 0 : safety))}px`;
         if(region.contour) {host.style.columnCount='initial';shapes.set(host,region.contour);}
         root.appendChild(host);
         return host;

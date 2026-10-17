@@ -1,0 +1,21 @@
+import {act} from 'react';
+import {createRoot} from 'react-dom/client';
+import {afterEach,beforeEach,it,expect,vi} from 'vitest';
+import {HighlightsSection} from './HighlightsSection';
+import {useDoc} from '../../store/useDoc';
+import {presetFor} from '../../store/presets';
+let host:HTMLDivElement,root:ReturnType<typeof createRoot>;
+beforeEach(()=>{vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT',true);host=document.createElement('div');document.body.append(host);root=createRoot(host);useDoc.getState().load(presetFor('paper-8'));});
+afterEach(()=>{act(()=>root.unmount());host.remove();vi.unstubAllGlobals();});
+it('keeps border appearance controls together, preserves colour while hidden, and never edits highlight text',()=>{
+  const before=JSON.stringify(useDoc.getState().doc.highlights);
+  act(()=>root.render(<HighlightsSection/>));
+  const border=()=>[...host.querySelectorAll('label')].find(label=>label.textContent==='Show highlight border')!.querySelector<HTMLInputElement>('input')!;
+  expect(border().checked).toBe(true);
+  act(()=>{const input=host.querySelector<HTMLInputElement>('input[type=color]')!;Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value')!.set!.call(input,'#c62475');input.dispatchEvent(new Event('input',{bubbles:true}));input.dispatchEvent(new Event('change',{bubbles:true}));});
+  expect(useDoc.getState().doc.design.highlightBorderColor).toBe('#c62475');
+  act(()=>border().click());expect(useDoc.getState().doc.design.highlightBorder).toBe(false);expect(host.querySelector('input[type=color]')).toBeNull();
+  act(()=>border().click());expect(host.querySelector<HTMLInputElement>('input[type=color]')!.value).toBe('#c62475');
+  act(()=>[...host.querySelectorAll('button')].find(button=>button.textContent==='Use theme border colour')!.click());
+  expect(useDoc.getState().doc.design.highlightBorderColor).toBeUndefined();expect(JSON.stringify(useDoc.getState().doc.highlights)).toBe(before);
+});

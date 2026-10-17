@@ -44,6 +44,9 @@
 .app .panel .list-item--stack:has(.image-card-heading) { display:flex; flex-direction:column; align-items:stretch; gap:10px; padding:12px; margin:12px 0; background:#fff; border-color:#dfe6ef; border-radius:9px; }
 .app .panel .figure-edit { width:100%; gap:9px; padding:0; background:transparent; border:0; }
 .app .panel .add-btn { min-height:34px; font-size:12px; color:#3c4a62; background:#f8fafc; border-color:#dbe3ee; }
+.app .panel .btn { display:inline-flex; align-items:center; justify-content:center; gap:6px; width:100%; max-width:100%; min-height:36px; padding:7px 10px; border:1px solid #dbe3ee; border-radius:7px; background:#f8fafc; color:#4338ca; font:600 12px/1.5 system-ui,sans-serif; white-space:normal; overflow-wrap:anywhere; cursor:pointer; }
+.app .panel .btn:hover:not(:disabled) { border-color:#c7d2fe; background:#eef2ff; }
+.app .panel .btn:disabled { opacity:.55; cursor:not-allowed; }
 .app .panel .hero-upload { border-style:dashed; color:#4338ca; background:#f6f7ff; }
 .app .panel .icon-btn { width:32px; height:32px; min-height:32px; }
 .app .panel .toggle input { width:17px; height:17px; accent-color:#4f46e5; }
@@ -61,7 +64,7 @@
 @media (max-width:720px) {
   .app .panel-workspace-heading { padding-top:12px; }
   .app .panel-tab { min-height:40px; }
-  .app .panel .field-input,.app .panel .segment-btn { min-height:40px; }
+  .app .panel .field-input,.app .panel .segment-btn,.app .panel .btn { min-height:40px; }
   .app .panel .control-disclosure > summary { padding-block:13px; }
   .app .editing-access--active { padding:6px 10px; }
   .app .workspace > .splitter { pointer-events:none; }

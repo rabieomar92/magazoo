@@ -202,7 +202,7 @@ function nextPaint(targetWindow: Window = window) {
 const REF_INDEX_ATTR = 'data-pdf-ref-index';
 
 /** Resolve CSS counters before cloning the live pages into the print frame. */
-function resolveReferenceCounters(page: HTMLElement): () => void {
+export function resolveReferenceCounters(page: HTMLElement): () => void {
   const lists = page.querySelectorAll<HTMLOListElement>('ol.references');
   if (!lists.length) return () => {};
 
@@ -234,11 +234,11 @@ function copyAuthorStyles(sourceDocument: Document, targetDocument: Document) {
   // document language and direction. The print frame starts as a blank
   // document, so carry these root attributes across before it lays out any
   // cloned text.
-  for (const attribute of ['lang', 'dir']) {
+  for (const attribute of ['lang', 'dir', 'class', 'id', 'style']) {
     const value = sourceDocument.documentElement.getAttribute(attribute);
     if (value) targetDocument.documentElement.setAttribute(attribute, value);
   }
-  for (const attribute of ['class', 'dir']) {
+  for (const attribute of ['class', 'dir', 'id', 'style']) {
     const value = sourceDocument.body?.getAttribute(attribute);
     if (value) targetDocument.body.setAttribute(attribute, value);
   }
@@ -284,8 +284,7 @@ function freezeColumnLayout(source: HTMLElement, clone: HTMLElement) {
   // Remove only the preview zoom synchronously for precise layout reads. A
   // computed-style number can itself be rounded (344.90625 -> "344.906px"),
   // enough to drop a line at an exact column boundary. Restore before paint.
-  const transform = source.style.getPropertyValue('transform');
-  const priority = source.style.getPropertyPriority('transform');
+  const originalStyle = source.getAttribute('style');
   source.style.setProperty('transform', 'none', 'important');
   try {
     const sourceNodes = Array.from(source.querySelectorAll<HTMLElement>('*'));
@@ -320,8 +319,8 @@ function freezeColumnLayout(source: HTMLElement, clone: HTMLElement) {
       cloneNode.style.setProperty('column-fill', computed.columnFill, 'important');
     });
   } finally {
-    if (transform) source.style.setProperty('transform', transform, priority);
-    else source.style.removeProperty('transform');
+    if (originalStyle === null) source.removeAttribute('style');
+    else source.setAttribute('style', originalStyle);
   }
 }
 
@@ -376,7 +375,21 @@ export function clonePages(source: HTMLElement, targetDocument: Document, { free
   });
   pages.querySelectorAll('[data-editor-only]').forEach(node=>node.remove());
 
-  targetDocument.body.appendChild(pages);
+  // Author CSS may depend on .paper-scroll, .pages-frame, a workspace ID,
+  // inherited custom properties or language. Preserve that selector context,
+  // without copying the editor controls or its zoom/scroll/layout boxes.
+  let root: HTMLElement = pages;
+  for (let ancestor = source.parentElement; ancestor && ancestor !== source.ownerDocument.body; ancestor = ancestor.parentElement) {
+    const context = ancestor.cloneNode(false) as HTMLElement;
+    context.classList.add('pdf-export-context');
+    for (const [property, value] of Object.entries({display:'contents', transform:'none', zoom:'1', contain:'none', 'content-visibility':'visible', visibility:'visible', opacity:'1', filter:'none', 'clip-path':'none', overflow:'visible', margin:'0', padding:'0', border:'0', background:'none', 'box-shadow':'none'})) {
+      context.style.setProperty(property, value, 'important');
+    }
+    context.appendChild(root);
+    root = context;
+  }
+  targetDocument.body.appendChild(root);
+  return root;
 }
 
 /** One article's sheets together with the element they inherit from. A sheet
@@ -427,7 +440,7 @@ export function issuePageContainers(root: HTMLElement): HTMLElement[] {
  * path. Printing the issue is printing each article, in order, in one job.
  */
 export function cloneIssuePages(containers: readonly HTMLElement[], targetDocument: Document) {
-  for (const container of containers) clonePages(container, targetDocument);
+  return containers.map(container => clonePages(container, targetDocument));
 }
 
 /**

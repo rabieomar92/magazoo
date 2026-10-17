@@ -13,7 +13,7 @@ import { usePdfPageSize } from '../../store/pdfPreferences';
 function GatePositionEditor({ kind }: { kind: 'title' | 'text' }) {
   const design = useDoc(s => s.doc.design);
   const [pdfSize] = usePdfPageSize();
-  const outputDesign = { ...design, pageFormat: pdfSize === 'magazine' ? 'magazine' as const : undefined };
+  const outputDesign = { ...design, pageFormat: pdfSize };
   const dimensions = pageDimensions(outputDesign);
   const update = useDoc(s => s.update);
   const rtl = design.textDirection === 'rtl';

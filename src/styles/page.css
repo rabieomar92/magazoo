@@ -149,14 +149,14 @@
   font-size: calc(var(--fs-body) * 0.9);
   color: var(--ink);
   background: var(--accent-soft);
-  border-inline-start: 3px solid var(--accent);
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 24%, transparent),
+  border-inline-start: 3px solid var(--hl-border-color,var(--accent));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--hl-border-color,var(--accent)) 24%, transparent),
     0 4px 14px rgba(0, 0, 0, 0.12);
 }
 
 .placed-highlights:active {
   cursor: grabbing;
-  box-shadow: 0 0 0 2px var(--accent), 0 6px 18px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 0 0 2px var(--hl-border-color,var(--accent)), 0 6px 18px rgba(0, 0, 0, 0.2);
 }
 
 .placed-highlights h3 {
@@ -1001,7 +1001,7 @@
   /* Logical start-edge border + direction — see .body-cols's RTL comment. The
      accent stripe belongs on the box's reading-start edge in either
      direction, same as a printed callout would place it. */
-  border-inline-start: 3px solid var(--accent);
+  border-inline-start: 3px solid var(--hl-border-color,var(--accent));
   padding: 0.8em 0.6em;
   font-family: var(--sans);
   font-size: calc(var(--fs-body) * 0.9);
@@ -1067,7 +1067,7 @@
   margin: max(1.2em, 3mm) 0 0;
   padding: 0.7em 0.9em;
   background: var(--accent-soft);
-  border-inline-start: 3px solid var(--accent);
+  border-inline-start: 3px solid var(--hl-border-color,var(--accent));
   font-family: var(--sans);
   font-size: calc(var(--fs-body) * 0.9);
   /* See .sidebar's comment: direction alone doesn't beat `.page`'s physical
@@ -1093,7 +1093,7 @@
   margin: 0.2em 0 0;
   padding: 0.8em 0.6em;
   background: var(--accent-soft);
-  border-inline-start: 3px solid var(--accent);
+  border-inline-start: 3px solid var(--hl-border-color,var(--accent));
   font-family: var(--sans);
   font-size: calc(var(--fs-body) * 0.9);
   /* See .sidebar's comment: direction alone doesn't beat `.page`'s physical

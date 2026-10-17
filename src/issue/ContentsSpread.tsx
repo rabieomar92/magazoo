@@ -159,7 +159,7 @@ function MosaicCard({ entry, design, ratio, photo }: {
 const CARD_GAP_MM = 7;
 const MAX_EXTRA_GAP_MM = 11;
 /** B5 remains an output fit of the original composition; Magazine is native. */
-const contentsDimensions = (size: PdfPageSize) => pageDimensions(size === 'magazine' ? { pageFormat: 'magazine' } : undefined);
+const contentsDimensions = (size: PdfPageSize) => pageDimensions({ pageFormat: size });
 function contentsPageStyle(size: PdfPageSize) {
   const dimensions = contentsDimensions(size);
   return { '--page-w': `${dimensions.width}mm`, '--page-h': `${dimensions.height}mm` } as CSSProperties;

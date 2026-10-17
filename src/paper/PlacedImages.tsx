@@ -426,7 +426,7 @@ function PlacedHighlightsItem({ doc, design, pageHeight, readOnly }: { doc: Doc;
     // received a measurable width yet. Without this early commit, a loaded
     // free-placement document could be autosaved before its first layout and
     // lose the box's position on the next open.
-    const canCommit = !readOnly && !preserveSourceAnchors && design.pageFormat !== 'magazine' && !element.closest('[inert]');
+    const canCommit = !readOnly && !preserveSourceAnchors && !design.pageFormat && !element.closest('[inert]');
     if (canCommit && !doc.highlightBox) commitAnchor(placement.anchor.column, placement.anchor.y);
     if (!page.offsetWidth) return;
     const pxPerMm = page.getBoundingClientRect().width / pageDimensions(design).width;

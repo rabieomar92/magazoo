@@ -1,5 +1,4 @@
-/** Output sheets. Magazine pages are measured at their native trim size;
- * A4 and B5 can also fit artwork measured at another size. */
+/** Every selected output size is also the native canvas trim. */
 export type PdfPageSize = 'a4' | 'b5' | 'magazine';
 export const PDF_PAGE_SIZES = {
   a4: { label: 'A4', width: 210, height: 297 },
@@ -39,8 +38,9 @@ export function fitPdfSheets(doc: Document, size: PdfPageSize) {
   const pages = Array.from(doc.querySelectorAll<HTMLElement>('.pdf-export-page'));
   if (!pages.length) return;
   const dimensions = pages.map(pdfPageDimensions);
-  if (size === 'magazine' && dimensions.some(page => page.width !== 203 || page.height !== 267)) {
-    throw new Error('The Magazine preview is not ready at 203 × 267 mm. Wait for the layout to update and try again; an A4 page cannot be exported as a borderless Magazine page.');
+  const expected = PDF_PAGE_SIZES[size];
+  if (dimensions.some(page => page.width !== expected.width || page.height !== expected.height)) {
+    throw new Error(`The ${expected.label} preview is not ready at ${expected.width} × ${expected.height} mm. Wait for the layout to update and try again; exporting a different canvas size would add borders or change its scale.`);
   }
   if (size === 'a4' && dimensions.every(page => page.width === 210 && page.height === 297)) return;
   const { width, height } = pdfSheetGeometry(size);
@@ -87,4 +87,5 @@ export function fitPdfSheets(doc: Document, size: PdfPageSize) {
     page.style.setProperty('break-after', 'auto', 'important');
     page.style.setProperty('page-break-after', 'auto', 'important');
   });
+  return css;
 }

@@ -375,7 +375,7 @@ export interface TextStyle {
 export interface Design {
   /** Render-only output override; selected paper size is a browser preference,
    * not an authoring change. Missing keeps the original A4/reference layout. */
-  pageFormat?: 'magazine';
+  pageFormat?: 'a4' | 'b5' | 'magazine';
   textStyles?: Record<string, TextStyle>;
   /** Reference article compositions retain the magazine's 210 × 276 mm trim,
    * or can explicitly extend their text area to A4. Other templates ignore it. */
@@ -422,6 +422,9 @@ export interface Design {
    *   body text fills the gap above it (col 4 top) before spilling to page 2.
    */
   highlightsPlacement?: 'page1' | 'all' | 'below' | 'page1-flow' | 'free';
+  /** Optional border appearance; missing retains each template's original look. */
+  highlightBorder?: boolean;
+  highlightBorderColor?: string;
   fontDisplay: string;
   fontBody: string;
   /**

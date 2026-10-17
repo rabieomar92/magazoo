@@ -382,6 +382,22 @@ describe('image-shaped columns', () => {
     expect(imageWordsInReadingOrder(filled.columns)).toEqual(words(source.text));
   });
 
+  it('uses every complete line before a drop-cap/contour seam instead of losing one to a fractional safety reserve',()=>{
+    const owner=document.createElement('div');owner.innerHTML='<style>.seam-probe p {font-size:10px;line-height:20px}</style>';
+    const probe=document.createElement('div');probe.className='seam-probe';probe.style.width='120px';owner.append(probe);document.body.append(owner);
+    const source=text('one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen');
+    const outline={top:150,bottom:200,outline:{points:[{x:0,y:150},{x:80,y:170},{x:0,y:200}],gap:0}};
+    try{
+      const filled=fillColumnsAroundImages([source],probe,[[outline]],340,el=>words(el.textContent??'').length>Math.floor(parseFloat(el.style.height)/20));
+      const first=filled.columns[0].segments[0];
+      expect(first.top).toBe(0);expect(first.bottom).toBe(140);
+      expect(words(first.pieces.map(p=>p.text).join(' '))).toHaveLength(7);
+      expect(filled.columns[0].segments[1].top).toBe(140);
+      expect(imageWordsInReadingOrder(filled.columns)).toEqual(words(source.text));
+      expect(filled.remainder).toEqual([]);
+    }finally{owner.remove();}
+  });
+
   it('does not reserve a phantom rectangle when the drawn border misses this column',()=>{
     const probe=document.createElement('div');probe.style.width='120px';
     const source=text('all these words remain available across the whole column');

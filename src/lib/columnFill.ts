@@ -488,7 +488,11 @@ export function fillColumnsAroundImages(
           const clear=contourOpening(bands,width,columnHeight,3*leading+(Number.parseFloat(style.paddingTop)||0)+segmentSafety);
           const opening=clear?{top:lineGridUp(clear.top,lineHeight),bottom:lineGridDown(clear.bottom,lineHeight)}:undefined;
           if(!opening)continue;
-          probe.style.height=`${opening.bottom-opening.top-segmentSafety}px`;
+          // This is a whole-line seam into the SAME paragraph, not an image
+          // edge. Reserving a fraction of a line here discards a complete
+          // writable line before continuing at opening.bottom. Real glyph
+          // clipping is still checked by isOverflowing/hasClippedTextLine.
+          probe.style.height=`${opening.bottom-opening.top}px`;
           const head=fillTextRegion(rest,probe,isOverflowing,true);
           columns[columnIndex].segments.push({...opening,order:segmentOrder++,pieces:head.placed});
           rest=head.remainder;if(head.placed.length)opened=true;

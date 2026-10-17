@@ -77,7 +77,7 @@ it.each(['a4', 'b5', 'magazine'])('exports the compiled issue at %s without savi
   expect(exportedRoot.querySelectorAll('.page')).toHaveLength(size === 'magazine' ? 4 : 3);
   expect(exportedRoot.dataset.proofSize).toBe(size);
   const sources = compilation.sources.mock.calls.at(-1)![0];
-  expect(sources[0].doc.design.pageFormat).toBe(size === 'magazine' ? 'magazine' : undefined);
+  expect(sources[0].doc.design.pageFormat).toBe(size);
   expect(JSON.stringify(response)).toBe(before);
   // The only server operation is the initial read: choosing an output size
   // must not finalise page numbers or rewrite articles/the saved issue plan.
@@ -105,7 +105,7 @@ it('blocks the old proof until native Magazine recompiles, then restores the leg
   compilation.hold = false;
   act(() => { select.value = 'a4'; select.dispatchEvent(new Event('change', { bubbles: true })); });
   expect(exportButton().disabled).toBe(false);
-  expect(compilation.sources.mock.calls.at(-1)![0][0].doc.design.pageFormat).toBeUndefined();
+  expect(compilation.sources.mock.calls.at(-1)![0][0].doc.design.pageFormat).toBe('a4');
   expect(host.querySelector('.inspector-metrics')?.textContent).toContain('3pages');
   expect(JSON.stringify(response)).toBe(before);
   expect(issueApi).toHaveBeenCalledTimes(1);

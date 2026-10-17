@@ -4,7 +4,7 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { ContentsSpread } from './ContentsSpread';
 import { contentsDesignOf, DEFAULT_CONTENTS_DESIGN } from './model';
 import { clonePages } from '../lib/pdfExport';
-import { fitPdfSheets } from '../lib/pdfPageSize';
+import { fitPdfSheets, PDF_PAGE_SIZES } from '../lib/pdfPageSize';
 
 let host: HTMLDivElement;
 let root: ReturnType<typeof createRoot>;
@@ -53,10 +53,11 @@ it.each(['mosaic', 'feature', 'sections'] as const)('lays out both %s contents s
     const pages = [...host.querySelectorAll<HTMLElement>('.issue-contents-page')];
     expect(pages).toHaveLength(2);
     for (const page of pages) {
-      expect(page.style.getPropertyValue('--page-w')).toBe(pageSize === 'magazine' ? '203mm' : '210mm');
-      expect(page.style.getPropertyValue('--page-h')).toBe(pageSize === 'magazine' ? '267mm' : '297mm');
-      expect(page.dataset.pageWidthMm).toBe(pageSize === 'magazine' ? '203' : '210');
-      expect(page.dataset.pageHeightMm).toBe(pageSize === 'magazine' ? '267' : '297');
+      const {width,height}=PDF_PAGE_SIZES[pageSize];
+      expect(page.style.getPropertyValue('--page-w')).toBe(`${width}mm`);
+      expect(page.style.getPropertyValue('--page-h')).toBe(`${height}mm`);
+      expect(page.dataset.pageWidthMm).toBe(String(width));
+      expect(page.dataset.pageHeightMm).toBe(String(height));
       expect(page.style.transform).toBe('');
     }
   }

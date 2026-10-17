@@ -826,6 +826,7 @@
 
 .mag2-hl {
   box-sizing: border-box;
+  border: var(--mag2-hl-border,0 solid transparent);
   padding: 4mm;
   background: var(--accent-soft);
   print-color-adjust: exact;

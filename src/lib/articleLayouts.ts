@@ -15,7 +15,7 @@ export type ReferenceArticleId = keyof typeof ARTICLE_LAYOUTS;
 export function isReferenceArticle(id?: TemplateId): id is ReferenceArticleId {
   return !!id && Object.prototype.hasOwnProperty.call(ARTICLE_LAYOUTS, id);
 }
-export const articlePageHeight = (design: Design) => design.pageFormat === 'magazine'
+export const articlePageHeight = (design: Design) => design.pageFormat
   ? pageDimensions(design).height : design.articlePageSize === 'a4' ? 297 : 276;
 /** The reference grid includes the rail; toggling a callout must not create
  * an extra, narrower image grid. Use only for geometry, not render decisions. */

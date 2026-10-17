@@ -67,3 +67,9 @@ it('remembers the selected paper size across toolbar remounts without saving the
   expect(useDoc.getState().doc).toBe(before);
   expect(exportPreviewPdf).not.toHaveBeenCalled();
 });
+
+it('uses the prepared PDF export for the browser print shortcut',async()=>{
+  act(()=>root.render(<Toolbar onPreviewToolsHost={()=>undefined}/>));
+  await act(async()=>window.dispatchEvent(new KeyboardEvent('keydown',{key:'p',ctrlKey:true,cancelable:true})));
+  expect(exportPreviewPdf).toHaveBeenCalledExactlyOnceWith(useDoc.getState().doc.meta.title,undefined,'a4');
+});

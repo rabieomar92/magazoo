@@ -14,6 +14,7 @@ import { useIssueAutosave } from './useIssueAutosave';
 import './issue.css';
 import { Wordmark } from '../components/Wordmark';
 import { MagazooLoader } from '../components/MagazooLoader';
+import { registerPublicationPrint } from '../lib/nativePrint';
 
 /** What the compiled sheets are built from, and the only thing that can put
  * the proof out of date. Everything else an editor can change — wording,
@@ -64,7 +65,7 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
   const [progress, setProgress] = useState<CompileProgress>({ completed: 0, total: data.items.length, name: '', pass: 1, passes: 2 });
   const [busy, setBusy] = useState(false);
   const [pdfSize, setPdfSize] = usePdfPageSize();
-  const compositionFormat = pdfSize === 'magazine' ? 'magazine' : 'a4';
+  const compositionFormat = pdfSize;
   const [compiledFormat, setCompiledFormat] = useState<typeof compositionFormat | null>(null);
   const [contentsOverflow, setContentsOverflow] = useState(true);
   const [finalizedPlan, setFinalizedPlan] = useState('');
@@ -131,7 +132,7 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
   useLayoutEffect(() => {
     const stage = stageRef.current;
     if (!stage) return;
-    const dimensions = pageDimensions(compositionFormat === 'magazine' ? { pageFormat: 'magazine' } : undefined);
+    const dimensions = pageDimensions({ pageFormat: compositionFormat });
     const pageWidth = dimensions.width * 96 / 25.4;
     const pageHeight = dimensions.height * 96 / 25.4;
     const measure = () => setFitScale(Math.min(1, Math.max(0.12,
@@ -225,6 +226,9 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
   });
 
   const blocked = busy || !ready || contentsOverflow || proofStale;
+  const printState=useRef({blocked,exportIssue});
+  useLayoutEffect(()=>{printState.current={blocked,exportIssue};});
+  useEffect(() => registerPublicationPrint({source:()=>printState.current.blocked?null:pagesRef.current,size:pdfSize,issue:true,shortcut:()=>void printState.current.exportIssue()}),[pdfSize]);
   return <main className="studio" aria-busy={busy}>
     <header className="studio-bar">
       <div className="studio-bar-lead">

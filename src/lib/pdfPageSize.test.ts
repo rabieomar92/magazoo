@@ -29,9 +29,15 @@ describe('PDF output sheet fitting', () => {
     expect(() => fitPdfSheets(output, 'magazine')).toThrow('Magazine preview is not ready at 203 × 267 mm');
     expect(output.documentElement.outerHTML).toBe(before);
   });
+  it.each(['a4','b5'] as const)('refuses to silently fit a stale reference trim onto %s',size=>{
+    const source=document.createElement('div');source.innerHTML='<div class="page" data-page-height-mm="276">Exact canvas</div>';
+    const output=document.implementation.createHTMLDocument();clonePages(source,output);const before=output.documentElement.outerHTML;
+    expect(()=>fitPdfSheets(output,size)).toThrow('preview is not ready');expect(output.documentElement.outerHTML).toBe(before);
+  });
   it.each(['b5', 'magazine'] as const)('preserves page markup, text, images, order, and one break per %s sheet across articles', size => {
     const sources = [document.createElement('div'), document.createElement('div')];
-    const trim = size === 'magazine' ? ' data-page-width-mm="203" data-page-height-mm="267"' : '';
+    const native=PDF_PAGE_SIZES[size];
+    const trim = ` data-page-width-mm="${native.width}" data-page-height-mm="${native.height}"`;
     sources[0].innerHTML = `<div class="page"${trim} style="display:grid"><p>Cover</p><img src="/photo.png" /></div><div class="page"${trim}><p>Page two</p></div>`;
     sources[1].innerHTML = `<div class="page"${trim} style="display:flex"><p>Another article</p></div>`;
     const output = document.implementation.createHTMLDocument();
@@ -44,11 +50,11 @@ describe('PDF output sheet fitting', () => {
     expect(sheets.map(s => s.style.breakAfter)).toEqual(['page', 'page', 'auto']);
     expect(output.querySelectorAll('canvas')).toHaveLength(0);
     expect(output.querySelectorAll('img')).toHaveLength(1);
-    const expectedWidth = size === 'magazine' ? '203mm' : '210mm';
+    const expectedWidth = `${native.width}mm`;
     expect([...output.querySelectorAll<HTMLElement>('.page')].map(p => p.style.width)).toEqual([expectedWidth, expectedWidth, expectedWidth]);
-    if (size === 'magazine') {
+    {
       for (const page of output.querySelectorAll<HTMLElement>('.page')) {
-        expect(page.style.height).toBe('267mm');
+        expect(page.style.height).toBe(`${native.height}mm`);
         expect(page.style.getPropertyValue('--pdf-fit-scale')).toBe('1');
         expect(page.style.getPropertyValue('--pdf-fit-left')).toBe('0mm');
         expect(page.style.getPropertyValue('--pdf-fit-top')).toBe('0mm');
@@ -67,9 +73,7 @@ describe('PDF output sheet fitting', () => {
     expect(output.documentElement.outerHTML).toBe(before);
   });
   it.each([
-    ['b5', 210, 297],
-    ['b5', 210, 276],
-    ['a4', 210, 276],
+    ['b5', 176, 250],
     ['magazine', 203, 267],
   ] as const)('anchors only opted-in bottom-bleed %s artwork (%s × %s) to the output bottom trim', (size, width, height) => {
     const source = document.createElement('div');
@@ -97,26 +101,14 @@ describe('PDF output sheet fitting', () => {
     }
     expect(source.outerHTML).toBe(original);
   });
-  it.each(['a4','b5'] as const)('fits mixed native, reference and A4 artwork onto %s without cropping', size => {
+  it.each(['a4','b5'] as const)('rejects mixed trim sizes instead of adding invisible fit margins to %s', size => {
     const source = document.createElement('div');
     source.innerHTML = '<div class="page" data-page-height-mm="276">Reference trim</div><div class="page">A4 trim</div><div class="page" data-page-width-mm="203" data-page-height-mm="267">Native trim</div>';
     const output = document.implementation.createHTMLDocument();
     clonePages(source, output);
-    fitPdfSheets(output, size);
-    const pages = [...output.querySelectorAll<HTMLElement>('.pdf-export-page')];
-    expect(pages.map(p => p.style.height)).toEqual(['276mm','297mm','267mm']);
-    expect(pages.map(p => p.style.width)).toEqual(['210mm','210mm','203mm']);
-    expect(output.querySelectorAll('.pdf-export-sheet')).toHaveLength(3);
-    for (const [index, [w,h]] of [[210,276],[210,297],[203,267]].entries()) {
-      const fit = pdfSheetGeometry(size, h, w);
-      expect(fit.left).toBeGreaterThanOrEqual(0);
-      expect(fit.top).toBeGreaterThanOrEqual(0);
-      expect(fit.top + h * fit.scale).toBeLessThanOrEqual(fit.height + .00001);
-      expect(fit.left + w * fit.scale).toBeLessThanOrEqual(fit.width + .00001);
-      expect(pages[index].style.getPropertyValue('--pdf-fit-scale')).toBe(String(fit.scale));
-      expect(pages[index].style.getPropertyValue('--pdf-fit-left')).toBe(`${fit.left}mm`);
-      expect(pages[index].style.getPropertyValue('--pdf-fit-top')).toBe(`${fit.top}mm`);
-    }
+    const before=output.documentElement.outerHTML;
+    expect(()=>fitPdfSheets(output,size)).toThrow('preview is not ready');
+    expect(output.documentElement.outerHTML).toBe(before);
   });
   it('retains edge-to-edge dark native magazine paper without changing the original preview', () => {
     const source = document.createElement('div');

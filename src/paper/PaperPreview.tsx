@@ -1027,7 +1027,7 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
     [pages, doc.templateId],
   );
   useEffect(() => {
-    if (readOnly || preserveSourceAnchors || isReference || doc.design.pageFormat === 'magazine') return;
+    if (readOnly || preserveSourceAnchors || isReference || doc.design.pageFormat) return;
     if (!hlFree || !populatedPages.length) return;
     const requested = (doc.highlightBox ?? defaultPlacedHighlights(doc.design)).anchor.page;
     if (populatedPages.includes(requested)) return;
@@ -1445,7 +1445,7 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
   );
 
   return (
-    <PreviewReadOnly.Provider value={readOnly}><PreviewPreserveSourceAnchors.Provider value={preserveSourceAnchors || doc.design.pageFormat === 'magazine'}><div
+    <PreviewReadOnly.Provider value={readOnly}><PreviewPreserveSourceAnchors.Provider value={preserveSourceAnchors || !!doc.design.pageFormat}><div
         className={`paper-scroll${readOnly ? ' paper-scroll--readonly' : ''}${doc.design.textDirection === 'rtl' ? ' paper-scroll--rtl' : ''}`}
         data-preview-pending={pending ? 'true' : undefined}
         data-preview-overflow={isStructured && frontMatterStatus.overflow ? 'true' : undefined}

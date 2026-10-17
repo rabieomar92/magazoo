@@ -3,12 +3,15 @@ import { grid } from '../../lib/geometry';
 import { articleGridDesign, articlePageHeight, isReferenceArticle } from '../../lib/articleLayouts';
 import { defaultPlacedHighlights, placedHighlightsGeometry } from '../../lib/placedHighlights';
 import { familyOf, type PlacedHighlights } from '../../schema/document';
-import { LabeledInput, LabeledNumber, RowButtons, Section, SegmentField, Toggle } from '../Field';
+import { LabeledColor, LabeledInput, LabeledNumber, RowButtons, Section, SegmentField, Toggle } from '../Field';
+import {highlightBorderEnabled} from '../../lib/highlightBorder';
 
 export function HighlightsSection() {
   const highlights = useDoc((s) => s.doc.highlights);
   const label = useDoc((s) => s.doc.meta.highlightsLabel);
   const design = useDoc((s) => s.doc.design);
+  const templateId=useDoc(s=>s.doc.templateId);
+  const borderVisible=highlightBorderEnabled(design,templateId);
   const isReference = useDoc(s => isReferenceArticle(s.doc.templateId));
   const geometryDesign = isReference ? articleGridDesign(design) : design;
   const pageHeight = isReference ? articlePageHeight(design) : undefined;
@@ -62,6 +65,13 @@ export function HighlightsSection() {
     <Section title="Highlights" editorTarget="highlights">
       <Toggle label="Show highlights box" checked={design.sidebar} onChange={visible => update(d => { d.design.sidebar = visible; })} />
       <p className="hint">Hide or show the highlights and references box. Your saved text and position are kept.</p>
+      <details className="control-disclosure"><summary>Box appearance</summary>
+        <Toggle label="Show highlight border" checked={borderVisible} onChange={visible=>update(d=>{d.design.highlightBorder=visible;})}/>
+        {borderVisible&&<>
+          <LabeledColor label="Highlight border colour" value={design.highlightBorderColor??design.colors.accent} onChange={color=>update(d=>{d.design.highlightBorderColor=color;})}/>
+          {design.highlightBorderColor&&<button type="button" className="btn" onClick={()=>update(d=>{delete d.design.highlightBorderColor;})}>Use theme border colour</button>}
+        </>}
+      </details>
       <LabeledInput
         label="Section heading"
         editorTarget="highlights-label"

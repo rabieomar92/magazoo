@@ -3,6 +3,7 @@ import { fontStack } from './fonts';
 import { headingTextVars } from './headingText';
 import { clampSpacing, SUBTITLE_GAP } from './spacing';
 import { pageDimensions } from './pageFormat';
+import { highlightBorderVars } from './highlightBorder';
 
 export const PAGE_W = 210; // mm, A4
 export const PAGE_H = 297;
@@ -104,6 +105,7 @@ export function cssVars(d: Design, templateId?: TemplateId, bottomMargin = d.mar
     '--hero': d.colors.hero,
     '--accent': d.colors.accent,
     '--accent-soft': d.colors.accentSoft,
+    ...highlightBorderVars(d),
     '--ink': d.colors.ink,
     '--serif': fontStack(d.fontDisplay),
     '--drop-cap-font': fontStack(typeof d.textStyles?.title?.fontFamily === 'string' && /^[\p{L}\p{N} _-]{1,80}$/u.test(d.textStyles.title.fontFamily)

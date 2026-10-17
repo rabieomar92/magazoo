@@ -3,14 +3,18 @@ import { cssVars, grid } from './geometry';
 import { pageDimensions, withPageFormat } from './pageFormat';
 import { presetFor, TEMPLATE_META } from '../store/presets';
 import { signatureGeometry } from './signature';
+import { PDF_PAGE_SIZES } from './pdfPageSize';
+import { articlePageHeight } from './articleLayouts';
 
 describe('native magazine view model', () => {
-  it.each(TEMPLATE_META.map(meta => meta.id))('converts %s without rewriting a single source field', id => {
+  it.each(TEMPLATE_META.flatMap(meta => (['a4','b5','magazine'] as const).map(size=>[meta.id,size] as const)))('converts %s to native %s without rewriting a single source field', (id,size) => {
     const source = presetFor(id);
     const before = JSON.stringify(source);
-    const native = withPageFormat(source, 'magazine');
-    expect(pageDimensions(native.design)).toEqual({ width: 203, height: 267 });
-    expect(cssVars(native.design, id)).toMatchObject({ '--page-w': '203mm', '--page-h': '267mm' });
+    const native = withPageFormat(source, size);
+    const {width,height}=PDF_PAGE_SIZES[size];
+    expect(pageDimensions(native.design)).toEqual({ width, height });
+    expect(cssVars(native.design, id)).toMatchObject({ '--page-w': `${width}mm`, '--page-h': `${height}mm` });
+    expect(articlePageHeight(native.design)).toBe(height);
     expect(native.blocks).toBe(source.blocks);
     expect(native.assets).toBe(source.assets);
     expect(native.images).toBe(source.images);
@@ -18,8 +22,7 @@ describe('native magazine view model', () => {
     expect(native.design.sizes).toBe(source.design.sizes);
     expect(native.design.margin).toBe(source.design.margin);
     expect(JSON.stringify(source)).toBe(before);
-    expect(withPageFormat(source, 'a4')).toBe(source);
-    expect(withPageFormat(source, 'b5')).toBe(source);
+    expect(withPageFormat(native, size)).toBe(native);
     expect(pageDimensions(withPageFormat(native, 'a4').design)).toEqual({ width: 210, height: 297 });
   });
   it('uses one narrower native grid on every page, without shrinking font size', () => {
