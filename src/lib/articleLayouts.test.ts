@@ -7,6 +7,14 @@ import { paginateHosts } from './paginate';
 
 const ids = Object.keys(ARTICLE_LAYOUTS) as ReferenceArticleId[];
 describe('reference article compositions', () => {
+  it.each(ids)('%s releases unused preset header space after actual typography is measured',id=>{
+    const doc=presetFor(id);
+    for(const measured of [8,15,25,60]){
+      const g=articleGeometry(id,doc.design,measured);
+      expect(g.bodyTop).toBeCloseTo(g.titleTop+measured+g.gutter,6);
+      expect(g.starts.filter((_,i)=>i*(g.col+g.gutter)<g.titleWidth-.01).every(y=>y>=g.bodyTop)).toBe(true);
+    }
+  });
   it.each(ids)('%s keeps the measured four-column grid on every page', id => {
     const doc = presetFor(id);
     const g = articleGeometry(id, doc.design);

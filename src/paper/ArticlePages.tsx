@@ -31,7 +31,7 @@ function ArticleHeader({ doc }: { doc: Doc }) {
   return <header className="header article-header">
     <p className="eyebrow" data-editor-tab="content" data-editor-target="meta-category">{doc.meta.categoryLabel}</p>
     <h1 className="title" data-editor-tab="content" data-editor-target="meta-title">{doc.meta.title}</h1>
-    {doc.meta.subtitle && <p className="subtitle" data-editor-tab="content" data-editor-target="meta-subtitle">{doc.meta.subtitle}</p>}
+    {doc.meta.subtitle?.trim() && <p className="subtitle" data-editor-tab="content" data-editor-target="meta-subtitle">{doc.meta.subtitle}</p>}
     {(doc.meta.author || doc.meta.affiliation) && <p className="byline"><span data-editor-tab="content" data-editor-target="meta-author">{doc.meta.author}</span>
       {doc.meta.affiliation && <span className="affiliation" data-editor-tab="content" data-editor-target="meta-affiliation">{doc.meta.author ? ' · ' : ''}{doc.meta.affiliation}</span>}</p>}
   </header>;

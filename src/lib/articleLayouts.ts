@@ -53,7 +53,11 @@ export function articleGeometry(id: ReferenceArticleId, design: Design, measured
   const customInsetTop = inset && (design.firstPageTopMargin ?? 0) > 0;
   const titleTop = customInsetTop ? Math.max(contentTop, design.firstPageTopMargin!)
     : Math.max(26, contentTop, bottomHero ? 26 : (inset ? layout.titleTop : layout.titleTop + delta), design.firstPageTopMargin ?? 0);
-  const bodyTop = Math.max(titleTop + measuredHeader + gutter, customInsetTop ? 0 : bottomHero ? 26 : inset ? layout.bodyTop : layout.bodyTop + delta);
+  // Preset coordinates are only a pre-measurement fallback. Keeping their
+  // original title/deck reserve after measuring a shorter header leaves a
+  // phantom blank band (especially with an absent subtitle).
+  const bodyTop = measuredHeader > 0 ? titleTop + measuredHeader + gutter
+    : Math.max(titleTop + gutter, customInsetTop ? 0 : bottomHero ? 26 : inset ? layout.bodyTop : layout.bodyTop + delta);
   const titleTextTop=titleTop+Math.max(0,titleOffset);
   const bottom = height - (footerReserve > 0 ? footerReserve : margin);
   const imageBottom = bottomBleed ? height : bottom;
