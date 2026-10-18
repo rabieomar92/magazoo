@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { BusyIndicator } from '../components/BusyIndicator';
 import { emptyDoc, migrate, type Doc } from '../schema/document';
 import '../styles/admin.css';
 import AdminLibrary, { type DeleteTarget } from './AdminLibrary';
@@ -97,9 +98,9 @@ export default function AdminPage() {
       {!csrf ? <div className="admin-login-layout"><LoginBackground enabled={checked}/><section className="admin-card admin-login" aria-labelledby="admin-login-title">
         <div className="admin-login-brand"><Wordmark/></div><h1 id="admin-login-title">Sign in</h1><p>Administrator access</p>
         {error&&<div className="admin-alert" role="alert">{error}</div>}
-        <div className="admin-login-auth" aria-busy={!checked||busy}>{!checked?<p className="admin-login-check" role="status">Checking admin session…</p>:<form onSubmit={e => { e.preventDefault(); void run(async () => { const data = await api('auth/login', '', 'POST', {password}); setPassword(''); setPasswordVisible(false); setCsrf(data.csrf); await refresh(data.csrf); setNotice('Signed in.'); }); }}>
+        <div className="admin-login-auth" aria-busy={!checked||busy}>{!checked?<p className="admin-login-check"><BusyIndicator label="Checking admin session…"/></p>:<form onSubmit={e => { e.preventDefault(); void run(async () => { const data = await api('auth/login', '', 'POST', {password}); setPassword(''); setPasswordVisible(false); setCsrf(data.csrf); await refresh(data.csrf); setNotice('Signed in.'); }); }}>
           <label htmlFor="admin-login-password">Administrator password</label><div className="admin-login-password"><input id="admin-login-password" type={passwordVisible?'text':'password'} required minLength={8} maxLength={512} value={password} onChange={e => setPassword(e.target.value)} autoComplete="current-password" autoFocus disabled={busy}/><button className="admin-login-reveal" type="button" disabled={busy} aria-label={passwordVisible?'Hide password':'Show password'} aria-pressed={passwordVisible} onClick={()=>setPasswordVisible(value=>!value)}><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>{passwordVisible&&<path d="m3 3 18 18"/>}</svg></button></div>
-          <button className="primary" disabled={busy || password.length < 8}>{busy ? 'Signing in…' : 'Sign in to workspace'}<AdminIcon name="arrow"/></button>
+          <button className="primary" disabled={busy || password.length < 8}>{busy ? <BusyIndicator label="Signing in…"/> : 'Sign in to workspace'}<AdminIcon name="arrow"/></button>
         </form>}</div>
         <a className="admin-login-editor" href={`${import.meta.env.BASE_URL}#editor`}>Open editor<AdminIcon name="arrow"/></a>
       </section></div> : <>

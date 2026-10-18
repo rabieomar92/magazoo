@@ -9,6 +9,20 @@ export interface IssuePlan {
   /** Optional so plans saved before the contents designer existed still load. */
   contentsDesign?: Partial<ContentsDesign>;
   contentsStyle?: Record<string, ContentsEntryStyle>;
+  /** Original PDF bytes travel with the arrangement backup. */
+  externalPdfs?: ExternalIssuePdf[];
+  printSettings?: IssuePrintSettings;
+}
+
+export interface IssuePrintSettings {
+  binding: 'saddle-stitch' | 'perfect';
+  perfectMultiple: 2 | 4 | 8 | 16 | 32;
+  coverGsm?: number; innerGsm?: number; copies?: number; spineMm?: number;
+  paperFinish?: string; notes?: string;
+}
+
+export interface ExternalIssuePdf {
+  id: string; name: string; src: string; pageCount: number; thumbnail: string;
 }
 
 /** What the editor may override per line of the contents, independently of the
@@ -131,7 +145,7 @@ export function contentsDesignOf(plan: Pick<IssuePlan, 'contentsDesign'>): Conte
     pictures: CONTENTS_PICTURES.includes(stored.pictures as ContentsPictures) ? stored.pictures as ContentsPictures : base.pictures,
   };
 }
-export interface IssueItem { id: string; name: string; version: number; updated: number; doc: Doc }
+export interface IssueItem { id: string; name: string; version: number; updated: number; doc: Doc; externalPdf?: ExternalIssuePdf }
 export interface IssueAssignment { id: string; startNumber: number; pageCount: number; counted: boolean; mastheadSide?: 'left' | 'right' }
 export interface ContentsEntry {
   id: string; title: string; subtitle: string; page: number;
@@ -146,6 +160,17 @@ export interface IssueResponse {
   finalized?: { at: number; contentsStartNumber: number; documents: { id: string; version: number; pageCount: number; startNumber: number }[] } | null;
 }
 export const isIssueCover = (doc: Doc) => doc.templateId === 'magazine-4' || doc.templateId === 'backcover-1';
+export function issueDocumentLabel(doc: Doc): string {
+  switch (doc.templateId) {
+    case 'magazine-4': return 'Front cover';
+    case 'backcover-1': return 'Back cover';
+    case 'frontmatter-board': return 'Front matter · Editorial board';
+    case 'frontmatter-dean': return 'Front matter · Dean’s message';
+    case 'frontmatter-contents': return 'Front matter · Contents';
+    default: return doc.templateId?.startsWith('gallery-') ? 'Photo essay'
+      : doc.templateId?.startsWith('news-') ? 'News & briefs' : 'Article';
+  }
+}
 export const issuePlainText = (text = '') => parseRuns(text).map(run => run.text).join('').replace(/\s+/gu, ' ').trim();
 
 /**

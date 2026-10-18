@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { BusyIndicator } from './BusyIndicator';
 import { useDoc } from '../store/useDoc';
 import { useEditLease, releaseEditLease } from '../store/editLease';
 import { downloadCopy, saveToTarget, useProjectFile } from '../store/projectFiles';
@@ -22,7 +23,7 @@ export function SharedEditingAccess({ token }: {token:string}) {
   };
   if(lease.status==='active')return <div className="editing-access editing-access--active" role="status">
     <span><strong>Editing reserved for you</strong> · Other visitors are read-only.</span>
-    <button type="button" onClick={()=>void finish()} disabled={busy}>{busy?'Saving…':'Save & finish editing'}</button>
+    <button type="button" onClick={()=>void finish()} disabled={busy}>{busy?<BusyIndicator label="Saving…"/>:'Save & finish editing'}</button>
     {error&&<span role="alert">{error}</span>}
   </div>;
   return <main className="shared-readonly">
@@ -30,7 +31,7 @@ export function SharedEditingAccess({ token }: {token:string}) {
       <div><span className="editing-access-label">{lease.status==='loading'?'CONNECTING':'READ-ONLY'}</span><h1>{lease.status==='blocked'?'Someone else is editing':lease.status==='released'?'Editing finished':lease.status==='recovery'?'Your draft needs review':'Editing is paused'}</h1>
       <p>{lease.message}</p><p className="editing-access-note">Closing the editor normally releases access. If a browser crashes or disconnects, access recovers within about 3 minutes. Switching tabs does not release it.</p></div>
       <div className="editing-access-actions">
-        <button className="tool-btn tool-btn--primary" disabled={busy||lease.status==='loading'} onClick={()=>void resume()}>{busy?'Checking…':lease.status==='blocked'?'Check & start editing':'Reconnect to edit'}</button>
+        <button className="tool-btn tool-btn--primary" disabled={busy||lease.status==='loading'} onClick={()=>void resume()}>{busy||lease.status==='loading'?<BusyIndicator label="Connecting…"/>:lease.status==='blocked'?'Check & start editing':'Reconnect to edit'}</button>
         {dirty&&<button className="tool-btn" onClick={()=>void downloadCopy().catch(()=>setError('Could not download the draft. Please try again.'))}>Download my unsaved draft</button>}
         {lease.status==='recovery'&&<button className="tool-btn" disabled={busy} onClick={()=>void resume(true)}>Load latest after saving my copy</button>}
       </div>

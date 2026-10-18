@@ -7,6 +7,27 @@ export function issueError(status, message) {
 const object = value => value !== null && typeof value === 'object' && !Array.isArray(value);
 const integer = (value, min, max = Number.MAX_SAFE_INTEGER) => Number.isSafeInteger(value) && value >= min && value <= max;
 
+function externalPdfs(plan, items) {
+  if (plan.externalPdfs === undefined) return [];
+  if (!Array.isArray(plan.externalPdfs) || plan.externalPdfs.length > 50) issueError(400, 'Invalid imported PDF list.');
+  const ids = new Set(items.map(item => item.id));
+  let total = 0;
+  return plan.externalPdfs.map(pdf => {
+    if (!object(pdf) || typeof pdf.id !== 'string' || !/^pdf-[a-f0-9-]{36}$/iu.test(pdf.id) || ids.has(pdf.id) ||
+        typeof pdf.name !== 'string' || !pdf.name.trim() || pdf.name.length > 200 ||
+        !integer(pdf.pageCount, 1, 20) || typeof pdf.src !== 'string' || pdf.src.length > 12*1024*1024 ||
+        !/^data:application\/pdf;base64,JVBERi0[A-Za-z0-9+/]*={0,2}$/u.test(pdf.src) ||
+        typeof pdf.thumbnail !== 'string' || pdf.thumbnail.length > 2*1024*1024 || !/^data:image\/png;base64,[A-Za-z0-9+/]+={0,2}$/u.test(pdf.thumbnail)) {
+      issueError(400, 'Import a valid PDF (up to 8 MB and 20 pages).');
+    }
+    const bytes=Buffer.from(pdf.src.split(',')[1],'base64');
+    if(bytes.length>8*1024*1024)issueError(400,'Each imported PDF must be smaller than 8 MB.');
+    ids.add(pdf.id); total+=pdf.src.length+pdf.thumbnail.length;
+    if(total>32*1024*1024)issueError(400,'Imported PDFs exceed the arrangement limit. Use smaller files.');
+    return {id:pdf.id,name:pdf.name,src:pdf.src,pageCount:pdf.pageCount,thumbnail:pdf.thumbnail};
+  });
+}
+
 /** Keep editor settings across saves, accepting only the supported fields. */
 function contentsSettings(plan, ids) {
   const result = {};
@@ -54,6 +75,24 @@ function contentsSettings(plan, ids) {
   return result;
 }
 
+function printSettings(plan) {
+  if(plan.printSettings===undefined)return {};
+  const value=plan.printSettings;
+  if(!object(value)||!['saddle-stitch','perfect'].includes(value.binding)||![2,4,8,16,32].includes(value.perfectMultiple))issueError(400,'Invalid print specification settings.');
+  const result={binding:value.binding,perfectMultiple:value.perfectMultiple};
+  for(const [key,min,max] of [['coverGsm',50,600],['innerGsm',35,400],['copies',1,1000000],['spineMm',0,100]]){
+    if(value[key]===undefined)continue;
+    if(!Number.isFinite(value[key])||value[key]<min||value[key]>max||(key!=='spineMm'&&!Number.isInteger(value[key])))issueError(400,`Invalid print specification: ${key}.`);
+    result[key]=value[key];
+  }
+  for(const [key,max] of [['paperFinish',140],['notes',240]]){
+    if(value[key]===undefined)continue;
+    if(typeof value[key]!=='string'||value[key].length>max)issueError(400,`Invalid print specification: ${key}.`);
+    result[key]=value[key];
+  }
+  return {printSettings:result};
+}
+
 export function validateIssueVersion(version) {
   if (!integer(version, 0)) issueError(400, 'A valid issue version is required.');
 }
@@ -63,7 +102,8 @@ export function validateIssuePlan(plan, items) {
   if (!object(plan) || !Array.isArray(plan.order) || !Array.isArray(plan.contentsExcluded)) {
     issueError(400, 'Supply a complete issue arrangement.');
   }
-  const ids = new Set(items.map(item => item.id));
+  const pdfs = externalPdfs(plan,items);
+  const ids = new Set([...items.map(item => item.id),...pdfs.map(pdf=>pdf.id)]);
   if (plan.order.length !== ids.size + 1 || new Set(plan.order).size !== plan.order.length ||
       plan.order.filter(id => id === CONTENTS_ID).length !== 1 ||
       plan.order.some(id => id !== CONTENTS_ID && !ids.has(id))) {
@@ -82,6 +122,8 @@ export function validateIssuePlan(plan, items) {
     contentsTitle: plan.contentsTitle, contentsSubtitle: plan.contentsSubtitle,
     direction: plan.direction, contentsExcluded: [...plan.contentsExcluded],
     ...contentsSettings(plan, ids),
+    ...printSettings(plan),
+    ...(plan.externalPdfs !== undefined ? {externalPdfs:pdfs}:{}),
   };
 }
 
@@ -108,11 +150,15 @@ export function validateIssueDocuments(documents, plan, items) {
   let contentsStartNumber = cursor;
   let interiorPages = 0;
   const sides = new Map();
+  const pdfs = new Map((plan.externalPdfs??[]).map(pdf=>[pdf.id,pdf]));
   for (const id of plan.order) {
     if (id === CONTENTS_ID) {
       contentsStartNumber = cursor;
       cursor += 2;
       interiorPages += 2;
+    } else if (pdfs.has(id)) {
+      cursor += pdfs.get(id).pageCount;
+      interiorPages += pdfs.get(id).pageCount;
     } else {
       const candidate = submitted.get(id);
       if (candidate.startNumber !== cursor) {
@@ -126,5 +172,5 @@ export function validateIssueDocuments(documents, plan, items) {
       issueError(400, 'The issue exceeds the maximum page number of 99999.');
     }
   }
-  return { documents: plan.order.filter(id => id !== CONTENTS_ID).map(id => ({ ...submitted.get(id), mastheadSide: sides.get(id) })), contentsStartNumber };
+  return { documents: plan.order.filter(id => id !== CONTENTS_ID && !pdfs.has(id)).map(id => ({ ...submitted.get(id), mastheadSide: sides.get(id) })), contentsStartNumber };
 }

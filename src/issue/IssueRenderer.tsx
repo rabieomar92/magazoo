@@ -17,8 +17,11 @@ import '../styles/drop-caps.css';
 import '../styles/rtl.css';
 import 'katex/dist/katex.min.css';
 import './contents.css';
+import type { ExternalIssuePdf } from './model';
+import { renderIssuePdf } from './externalPdf';
+import { externalPdfSheet } from './ExternalPdfPages';
 
-export interface IssueSourceDocument { id: string; name: string; doc: Doc }
+export interface IssueSourceDocument { id: string; name: string; doc: Doc; externalPdf?: ExternalIssuePdf }
 export interface RenderedIssueDocument {
   id: string;
   name: string;
@@ -59,12 +62,23 @@ export function IssueRenderer({ documents, onComplete, onError, onProgress }: Is
         return;
       }
       callbacks.current.onProgress?.(index, documents.length, current.name);
+      if (current.externalPdf) {
+        const urls = await renderIssuePdf(current.externalPdf);
+        if (cancelled) return;
+        const pages = urls.map(url=>externalPdfSheet(url,current.doc.design.pageFormat??'a4'));
+        completed.current[index]={id:current.id,name:current.name,pages,pageCount:pages.length};
+        callbacks.current.onProgress?.(index+1,documents.length,current.name);
+        if(index+1>=documents.length){setStopped(true);callbacks.current.onComplete([...completed.current]);}
+        else setIndex(index+1);
+        return;
+      }
       if (current.doc.design.customCss?.trim()) {
         throw new Error(`${current.name} uses custom CSS. Remove its custom CSS before compiling this issue, or export that document separately.`);
       }
       const source = host.current?.querySelector<HTMLElement>('.pages');
       if (!source) throw new Error(`Could not prepare ${current.name}. Please try compiling again.`);
-      await waitForPreviewResources(source);
+      try { await waitForPreviewResources(source); }
+      catch (failure) { throw new Error(`${current.name}: ${failure instanceof Error ? failure.message : 'Could not prepare the article layout.'}`); }
       if (cancelled) return;
       const preview = source.closest<HTMLElement>('.paper-scroll');
       if (preview?.dataset.previewOverflow === 'true' || source.querySelector('[data-image-avoidance="unresolved"]')) {
@@ -88,6 +102,6 @@ export function IssueRenderer({ documents, onComplete, onError, onProgress }: Is
   }, [current, documents, index, stopped]);
 
   return <div className="issue-renderer" ref={host} aria-hidden="true">
-    {current && !stopped && <PaperPreviewLayout key={current.id} doc={current.doc} toolbarHost={null} pending={false} readOnly />}
+    {current && !current.externalPdf && !stopped && <PaperPreviewLayout key={current.id} doc={current.doc} toolbarHost={null} pending={false} readOnly />}
   </div>;
 }

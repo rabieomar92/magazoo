@@ -11,6 +11,7 @@ import type { IssueProof as Proof } from './IssueProof';
 import { usePdfPreferences } from '../store/pdfPreferences';
 
 const compilation = vi.hoisted(() => ({ sources: vi.fn(), hold: false, complete: undefined as (() => void) | undefined }));
+const proofMeasurement=vi.hoisted(()=>({hold:false,complete:undefined as (()=>void)|undefined}));
 
 vi.mock('./api', () => ({ issueApi: vi.fn() }));
 vi.mock('../lib/pdfExport', async importOriginal => ({
@@ -18,7 +19,8 @@ vi.mock('../lib/pdfExport', async importOriginal => ({
   exportIssuePdf: vi.fn().mockResolvedValue(undefined),
   waitForPreviewResources: vi.fn().mockResolvedValue(undefined),
 }));
-vi.mock('./IssueCompiler', () => ({
+vi.mock('./IssueCompiler', async importOriginal => ({
+  ...await importOriginal<typeof import('./IssueCompiler')>(),
   IssueCompiler: ({ sources, items, plan, onComplete }: ComponentProps<typeof Compiler>) => {
     useEffect(() => {
       compilation.sources(sources);
@@ -31,8 +33,15 @@ vi.mock('./IssueCompiler', () => ({
   },
 }));
 vi.mock('./IssueProof', () => ({
-  IssueProof: ({ pagesRef, onOverflow, documents, pageSize }: ComponentProps<typeof Proof>) => {
+  IssueProof: ({ pagesRef, onOverflow, documents, pageSize, onPending, onPageCounts }: ComponentProps<typeof Proof>) => {
     useEffect(() => onOverflow(false), [onOverflow]);
+    useEffect(()=>{
+      onPending?.();
+      const counts=Object.fromEntries(documents.map(source=>[source.id,source.doc.design.pageFormat==='magazine'?2:1]));
+      const complete=()=>onPageCounts?.(counts);
+      if(proofMeasurement.hold)proofMeasurement.complete=complete;else complete();
+    // The real proof measures again when its numbered documents change.
+    },[documents]);
     const count = 2 + documents.reduce((total, source) => total + (source.doc.design.pageFormat === 'magazine' ? 2 : 1), 0);
     return <div ref={pagesRef} data-proof-size={pageSize}><div className="pages">{Array.from({ length: count }, (_, index) => <section key={index} className="page" />)}</div></div>;
   },
@@ -47,6 +56,7 @@ beforeEach(() => {
   usePdfPreferences.setState({ size: 'a4' });
   compilation.hold = false;
   compilation.complete = undefined;
+  proofMeasurement.hold=false;proofMeasurement.complete=undefined;
   const items = [{ id: 'article', name: 'A science story', version: 3, updated: 0, doc: emptyDoc() }];
   response = { project: { id: 'project', name: 'Test magazine' }, version: 7, items, plan: defaultIssuePlan(items) };
   vi.mocked(issueApi).mockResolvedValue(response);
@@ -65,6 +75,18 @@ it('offers canvas-side ordering without replacing the compiled proof', async () 
   expect(host.querySelector('[data-proof-size]')).toBe(proof);
   act(() => [...host.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent === 'View pages')!.click());
   expect(host.querySelector('[aria-label="Arrange articles on canvas"]')).toBeNull();
+});
+
+it('keeps PDF export and the vendor brief disabled until the assembled proof is measured',async()=>{
+  proofMeasurement.hold=true;
+  await act(async()=>root.render(<IssueWorkspace projectId="project" csrf="test-token" onClose={()=>undefined}/>));
+  act(()=>host.querySelector<HTMLButtonElement>('#tab-output')!.click());
+  const exportButton=()=>[...host.querySelectorAll<HTMLButtonElement>('.studio-actions button')].find(button=>button.textContent?.startsWith('Export '))!;
+  expect(exportButton().disabled).toBe(true);
+  expect(host.querySelector<HTMLButtonElement>('.issue-print-brief-button')!.disabled).toBe(true);
+  act(()=>proofMeasurement.complete!());
+  expect(exportButton().disabled).toBe(false);
+  expect(host.querySelector<HTMLButtonElement>('.issue-print-brief-button')!.disabled).toBe(false);
 });
 
 it('uses Mosaic for legacy contents layouts without exposing ineffective feature controls', async () => {

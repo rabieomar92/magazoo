@@ -1,0 +1,42 @@
+.studio .issue-print-brief-button { display:inline-flex; align-items:center; gap:7px; border-radius:0; font-size:12px; font-weight:500; box-shadow:none; }
+.print-brief-dialog { width:min(960px,calc(100vw - 32px)); max-height:92dvh; padding:0; border:1px solid #dce1e9; color:#172033; background:#fff; box-shadow:0 28px 100px #0c142440; font:13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; }
+.print-brief-dialog::backdrop { background:#11182770; backdrop-filter:blur(3px); }
+.print-brief-dialog-header,.print-brief-dialog-footer { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:16px 22px; }
+.print-brief-dialog-header { border-bottom:1px solid #e7eaf0; }
+.print-brief-dialog-header h2 { margin:0; font-size:16px; }
+.print-brief-dialog-header p { margin:3px 0 0; color:#738096; font-size:12px; }
+.print-brief-dialog-header button { font-size:20px; box-shadow:none; border:0; }
+.print-brief-inputs { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; padding:18px 22px; }
+.print-brief-inputs label { display:grid; align-content:start; gap:5px; color:#536077; font-size:11px; }
+.print-brief-inputs input,.print-brief-inputs select { box-sizing:border-box; width:100%; padding:8px 10px; min-height:36px; border:1px solid #dce1e9; background:#fff; color:#172033; border-radius:0; font-family:inherit; font-size:12px; line-height:1.4; }
+.print-brief-wide { grid-column:span 2; }
+.print-brief-preview-scroll { padding:24px; background:#eef1f5; overflow:auto; max-height:60dvh; }
+.print-brief-preview { max-width:794px; margin:auto; }
+.print-brief-sheet { box-sizing:border-box; width:210mm; height:297mm; padding:13mm 14mm 11mm; background:#fff; color:#172033; font:9pt/1.35 Arial,sans-serif; transform-origin:0 0; overflow:hidden; box-shadow:0 2px 12px #18223912; print-color-adjust:exact; -webkit-print-color-adjust:exact; }
+.print-brief-sheet * { box-sizing:border-box; }
+.print-brief-masthead { display:flex; justify-content:space-between; border-bottom:2px solid #172033; padding-bottom:3mm; font-size:7pt; letter-spacing:.09em; color:#596579; }
+.print-brief-sheet h1 { margin:5mm 0 1mm; font:600 22pt/1.1 Arial,sans-serif; letter-spacing:-.035em; overflow-wrap:anywhere; }
+.print-brief-subtitle { margin:0 0 4mm; color:#687489; font-size:9pt; }
+.print-brief-keyline { display:flex; justify-content:space-between; gap:3mm; padding:3mm 0; border-block:1px solid #dfe4ec; font-size:9pt; }
+.print-brief-facts { display:grid; grid-template-columns:1fr 1fr; gap:9mm; margin:5mm 0 4mm; }
+.print-brief-sheet h2 { margin:0 0 2mm; font:600 8pt/1.3 Arial,sans-serif; text-transform:uppercase; letter-spacing:.05em; }
+.print-brief-facts dl { display:grid; grid-template-columns:42% 58%; gap:1.5mm 2mm; font-size:8pt; margin:0; }
+.print-brief-facts dt { color:#687489; }
+.print-brief-facts dd { margin:0; overflow-wrap:anywhere; }
+.print-brief-pagination { border-block:1px solid #dfe4ec; padding:3mm 0; margin-bottom:4mm; }
+.print-brief-pagination p { margin:1mm 0 0; font-size:8pt; }
+.print-brief-section-heading { display:flex; justify-content:space-between; align-items:baseline; gap:3mm; }
+.print-brief-section-heading > span { color:#687489; font-size:7pt; }
+.print-brief-order ol { column-gap:7mm; margin:1mm 0 0; padding:0; list-style:none; }
+.print-brief-order li { display:flex; gap:2mm; break-inside:avoid; padding:.65mm 0; border-top:1px solid #edf0f4; }
+.print-brief-order li > b { flex:none; width:10mm; font-size:8pt; font-variant-numeric:tabular-nums; }
+.print-brief-order li div { min-width:0; }
+.print-brief-order strong { display:block; font-size:8pt; font-weight:500; line-height:1.2; overflow-wrap:anywhere; }
+.print-brief-order small { display:block; margin-top:.5mm; color:#768196; font-size:6.5pt; line-height:1.2; }
+.print-brief-footer { margin-top:4mm; padding-top:2mm; border-top:1px solid #172033; color:#687489; font-size:7pt; }
+.print-brief-footer p { margin:1mm 0 0; }
+.print-brief-sheet.is-dense .print-brief-order strong { font-size:7pt; }
+.print-brief-sheet.is-dense .print-brief-order li { padding:.65mm 0; }
+.print-brief-dialog-footer { position:sticky; bottom:0; justify-content:flex-end; background:#fff; border-top:1px solid #e7eaf0; }
+.print-brief-dialog-footer p { margin-right:auto; color:#a21b3a; font-size:12px; }
+@media(max-width:640px) { .print-brief-inputs { grid-template-columns:repeat(2,minmax(0,1fr)); } .print-brief-preview-scroll { padding:14px; } }

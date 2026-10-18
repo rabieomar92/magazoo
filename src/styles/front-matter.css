@@ -305,7 +305,9 @@
   letter-spacing: normal;
 }
 .fm-page--board .fm-footer {
-  margin-top: 4mm;
+  /* The shared footer already occupies the page's bottom margin. This empty
+     legacy placeholder must not reserve a second gap and clip the About rail. */
+  margin-top: 0;
   padding-top: 0;
   border-top: 0;
 }

@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useStore } from 'zustand';
 import { useDoc } from '../store/useDoc';
-import { openProject, saveProject, saveProjectAs, useProjectFile } from '../store/projectFiles';
+import { openProject, saveProject, saveProjectAs, useProjectFile, useFileActivity } from '../store/projectFiles';
 import { useSaveStatus, type SaveState } from '../store/saveStatus';
 import { exportPreviewPdf } from '../lib/pdfExport';
 import { PDF_PAGE_SIZES, type PdfPageSize } from '../lib/pdfPageSize';
@@ -9,6 +9,7 @@ import { usePdfPageSize } from '../store/pdfPreferences';
 import { Wordmark } from '../components/Wordmark';
 import { MagazooLoader } from '../components/MagazooLoader';
 import { registerPublicationPrint } from '../lib/nativePrint';
+import { BusyIndicator } from '../components/BusyIndicator';
 
 const SAVE_LABEL: Record<SaveState, string> = {
   idle: 'Ready',
@@ -34,6 +35,7 @@ export function Toolbar({ onPreviewToolsHost, onToggleSidebar, sidebarCollapsed 
   const projectStatus = { draft: 'Draft', pending: 'Unsaved changes', saving: 'Saving…', saved: 'Saved', error: 'Save failed', conflict: 'Save conflict' }[project.status];
   const title = useDoc((s) => s.doc.meta.title);
   const [exporting, setExporting] = useState(false);
+  const opening=useFileActivity(state=>state.opening);
   const [pdfSize, setPdfSize] = usePdfPageSize();
 
   const exportPdf = async () => {
@@ -92,7 +94,7 @@ export function Toolbar({ onPreviewToolsHost, onToggleSidebar, sidebarCollapsed 
           <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><rect x="2.5" y="3" width="15" height="14" rx="2"/><path d="M8 3v14M4.5 6h1.5M4.5 9h1.5"/></svg>
         </button>}
         <Wordmark className="toolbar-brand" />
-        <span className={`project-save-status${project.status==='error'||project.status==='conflict' ? ' is-error':''}`} role="status" aria-label={project.message}>{projectStatus}</span>
+        <span className={`project-save-status${project.status==='error'||project.status==='conflict' ? ' is-error':''}`} role="status" aria-label={project.message}>{project.status==='saving'?<BusyIndicator label="Saving…"/>:projectStatus}</span>
         {saveState === 'error' && <span className="toolbar-save-error">Autosave failed</span>}
       </div>
       <span className="visually-hidden" role="status" aria-live="polite">
@@ -131,11 +133,12 @@ export function Toolbar({ onPreviewToolsHost, onToggleSidebar, sidebarCollapsed 
           <button
             className="tool-btn"
             onClick={() => void openProject()}
+            disabled={opening}
             title="Open a Magazoo! project"
             aria-label="Open a Magazoo! project"
           >
             <span className="tool-btn-icon" aria-hidden="true">↗</span>
-            <span className="tool-btn-label">Open</span>
+            <span className="tool-btn-label">{opening?<BusyIndicator label="Opening…"/>:'Open'}</span>
           </button>
           <button className="tool-btn" onClick={() => void saveProject()} title="Save (Ctrl/⌘S)" aria-label="Save">Save</button>
           <button

@@ -40,6 +40,21 @@ export interface CompileProgress { completed: number; total: number; name: strin
  */
 const MAX_PASSES = 4;
 
+/** The assembled proof is authoritative: independently mounted previews can
+ * settle differently after all publication fonts and resources are present. */
+export function reconcileCompiledProof(compiled:CompiledIssue, counts:Record<string,number>):CompiledIssue {
+  if(compiled.numbered.some(source=>!Number.isSafeInteger(counts[source.id])||counts[source.id]<1))throw new Error('Wait for every document in the proof to finish laying out.');
+  if(compiled.numbered.every(source=>compiled.counts[source.id]===counts[source.id]))return compiled;
+  const items=compiled.numbered.map(source=>({...source,version:1,updated:0}));
+  const assignments=assignIssuePages(compiled.plan,items,counts);
+  const starts=new Map(assignments.map(row=>[row.id,row]));
+  const numbered=compiled.numbered.map(source=>{
+    const row=starts.get(source.id)!;
+    return {...source,doc:documentWithIssueNumber(source.doc,row.startNumber,row.mastheadSide)};
+  });
+  return {...compiled,counts,assignments,numbered};
+}
+
 export function IssueCompiler({ sources, plan, items, onComplete, onError, onProgress }: {
   sources: readonly IssueSourceDocument[];
   plan: IssuePlan;

@@ -20,6 +20,7 @@
   "dependencies": {
     "dexie": "^4.4.4",
     "katex": "^0.16.47",
+    "pdfjs-dist": "^6.4.299",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "sharp": "^0.35.5",

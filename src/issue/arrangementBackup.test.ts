@@ -11,3 +11,11 @@ it('refuses missing articles and duplicate slots instead of silently losing sett
  expect(()=>restoreArrangement(backup,[{id:'new-a',name:'a.json'}])).toThrow();
  expect(()=>restoreArrangement({...backup,plan:{...plan,order:['old-a','old-a','__contents__']}},backup.items)).toThrow();
 });
+it('restores original PDF bytes and vendor settings with stable PDF ids',()=>{
+ const pdf={id:'pdf-kept',name:'insert.pdf',src:'data:application/pdf;base64,JVBERi0=',thumbnail:'',pageCount:2};
+ const saved={...backup,plan:{...plan,externalPdfs:[pdf],order:['old-b',pdf.id,'__contents__','old-a'],printSettings:{binding:'perfect',perfectMultiple:4,coverGsm:250}}};
+ const restored=restoreArrangement(saved,[{id:'new-a',name:'a.json'},{id:'new-b',name:'b.json'}]);
+ expect(restored.externalPdfs).toEqual([pdf]);
+ expect(restored.order).toEqual(['new-b',pdf.id,'__contents__','new-a']);
+ expect(restored.printSettings).toEqual(saved.plan.printSettings);
+});

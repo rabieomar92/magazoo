@@ -1,0 +1,5 @@
+.busy-indicator { display:inline-flex; align-items:center; gap:.5em; font:inherit; }
+.busy-indicator-ring { display:inline-block; width:1em; height:1em; flex:none; border:2px solid currentColor; border-right-color:transparent; border-radius:50%; box-sizing:border-box; animation:busy-indicator-turn .8s linear infinite; }
+@keyframes busy-indicator-turn { to { transform:rotate(360deg); } }
+@media(prefers-reduced-motion:reduce) { .busy-indicator-ring { animation:none; } }
+@media print { .busy-indicator { display:none !important; } }

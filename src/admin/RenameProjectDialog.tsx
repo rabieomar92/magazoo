@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { BusyIndicator } from '../components/BusyIndicator';
 
 export default function RenameProjectDialog({ name, close, rename }: {
   name: string; close: () => void; rename: (name: string) => Promise<void>;
@@ -21,7 +22,7 @@ export default function RenameProjectDialog({ name, close, rename }: {
       <p>Documents, private editing links and the saved issue arrangement stay unchanged.</p>
       <label>Project name<input autoFocus required maxLength={120} value={value} disabled={busy} onChange={event => setValue(event.target.value)} /></label>
       {error && <p className="admin-alert" role="alert">{error}</p>}
-      <div className="admin-actions"><button type="button" disabled={busy} onClick={close}>Cancel</button><button type="submit" className="primary" disabled={busy || !value.trim() || value.trim() === name}>{busy ? 'Renaming…' : 'Save name'}</button></div>
+      <div className="admin-actions"><button type="button" disabled={busy} onClick={close}>Cancel</button><button type="submit" className="primary" disabled={busy || !value.trim() || value.trim() === name}>{busy ? <BusyIndicator label="Renaming…"/> : 'Save name'}</button></div>
     </form>
   </dialog>;
 }

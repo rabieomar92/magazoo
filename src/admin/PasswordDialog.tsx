@@ -1,5 +1,6 @@
 import {useEffect,useRef,useState} from 'react';
 import {AdminIcon} from './AdminIcon';
+import {BusyIndicator} from '../components/BusyIndicator';
 
 /** Transient credentials only: never included in article JSON or storage. */
 export function PasswordDialog({close,save}:{close:()=>void;save:(data:{currentPassword:string;newPassword:string;confirmation:string})=>Promise<void>}){
@@ -17,7 +18,7 @@ export function PasswordDialog({close,save}:{close:()=>void;save:(data:{currentP
       <fieldset disabled={busy}><label>Current password<input type="password" autoComplete="current-password" autoFocus required maxLength={512} value={currentPassword} onChange={e=>setCurrent(e.target.value)}/></label>
         <label>New password<input type="password" autoComplete="new-password" required minLength={15} maxLength={512} value={newPassword} onChange={e=>setNext(e.target.value)}/></label>
         <label>Confirm new password<input type="password" autoComplete="new-password" required minLength={15} maxLength={512} value={confirmation} onChange={e=>setConfirmation(e.target.value)}/></label>
-        <div className="admin-actions"><button type="button" onClick={close}>Cancel</button><button type="submit" className="primary" disabled={!currentPassword||newPassword.trim().length<15||!confirmation}>{busy?'Updating…':'Change password'}</button></div>
+        <div className="admin-actions"><button type="button" onClick={close}>Cancel</button><button type="submit" className="primary" disabled={!currentPassword||newPassword.trim().length<15||!confirmation}>{busy?<BusyIndicator label="Updating…"/>:'Change password'}</button></div>
       </fieldset>
     </form>
   </dialog>;

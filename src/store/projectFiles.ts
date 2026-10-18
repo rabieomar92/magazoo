@@ -150,10 +150,14 @@ export async function saveProject() {
     await saveToTarget(useDoc.getState().doc,true);
   } catch(error) { alert(error instanceof Error ? error.message : 'Save failed.'); }
 }
+export const useFileActivity = create<{opening:boolean}>(()=>({opening:false}));
 export async function openProject() {
+  if(useFileActivity.getState().opening)return;
   const state=useProjectFile.getState();
   if (state.status !== 'saved' && !confirm('Open another project? Save your current work first if you need to keep it.')) return;
   const load = async (file:File,handle?:ProjectFileHandle) => {
+    useFileActivity.setState({opening:true});
+    try {
     const doc=migrate(JSON.parse(await file.text()));
     await pending.catch(() => {});
     await releaseEditLease();
@@ -161,6 +165,7 @@ export async function openProject() {
     bindTarget(handle ? {kind:'file',handle,modified:file.lastModified}:null,doc);
     if(location.hash.startsWith('#edit='))history.replaceState(null,'',location.pathname);
     useEditLease.setState({status:'local'});
+    } finally { useFileActivity.setState({opening:false}); }
   };
   try {
     const picker=(window as PickerWindow).showOpenFilePicker;

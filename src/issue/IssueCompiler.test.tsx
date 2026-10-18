@@ -1,7 +1,7 @@
 import { act, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 import { expect, it, vi } from 'vitest';
-import { IssueCompiler, type CompiledIssue } from './IssueCompiler';
+import { IssueCompiler, reconcileCompiledProof, type CompiledIssue } from './IssueCompiler';
 import { defaultIssuePlan } from './model';
 import { emptyDoc } from '../schema/document';
 import type { IssueSourceDocument, RenderedIssueDocument } from './IssueRenderer';
@@ -48,4 +48,17 @@ it('does not mark a non-converging issue ready with incorrect page numbering', a
     expect(error).toHaveBeenCalledOnce();
     expect(error.mock.calls[0][0].message).toContain('page counts keep changing');
   } finally { measurement.unstable = false; act(() => root.unmount()); vi.unstubAllGlobals(); }
+});
+
+it('renumbers from all settled proof pages without filtering contents membership or mutating articles',()=>{
+  const items=['a','b'].map(id=>({id,name:id,version:1,updated:0,doc:emptyDoc()}));
+  const plan={...defaultIssuePlan(items),contentsExcluded:['a','b']};
+  const initial:CompiledIssue={plan,numbered:items,documents:[],counts:{a:3,b:1},assignments:[]};
+  const before=JSON.stringify(items);
+  const settled=reconcileCompiledProof(initial,{a:1,b:1});
+  expect(settled.assignments.map(row=>[row.id,row.startNumber,row.pageCount])).toEqual([['__contents__',1,2],['a',3,1],['b',4,1]]);
+  expect(settled.numbered.map(source=>source.doc.footer?.startNumber)).toEqual([3,4]);
+  expect(reconcileCompiledProof(settled,{a:1,b:1})).toBe(settled);
+  expect(JSON.stringify(items)).toBe(before);
+  expect(()=>reconcileCompiledProof(initial,{a:0,b:1})).toThrow();
 });

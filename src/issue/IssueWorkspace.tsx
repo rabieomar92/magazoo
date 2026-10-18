@@ -6,7 +6,7 @@ import { pageDimensions, withPageFormat } from '../lib/pageFormat';
 import { usePdfPageSize } from '../store/pdfPreferences';
 import { issueApi } from './api';
 import { contentsDesignOf, contentsEntries, defaultIssuePlan, reconcileIssuePlan, CONTENTS_ID, type ContentsDensity, type ContentsDesign, type ContentsEntryStyle, type ContentsPictures, type IssueItem, type IssuePlan, type IssueResponse } from './model';
-import { IssueCompiler, type CompiledIssue, type CompileProgress } from './IssueCompiler';
+import { IssueCompiler, reconcileCompiledProof, type CompiledIssue, type CompileProgress } from './IssueCompiler';
 import { IssueProof } from './IssueProof';
 import { ContentsEntryCard } from './ContentsEntryCards';
 import { IssueOrder } from './IssueOrder';
@@ -16,6 +16,12 @@ import { Wordmark } from '../components/Wordmark';
 import { MagazooLoader } from '../components/MagazooLoader';
 import { registerPublicationPrint } from '../lib/nativePrint';
 import { restoreArrangement } from './arrangementBackup';
+import { BusyIndicator } from '../components/BusyIndicator';
+import { IssuePdfImport } from './IssuePdfImport';
+import { withExternalPdfItems } from './externalPdfModel';
+import { releaseIssuePdf } from './externalPdf';
+import type { ExternalIssuePdf } from './model';
+import { IssuePrintBrief } from './IssuePrintBrief';
 
 /** What the compiled sheets are built from, and the only thing that can put
  * the proof out of date. Everything else an editor can change — wording,
@@ -54,8 +60,12 @@ const TABS: { id: Tab; label: string }[] = [
 ];
 
 function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; csrf: string; onClose: () => void; onReload: () => void }) {
-  const [items, setItems] = useState<IssueItem[]>(data.items);
-  const [plan, setPlan] = useState<IssuePlan>(() => data.plan ? reconcileIssuePlan(data.plan, data.items) : defaultIssuePlan(data.items));
+  const [articles, setItems] = useState<IssueItem[]>(data.items);
+  const [plan, setPlan] = useState<IssuePlan>(() => data.plan ? reconcileIssuePlan(data.plan, withExternalPdfItems(data.items, data.plan.externalPdfs)) : defaultIssuePlan(data.items));
+  const items = useMemo(()=>withExternalPdfItems(articles,plan.externalPdfs),[articles,plan.externalPdfs]);
+  const pdfResources = useRef(plan.externalPdfs);
+  useEffect(()=>{pdfResources.current=plan.externalPdfs;},[plan.externalPdfs]);
+  useEffect(()=>()=>pdfResources.current?.forEach(releaseIssuePdf),[]);
   /** The arrangement the sheets on screen were built from. Editing is free;
    * re-setting the issue is deliberate. */
 
@@ -77,13 +87,15 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
   const [selectedEntry, setSelectedEntry] = useState('');
   const [fitScale, setFitScale] = useState(0.4);
   const [proofVersion, setProofVersion] = useState(0);
+  const [proofVerified,setProofVerified]=useState(false);
+  const proofPasses=useRef(0);
   const restoredFinalization = useRef(false);
   const pagesRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const save = useIssueAutosave(data.project.id, csrf, plan, data.version, data.plan);
 
   // A new array identity is what tells the compiler to set the issue again.
-  const sources = useMemo(() => { void compileToken; return data.items.map(({ id, name, doc }) => ({ id, name, doc: withPageFormat(doc, compositionFormat) })); }, [data.items, compileToken, compositionFormat]);
+  const sources = useMemo(() => { void compileToken; return items.map(({ id, name, doc, externalPdf }) => ({ id, name, doc: withPageFormat(doc, compositionFormat), externalPdf })); }, [items, compileToken, compositionFormat]);
   const ready = !!compiled && compiledFormat === compositionFormat;
   const assignments = useMemo(() => ready ? compiled!.assignments : [], [compiled, ready]);
   // Keep old design data readable, but the studio now offers one dependable
@@ -150,11 +162,21 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
   const scale = zoom === 'fit' ? fitScale : zoom;
 
   const onCompiled = useCallback((result: CompiledIssue) => {
+    setProofVerified(false);proofPasses.current=0;
     setCompiled(result);
     setCompiledFormat(compositionFormat);
     setRenderError('');
     setProofVersion(value => value + 1);
   }, [compositionFormat]);
+  const onProofCounts=useCallback((counts:Record<string,number>)=>{
+    if(!compiled)return;
+    try {
+      const next=reconcileCompiledProof(compiled,counts);
+      if(next===compiled){setProofVerified(true);return;}
+      if(++proofPasses.current>4)throw new Error('The assembled issue keeps changing page counts. Review the page layouts before exporting.');
+      setProofVerified(false);setCompiled(next);
+    }catch(failure){setError(failure instanceof Error?failure.message:'Could not verify the issue proof.');setProofVerified(false);}
+  },[compiled]);
   useEffect(() => {
     setRenderError('');
     setNotice('');
@@ -171,6 +193,23 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
   const onProgress = useCallback((value: CompileProgress) => setProgress(value), []);
 
   const updatePlan = (next: IssuePlan) => { setPlan(next); setNotice(''); };
+  const importPdf = (pdf: ExternalIssuePdf) => {
+    const externalPdfs=[...(plan.externalPdfs??[]),pdf];
+    if(externalPdfs.reduce((sum,item)=>sum+item.src.length+item.thumbnail.length,0)>32*1024*1024)throw new Error('This arrangement has reached its 24 MB PDF limit. Use smaller files.');
+    const order=[...plan.order];
+    const back=order.findIndex(id=>items.find(item=>item.id===id)?.doc.templateId==='backcover-1');
+    order.splice(back<0?order.length:back,0,pdf.id);
+    updatePlan({...plan,externalPdfs,order,contentsExcluded:[...plan.contentsExcluded,pdf.id]});
+    setCompiled(null);setRenderError('');setContentsOverflow(true);setCompileToken(value=>value+1);
+    setNotice('PDF imported. Its pages stay together and count toward the whole issue. Imported pages print as fixed artwork at up to 300 dpi; the original PDF is retained in the arrangement.');
+  };
+  const removePdf = (id:string) => {
+    const pdf=plan.externalPdfs?.find(item=>item.id===id);if(!pdf)return;
+    const contentsStyle={...plan.contentsStyle};delete contentsStyle[id];
+    updatePlan({...plan,order:plan.order.filter(value=>value!==id),externalPdfs:plan.externalPdfs?.filter(item=>item.id!==id),contentsExcluded:plan.contentsExcluded.filter(value=>value!==id),contentsStyle});
+    setCompiled(null);setRenderError('');setContentsOverflow(true);setCompileToken(value=>value+1);
+    releaseIssuePdf(pdf);
+  };
   const updateDesign = (patch: Partial<ContentsDesign>) => updatePlan({ ...plan, contentsDesign: { ...contentsDesign, ...patch } });
   const updateEntryStyle = (id: string, patch: Partial<ContentsEntryStyle>) => {
     const next: ContentsEntryStyle = { ...(plan.contentsStyle?.[id] ?? {}), ...patch };
@@ -207,9 +246,9 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
     finally { setBusy(false); }
   };
   const finalize = () => execute(async () => {
-    if (!ready || contentsOverflow || proofStale) throw new Error('Recompile the issue and resolve the contents layout before finalising.');
+    if (!ready || !proofVerified || contentsOverflow || proofStale) throw new Error('Wait for the assembled issue proof to settle before finalising.');
     const version = await save.flush();
-    const documents = assignments.filter(row => row.id !== CONTENTS_ID).map(row => ({ id: row.id, version: items.find(item => item.id === row.id)!.version, startNumber: row.startNumber, pageCount: row.pageCount }));
+    const documents = assignments.filter(row => row.id !== CONTENTS_ID && !items.find(item=>item.id===row.id)?.externalPdf).map(row => ({ id: row.id, version: items.find(item => item.id === row.id)!.version, startNumber: row.startNumber, pageCount: row.pageCount }));
     const result = await issueApi<{ version: number; items: { id: string; version: number }[] }>(data.project.id, csrf, '/finalize', 'POST', { version, plan, documents });
     save.acceptFinalizedVersion(result.version);
     setItems(previous => previous.map(item => ({ ...item, version: result.items.find(updated => updated.id === item.id)?.version ?? item.version })));
@@ -217,7 +256,7 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
     setNotice('Issue finalised. Starting page numbers are saved to every article. Your two-page contents spread is ready.');
   });
   const exportIssue = () => execute(async () => {
-    if (!ready || proofStale || contentsOverflow) throw new Error('Wait for the selected page size to finish compiling before exporting.');
+    if (!ready || !proofVerified || proofStale || contentsOverflow) throw new Error('Wait for the assembled issue proof to finish compiling before exporting.');
     if (canvasView === 'arrange') {
       setCanvasView('proof');
       await new Promise<void>(resolve => window.requestAnimationFrame(() => window.requestAnimationFrame(() => resolve())));
@@ -233,7 +272,7 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
     await exportIssuePdf(data.project.name, root, pdfSize);
   });
 
-  const blocked = busy || !ready || contentsOverflow || proofStale;
+  const blocked = busy || !ready || !proofVerified || contentsOverflow || proofStale;
   const printState=useRef({blocked,exportIssue});
   useLayoutEffect(()=>{printState.current={blocked,exportIssue};});
   useEffect(() => registerPublicationPrint({source:()=>printState.current.blocked?null:pagesRef.current,size:pdfSize,issue:true,shortcut:()=>void printState.current.exportIssue()}),[pdfSize]);
@@ -245,7 +284,7 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
         <span className="studio-project" dir="auto">{data.project.name}</span>
       </div>
       <div className="studio-bar-end">
-        <span className={`save-pill is-${save.status}`} role="status">{save.status === 'saved' ? 'Saved' : save.status === 'saving' ? 'Saving…' : save.status === 'pending' ? 'Unsaved changes' : 'Not saved'}</span>
+        <span className={`save-pill is-${save.status}`} role="status">{save.status === 'saved' ? 'Saved' : save.status === 'saving' ? <BusyIndicator label="Saving…"/> : save.status === 'pending' ? 'Unsaved changes' : 'Not saved'}</span>
         <button disabled={busy} onClick={() => void execute(async () => { await save.flush(); onClose(); })}>Back to library</button>
       </div>
     </header>
@@ -257,7 +296,7 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
     <div className="studio-shell">
       <aside className="inspector">
         <div className="inspector-metrics">
-          <div><strong>{items.length}</strong><span>articles</span></div>
+          <div><strong>{items.length}</strong><span>documents</span></div>
           <div><strong>{ready ? physicalPages : '—'}</strong><span>pages</span></div>
           <div><strong>{ready ? entries.length : '—'}</strong><span>listed</span></div>
         </div>
@@ -268,7 +307,8 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
         {tab === 'arrange' && <div className="panel" role="tabpanel" id="panel-arrange" aria-labelledby="tab-arrange">
           <section className="card">
             <div className="card-head"><h2>Reading order</h2><button disabled={busy || save.status !== 'saved'} onClick={onReload}>Refresh articles</button></div>
-            <IssueOrder plan={plan} items={items} assignments={assignments} disabled={busy} onChange={updatePlan} />
+            <IssuePdfImport disabled={busy} onImport={importPdf} />
+            <IssueOrder plan={plan} items={items} assignments={assignments} disabled={busy} onChange={updatePlan} onRemovePdf={removePdf} />
           </section>
           <section className="card">
             <h2>Page numbering</h2>
@@ -337,6 +377,10 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
         {tab === 'output' && <div className="panel" role="tabpanel" id="panel-output" aria-labelledby="tab-output">
           <section className="card">
             <h2>Arrangement backup</h2>
+            <button type="button" disabled={busy} onClick={()=>{
+              const file=new Blob([JSON.stringify({plan,items:articles.map(({id,name})=>({id,name}))},null,2)],{type:'application/json'});
+              const url=URL.createObjectURL(file),link=document.createElement('a');link.href=url;link.download='magazoo-arrangement.json';link.click();window.setTimeout(()=>URL.revokeObjectURL(url),1000);
+            }}>Download arrangement &amp; imported PDFs</button>
             <p className="field-hint">Restore reading order, contents wording, design and numbering after uploading the same article files. This does not replace article content.</p>
             <label className="field">Restore arrangement<input type="file" accept=".json,application/json" disabled={busy} onChange={async event=>{
               const input=event.currentTarget,file=input.files?.[0];if(!file)return;
@@ -357,6 +401,7 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
           </section>
           <section className="card">
             <h2>Finalise &amp; export</h2>
+            <IssuePrintBrief title={data.project.name} plan={plan} items={items} assignments={assignments} size={pdfSize} disabled={busy||!ready||!proofVerified||proofStale} onChange={updatePlan}/>
             <label className="field">PDF page size<select value={pdfSize} disabled={busy} onChange={event => setPdfSize(event.target.value as PdfPageSize)}>
               {Object.entries(PDF_PAGE_SIZES).map(([key, size]) => <option key={key} value={key}>{size.label} · {size.width} × {size.height} mm</option>)}
             </select></label>
@@ -371,6 +416,7 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
         <div className="stage-bar">
           <div className="stage-title">
             <strong>Compiled preview</strong>
+            {ready&&!proofVerified&&<BusyIndicator label="Verifying pages…"/>}
             {ready && <span>{physicalPages} {physicalPages === 1 ? 'page' : 'pages'}</span>}
           </div>
           <div className="stage-tools">
@@ -386,14 +432,14 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
         </div>
         <div className="stage-scroll" ref={stageRef}>
           {canvasView === 'arrange' && <section className="issue-canvas-order" aria-label="Arrange articles on canvas">
-            <h2>Arrange your issue</h2>
+            <div className="issue-arrange-heading"><h2>Arrange your issue</h2><div className="issue-arrange-actions"><IssuePrintBrief title={data.project.name} plan={plan} items={items} assignments={assignments} size={pdfSize} disabled={busy||!ready||!proofVerified||proofStale} onChange={updatePlan}/><IssuePdfImport disabled={busy} onImport={importPdf} /></div></div>
             <p>Drag an article to its new position. Its pages move together. Then recompile to refresh the page numbers.</p>
-            <IssueOrder plan={plan} items={items} assignments={assignments} disabled={busy} onChange={updatePlan} visual />
+            <IssueOrder plan={plan} items={items} assignments={assignments} disabled={busy} onChange={updatePlan} onRemovePdf={removePdf} visual />
             {proofStale && <button type="button" className="primary" disabled={busy} onClick={() => { recompile(); setCanvasView('proof'); }}>Apply order &amp; recompile</button>}
           </section>}
-          <div hidden={canvasView === 'arrange'}>
+          <div className={canvasView === 'arrange'?'issue-proof-offstage':undefined}>
           {ready
-            ? <IssueProof plan={proofPlan!} entries={entries} documents={compiled!.numbered} magazineName={data.project.name} design={proofDesign} contentsStart={contentsStart} contentsSide={assignments.find(row => row.id === CONTENTS_ID)?.mastheadSide} pageSize={pdfSize} scale={scale} pagesRef={pagesRef} onOverflow={setContentsOverflow} />
+            ? <IssueProof plan={proofPlan!} entries={entries} documents={compiled!.numbered} magazineName={data.project.name} design={proofDesign} contentsStart={contentsStart} contentsSide={assignments.find(row => row.id === CONTENTS_ID)?.mastheadSide} pageSize={pdfSize} scale={scale} pagesRef={pagesRef} onOverflow={setContentsOverflow} onPageCounts={onProofCounts} onPending={()=>setProofVerified(false)} onError={failure=>{setError(failure.message);setProofVerified(false);}} />
             : <div className="stage-progress">
                 {renderError
                   ? <><Wordmark className="stage-mark" /><h3>An article needs attention</h3><p role="alert">{renderError}</p><button className="primary" onClick={recompile}>Try again</button></>
