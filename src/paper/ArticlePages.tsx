@@ -21,6 +21,7 @@ import { PlacedImages } from './PlacedImages';
 import {HeroCaption} from './HeroCaption';
 import {useHeroCaptionLayout} from './useHeroCaptionLayout';
 import {lineGridUp,lineGridDown} from '../lib/lineGrid';
+import {unscaledVerticalOffset} from '../lib/previewGeometry';
 import '../styles/article-layouts.css';
 
 const MM = 96 / 25.4;
@@ -80,7 +81,7 @@ export function ArticlePages({ doc, vars, onStatus, readOnly = false }: { doc: D
       const headerHeight = header.current.offsetHeight / MM;
       const captionHeight = (caption.current?.offsetHeight ?? 0) / MM;
       const title=header.current.querySelector<HTMLElement>('.title');
-      const titleOffset=title?(title.getBoundingClientRect().top-header.current.getBoundingClientRect().top)/MM:0;
+      const titleOffset=title?unscaledVerticalOffset(title,header.current)/MM:0;
       const geometry = articleGeometry(id, doc.design, headerHeight, captionHeight, footerBottomMargin(doc),titleOffset);
       const obstacles: ArticleObstacle[] = [];
       const imageBounds: ArticleObstacle[] = [];
