@@ -17,3 +17,17 @@ export function largestBoardScaleThatFits(
   }
   return Math.floor(low * 1000) / 1000;
 }
+
+/** Honour the requested photograph height up to the space actually left by
+ * the publication copy. Measurement must use the same page as final output. */
+export function largestBoardHeroThatFits(requested:number, fits:(height:number)=>boolean) {
+  const maximum=Math.max(25,Math.min(180,requested));
+  if (fits(maximum)) return maximum;
+  if (!fits(25)) return 25;
+  let low=25, high=maximum;
+  while (high-low>.1) {
+    const middle=(low+high)/2;
+    if (fits(middle)) low=middle; else high=middle;
+  }
+  return Math.floor(low*10)/10;
+}

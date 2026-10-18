@@ -138,11 +138,10 @@
 }
 .fm-page--board .fm-banner--bleed {
   width: calc(100% + 2 * var(--margin));
-  height: var(--hero-h);
+  height: var(--fm-board-hero-height,var(--hero-h));
   margin: 0 calc(-1 * var(--margin));
   background: color-mix(in srgb,var(--ink) 10%,var(--paper-bg,#fff));
 }
-.fm-page--board.fm-page--compact-trim .fm-banner--bleed { height:min(var(--hero-h),calc(var(--page-h) * .27)); }
 .fm-board-caption {
   min-width: 0;
   display: grid;

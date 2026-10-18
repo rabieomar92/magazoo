@@ -10,7 +10,7 @@ import { FramedImage } from '../components/FramedImage';
 import { HeroCaption } from './HeroCaption';
 import { heroCaptionText } from '../lib/heroCaption';
 import { TagBar } from './TagBar';
-import { largestBoardScaleThatFits } from '../lib/frontMatterBoardFit';
+import { largestBoardScaleThatFits, largestBoardHeroThatFits } from '../lib/frontMatterBoardFit';
 import { SignatureImage } from '../components/SignatureImage';
 import { signatureGeometry } from '../lib/signature';
 import { pageDimensions } from '../lib/pageFormat';
@@ -52,8 +52,10 @@ export function FrontMatterPages({doc,vars,onStatus}: {doc:Doc;vars:CSSPropertie
   const logoAspect = logoAsset ? Math.max(.8,Math.min(8,logoAsset.naturalWidth/Math.max(1,logoAsset.naturalHeight))) : 3.2;
   const signature = signatureGeometry(content.signature?.assetId ? doc.assets[content.signature.assetId] : null, content, doc.design.margin, pageDimensions(doc.design).width);
   const [boardScale,setBoardScale] = useState(1);
+  const [boardHeroHeight,setBoardHeroHeight] = useState(doc.design.heroHeight);
   const pageVars = {
     ...vars,
+    '--fm-board-hero-height': `${boardHeroHeight}mm`,
     '--fm-about-columns': String(aboutColumns),
     '--fm-board-body-size': `${doc.design.sizes.body * boardScale}pt`,
     '--fm-board-heading-size': `${7.2 * boardScale}pt`,
@@ -84,8 +86,9 @@ export function FrontMatterPages({doc,vars,onStatus}: {doc:Doc;vars:CSSPropertie
     const root = measureRef.current;
     const column = root?.querySelector<HTMLElement>('.fm-column');
     if (!root || !column) return;
+    const measurementPage=root.querySelector<HTMLElement>('.fm-measure-page')!;
     const nodes = [...column.querySelectorAll<HTMLElement>('.fm-unit')];
-    const height = column.clientHeight;
+    let height = column.clientHeight;
     let gap = parseFloat(getComputedStyle(column).rowGap) || 0;
     let widthOverflow = false;
     let trackWidthOverflow = !board;
@@ -108,15 +111,34 @@ export function FrontMatterPages({doc,vars,onStatus}: {doc:Doc;vars:CSSPropertie
       return size;
     };
     const applyBoardScale = (scale:number) => {
-      root.style.setProperty('--fm-board-body-size',`${doc.design.sizes.body * scale}pt`);
-      root.style.setProperty('--fm-board-heading-size',`${7.2 * scale}pt`);
-      root.style.setProperty('--fm-board-entry-gap',`${2.8 * scale}mm`);
+      measurementPage.style.setProperty('--fm-board-body-size',`${doc.design.sizes.body * scale}pt`);
+      measurementPage.style.setProperty('--fm-board-heading-size',`${7.2 * scale}pt`);
+      measurementPage.style.setProperty('--fm-board-entry-gap',`${2.8 * scale}mm`);
       gap = parseFloat(getComputedStyle(column).rowGap) || 0;
     };
     const packAtScale = (scale:number) => {
       if (board) applyBoardScale(scale);
       return packFrontMatter(units,Math.max(1,height-2),measure,gap);
     };
+    if (board && root.querySelector('.fm-banner--bleed')) {
+      // Fit the image against real copy, not a fixed percentage of the trim.
+      // Use full-size role text so making the photograph larger never silently
+      // shrinks type. Both preview and compilation run this same measurement.
+      applyBoardScale(1);
+      const fitted=largestBoardHeroThatFits(doc.design.heroHeight,candidate=>{
+        measurementPage.style.setProperty('--fm-board-hero-height',`${candidate}mm`);
+        height=column.clientHeight;
+        const rail=root.querySelector<HTMLElement>('.fm-rail');
+        const header=root.querySelector<HTMLElement>('.fm-board-list-header');
+        const packed=packAtScale(1);
+        return height>=40 && !packed.overflow && packed.columns.length<=2
+          && (!rail || (rail.scrollHeight<=rail.clientHeight && rail.scrollWidth<=rail.clientWidth+1))
+          && (!header || header.scrollHeight<=header.clientHeight+1);
+      });
+      measurementPage.style.setProperty('--fm-board-hero-height',`${fitted}mm`);
+      height=column.clientHeight;
+      setBoardHeroHeight(previous=>Math.abs(previous-fitted)<.05?previous:fitted);
+    }
     let selectedBoardScale = 1;
     if (board) {
       const fitsBoardScale = (scale:number) => {

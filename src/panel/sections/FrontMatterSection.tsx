@@ -116,6 +116,7 @@ export function FrontMatterDesign({pageOnly=false}:{pageOnly?:boolean}) {
       {!pageOnly&&<LabeledNumber label="Top bar margin" unit="mm" min={0} max={25} value={doc.design.topBarOffset ?? 10} onChange={v => update(d => {d.design.topBarOffset = Math.max(0,Math.min(25,v));})} />}
       <LabeledNumber label="Page margin" unit="mm" min={10} max={22} value={doc.design.margin} onChange={v => update(d => {d.design.margin = Math.max(10,Math.min(22,v));})} />
       {!dean && <LabeledNumber label={board ? 'Bleed image height' : 'Image height'} unit="mm" min={25} max={board ? 180 : 90} value={doc.design.heroHeight} onChange={v => update(d => {d.design.heroHeight = Math.max(25,Math.min(board ? 180 : 90,v));})} />}
+      {board && <p className="hint">The photo grows up to this height, limited only by the space needed to keep the publication text and board readable above the footer.</p>}
       {!pageOnly&&<><SegmentField<'left' | 'right'>
         label="Masthead & footer side"
         value={doc.design.barSide ?? 'left'}
