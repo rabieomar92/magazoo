@@ -12,7 +12,11 @@ async function openPdf(src: string) {
   const pdfjs = await import('pdfjs-dist');
   pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
   const base = `${import.meta.env.BASE_URL}pdfjs/`;
-  const task = pdfjs.getDocument({ url: src,
+  // Decode the self-contained backup locally. Fetching a data: URL is blocked
+  // by the production connect-src policy, even though image previews allow it.
+  const encoded = src.slice(src.indexOf(',') + 1);
+  const data = Uint8Array.from(atob(encoded), character => character.charCodeAt(0));
+  const task = pdfjs.getDocument({ data,
     cMapUrl: `${base}cmaps/`, cMapPacked: true, standardFontDataUrl: `${base}standard_fonts/`, wasmUrl: `${base}wasm/` });
   task.onPassword = () => { void task.destroy(); };
   const pdf = await task.promise.catch(error => { throw new Error(error?.name === 'PasswordException' || error?.message?.includes('destroyed') ? 'Unlock this PDF before importing it.' : 'This PDF could not be opened. Try saving a new copy.'); });

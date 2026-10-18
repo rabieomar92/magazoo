@@ -181,7 +181,7 @@
 .crop-zoom b { font:600 11px/1 ui-monospace,SFMono-Regular,Menlo,monospace; color:var(--ink); font-variant-numeric:tabular-nums; }
 
 /* --- reading order ---------------------------------------------------- */
-.issue-order,.issue-order-list { list-style:none; padding:0; margin:8px 0 0; max-height:540px; overflow:auto; scrollbar-width:thin; overscroll-behavior:contain; }
+.issue-order,.issue-order-list { list-style:none; padding:0; margin:8px 0 0; max-height:none; overflow:visible; }
 .issue-order li,.issue-order-list li {
   position:relative; display:flex; align-items:center; gap:8px; padding:9px 9px 9px 0; margin:7px 0;
   border:1px solid var(--line); border-radius:10px; background:var(--surface); transition:border-color .12s,background .12s,box-shadow .12s;
@@ -229,7 +229,7 @@
 .issue-canvas-order { max-width:1000px; margin:0 auto; padding:24px; background:var(--surface); color:var(--ink); }
 .issue-canvas-order h2 { margin:0 0 8px; }
 .issue-canvas-order > p { color:var(--ink-2); font-size:13px; }
-.issue-order-visual { max-height:min(65vh,850px); padding:6px; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)) 18px repeat(2,minmax(0,1fr)); gap:14px 10px; align-items:stretch; }
+.issue-order-visual { max-height:none; overflow:visible; padding:6px; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)) 18px repeat(2,minmax(0,1fr)); gap:14px 10px; align-items:stretch; }
 .issue-order-visual li { min-width:0; min-height:240px; margin:0; padding:10px; display:flex; flex-direction:column; gap:8px; border-radius:0; transition:background .12s,border-color .12s; }
 .issue-order-visual li:nth-child(4n+1) { grid-column:1; }
 .issue-order-visual li:nth-child(4n+2) { grid-column:2; }

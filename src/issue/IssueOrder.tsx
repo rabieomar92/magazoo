@@ -25,6 +25,9 @@ export function IssueOrder({ plan, items, assignments, disabled, onChange, visua
     event.preventDefault();
     cleanup.current();
     const button = event.currentTarget;
+    // The canvas/inspector owns scrolling; the card list must not create a
+    // second scroll pane. Keep edge-drag autoscroll on that outer viewport.
+    const scrollHost = button.closest<HTMLElement>('.stage-scroll, .inspector') ?? list.current!;
     const original = button.closest('li')!;
     const bounds = original.getBoundingClientRect();
     const offsetX = event.clientX - bounds.left, offsetY = event.clientY - bounds.top;
@@ -72,7 +75,7 @@ export function IssueOrder({ plan, items, assignments, disabled, onChange, visua
     };
     const scroll = () => {
       position(x - offsetX, y - offsetY);
-      const host = list.current;
+      const host = scrollHost;
       if (host) {
         const rect = host.getBoundingClientRect();
         if (y < rect.top + 55) host.scrollTop -= 11;
