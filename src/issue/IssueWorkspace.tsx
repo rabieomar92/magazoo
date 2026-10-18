@@ -3,7 +3,7 @@ import { migrate } from '../schema/document';
 import { exportIssuePdf, issuePageGroups, waitForPreviewResources } from '../lib/pdfExport';
 import { PDF_PAGE_SIZES, type PdfPageSize } from '../lib/pdfPageSize';
 import { pageDimensions, withPageFormat } from '../lib/pageFormat';
-import { usePdfPageSize } from '../store/pdfPreferences';
+import { usePdfPageSize, usePdfPreferences } from '../store/pdfPreferences';
 import { issueApi } from './api';
 import { contentsDesignOf, contentsEntries, defaultIssuePlan, reconcileIssuePlan, CONTENTS_ID, type ContentsDensity, type ContentsDesign, type ContentsEntryStyle, type ContentsPictures, type IssueItem, type IssuePlan, type IssueResponse } from './model';
 import { IssueCompiler, reconcileCompiledProof, type CompiledIssue, type CompileProgress } from './IssueCompiler';
@@ -38,6 +38,8 @@ export default function IssueWorkspace({ projectId, csrf, onClose }: { projectId
     setLoaded(null); setError('');
     void issueApi<IssueResponse>(projectId, csrf, '', 'GET', undefined, controller.signal).then(data => {
       const items = data.items.map(item => ({ ...item, doc: migrate(item.doc) }));
+      const nativeFormat=items[0]?.doc.design.pageFormat;
+      if(nativeFormat&&items.every(item=>item.doc.design.pageFormat===nativeFormat))usePdfPreferences.getState().setSize(nativeFormat);
       setLoaded({ ...data, items });
     }).catch(failure => { if (!controller.signal.aborted) setError(failure instanceof Error ? failure.message : 'Unable to open this project.'); });
     return () => controller.abort();
@@ -405,7 +407,7 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
             <label className="field">PDF page size<select value={pdfSize} disabled={busy} onChange={event => setPdfSize(event.target.value as PdfPageSize)}>
               {Object.entries(PDF_PAGE_SIZES).map(([key, size]) => <option key={key} value={key}>{size.label} · {size.width} × {size.height} mm</option>)}
             </select></label>
-            <p className="field-hint">A4, B5 and Magazine lay out every article, cover and contents page directly at the selected paper size. Changing size recompiles the issue and may change its page counts; saved article content stays untouched. Choose the browser’s Save as PDF, Default margins (the publication sets them to zero), 100% scale and Background graphics. A system PDF printer or physical printer may need a matching custom paper size.</p>
+            <p className="field-hint">A4, ISO B5, JIS B5 and Magazine lay out every article, cover and contents page directly at the selected paper size. Changing size recompiles the issue and may change its page counts; saved article content stays untouched. Choose the browser’s Save as PDF, Default margins (the publication sets them to zero), 100% scale and Background graphics. A system PDF printer or physical printer may need a matching custom paper size.</p>
             <p className="field-hint">Finalising writes each article’s starting page number back into the saved document, so a single-article export carries the same folio as the issue.</p>
             {contentsOverflow && ready && <p className="inline-alert" role="alert">The contents text does not fit its two pages. Shorten the heading or introduction, drop a subtitle, or uncheck some entries.</p>}
           </section>

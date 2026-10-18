@@ -7,7 +7,7 @@ import { PDF_PAGE_SIZES } from './pdfPageSize';
 import { articlePageHeight } from './articleLayouts';
 
 describe('native magazine view model', () => {
-  it.each(TEMPLATE_META.flatMap(meta => (['a4','b5','magazine'] as const).map(size=>[meta.id,size] as const)))('converts %s to native %s without rewriting a single source field', (id,size) => {
+  it.each(TEMPLATE_META.flatMap(meta => (['a4','b5','jis-b5','magazine'] as const).map(size=>[meta.id,size] as const)))('converts %s to native %s without rewriting a single source field', (id,size) => {
     const source = presetFor(id);
     const before = JSON.stringify(source);
     const native = withPageFormat(source, size);

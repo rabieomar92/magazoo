@@ -3,6 +3,9 @@ import { cloneIssuePages, clonePages } from './pdfExport';
 import { fitPdfSheets, PDF_PAGE_SIZES, pdfPageDimensions, pdfSheetGeometry } from './pdfPageSize';
 
 describe('PDF output sheet fitting', () => {
+  it('prints native portrait JIS B5 at 100% without margins or rescaling', () => {
+    expect(pdfSheetGeometry('jis-b5',257,182)).toEqual({width:182,height:257,scale:1,left:0,top:0});
+  });
   it('fits all four A4 corners inside B5 without distortion or crop', () => {
     const g = pdfSheetGeometry('b5');
     expect(g.width).toBe(176); expect(g.height).toBe(250);

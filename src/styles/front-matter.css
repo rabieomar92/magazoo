@@ -98,6 +98,9 @@
   margin: 3mm 0 3.5mm;
   background: color-mix(in srgb,var(--ink) 6%,var(--paper-bg,#fff));
 }
+.fm-page--dean.fm-page--compact-trim .fm-rail > div { display:flex; flex-direction:column; max-height:100%; }
+.fm-page--dean.fm-page--compact-trim .fm-rail > div > :not(.fm-dean-cover) { flex-shrink:0; }
+.fm-page--dean.fm-page--compact-trim .fm-dean-cover { flex-shrink:1; min-height:0; }
 .fm-dean-signature {
   display: block;
   break-inside: avoid;
@@ -139,6 +142,7 @@
   margin: 0 calc(-1 * var(--margin));
   background: color-mix(in srgb,var(--ink) 10%,var(--paper-bg,#fff));
 }
+.fm-page--board.fm-page--compact-trim .fm-banner--bleed { height:min(var(--hero-h),calc(var(--page-h) * .27)); }
 .fm-board-caption {
   min-width: 0;
   display: grid;

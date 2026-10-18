@@ -4,6 +4,12 @@ import { makeFrontMatter } from '../store/frontMatter';
 import { FrontMatterPages } from './FrontMatterPages';
 
 describe('editorial board page', () => {
+  it('uses the compact-trim image fit on both real and measuring JIS B5 frames',()=>{
+    const doc=makeFrontMatter('frontmatter-dean');doc.design.pageFormat='jis-b5';
+    const host=document.createElement('div');host.innerHTML=renderToStaticMarkup(<FrontMatterPages doc={doc} vars={{}} onStatus={()=>undefined}/>);
+    expect(host.querySelector('.page')?.classList.contains('fm-page--compact-trim')).toBe(true);
+    expect(host.querySelector('.fm-measure-page')?.classList.contains('fm-page--compact-trim')).toBe(true);
+  });
   it('keeps its measuring copy out of the real page collection', () => {
     const doc = makeFrontMatter('frontmatter-board');
     const host = document.createElement('div');

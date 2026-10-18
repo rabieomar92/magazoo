@@ -18,4 +18,8 @@ it('includes the whole issue in the vendor order, even entries omitted from the 
   expect(brief.closed).toBe('203 × 267 mm');
   expect(brief.open).toBe('406 × 267 mm');
   expect(brief.coverOpen).toBe('409 × 267 mm');
+  const jis=buildPrintBrief('Issue',plan,items,assignments,'jis-b5');
+  expect(jis.closed).toBe('182 × 257 mm');
+  expect(jis.open).toBe('364 × 257 mm');
+  expect(jis.coverOpen).toBe('367 × 257 mm');
 });

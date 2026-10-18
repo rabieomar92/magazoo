@@ -216,7 +216,7 @@ export function FrontMatterPages({doc,vars,onStatus}: {doc:Doc;vars:CSSPropertie
     </div>;
   };
   const sheet = (pageIndex:number, children:ReactNode, measuring=false) => <div
-    className={`${measuring?'fm-measure-page':'page'} fm-page fm-page--${dean?'dean':board?'board':'contents'}${board&&pageIndex>0&&!measuring?' fm-page--continuation':''}${board&&doc.design.showTopBar===false?' fm-page--no-topbar':''}`}
+    className={`${measuring?'fm-measure-page':'page'} fm-page fm-page--${dean?'dean':board?'board':'contents'}${doc.design.pageFormat==='jis-b5'?' fm-page--compact-trim':''}${board&&pageIndex>0&&!measuring?' fm-page--continuation':''}${board&&doc.design.showTopBar===false?' fm-page--no-topbar':''}`}
     style={pageVars} dir={doc.design.textDirection ?? 'ltr'} key={pageIndex}
     data-layout-helper={measuring ? 'true' : undefined}
     data-layout-overflow={!measuring && layout.overflow ? 'true' : undefined}>

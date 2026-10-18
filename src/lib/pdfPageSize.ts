@@ -1,8 +1,9 @@
 /** Every selected output size is also the native canvas trim. */
-export type PdfPageSize = 'a4' | 'b5' | 'magazine';
+export type PdfPageSize = 'a4' | 'b5' | 'jis-b5' | 'magazine';
 export const PDF_PAGE_SIZES = {
   a4: { label: 'A4', width: 210, height: 297 },
   b5: { label: 'B5 (ISO)', width: 176, height: 250 },
+  'jis-b5': { label: 'JIS B5', width: 182, height: 257 },
   magazine: { label: 'Magazine', width: 203, height: 267 },
 } as const;
 

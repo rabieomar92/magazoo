@@ -35,7 +35,7 @@ beforeEach(() => {
 });
 afterEach(() => { act(() => root.unmount()); host.remove(); usePdfPreferences.getState().setSize('a4'); vi.unstubAllGlobals(); });
 
-it.each(['a4', 'b5', 'magazine'])('exports the selected %s sheet without editing or saving the article', async size => {
+it.each(['a4', 'b5', 'jis-b5', 'magazine'])('exports the selected %s sheet without editing or saving the article', async size => {
   const sourceDoc = useDoc.getState().doc;
   const sourceJson = JSON.stringify(sourceDoc);
   const fileState = useProjectFile.getState();
@@ -43,7 +43,7 @@ it.each(['a4', 'b5', 'magazine'])('exports the selected %s sheet without editing
 
   const select = host.querySelector<HTMLSelectElement>('[aria-label="PDF page size"]')!;
   expect([...select.options].map(option => option.textContent)).toEqual([
-    'A4 · 210 × 297 mm', 'B5 (ISO) · 176 × 250 mm', 'Magazine · 203 × 267 mm',
+    'A4 · 210 × 297 mm', 'B5 (ISO) · 176 × 250 mm', 'JIS B5 · 182 × 257 mm', 'Magazine · 203 × 267 mm',
   ]);
   expect(select.value).toBe('a4');
   act(() => { select.value = size; select.dispatchEvent(new Event('change', { bubbles: true })); });

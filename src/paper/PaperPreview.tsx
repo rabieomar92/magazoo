@@ -5,7 +5,7 @@ import { textStylesCss, textStyleSelector } from '../lib/textStyles';
 import { isReferenceArticle, articlePageHeight } from '../lib/articleLayouts';
 import { ArticlePages } from './ArticlePages';
 import { createPortal } from 'react-dom';
-import { useDoc } from '../store/useDoc';
+import { useDoc, currentDocumentSession } from '../store/useDoc';
 import { quoteFlowText } from '../lib/decorativeQuote';
 import { DEFAULT_TOP_BAR_OFFSET, familyOf } from '../schema/document';
 import { cssVars, grid, readableInk } from '../lib/geometry';
@@ -220,7 +220,11 @@ function positionImageAvoidingCallouts(pageNodes: HTMLElement[]): number {
  * briefly so a burst of keystrokes causes one pagination pass, not one each. */
 export function PaperPreview({ toolbarHost }: { toolbarHost: HTMLElement | null }) {
   const liveDoc = useDoc((state) => state.doc);
-  const [pdfSize] = usePdfPageSize();
+  const [pdfSize,setPdfSize] = usePdfPageSize();
+  const documentSession=currentDocumentSession();
+  useLayoutEffect(()=>{
+    if(liveDoc.design.pageFormat)setPdfSize(liveDoc.design.pageFormat);
+  },[documentSession,liveDoc.design.pageFormat,setPdfSize]);
   const previousSize = useRef(pdfSize);
   const hasChangedOutput = useRef(false);
   if (previousSize.current !== pdfSize) {

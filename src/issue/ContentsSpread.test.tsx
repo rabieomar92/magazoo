@@ -59,7 +59,7 @@ it('loads older plans safely and normalises colour picker values', () => {
 it.each(['mosaic', 'feature', 'sections'] as const)('lays out both %s contents sheets at native Magazine dimensions and restores legacy size', layout => {
   const design = { ...DEFAULT_CONTENTS_DESIGN, layout };
   const before = JSON.stringify(design);
-  for (const pageSize of ['magazine', 'a4', 'b5'] as const) {
+  for (const pageSize of ['magazine', 'a4', 'b5', 'jis-b5'] as const) {
     act(() => root.render(<ContentsSpread entries={[]} design={design} pageSize={pageSize} />));
     const pages = [...host.querySelectorAll<HTMLElement>('.issue-contents-page')];
     expect(pages).toHaveLength(2);
