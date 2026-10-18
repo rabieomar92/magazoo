@@ -3,13 +3,13 @@
 .issue-renderer .pages { pointer-events:none; }
 .issue-contents-masthead.is-right { flex-direction:row-reverse; }
 
-.page.issue-contents-page { --page-w:210mm; --page-h:297mm; --margin:15mm; --paper-bg:var(--contents-paper,#faf8f2); --ink:var(--contents-ink,#213238); --sans:'Helvetica',Arial,sans-serif; display:flex; flex-direction:column; gap:calc(8mm * var(--contents-gap-scale,1)); padding:14mm 15mm 12mm; background:var(--contents-paper,#faf8f2); color:var(--contents-ink,#213238); font:calc(10pt * var(--contents-scale,1))/1.4 'Helvetica',Arial,sans-serif; text-align:start; direction:var(--text-dir,ltr); }
-.issue-contents-masthead { display:flex; flex:none; direction:ltr; background:var(--contents-bar,#faf8f2); justify-content:space-between; gap:calc(5mm * var(--contents-gap-scale,1)); padding:3mm 4mm; border-bottom:.3mm solid #a4aca8; font:calc(8pt * var(--contents-scale,1))/1.3 'Helvetica',Arial,sans-serif; color:var(--contents-bar-ink,#213238); }
+.page.issue-contents-page { --page-w:210mm; --page-h:297mm; --margin:15mm; --paper-bg:var(--contents-paper,#faf8f2); --ink:var(--contents-ink,#213238); --sans:'Avenir Next LT Pro','Avenir Next',Avenir,Arial,sans-serif; display:flex; flex-direction:column; gap:calc(8mm * var(--contents-gap-scale,1)); padding:14mm 15mm 12mm; background:var(--contents-paper,#faf8f2); color:var(--contents-ink,#213238); font:calc(10pt * var(--contents-scale,1))/1.4 'Avenir Next LT Pro','Avenir Next',Avenir,Arial,sans-serif; text-align:start; direction:var(--text-dir,ltr); }
+.issue-contents-masthead { display:flex; flex:none; direction:ltr; background:var(--contents-bar,#faf8f2); justify-content:space-between; gap:calc(5mm * var(--contents-gap-scale,1)); padding:3mm 4mm; border-bottom:.3mm solid #a4aca8; font:calc(8pt * var(--contents-scale,1))/1.3 'Avenir Next LT Pro','Avenir Next',Avenir,Arial,sans-serif; color:var(--contents-bar-ink,#213238); }
 .issue-contents-kicker { font-weight:700; letter-spacing:.16em; text-transform:uppercase; color:inherit; }
 .issue-contents-header { flex:none; }
-.issue-contents-header h1 { font:600 calc(43pt * var(--contents-scale,1))/1.05 var(--contents-headline-font,'Playfair Display',Georgia,serif); margin:5mm 0 3mm; letter-spacing:calc(-.035em + var(--contents-tracking,0em)); color:var(--contents-ink,#213238); overflow-wrap:anywhere; }
-.issue-contents-header h1 > span { font:300 calc(22pt * var(--contents-scale,1))/1 'Helvetica',Arial,sans-serif; color:var(--contents-ink,#213238); letter-spacing:-.03em; }
-.issue-contents-header > p { font:calc(10pt * var(--contents-scale,1))/1.45 'Helvetica',Arial,sans-serif; margin:0; color:var(--contents-ink,#213238); }
+.issue-contents-header h1 { font:600 calc(43pt * var(--contents-scale,1))/1.05 var(--contents-headline-font,'Avenir Next LT Pro','Avenir Next',Avenir,Arial,sans-serif); margin:5mm 0 3mm; letter-spacing:calc(-.035em + var(--contents-tracking,0em)); color:var(--contents-ink,#213238); overflow-wrap:anywhere; }
+.issue-contents-header h1 > span { font:300 calc(22pt * var(--contents-scale,1))/1 'Avenir Next LT Pro','Avenir Next',Avenir,Arial,sans-serif; color:var(--contents-ink,#213238); letter-spacing:-.03em; }
+.issue-contents-header > p { font:calc(10pt * var(--contents-scale,1))/1.45 'Avenir Next LT Pro','Avenir Next',Avenir,Arial,sans-serif; margin:0; color:var(--contents-ink,#213238); }
 
 /* The body is the only part of the sheet allowed to grow or shrink: the
    header/footer stay a fixed height. Filling it is left to the density tier
@@ -28,12 +28,12 @@
    thumbnails (the plain "feature" layout's entry list) reads as a tidy wall
    of tiles, so it keeps a fixed height instead of a jagged one per photo. */
 .issue-contents-entry .issue-contents-shot.is-thumb { height:var(--contents-thumb-h); max-height:none; flex:none; margin-bottom:3mm; }
-.issue-contents-plabel { position:absolute; left:3mm; bottom:3mm; padding:.8mm 2.6mm; border-radius:1mm; background:#182421cc; color:#f6f4ec; font:700 calc(7pt * var(--contents-scale,1))/1.2 'Helvetica',Arial,sans-serif; letter-spacing:.02em; }
+.issue-contents-plabel { position:absolute; left:3mm; bottom:3mm; padding:.8mm 2.6mm; border-radius:1mm; background:#182421cc; color:#f6f4ec; font:700 calc(7pt * var(--contents-scale,1))/1.2 'Avenir Next LT Pro','Avenir Next',Avenir,Arial,sans-serif; letter-spacing:.02em; }
 
 /* A colour chip for "COVER STORY"-style flags — an eyebrow set above the
    headline, the way a section front reads, rather than a caption trailing
    after the title. */
-.issue-contents-badge { display:inline-block; margin:1mm 0; padding:.7mm 2.4mm; border-radius:.8mm; background:var(--contents-accent); color:#fff; font:700 calc(7pt * var(--contents-scale,1))/1.3 'Helvetica',Arial,sans-serif; letter-spacing:.09em; text-transform:uppercase; }
+.issue-contents-badge { display:inline-block; margin:1mm 0; padding:.7mm 2.4mm; border-radius:.8mm; background:var(--contents-accent); color:#fff; font:700 calc(7pt * var(--contents-scale,1))/1.3 'Avenir Next LT Pro','Avenir Next',Avenir,Arial,sans-serif; letter-spacing:.09em; text-transform:uppercase; }
 .issue-contents-block-head .issue-contents-badge { margin:0; }
 
 .issue-contents-feature { flex:1 1 auto; min-height:0; display:flex; flex-direction:column; overflow:hidden; }
@@ -42,20 +42,20 @@
 .issue-contents-art i:nth-child(2) { transform:translate(-40mm,-40mm); }
 .issue-contents-art .brand-mark { font-size:calc(32pt * var(--contents-scale,1)); color:#44685d; --brand-accent:var(--contents-accent); }
 .issue-contents-feature-copy { flex:none; display:grid; grid-template-columns:19mm minmax(0,1fr); gap:calc(5mm * var(--contents-gap-scale,1)); border-top:.7mm solid var(--contents-accent); padding-top:4mm; margin-top:4mm; }
-.issue-contents-number { font:400 calc(29pt * var(--contents-scale,1))/1.03 var(--contents-headline-font,'Playfair Display',Georgia,serif); color:var(--contents-accent); font-variant-numeric:tabular-nums; }
-.issue-contents-feature h2 { font:600 calc(20pt * var(--contents-scale,1))/1.16 var(--contents-headline-font,'Playfair Display',Georgia,serif); letter-spacing:calc(-.015em + var(--contents-tracking,0em)); margin:0 0 2mm; }
-.issue-contents-feature p { font:italic calc(9.5pt * var(--contents-scale,1))/1.4 'Helvetica',Arial,sans-serif; margin:0; color:var(--contents-ink,#213238); }
+.issue-contents-number { font:400 calc(29pt * var(--contents-scale,1))/1.03 var(--contents-headline-font,'Avenir Next LT Pro','Avenir Next',Avenir,Arial,sans-serif); color:var(--contents-accent); font-variant-numeric:tabular-nums; }
+.issue-contents-feature h2 { font:600 calc(20pt * var(--contents-scale,1))/1.16 var(--contents-headline-font,'Avenir Next LT Pro','Avenir Next',Avenir,Arial,sans-serif); letter-spacing:calc(-.015em + var(--contents-tracking,0em)); margin:0 0 2mm; }
+.issue-contents-feature p { font:italic calc(9.5pt * var(--contents-scale,1))/1.4 'Avenir Next LT Pro','Avenir Next',Avenir,Arial,sans-serif; margin:0; color:var(--contents-ink,#213238); }
 
 .issue-contents-list { flex:0 1 auto; min-height:0; overflow:hidden; display:grid; grid-template-columns:repeat(var(--contents-cols,2),minmax(0,1fr)); column-gap:calc(7mm * var(--contents-gap-scale,1)); row-gap:calc(5mm * var(--contents-gap-scale,1)); align-items:start; }
 .issue-contents-group { grid-column:1 / -1; display:grid; grid-template-columns:repeat(var(--contents-cols,2),minmax(0,1fr)); column-gap:calc(7mm * var(--contents-gap-scale,1)); row-gap:calc(5mm * var(--contents-gap-scale,1)); }
-.issue-contents-section { grid-column:1 / -1; margin:0; font:700 calc(10pt * var(--contents-scale,1))/1.2 'Helvetica',Arial,sans-serif; color:var(--contents-heading); text-transform:uppercase; letter-spacing:.08em; }
+.issue-contents-section { grid-column:1 / -1; margin:0; font:700 calc(10pt * var(--contents-scale,1))/1.2 'Avenir Next LT Pro','Avenir Next',Avenir,Arial,sans-serif; color:var(--contents-heading); text-transform:uppercase; letter-spacing:.08em; }
 .issue-contents-entry { min-width:0; border-top:.25mm solid #c7ceca; padding-top:3mm; }
 .issue-contents-entry-copy { display:grid; grid-template-columns:12mm minmax(0,1fr); gap:calc(3mm * var(--contents-gap-scale,1)); }
 .issue-contents-entry .issue-contents-number { font-size:calc(19pt * var(--contents-scale,1)); }
-.issue-contents-entry h2 { font:600 calc(11pt * var(--contents-scale,1))/1.22 var(--contents-headline-font,'Playfair Display',Georgia,serif); letter-spacing:var(--contents-tracking,0em); margin:0 0 1.5mm; }
-.issue-contents-entry p { font:italic calc(8pt * var(--contents-scale,1))/1.38 'Helvetica',Arial,sans-serif; color:var(--contents-ink,#213238); margin:0; }
+.issue-contents-entry h2 { font:600 calc(11pt * var(--contents-scale,1))/1.22 var(--contents-headline-font,'Avenir Next LT Pro','Avenir Next',Avenir,Arial,sans-serif); letter-spacing:var(--contents-tracking,0em); margin:0 0 1.5mm; }
+.issue-contents-entry p { font:italic calc(8pt * var(--contents-scale,1))/1.38 'Avenir Next LT Pro','Avenir Next',Avenir,Arial,sans-serif; color:var(--contents-ink,#213238); margin:0; }
 
-.issue-contents-footer { flex:none; display:flex; justify-content:space-between; gap:calc(6mm * var(--contents-gap-scale,1)); border-top:.25mm solid #adb9b0; padding-top:4mm; font:calc(7pt * var(--contents-scale,1))/1.3 'Helvetica',Arial,sans-serif; color:var(--contents-ink,#213238); }
+.issue-contents-footer { flex:none; display:flex; justify-content:space-between; gap:calc(6mm * var(--contents-gap-scale,1)); border-top:.25mm solid #adb9b0; padding-top:4mm; font:calc(7pt * var(--contents-scale,1))/1.3 'Avenir Next LT Pro','Avenir Next',Avenir,Arial,sans-serif; color:var(--contents-ink,#213238); }
 .issue-contents-second .issue-contents-footer { flex-direction:row-reverse; }
 
 .issue-contents-airy .issue-contents-shot.is-feature { height:90mm; }
@@ -112,18 +112,18 @@
 .issue-contents-sections { flex:1 1 auto; min-height:0; display:flex; flex-direction:column; justify-content:space-between; gap:calc(7mm * var(--contents-gap-scale,1)); }
 .issue-contents-block { flex:0 0 auto; min-height:0; display:flex; flex-direction:column; gap:calc(3.5mm * var(--contents-gap-scale,1)); overflow:hidden; }
 .issue-contents-block-head { flex:none; display:flex; align-items:baseline; gap:calc(3mm * var(--contents-gap-scale,1)); padding-bottom:1.5mm; border-bottom:.6mm solid var(--contents-heading); }
-.issue-contents-block-head h3 { flex:1; margin:0; font:700 calc(11.5pt * var(--contents-scale,1))/1.2 'Helvetica',Arial,sans-serif; color:var(--contents-heading); text-transform:uppercase; letter-spacing:.09em; }
+.issue-contents-block-head h3 { flex:1; margin:0; font:700 calc(11.5pt * var(--contents-scale,1))/1.2 'Avenir Next LT Pro','Avenir Next',Avenir,Arial,sans-serif; color:var(--contents-heading); text-transform:uppercase; letter-spacing:.09em; }
 .issue-contents-block-head .issue-contents-number { font-size:calc(15pt * var(--contents-scale,1)); color:var(--contents-heading); }
 
-.issue-contents-block-solo h2 { font:600 calc(14pt * var(--contents-scale,1))/1.18 var(--contents-headline-font,'Playfair Display',Georgia,serif); letter-spacing:calc(-.01em + var(--contents-tracking,0em)); margin:3mm 0 1.5mm; display:-webkit-box; -webkit-box-orient:vertical; overflow:hidden; -webkit-line-clamp:2; }
-.issue-contents-block-solo p { font:italic calc(9pt * var(--contents-scale,1))/1.4 'Helvetica',Arial,sans-serif; color:var(--contents-ink,#213238); margin:0; display:-webkit-box; -webkit-box-orient:vertical; overflow:hidden; -webkit-line-clamp:3; }
+.issue-contents-block-solo h2 { font:600 calc(14pt * var(--contents-scale,1))/1.18 var(--contents-headline-font,'Avenir Next LT Pro','Avenir Next',Avenir,Arial,sans-serif); letter-spacing:calc(-.01em + var(--contents-tracking,0em)); margin:3mm 0 1.5mm; display:-webkit-box; -webkit-box-orient:vertical; overflow:hidden; -webkit-line-clamp:2; }
+.issue-contents-block-solo p { font:italic calc(9pt * var(--contents-scale,1))/1.4 'Avenir Next LT Pro','Avenir Next',Avenir,Arial,sans-serif; color:var(--contents-ink,#213238); margin:0; display:-webkit-box; -webkit-box-orient:vertical; overflow:hidden; -webkit-line-clamp:3; }
 
 .issue-contents-block-body { flex:1 1 auto; min-height:0; display:flex; flex-direction:row; gap:calc(5mm * var(--contents-gap-scale,1)); overflow:hidden; }
 .issue-contents-rows { flex:1 1 auto; min-width:0; min-height:0; overflow:hidden; list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:calc(3.5mm * var(--contents-gap-scale,1)); }
 .issue-contents-rows > li { display:grid; grid-template-columns:10mm minmax(0,1fr); column-gap:calc(3mm * var(--contents-gap-scale,1)); align-items:start; border-top:.25mm solid #c7ceca; padding-top:2.6mm; }
-.issue-contents-rows .issue-contents-rownum { font:400 calc(15pt * var(--contents-scale,1))/1.1 var(--contents-headline-font,'Playfair Display',Georgia,serif); color:var(--contents-accent); font-variant-numeric:tabular-nums; }
-.issue-contents-rows h2 { font:600 calc(10.5pt * var(--contents-scale,1))/1.22 var(--contents-headline-font,'Playfair Display',Georgia,serif); letter-spacing:var(--contents-tracking,0em); margin:0 0 1mm; }
-.issue-contents-rows p { font:italic calc(8pt * var(--contents-scale,1))/1.35 'Helvetica',Arial,sans-serif; color:var(--contents-ink,#213238); margin:0; display:-webkit-box; -webkit-box-orient:vertical; overflow:hidden; -webkit-line-clamp:2; }
+.issue-contents-rows .issue-contents-rownum { font:400 calc(15pt * var(--contents-scale,1))/1.1 var(--contents-headline-font,'Avenir Next LT Pro','Avenir Next',Avenir,Arial,sans-serif); color:var(--contents-accent); font-variant-numeric:tabular-nums; }
+.issue-contents-rows h2 { font:600 calc(10.5pt * var(--contents-scale,1))/1.22 var(--contents-headline-font,'Avenir Next LT Pro','Avenir Next',Avenir,Arial,sans-serif); letter-spacing:var(--contents-tracking,0em); margin:0 0 1mm; }
+.issue-contents-rows p { font:italic calc(8pt * var(--contents-scale,1))/1.35 'Avenir Next LT Pro','Avenir Next',Avenir,Arial,sans-serif; color:var(--contents-ink,#213238); margin:0; display:-webkit-box; -webkit-box-orient:vertical; overflow:hidden; -webkit-line-clamp:2; }
 
 /* The rail: a narrow column of the block's own pictures, each at its own
    shape, stacked beside the list rather than stretched across the top of
@@ -205,23 +205,23 @@
 
 .issue-mosaic-head { display:flex; align-items:baseline; gap:2.6mm; min-width:0; margin-bottom:1.2mm; }
 .issue-mosaic-number {
-  flex:none; font:600 calc(15pt * var(--contents-scale,1))/1 var(--contents-headline-font,'Playfair Display',Georgia,serif);
+  flex:none; font:600 calc(15pt * var(--contents-scale,1))/1 var(--contents-headline-font,'Avenir Next LT Pro','Avenir Next',Avenir,Arial,sans-serif);
   color:var(--contents-accent,#9a603c); font-variant-numeric:tabular-nums;
 }
 .issue-mosaic-section {
   min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-  font:700 calc(6.6pt * var(--contents-scale,1))/1.2 'Helvetica',Arial,sans-serif;
+  font:700 calc(6.6pt * var(--contents-scale,1))/1.2 'Avenir Next LT Pro','Avenir Next',Avenir,Arial,sans-serif;
   letter-spacing:.14em; text-transform:uppercase; color:var(--contents-heading,#1f6f8b);
 }
 .issue-mosaic-card h2 {
   margin:0; color:var(--contents-ink,#213238); overflow-wrap:break-word;
-  font:600 calc(12.5pt * var(--contents-scale,1))/1.22 var(--contents-headline-font,'Playfair Display',Georgia,serif);
+  font:600 calc(12.5pt * var(--contents-scale,1))/1.22 var(--contents-headline-font,'Avenir Next LT Pro','Avenir Next',Avenir,Arial,sans-serif);
   letter-spacing:calc(-.008em + var(--contents-tracking,0em));
 }
 .issue-mosaic-card.has-photo h2 { font-size:calc(13.5pt * var(--contents-scale,1)); }
 .issue-mosaic-card p {
   margin:1.4mm 0 0; color:var(--contents-ink,#213238); overflow-wrap:break-word;
-  font:calc(8pt * var(--contents-scale,1))/1.45 'Helvetica',Arial,sans-serif;
+  font:calc(8pt * var(--contents-scale,1))/1.45 'Avenir Next LT Pro','Avenir Next',Avenir,Arial,sans-serif;
 }
 .issue-mosaic-card .issue-contents-badge { display:inline-block; margin-top:1.4mm; }
 

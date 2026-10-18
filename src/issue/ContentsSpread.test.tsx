@@ -5,6 +5,17 @@ import { ContentsSpread } from './ContentsSpread';
 import { contentsDesignOf, DEFAULT_CONTENTS_DESIGN } from './model';
 import { clonePages } from '../lib/pdfExport';
 import { fitPdfSheets, PDF_PAGE_SIZES } from '../lib/pdfPageSize';
+import {readFileSync} from 'node:fs';
+const contentsCss=readFileSync('src/issue/contents.css','utf8');
+
+it('uses bundled Avenir across contents typography rather than hard-coded Helvetica', () => {
+  expect(DEFAULT_CONTENTS_DESIGN.titleFont).toBe('sans');
+  expect(contentsCss).not.toContain("'Helvetica'");
+  for (const selector of ['.issue-contents-masthead {', '.issue-contents-header > p {', '.issue-mosaic-card p {']) {
+    const rule=contentsCss.slice(contentsCss.indexOf(selector),contentsCss.indexOf('}',contentsCss.indexOf(selector)));
+    expect(rule).toContain('Avenir Next LT Pro');
+  }
+});
 
 let host: HTMLDivElement;
 let root: ReturnType<typeof createRoot>;

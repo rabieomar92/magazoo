@@ -101,7 +101,7 @@ export const DEFAULT_CONTENTS_DESIGN: ContentsDesign = {
   layout: 'mosaic', density: 'auto', accent: '#9a603c', headingColor: '#1f6f8b', columns: 2,
   pageColor: '#faf8f2', textColor: '#213238', topBarColor: '#faf8f2',
   showHeroes: true, pageLabels: false, featureHeight: 59, thumbHeight: 25, rules: true, paddedNumbers: true,
-  titleFont: 'serif', textScale: 1, tracking: 0, gapScale: 1, mosaicSalt: 0, pictures: 'auto',
+  titleFont: 'sans', textScale: 1, tracking: 0, gapScale: 1, mosaicSalt: 0, pictures: 'auto',
 };
 
 const CONTENTS_PICTURES: ContentsPictures[] = ['auto', 'all', 'none'];
@@ -137,7 +137,7 @@ export function contentsDesignOf(plan: Pick<IssuePlan, 'contentsDesign'>): Conte
     thumbHeight: clampNumber(stored.thumbHeight, 8, 90, base.thumbHeight),
     rules: typeof stored.rules === 'boolean' ? stored.rules : base.rules,
     paddedNumbers: typeof stored.paddedNumbers === 'boolean' ? stored.paddedNumbers : base.paddedNumbers,
-    titleFont: stored.titleFont === 'sans' ? 'sans' : base.titleFont,
+    titleFont: stored.titleFont === 'sans' || stored.titleFont === 'serif' ? stored.titleFont : base.titleFont,
     textScale: clampNumber(stored.textScale, 0.85, 1.15, base.textScale),
     tracking: clampNumber(stored.tracking, -0.02, 0.04, base.tracking),
     gapScale: clampNumber(stored.gapScale, 0.7, 1.3, base.gapScale),
