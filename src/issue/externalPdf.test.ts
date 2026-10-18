@@ -12,3 +12,10 @@ it('passes PDF bytes directly instead of fetching a data URL blocked by producti
   expect([...getDocument.mock.calls[0][0].data]).toEqual([...bytes]);
   expect(getDocument.mock.calls[0][0]).not.toHaveProperty('url');
 });
+
+it('identifies worker delivery failures without blaming the uploaded PDF', async () => {
+  getDocument.mockImplementationOnce(() => ({ promise: Promise.reject(new Error('Setting up fake worker failed: Failed to fetch dynamically imported module')), destroy: vi.fn() }));
+  const bytes = new TextEncoder().encode('%PDF-1.7\n');
+  const file = { size: bytes.length, name: 'test.pdf', arrayBuffer: async () => bytes.buffer } as File;
+  await expect(importIssuePdf(file)).rejects.toThrow('website loading problem, not a damaged PDF');
+});

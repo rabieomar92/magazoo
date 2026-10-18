@@ -56,7 +56,7 @@ export function createApp({storage,origin,passwordHash,staticDir,authOptions={},
         if(path==='/' || path==='/index.html')file=resolve(dist,'index.html');
         const info=await stat(file).catch(()=>null);
         if(!info?.isFile())fail(404,'Not found.');
-        const types={'.html':'text/html; charset=utf-8','.js':'text/javascript','.css':'text/css','.json':'application/json','.woff2':'font/woff2','.otf':'font/otf','.ttf':'font/ttf','.svg':'image/svg+xml','.png':'image/png','.jpg':'image/jpeg','.webp':'image/webp','.ico':'image/x-icon'};
+        const types={'.html':'text/html; charset=utf-8','.js':'text/javascript','.mjs':'text/javascript','.wasm':'application/wasm','.css':'text/css','.json':'application/json','.woff2':'font/woff2','.otf':'font/otf','.ttf':'font/ttf','.svg':'image/svg+xml','.png':'image/png','.jpg':'image/jpeg','.webp':'image/webp','.ico':'image/x-icon'};
         res.setHeader('Content-Security-Policy',"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https:; worker-src 'self'; frame-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'");
         if(/^\/media\/login-network(?:-hd)?(?:-poster\.jpg|\.mp4)$/.test(path))res.setHeader('Cache-Control','public, max-age=86400');
         if(extname(file)==='.mp4'){serveVideo(req,res,file,info.size);return;}

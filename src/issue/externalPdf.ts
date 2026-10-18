@@ -19,7 +19,12 @@ async function openPdf(src: string) {
   const task = pdfjs.getDocument({ data,
     cMapUrl: `${base}cmaps/`, cMapPacked: true, standardFontDataUrl: `${base}standard_fonts/`, wasmUrl: `${base}wasm/` });
   task.onPassword = () => { void task.destroy(); };
-  const pdf = await task.promise.catch(error => { throw new Error(error?.name === 'PasswordException' || error?.message?.includes('destroyed') ? 'Unlock this PDF before importing it.' : 'This PDF could not be opened. Try saving a new copy.'); });
+  const pdf = await task.promise.catch(error => {
+    if (/worker|module script|dynamically imported module/i.test(error?.message ?? '')) {
+      throw new Error('The PDF reader could not load. This is a website loading problem, not a damaged PDF. Refresh the page; if it continues, contact the administrator.');
+    }
+    throw new Error(error?.name === 'PasswordException' || error?.message?.includes('destroyed') ? 'Unlock this PDF before importing it.' : 'This PDF could not be opened. Try saving a new copy.');
+  });
   return { pdf, close: () => task.destroy() };
 }
 
