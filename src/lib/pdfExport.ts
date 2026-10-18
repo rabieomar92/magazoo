@@ -24,7 +24,7 @@ export function waitForStablePreview(source: HTMLElement): Promise<void> {
       };
       if (!source.isConnected) return finish(new Error('The preview changed. Please retry PDF export.'));
       if (now - started > RESOURCE_TIMEOUT_MS) return finish(new Error('The preview is still updating. Wait for it to settle, then export again.'));
-      if (container.getAttribute('data-preview-pending') === 'true' || document.fonts?.status === 'loading') {
+      if (container.getAttribute('data-preview-pending') === 'true' || container.querySelector('[data-preview-pending="true"]') || document.fonts?.status === 'loading') {
         lastChange = now;
         return;
       }
@@ -262,24 +262,24 @@ function copyAuthorStyles(sourceDocument: Document, targetDocument: Document) {
     });
 }
 
-function waitForStyles(documentToWait: Document) {
-  const links = Array.from(documentToWait.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]'));
-  return withTimeout(
-    Promise.all(
-      links.map(
-        (link) =>
-          new Promise<void>((resolve, reject) => {
-            if (link.sheet) {
-              resolve();
-              return;
-            }
-            link.addEventListener('load', () => resolve(), { once: true });
-            link.addEventListener('error', () => reject(new Error('A stylesheet could not load. Please retry PDF export.')), { once: true });
-          }),
-      ),
-    ).then(() => undefined),
-    'Styles took too long to prepare for PDF export.',
-  );
+export function waitForStyles(documentToWait: Document) {
+  const links = Array.from(documentToWait.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]')).filter(link => !link.disabled);
+  return Promise.all(links.map(link => new Promise<void>((resolve, reject) => {
+    let poll = 0, timeout = 0;
+    const finish = (error?: Error) => {
+      window.clearInterval(poll); window.clearTimeout(timeout);
+      link.removeEventListener('load', loaded); link.removeEventListener('error', failed);
+      if (error) reject(error); else resolve();
+    };
+    const loaded = () => finish();
+    const failed = () => finish(new Error(`Could not load PDF stylesheet ${new URL(link.href, documentToWait.baseURI).pathname}. Reload the editor before exporting.`));
+    if (link.sheet) { resolve(); return; }
+    link.addEventListener('load', loaded); link.addEventListener('error', failed);
+    // A cached link can finish before listeners are attached. Re-check its
+    // CSSOM instead of waiting forever for an event that already happened.
+    poll = window.setInterval(() => { if (link.sheet) finish(); }, 50);
+    timeout = window.setTimeout(() => finish(new Error(`PDF stylesheet ${new URL(link.href, documentToWait.baseURI).pathname} did not become ready. Reload the editor before exporting.`)), RESOURCE_TIMEOUT_MS);
+  }))).then(() => undefined);
 }
 
 function freezeColumnLayout(source: HTMLElement, clone: HTMLElement) {
@@ -485,16 +485,25 @@ export async function exportIssuePdf(title: string, root: HTMLElement, size: Pdf
     exportCss.textContent = pdfExportCss(size);
     printDocument.head.appendChild(exportCss);
 
+    // Attach load listeners before doing any expensive layout reads. Waiting
+    // until after the whole issue was cloned could miss a stylesheet event.
+    await waitForStyles(printDocument);
+
     // The proof pane carries a zoom, and column geometry has to be frozen from
     // the unscaled layout. Restored as soon as the clone is taken, so the pane
     // never flashes at full size behind the print dialog.
     const transform = root.style.getPropertyValue('transform');
     const priority = root.style.getPropertyPriority('transform');
-    root.style.setProperty('transform', 'none', 'important');
-    try { cloneIssuePages(containers, printDocument); }
-    finally {
-      if (transform) root.style.setProperty('transform', transform, priority);
-      else root.style.removeProperty('transform');
+    for (const container of containers) {
+      root.style.setProperty('transform', 'none', 'important');
+      try { clonePages(container, printDocument); }
+      finally {
+        if (transform) root.style.setProperty('transform', transform, priority);
+        else root.style.removeProperty('transform');
+      }
+      // Restore the canvas zoom BEFORE yielding, otherwise resize observers
+      // can re-pack the contents mid-export and the proof visibly jumps.
+      await new Promise<void>(resolve => window.setTimeout(resolve, 0));
     }
 
     // Each article keeps its own container, so the stylesheet's per-container
@@ -507,7 +516,6 @@ export async function exportIssuePdf(title: string, root: HTMLElement, size: Pdf
       sheet.style.setProperty('page-break-after', last ? 'auto' : 'always', 'important');
     });
 
-    await waitForStyles(printDocument);
     await waitForFonts(printDocument);
     await Promise.all(Array.from(printDocument.images).map(waitForImage));
     await compositePrintHeroFades(printDocument);

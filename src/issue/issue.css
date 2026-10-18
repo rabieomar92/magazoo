@@ -226,6 +226,29 @@
 .studio .zoom button.is-active { background:var(--brand); color:#fff; }
 .zoom span { font:600 11px/1 ui-monospace,SFMono-Regular,Menlo,monospace; color:#98a3b8; min-width:38px; text-align:center; font-variant-numeric:tabular-nums; }
 .stage-scroll { flex:1; min-height:0; overflow:auto; overscroll-behavior:contain; padding:20px; scrollbar-width:thin; scrollbar-color:#3a4357 #151a24; }
+.issue-canvas-order { max-width:1000px; margin:0 auto; padding:24px; background:var(--surface); color:var(--ink); }
+.issue-canvas-order h2 { margin:0 0 8px; }
+.issue-canvas-order > p { color:var(--ink-2); font-size:13px; }
+.issue-order-visual { max-height:min(65vh,850px); padding:6px; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)) 18px repeat(2,minmax(0,1fr)); gap:14px 10px; align-items:stretch; }
+.issue-order-visual li { min-width:0; min-height:240px; margin:0; padding:10px; display:flex; flex-direction:column; gap:8px; border-radius:0; transition:background .12s,border-color .12s; }
+.issue-order-visual li:nth-child(4n+1) { grid-column:1; }
+.issue-order-visual li:nth-child(4n+2) { grid-column:2; }
+.issue-order-visual li:nth-child(4n+3) { grid-column:4; }
+.issue-order-visual li:nth-child(4n) { grid-column:5; }
+.issue-order-visual .issue-grip { position:relative; align-self:stretch; width:100%; padding:0; height:100px; flex:none; cursor:grab; touch-action:none; overflow:hidden; border:0; }
+.issue-order-visual .is-grabbed .issue-grip { cursor:grabbing; }
+.issue-order-thumb { width:110px; height:88px; flex:none; display:grid; place-items:center; background:var(--brand-wash); overflow:hidden; }
+.issue-order-thumb img { width:100%; height:100%; object-fit:cover; }
+.issue-order-thumb span { font-size:18px; color:var(--brand); }
+.issue-order-visual .issue-order-thumb { width:100%; height:100%; }
+.issue-order-visual .issue-order-copy { width:100%; }
+.issue-order-visual .issue-order-copy strong { font-size:12px; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+.issue-order-visual .issue-order-type { display:none; }
+.issue-order-visual .issue-order-end { width:100%; display:flex; justify-content:space-between; align-items:center; }
+.issue-seat-number { position:absolute; top:5px; left:5px; z-index:1; padding:3px 6px; color:white; background:#151a24; font:700 11px/1.4 var(--ui); }
+.issue-map-direction { text-align:center; border-top:3px solid var(--brand); padding:10px; font:600 10px/1.4 var(--ui); letter-spacing:.12em; color:var(--ink-2); }
+.issue-drag-preview { position:fixed; left:0; top:0; z-index:100; pointer-events:none; max-width:260px; padding:12px 16px; background:var(--ink); color:white; box-shadow:0 8px 25px #0005; font:600 13px/1.4 var(--ui); will-change:transform; }
+@media(max-width:640px) { .issue-canvas-order { padding:12px; } .issue-order-visual { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; } .issue-order-visual li:nth-child(n) { grid-column:auto; } }
 
 .stage-progress { max-width:470px; margin:9vh auto; text-align:center; color:#aab3c6; }
 .stage-mark { font-size:24px; color:#fff; --brand-accent:#9a90ee; }

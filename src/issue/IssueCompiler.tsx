@@ -83,8 +83,12 @@ export function IssueCompiler({ sources, plan, items, onComplete, onError, onPro
       const start = starts.get(source.id);
       return start === undefined ? source : { ...source, doc: documentWithIssueNumber(source.doc, start.startNumber, start.mastheadSide) };
     });
-    if (settled || pass + 1 >= MAX_PASSES) {
+    if (settled) {
       handlers.current.onComplete({ numbered, documents: rendered, counts, assignments, plan: frozen.current.plan });
+      return;
+    }
+    if (pass + 1 >= MAX_PASSES) {
+      handlers.current.onError(new Error('Article page counts keep changing after numbering. Check the article layouts and fonts before recompiling; the issue has not been marked ready to export.'));
       return;
     }
     setDocuments(numbered);

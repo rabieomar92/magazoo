@@ -1,5 +1,32 @@
 import { describe, expect, it, vi } from 'vitest';
-import { clonePages, cssImageUrls, PDF_EXPORT_CSS, pdfExportCss, waitForStablePreview,waitForPreviewResources } from './pdfExport';
+import { clonePages, cssImageUrls, PDF_EXPORT_CSS, pdfExportCss, waitForStablePreview,waitForPreviewResources, waitForStyles } from './pdfExport';
+
+describe('print stylesheet readiness', () => {
+  it('accepts styles that completed before listeners were installed', async () => {
+    const target = document.implementation.createHTMLDocument('print');
+    const link = target.createElement('link'); link.rel = 'stylesheet'; link.href = '/fonts.css';
+    Object.defineProperty(link, 'sheet', { value: {} }); target.head.append(link);
+    await expect(waitForStyles(target)).resolves.toBeUndefined();
+  });
+  it('detects cached styles becoming available without a load event', async () => {
+    vi.useFakeTimers();
+    try {
+      const target = document.implementation.createHTMLDocument('print');
+      const link = target.createElement('link'); link.rel = 'stylesheet'; link.href = '/cached.css'; target.head.append(link);
+      const pending = waitForStyles(target);
+      Object.defineProperty(link, 'sheet', { value: {} });
+      await vi.advanceTimersByTimeAsync(50);
+      await expect(pending).resolves.toBeUndefined();
+      expect(vi.getTimerCount()).toBe(0);
+    } finally { vi.useRealTimers(); }
+  });
+  it('reports which stylesheet failed and cleans up its timers', async () => {
+    const target = document.implementation.createHTMLDocument('print');
+    const link = target.createElement('link'); link.rel = 'stylesheet'; link.href = 'https://example.test/assets/missing.css'; target.head.append(link);
+    const pending = waitForStyles(target); link.dispatchEvent(new Event('error'));
+    await expect(pending).rejects.toThrow('/assets/missing.css');
+  });
+});
 
 describe('PDF export layout contract', () => {
   it('retains ancestor selectors, language and custom properties without copying editor UI or zoom boxes',()=>{

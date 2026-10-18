@@ -16,6 +16,7 @@ vi.mock('./api', () => ({ issueApi: vi.fn() }));
 vi.mock('../lib/pdfExport', async importOriginal => ({
   ...await importOriginal<typeof import('../lib/pdfExport')>(),
   exportIssuePdf: vi.fn().mockResolvedValue(undefined),
+  waitForPreviewResources: vi.fn().mockResolvedValue(undefined),
 }));
 vi.mock('./IssueCompiler', () => ({
   IssueCompiler: ({ sources, items, plan, onComplete }: ComponentProps<typeof Compiler>) => {
@@ -54,6 +55,26 @@ beforeEach(() => {
   root = createRoot(host);
 });
 afterEach(() => { act(() => root.unmount()); host.remove(); vi.unstubAllGlobals(); });
+
+it('offers canvas-side ordering without replacing the compiled proof', async () => {
+  await act(async () => root.render(<IssueWorkspace projectId="project" csrf="test-token" onClose={() => undefined} />));
+  const proof = host.querySelector('[data-proof-size]');
+  act(() => [...host.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent === 'Arrange on canvas')!.click());
+  expect(host.querySelector('[aria-label="Arrange articles on canvas"]')).not.toBeNull();
+  expect(host.querySelector('[aria-label="Canvas reading order"] li')).not.toBeNull();
+  expect(host.querySelector('[data-proof-size]')).toBe(proof);
+  act(() => [...host.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent === 'View pages')!.click());
+  expect(host.querySelector('[aria-label="Arrange articles on canvas"]')).toBeNull();
+});
+
+it('uses Mosaic for legacy contents layouts without exposing ineffective feature controls', async () => {
+  response.plan!.contentsDesign = { layout: 'feature' };
+  await act(async () => root.render(<IssueWorkspace projectId="project" csrf="test-token" onClose={() => undefined} />));
+  act(() => host.querySelector<HTMLButtonElement>('#tab-contents')!.click());
+  expect(host.querySelector('#panel-contents')!.textContent).toContain('Mosaic · tiled cards');
+  expect(host.querySelector('#panel-contents')!.textContent).not.toContain('Feature picture (mm)');
+  expect(host.querySelector('option[value="feature"]')).toBeNull();
+});
 
 it.each(['a4', 'b5', 'magazine'])('exports the compiled issue at %s without saving or finalising the source data', async size => {
   const before = JSON.stringify(response);

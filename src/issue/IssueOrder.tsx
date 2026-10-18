@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react';
 import { CONTENTS_ID, reorderIssue, type IssueAssignment, type IssueItem, type IssuePlan } from './model';
 
-export function IssueOrder({ plan, items, assignments, disabled, onChange }: {
-  plan: IssuePlan; items: IssueItem[]; assignments: IssueAssignment[]; disabled: boolean; onChange: (plan: IssuePlan) => void;
+export function IssueOrder({ plan, items, assignments, disabled, onChange, visual = false }: {
+  plan: IssuePlan; items: IssueItem[]; assignments: IssueAssignment[]; disabled: boolean; onChange: (plan: IssuePlan) => void; visual?: boolean;
 }) {
   const list = useRef<HTMLOListElement>(null);
+  const ghost = useRef<HTMLDivElement>(null);
   const latest = useRef(plan); latest.current = plan;
   const cleanup = useRef<() => void>(() => {});
   const [drag, setDrag] = useState<{ id: string; over: string } | null>(null);
@@ -25,7 +26,7 @@ export function IssueOrder({ plan, items, assignments, disabled, onChange }: {
     cleanup.current();
     const button = event.currentTarget;
     button.setPointerCapture(event.pointerId);
-    let over = id, y = event.clientY, frame = 0;
+    let over = id, y = event.clientY, x = event.clientX, frame = 0;
     const hit = (x: number, nextY: number) => {
       y = nextY;
       const row = document.elementFromPoint(x, y)?.closest<HTMLElement>('[data-issue-order-id]');
@@ -33,17 +34,18 @@ export function IssueOrder({ plan, items, assignments, disabled, onChange }: {
       if (target && list.current?.contains(row!)) { over = target; setDrag({ id, over }); }
     };
     const scroll = () => {
+      if (ghost.current) ghost.current.style.transform = `translate(${x + 18}px, ${y + 14}px)`;
       const host = list.current;
       if (host) {
         const rect = host.getBoundingClientRect();
         if (y < rect.top + 55) host.scrollTop -= 11;
         else if (y > rect.bottom - 55) host.scrollTop += 11;
-        const row = document.elementFromPoint(rect.left + rect.width / 2, Math.min(rect.bottom - 2, Math.max(rect.top + 2, y)))?.closest<HTMLElement>('[data-issue-order-id]');
+        const row = document.elementFromPoint(visual ? Math.min(rect.right - 2, Math.max(rect.left + 2, x)) : rect.left + rect.width / 2, Math.min(rect.bottom - 2, Math.max(rect.top + 2, y)))?.closest<HTMLElement>('[data-issue-order-id]');
         if (row && host.contains(row) && row.dataset.issueOrderId) { over = row.dataset.issueOrderId; setDrag(previous => previous?.over === over ? previous : { id, over }); }
       }
       frame = requestAnimationFrame(scroll);
     };
-    const update = (e: globalThis.PointerEvent) => hit(e.clientX, e.clientY);
+    const update = (e: globalThis.PointerEvent) => { x = e.clientX; hit(e.clientX, e.clientY); };
     const stop = () => {
       cancelAnimationFrame(frame);
       window.removeEventListener('pointermove', update);
@@ -83,17 +85,20 @@ export function IssueOrder({ plan, items, assignments, disabled, onChange }: {
     }
   };
   return <>
-    <p id="issue-drag-help" className="issue-help">Drag the grip to arrange. Each article’s pages stay together. Keyboard: Space, arrow keys, then Space to place.</p>
+    {visual && drag && <div ref={ghost} className="issue-drag-preview" aria-hidden="true">{drag.id === CONTENTS_ID ? 'Contents spread' : byId.get(drag.id)?.doc.meta.title || byId.get(drag.id)?.name}</div>}
+    {visual && <div className="issue-map-direction">START · READ ACROSS, THEN DOWN ↓</div>}
+    <p id={visual ? 'canvas-drag-help' : 'issue-drag-help'} className="issue-help">{visual ? 'Drag a picture onto another tile to insert it there. Each tile is one article; its pages stay together.' : 'Drag the grip to arrange. Each article’s pages stay together.'} Keyboard: Space, arrow keys, then Space to place.</p>
     <div className="issue-sr-only" aria-live="polite">{announcement}</div>
-    <ol className="issue-order" ref={list} aria-label="Issue reading order">
+    <ol className={`issue-order${visual ? ' issue-order-visual' : ''}`} ref={list} aria-label={visual ? 'Canvas reading order' : 'Issue reading order'}>
       {plan.order.map((id, index) => {
         const item = byId.get(id), contents = id === CONTENTS_ID;
         const row = assignments.find(assignment => assignment.id === id);
         const title = contents ? plan.contentsTitle || 'Contents' : item?.doc.meta.title || item?.name || 'Untitled';
         const pages = row ? row.counted ? (row.pageCount === 1 ? `${row.startNumber}` : `${row.startNumber}–${row.startNumber + row.pageCount - 1}`) : 'Cover' : '…';
         const selected = !plan.contentsExcluded.includes(id);
+        const thumbnail = item?.doc.hero.assetId ? item.doc.assets[item.doc.hero.assetId] : undefined;
         return <li key={id} data-issue-order-id={id} className={`${contents ? 'issue-order-contents' : ''}${drag?.id === id || keyboard?.id === id ? ' is-grabbed' : ''}${drag?.over === id && drag.id !== id ? ' is-drop-target' : ''}`}>
-          <button type="button" className="issue-grip" aria-label={`Move ${contents ? 'contents spread' : item?.name}`} aria-describedby="issue-drag-help" aria-pressed={drag?.id === id || keyboard?.id === id} disabled={disabled} onPointerDown={e => pointerStart(e, id)} onKeyDown={e => keyMove(e, id)}><svg width="16" height="24" viewBox="0 0 16 24" aria-hidden="true">{[5, 12, 19].flatMap(y => [5, 11].map(x => <circle key={`${x}-${y}`} cx={x} cy={y} r="1.5" fill="currentColor" />))}</svg></button>
+          <button type="button" className="issue-grip" aria-label={`Move ${contents ? 'contents spread' : item?.name}`} aria-describedby={visual ? 'canvas-drag-help' : 'issue-drag-help'} aria-pressed={drag?.id === id || keyboard?.id === id} disabled={disabled} onPointerDown={e => pointerStart(e, id)} onKeyDown={e => keyMove(e, id)}>{visual ? <><span className="issue-seat-number">{String(index + 1).padStart(2, '0')}</span><span className="issue-order-thumb">{thumbnail?.src ? <img src={thumbnail.src} alt="" draggable={false} loading="lazy" decoding="async" /> : <span>{contents ? 'Contents' : 'Article'}</span>}</span></> : <svg width="16" height="24" viewBox="0 0 16 24" aria-hidden="true">{[5, 12, 19].flatMap(y => [5, 11].map(x => <circle key={`${x}-${y}`} cx={x} cy={y} r="1.5" fill="currentColor" />))}</svg>}</button>
           <div className="issue-order-copy"><span className="issue-order-type">{contents ? 'Generated · 2-page contents' : `${index + 1} · ${item?.name}`}</span><strong dir="auto">{title}</strong><small>{contents ? 'Titles, subtitles & photographs update from your articles' : row ? `${row.pageCount} physical ${row.pageCount === 1 ? 'page' : 'pages'}` : 'Measuring pages…'}</small>
             {!contents && <label className="issue-toc-check"><input type="checkbox" checked={selected} disabled={disabled} onChange={() => onChange({ ...plan, contentsExcluded: selected ? [...plan.contentsExcluded, id] : plan.contentsExcluded.filter(excluded => excluded !== id) })} />List in contents</label>}
           </div>

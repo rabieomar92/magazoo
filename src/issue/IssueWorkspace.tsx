@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { migrate } from '../schema/document';
-import { exportIssuePdf, issuePageGroups } from '../lib/pdfExport';
+import { exportIssuePdf, issuePageGroups, waitForPreviewResources } from '../lib/pdfExport';
 import { PDF_PAGE_SIZES, type PdfPageSize } from '../lib/pdfPageSize';
 import { pageDimensions, withPageFormat } from '../lib/pageFormat';
 import { usePdfPageSize } from '../store/pdfPreferences';
 import { issueApi } from './api';
-import { contentsDesignOf, contentsEntries, defaultIssuePlan, reconcileIssuePlan, CONTENTS_ID, type ContentsDensity, type ContentsDesign, type ContentsEntryStyle, type ContentsLayout, type ContentsPictures, type IssueItem, type IssuePlan, type IssueResponse } from './model';
+import { contentsDesignOf, contentsEntries, defaultIssuePlan, reconcileIssuePlan, CONTENTS_ID, type ContentsDensity, type ContentsDesign, type ContentsEntryStyle, type ContentsPictures, type IssueItem, type IssuePlan, type IssueResponse } from './model';
 import { IssueCompiler, type CompiledIssue, type CompileProgress } from './IssueCompiler';
 import { IssueProof } from './IssueProof';
 import { ContentsEntryCard } from './ContentsEntryCards';
@@ -15,6 +15,7 @@ import './issue.css';
 import { Wordmark } from '../components/Wordmark';
 import { MagazooLoader } from '../components/MagazooLoader';
 import { registerPublicationPrint } from '../lib/nativePrint';
+import { restoreArrangement } from './arrangementBackup';
 
 /** What the compiled sheets are built from, and the only thing that can put
  * the proof out of date. Everything else an editor can change — wording,
@@ -72,6 +73,8 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
   const [notice, setNotice] = useState('');
   const [tab, setTab] = useState<Tab>('arrange');
   const [zoom, setZoom] = useState<number | 'fit'>('fit');
+  const [canvasView, setCanvasView] = useState<'proof' | 'arrange'>('proof');
+  const [selectedEntry, setSelectedEntry] = useState('');
   const [fitScale, setFitScale] = useState(0.4);
   const [proofVersion, setProofVersion] = useState(0);
   const restoredFinalization = useRef(false);
@@ -83,7 +86,9 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
   const sources = useMemo(() => { void compileToken; return data.items.map(({ id, name, doc }) => ({ id, name, doc: withPageFormat(doc, compositionFormat) })); }, [data.items, compileToken, compositionFormat]);
   const ready = !!compiled && compiledFormat === compositionFormat;
   const assignments = useMemo(() => ready ? compiled!.assignments : [], [compiled, ready]);
-  const contentsDesign = useMemo(() => contentsDesignOf(plan), [plan]);
+  // Keep old design data readable, but the studio now offers one dependable
+  // contents composition instead of three competing sets of controls.
+  const contentsDesign = useMemo<ContentsDesign>(() => ({ ...contentsDesignOf(plan), layout: 'mosaic' }), [plan]);
   /**
    * What the contents spread on screen is drawn from.
    *
@@ -213,15 +218,18 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
   });
   const exportIssue = () => execute(async () => {
     if (!ready || proofStale || contentsOverflow) throw new Error('Wait for the selected page size to finish compiling before exporting.');
-    const sheetCount = (root: HTMLElement) => issuePageGroups(root).reduce((total, group) => total + group.sheets.length, 0);
-    let root: HTMLDivElement | null = null;
-    for (let attempt = 0; attempt < 100; attempt++) {
-      root = pagesRef.current;
-      if (root && sheetCount(root) === physicalPages) break;
-      root = null;
-      await new Promise<void>(resolve => window.setTimeout(resolve, 100));
+    if (canvasView === 'arrange') {
+      setCanvasView('proof');
+      await new Promise<void>(resolve => window.requestAnimationFrame(() => window.requestAnimationFrame(() => resolve())));
     }
-    if (!root) throw new Error('The compiled issue is still being laid out. Try exporting again in a moment.');
+    const sheetCount = (root: HTMLElement) => issuePageGroups(root).reduce((total, group) => total + group.sheets.length, 0);
+    const root = pagesRef.current;
+    if (!root) throw new Error('Open the page proof before exporting.');
+    // Font/image readiness and the pagination quiet period matter, not an
+    // arbitrary ten seconds from clicking Export. Check counts only afterwards.
+    await waitForPreviewResources(root);
+    const actual = sheetCount(root);
+    if (actual !== physicalPages) throw new Error(`The proof has ${actual} pages, but numbering was compiled for ${physicalPages}. Recompile the whole issue before exporting so the printed page numbers stay correct.`);
     await exportIssuePdf(data.project.name, root, pdfSize);
   });
 
@@ -276,24 +284,20 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
           <section className="card">
             <h2>Contents spread</h2>
             <label className="field">Heading<input maxLength={100} value={plan.contentsTitle} disabled={busy} onChange={event => updatePlan({ ...plan, contentsTitle: event.target.value })} /></label>
-            <label className="field">Introduction<textarea rows={2} maxLength={500} value={plan.contentsSubtitle} disabled={busy} onChange={event => updatePlan({ ...plan, contentsSubtitle: event.target.value })} /></label>
             <label className="field">Reading direction<select value={plan.direction} disabled={busy} onChange={event => updatePlan({ ...plan, direction: event.target.value as 'ltr' | 'rtl' })}><option value="ltr">Left to right</option><option value="rtl">Right to left (Arabic)</option></select></label>
           </section>
           <section className="card">
             <div className="card-head"><h2>Design</h2><button type="button" disabled={busy} onClick={() => updatePlan({ ...plan, contentsDesign: undefined })}>Reset</button></div>
             <div className="field-grid">
-              <label className="field">Layout<select value={contentsDesign.layout} disabled={busy} onChange={event => updateDesign({ layout: event.target.value as ContentsLayout })}><option value="mosaic">Mosaic — tiled cards</option><option value="sections">Sectioned list</option><option value="feature">Lead feature + grid</option></select></label>
+              <p className="field-hint">Mosaic · tiled cards</p>
               <label className="field">Density<select value={contentsDesign.density} disabled={busy} onChange={event => updateDesign({ density: event.target.value as ContentsDensity })}><option value="auto">Auto (fills page)</option><option value="airy">Airy</option><option value="normal">Normal</option><option value="dense">Dense</option><option value="packed">Packed</option></select></label>
-              {contentsDesign.layout === 'feature' && <label className="field">List columns<select value={contentsDesign.columns} disabled={busy} onChange={event => updateDesign({ columns: Number(event.target.value) as 1 | 2 })}><option value={1}>1</option><option value={2}>2</option></select></label>}
               <label className="field">Headline font<select value={contentsDesign.titleFont} disabled={busy} onChange={event => updateDesign({ titleFont: event.target.value as 'serif' | 'sans' })}><option value="serif">Serif · Playfair</option><option value="sans">Sans · Avenir Next</option></select></label>
               <label className="field swatch">Accent<input type="color" value={contentsDesign.accent} disabled={busy} onChange={event => updateDesign({ accent: event.target.value })} /></label>
               <label className="field swatch">Page colour<input type="color" value={contentsDesign.pageColor} disabled={busy} onChange={event => updateDesign({ pageColor: event.target.value })} /></label>
               <label className="field swatch">Text colour<input type="color" value={contentsDesign.textColor} disabled={busy} onChange={event => updateDesign({ textColor: event.target.value })} /></label>
               <label className="field swatch">Top bar colour<input type="color" value={contentsDesign.topBarColor} disabled={busy} onChange={event => updateDesign({ topBarColor: event.target.value })} /></label>
               <label className="field swatch">Headings<input type="color" value={contentsDesign.headingColor} disabled={busy} onChange={event => updateDesign({ headingColor: event.target.value })} /></label>
-              <label className="field">Feature picture (mm)<input type="number" min={20} max={150} step={1} value={contentsDesign.featureHeight} disabled={busy} onChange={event => { const value = event.target.valueAsNumber; if (Number.isFinite(value)) updateDesign({ featureHeight: value }); }} /></label>
               {contentsDesign.layout === 'mosaic' && <label className="field">Pictures<select value={contentsDesign.pictures} disabled={busy} onChange={event => updateDesign({ pictures: event.target.value as ContentsPictures })}><option value="auto">Automatic — as many as fit</option><option value="all">On every entry that has one</option><option value="none">Text only</option></select></label>}
-              <label className="field">Thumbnail (mm)<input type="number" min={8} max={90} step={1} value={contentsDesign.thumbHeight} disabled={busy} onChange={event => { const value = event.target.valueAsNumber; if (Number.isFinite(value)) updateDesign({ thumbHeight: value }); }} /></label>
             </div>
             <label className="field range">Text size <b>{Math.round(contentsDesign.textScale * 100)}%</b><input type="range" min={0.85} max={1.15} step={0.01} value={contentsDesign.textScale} disabled={busy} onChange={event => updateDesign({ textScale: event.target.valueAsNumber })} /></label>
             <label className="field range">Character spacing <b>{contentsDesign.tracking >= 0 ? '+' : ''}{contentsDesign.tracking.toFixed(3)}em</b><input type="range" min={-0.02} max={0.04} step={0.005} value={contentsDesign.tracking} disabled={busy} onChange={event => updateDesign({ tracking: event.target.valueAsNumber })} /></label>
@@ -319,8 +323,9 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
             <p className="field-hint">Each line of the contents page, independent of the article it came from. Open one to reword it, drop or reframe its picture, or move it to another section.</p>
             <div className="entry-list">
               {contentsItems.length === 0 && <p className="field-hint">No articles are listed in the contents spread yet.</p>}
-              {contentsItems.map((item, index) => <ContentsEntryCard
-                key={item.id} item={item} index={index} design={contentsDesign} busy={busy} proofVersion={proofVersion}
+              {contentsItems.length > 0 && <label className="field">Edit contents entry<select value={contentsItems.some(item => item.id === selectedEntry) ? selectedEntry : contentsItems[0].id} disabled={busy} onChange={event => setSelectedEntry(event.target.value)}>{contentsItems.map((item, index) => <option key={item.id} value={item.id}>{index + 1}. {item.doc.meta.title || item.name}</option>)}</select></label>}
+              {contentsItems.filter(item => item.id === (contentsItems.some(entry => entry.id === selectedEntry) ? selectedEntry : contentsItems[0]?.id)).map(item => <ContentsEntryCard
+                key={item.id} item={item} index={contentsItems.indexOf(item)} design={contentsDesign} busy={busy} proofVersion={proofVersion}
                 style={plan.contentsStyle?.[item.id] ?? {}}
                 onChange={patch => updateEntryStyle(item.id, patch)}
                 onReset={() => resetEntryStyle(item.id)}
@@ -330,6 +335,16 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
         </div>}
 
         {tab === 'output' && <div className="panel" role="tabpanel" id="panel-output" aria-labelledby="tab-output">
+          <section className="card">
+            <h2>Arrangement backup</h2>
+            <p className="field-hint">Restore reading order, contents wording, design and numbering after uploading the same article files. This does not replace article content.</p>
+            <label className="field">Restore arrangement<input type="file" accept=".json,application/json" disabled={busy} onChange={async event=>{
+              const input=event.currentTarget,file=input.files?.[0];if(!file)return;
+              try { const restored=restoreArrangement(JSON.parse(await file.text()),items);updatePlan(restored);setNotice('Arrangement restored. Recompile to update page numbers.');setError(''); }
+              catch(failure){setError(failure instanceof Error?failure.message:'Could not restore arrangement.');}
+              finally{input.value='';}
+            }}/></label>
+          </section>
           <section className="card">
             <h2>Compile</h2>
             {ready
@@ -359,6 +374,7 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
             {ready && <span>{physicalPages} {physicalPages === 1 ? 'page' : 'pages'}</span>}
           </div>
           <div className="stage-tools">
+            <button type="button" className={canvasView === 'arrange' ? 'is-active' : ''} disabled={busy} onClick={() => setCanvasView(value => value === 'arrange' ? 'proof' : 'arrange')}>{canvasView === 'arrange' ? 'View pages' : 'Arrange on canvas'}</button>
             {proofStale && <button type="button" className="stale-pill" disabled={busy} onClick={recompile}>Arrangement changed — recompile</button>}
             <div className="zoom">
               <button type="button" title="Zoom out" aria-label="Zoom out" onClick={() => setZoom(Math.max(0.12, Math.round((scale - 0.05) * 100) / 100))}>−</button>
@@ -369,6 +385,13 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
           </div>
         </div>
         <div className="stage-scroll" ref={stageRef}>
+          {canvasView === 'arrange' && <section className="issue-canvas-order" aria-label="Arrange articles on canvas">
+            <h2>Arrange your issue</h2>
+            <p>Drag an article to its new position. Its pages move together. Then recompile to refresh the page numbers.</p>
+            <IssueOrder plan={plan} items={items} assignments={assignments} disabled={busy} onChange={updatePlan} visual />
+            {proofStale && <button type="button" className="primary" disabled={busy} onClick={() => { recompile(); setCanvasView('proof'); }}>Apply order &amp; recompile</button>}
+          </section>}
+          <div hidden={canvasView === 'arrange'}>
           {ready
             ? <IssueProof plan={proofPlan!} entries={entries} documents={compiled!.numbered} magazineName={data.project.name} design={proofDesign} contentsStart={contentsStart} contentsSide={assignments.find(row => row.id === CONTENTS_ID)?.mastheadSide} pageSize={pdfSize} scale={scale} pagesRef={pagesRef} onOverflow={setContentsOverflow} />
             : <div className="stage-progress">
@@ -382,6 +405,7 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
                       max={Math.max(1, progress.total)}
                     />}
               </div>}
+          </div>
         </div>
       </section>
     </div>
