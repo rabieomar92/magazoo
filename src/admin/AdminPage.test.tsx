@@ -90,9 +90,9 @@ it('opens the requested form and preserves its draft when closed',async()=>{
 it('creates a project with the existing API and closes the form after success',async()=>{
   await render();await click('New project');
   const form=host.querySelector<HTMLFormElement>('form:not([hidden])')!;
-  fill(form.querySelector('input')!,'New issue');await submit(form);
+  fill(form.querySelector('input')!,'New issue');await submit(form);await submit(form);await submit(form);
   const post=request.mock.calls.find(([url,options])=>url.endsWith('projects')&&options.method==='POST')!;
-  expect(JSON.parse(String(post[1].body))).toEqual({name:'New issue'});
+  expect(JSON.parse(String(post[1].body))).toEqual({name:'New issue',settings:{paperSize:'jis-b5',bleedMm:3}});
   expect((post[1].headers as Record<string,string>)['X-CSRF-Token']).toBe('test-csrf');
   expect(host.querySelector<HTMLElement>('#admin-create-panel')!.hidden).toBe(true);
   expect(host.textContent).toContain('Project created');
@@ -111,8 +111,9 @@ it('keeps the form and entered name when a request fails',async()=>{
   const form=host.querySelector<HTMLFormElement>('form:not([hidden])')!;
   fill(form.querySelector('input')!,'Keep this draft');
   request.mockResolvedValueOnce({ok:false,json:async()=>({error:'That name is already used.'})});
-  await submit(form);
+  await submit(form);await submit(form);await submit(form);
   expect(host.querySelector('[role=alert]')?.textContent).toContain('already used');
+  await click('Back');await click('Back');
   expect(form.querySelector('input')!.value).toBe('Keep this draft');
   expect(host.querySelector<HTMLElement>('#admin-create-panel')!.hidden).toBe(false);
 });

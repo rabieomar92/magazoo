@@ -1,5 +1,5 @@
 export interface LibraryItem { id: string; name: string; token: string; version: number; updated: number; category?:string;templateId?:string }
-export interface LibraryProject { id: string; name: string; items: LibraryItem[] }
+export interface LibraryProject { id: string; name: string; items: LibraryItem[];settings?:import('../lib/projectSettings').ProjectSettings }
 export type LibrarySort = 'recent' | 'name' | 'oldest';
 const normalized = (value: string) => value.normalize('NFKD').replace(/\p{M}/gu, '').toLocaleLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
 

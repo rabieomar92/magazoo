@@ -36,7 +36,8 @@ export function Toolbar({ onPreviewToolsHost, onToggleSidebar, sidebarCollapsed 
   const projectStatus = { draft: 'Draft', pending: 'Unsaved changes', saving: 'Saving…', saved: 'Saved', error: 'Save failed', conflict: 'Save conflict' }[project.status];
   const title = useDoc((s) => s.doc.meta.title);
   const bleedMm=useDoc(s=>documentBleed(s.doc.design.bleedMm));
-  const cropMarks=useDoc(s=>s.doc.design.cropMarks===true);
+  const cropMarks=useDoc(s=>s.doc.design.cropMarks??s.doc.design.projectLayout===true);
+  const projectLayout=useDoc(s=>s.doc.design.projectLayout===true);
   const [exporting, setExporting] = useState(false);
   const opening=useFileActivity(state=>state.opening);
   const [pdfSize, setPdfSize] = usePdfPageSize();
@@ -155,7 +156,7 @@ export function Toolbar({ onPreviewToolsHost, onToggleSidebar, sidebarCollapsed 
           </button>
         </div>
         <div className="toolbar-group toolbar-group--export" role="group" aria-label="PDF output">
-          <select className="tool-btn select-control pdf-size-select" aria-label="PDF page size" value={pdfSize} disabled={exporting}
+          <select className="tool-btn select-control pdf-size-select" aria-label="PDF page size" value={pdfSize} disabled={exporting||projectLayout}
             title={`Canvas and output: ${PDF_PAGE_SIZES[pdfSize].width} × ${PDF_PAGE_SIZES[pdfSize].height} mm at 100%. This browser remembers your choice; your article JSON is unchanged.`}
             onChange={event => setPdfSize(event.target.value as PdfPageSize)}>
             {Object.entries(PDF_PAGE_SIZES).map(([key, size]) => <option key={key} value={key}>{size.label} · {size.width} × {size.height} mm</option>)}

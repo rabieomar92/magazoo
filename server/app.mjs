@@ -100,8 +100,14 @@ export function createApp({storage,origin,passwordHash,staticDir,authOptions={},
       }
       if(path==='/api/auth/logout' && req.method==='POST'){auth.logout(jar.magazoo_admin);res.setHeader('Set-Cookie',cookie('magazoo_admin','',0));return send(200,{ok:true});}
       if(path==='/api/projects' && req.method==='GET')return send(200,storage.list());
-      if(path==='/api/projects' && req.method==='POST'){const data=await body(req,4096);return send(201,storage.createProject(projectName(data.name)));}
+      if(path==='/api/projects' && req.method==='POST'){const data=await body(req,4096);return send(201,storage.createProject(projectName(data.name),data.settings));}
+      const projectSettings=path.match(/^\/api\/projects\/([\w-]+)\/settings$/);
+      if(projectSettings&&req.method==='PATCH'){const data=await body(req,4096);return send(200,storage.updateProjectSettings(projectSettings[1],data.settings,data.previousSettings));}
       const issue=path.match(/^\/api\/projects\/([\w-]+)\/issue(\/finalize)?$/);
+      const issueMetadata=path.match(/^\/api\/projects\/([\w-]+)\/issue\/metadata$/);
+      if(issueMetadata&&req.method==='GET')return send(200,storage.readIssueMetadata(issueMetadata[1]));
+      const projectDocument=path.match(/^\/api\/projects\/([\w-]+)\/documents\/([\w-]+)$/);
+      if(projectDocument&&req.method==='GET')return send(200,storage.readProjectDocument(projectDocument[1],projectDocument[2]));
       if(issue){
         operation=req.method==='GET'?'issue-load':issue[2]?'issue-finalize':'issue-save';
         const required=req.method==='GET'?'readIssue':issue[2]?'finalizeIssue':'saveIssue';

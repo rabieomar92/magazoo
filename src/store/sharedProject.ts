@@ -27,6 +27,9 @@ export async function loadSharedProject(token:string, cancelled=()=>false, disca
   const recovery=discardRecovery ? undefined : memory ?? (cached?.pending && cached.target?.kind==='online' ? cached:undefined);
   const recovered=!!recovery;
   const doc=withProjectIssueLabel(migrate(recovery ? recovery.doc : latest.doc),latest.projectName);
+  // A recovered local draft may predate a project format change. Preserve its
+  // authored content, but never let recovery detach it from the shared canvas.
+  if(latest.doc?.design?.projectLayout)Object.assign(doc.design,{pageFormat:latest.doc.design.pageFormat,bleedMm:latest.doc.design.bleedMm,bleedCanvas:true,projectLayout:true});
   const version=recovery?.target?.kind==='online' ? recovery.target.version:latest.version;
   bindTarget({kind:'online',token,name:latest.name,version,projectName:latest.projectName},recovered?null:doc);
   useDoc.getState().load(doc);

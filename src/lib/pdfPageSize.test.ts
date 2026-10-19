@@ -154,15 +154,31 @@ describe('PDF output sheet fitting', () => {
     clonePages(source,output);fitPdfSheets(output,size,5,true);
     const page=output.querySelector<HTMLElement>('.pdf-export-page')!;
     expect(page.style.getPropertyValue('--pdf-fit-scale')).toBe('1');
-    expect(page.style.getPropertyValue('--pdf-fit-left')).toBe('11mm');
-    expect(page.style.getPropertyValue('--pdf-fit-top')).toBe('11mm');
+    expect(page.style.getPropertyValue('--pdf-fit-left')).toBe('5mm');
+    expect(page.style.getPropertyValue('--pdf-fit-top')).toBe('5mm');
     const marks=output.querySelector('.pdf-crop-marks')!;
-    expect(marks.getAttribute('viewBox')).toBe(`0 0 ${trim.width+22} ${trim.height+22}`);
+    expect(marks.getAttribute('viewBox')).toBe(`0 0 ${trim.width+10} ${trim.height+10}`);
     expect(marks.querySelectorAll('line')).toHaveLength(8);
-    expect(marks.querySelector('line')!.getAttribute('x1')).toBe('11');
-    expect(marks.querySelector('line')!.getAttribute('y2')).toBe('5');
+    expect(marks.querySelector('line')!.getAttribute('x1')).toBe('5');
+    expect(marks.querySelector('line')!.getAttribute('y2')).toBe('4.5');
     expect(output.querySelectorAll('.pdf-bleed-strip')).toHaveLength(8);
     expect(source.outerHTML).toBe(original);
+  });
+  it.each(['a4','b5','jis-b5','vendor-b5','magazine'] as const)('exports the actual expanded %s canvas without adding padding or reflow',size=>{
+    const trim=PDF_PAGE_SIZES[size],source=document.createElement('div');
+    source.innerHTML=`<div class="page" data-page-width-mm="${trim.width+10}" data-page-height-mm="${trim.height+10}" data-canvas-bleed-mm="5"><p>Same authored content</p></div>`;
+    const original=source.outerHTML;
+    for(const print of [false,true]){
+      const output=document.implementation.createHTMLDocument();clonePages(source,output);fitPdfSheets(output,size,print?5:0,print);
+      const page=output.querySelector<HTMLElement>('.pdf-export-page')!;
+      expect(page.style.getPropertyValue('--pdf-fit-scale')).toBe('1');
+      expect(page.style.getPropertyValue('--pdf-fit-left')).toBe(print?'0mm':'-5mm');
+      expect(page.style.getPropertyValue('--pdf-fit-top')).toBe(print?'0mm':'-5mm');
+      expect(output.querySelectorAll('.pdf-bleed-strip')).toHaveLength(0);
+      expect(output.querySelectorAll('.pdf-crop-marks line')).toHaveLength(print?8:0);
+      expect(output.querySelector('p')!.textContent).toBe('Same authored content');
+      expect(source.outerHTML).toBe(original);
+    }
   });
   it('reads both native dimensions and retains legacy height-only reference metadata', () => {
     const page = document.createElement('div');

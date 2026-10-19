@@ -83,8 +83,8 @@ it('keeps separate online and print exports and preserves saved print bleed', as
   act(() => host.querySelector<HTMLButtonElement>('#tab-output')!.click());
   expect(host.querySelector('#panel-output')!.textContent).toContain('Print PDF bleed per edge');
   expect(host.querySelector<HTMLInputElement>('#panel-output input[type="number"][max="10"]')!.value).toBe('5');
-  await act(async()=>[...host.querySelectorAll<HTMLButtonElement>('.studio-actions button')].find(button=>button.textContent==='Export print PDF')!.click());
-  expect(exportIssuePdf).toHaveBeenCalledWith('Test magazine - Print',expect.any(HTMLDivElement),'a4',{bleedMm:5,cropMarks:true});
+  await act(async()=>[...host.querySelectorAll<HTMLButtonElement>('.studio-actions button')].find(button=>button.textContent==='Export bleed PDF')!.click());
+  expect(exportIssuePdf).toHaveBeenCalledWith('Test magazine - Bleed',expect.any(HTMLDivElement),'a4',{bleedMm:5,cropMarks:true});
 });
 
 it('keeps PDF export and the vendor brief disabled until the assembled proof is measured',async()=>{
@@ -125,7 +125,7 @@ it.each(['a4', 'b5', 'jis-b5', 'vendor-b5', 'magazine'])('exports the compiled i
   expect(button.disabled).toBe(false);
   await act(async () => button.click());
 
-  expect(exportIssuePdf).toHaveBeenCalledExactlyOnceWith('Test magazine - Online', expect.any(HTMLDivElement), size);
+  expect(exportIssuePdf).toHaveBeenCalledExactlyOnceWith('Test magazine - Original', expect.any(HTMLDivElement), size);
   const exportedRoot = vi.mocked(exportIssuePdf).mock.calls[0][1];
   expect(exportedRoot.querySelectorAll('.page')).toHaveLength(size === 'magazine' ? 4 : 3);
   expect(exportedRoot.dataset.proofSize).toBe(size);

@@ -322,3 +322,13 @@
 .admin-page .admin-library-heading{margin:0;font-size:20px;font-weight:600;letter-spacing:-.02em;}
 .admin-page .admin-workspace-name .admin-library-heading{font-size:15px;line-height:1.25;letter-spacing:-.01em;}
 @media(max-width:520px){.admin-page .admin-header .admin-flat-navigation{width:100%;justify-content:flex-start;}.admin-header-identity{gap:12px;}}
+.project-setup{max-width:680px}
+.project-setup-progress{display:flex;gap:24px;border-bottom:1px solid #e2e7ee;padding:0 0 16px;margin:12px 0 24px;font-size:12px;color:#8a94a6}
+.project-setup-progress [aria-current=step]{color:#252b3a;font-weight:650}
+.project-setup p{font-size:14px;color:#667085;line-height:1.6}
+.project-setup label{display:grid;gap:8px;margin:16px 0}
+.project-format-summary{border-left:2px solid #5145d9;padding:4px 16px}
+.project-setup-review{display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:14px}
+.project-setup-review dt{color:#667085}.project-setup-review dd{margin:0}
+.project-settings-dialog{width:min(680px,calc(100vw - 48px))}
+.admin-project-settings{float:right;margin-bottom:8px;border:0;background:transparent;color:#667085;font-size:12px;cursor:pointer}

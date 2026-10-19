@@ -3,6 +3,7 @@ import { randomBytes, randomUUID } from 'node:crypto';
 import { issueError, validateIssueDocuments, validateIssuePlan, validateIssueVersion } from './issue.mjs';
 import { editLocks } from './editLocks.mjs';
 import { heroSource } from './heroPreview.mjs';
+import {validateProjectSettings,applyProjectSettings} from './projectSettings.mjs';
 
 export const token = () => randomBytes(32).toString('base64url');
 const object = value => value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -47,6 +48,7 @@ export function openStorage(filename, lockOptions) {
   // Older issue tables may predate finalization. Add only the optional column;
   // never recreate a table or reset an existing arrangement or document.
   const issueColumns = db.prepare('PRAGMA table_info(project_issues)').all();
+  if(!db.prepare('PRAGMA table_info(projects)').all().some(column=>column.name==='settings'))db.exec('ALTER TABLE projects ADD COLUMN settings TEXT');
   if (!issueColumns.some(column => column.name === 'finalized')) db.exec('ALTER TABLE project_issues ADD COLUMN finalized TEXT');
   db.exec('CREATE TABLE IF NOT EXISTS app_settings (key TEXT PRIMARY KEY,value TEXT NOT NULL)');
   const locks = editLocks(db, lockOptions);
@@ -55,12 +57,13 @@ export function openStorage(filename, lockOptions) {
     if (!row) issueError(404, 'Document not found or link revoked.');
     return row;
   };
-  const listProjects=db.prepare('SELECT id,name,created FROM projects ORDER BY created DESC');
+  const listProjects=db.prepare('SELECT id,name,created,settings FROM projects ORDER BY created DESC');
+  const settingsOf=id=>{const value=db.prepare('SELECT settings FROM projects WHERE id=?').get(id)?.settings;return value?validateProjectSettings(JSON.parse(value)):undefined;};
   const listDocuments=db.prepare('SELECT projectId,id,name,token,version,updated FROM documents ORDER BY name');
   const labels=new Map();
   const readLabel=db.prepare("SELECT CASE WHEN json_valid(body) THEN json_extract(body,'$.meta.categoryLabel') END AS category, CASE WHEN json_valid(body) THEN json_extract(body,'$.templateId') END AS templateId FROM documents WHERE id=?");
   const list=()=>{
-    const projects=listProjects.all().map(project=>({...project,items:[]}));
+    const projects=listProjects.all().map(project=>({...project,settings:project.settings?JSON.parse(project.settings):undefined,items:[]}));
     const byId=new Map(projects.map(project=>[project.id,project]));
     for(const {projectId,...item} of listDocuments.all()){
       let label=labels.get(item.id);
@@ -81,6 +84,7 @@ export function openStorage(filename, lockOptions) {
     };
     const project = read('project', () => db.prepare('SELECT id,name FROM projects WHERE id=?').get(projectId));
     if (!project) issueError(404, 'Project not found.');
+    const settings=settingsOf(projectId);if(settings)project.settings=settings;
     const saved = read('arrangement', () => db.prepare('SELECT plan,version,finalized FROM project_issues WHERE projectId=?').get(projectId));
     const rows = read('documents', () => db.prepare('SELECT id,name,version,updated,body FROM documents WHERE projectId=? ORDER BY name').all(projectId));
     const items = rows.map(({ body, ...item }) => ({ ...item, doc: storedObject(body, 'ISSUE_DOCUMENT_UNREADABLE',
@@ -117,6 +121,8 @@ export function openStorage(filename, lockOptions) {
       });
     },
     readIssue(projectId) { return transaction(false, () => issueSnapshot(projectId)); },
+    readIssueMetadata(projectId){return transaction(false,()=>{const snapshot=issueSnapshot(projectId);return {...snapshot,items:snapshot.items.map(({doc,...item})=>item)};});},
+    readProjectDocument(projectId,id){const row=db.prepare('SELECT id,name,version,updated,body FROM documents WHERE projectId=? AND id=?').get(projectId,id);if(!row)issueError(404,'Document not found.');const {body,...item}=row;return {...item,doc:JSON.parse(body)};},
     saveIssue(projectId, version, plan) {
       return transaction(true, () => {
         const checked = checkedIssue(projectId, version, plan);
@@ -158,7 +164,18 @@ export function openStorage(filename, lockOptions) {
         return { version: version + 1, items: finalizedDocuments.map(({ id, version: documentVersion }) => ({ id, version: documentVersion })) };
       });
     },
-    createProject(name){const id=randomUUID();db.prepare('INSERT INTO projects VALUES (?,?,?)').run(id,name,Date.now());return{id,name};},
+    createProject(name,settings){const id=randomUUID(),checked=settings===undefined?undefined:validateProjectSettings(settings);db.prepare('INSERT INTO projects(id,name,created,settings) VALUES (?,?,?,?)').run(id,name,Date.now(),checked?JSON.stringify(checked):null);return{id,name,...(checked?{settings:checked}:{})};},
+    updateProjectSettings(id,value,previous){return transaction(true,()=>{
+      const current=db.prepare('SELECT id FROM projects WHERE id=?').get(id);if(!current)issueError(404,'Project not found.');
+      const settings=validateProjectSettings(value);
+      if(JSON.stringify(settingsOf(id)??null)!==JSON.stringify(previous??null))issueError(409,'Project settings changed in another session. Refresh before saving.');
+      const documents=db.prepare('SELECT id,body FROM documents WHERE projectId=?').all(id);
+      for(const doc of documents)locks.available(doc.id);
+      for(const doc of documents)db.prepare('UPDATE documents SET body=?,version=version+1,updated=? WHERE id=?').run(applyProjectSettings(doc.body,settings),Date.now(),doc.id);
+      db.prepare('UPDATE projects SET settings=? WHERE id=?').run(JSON.stringify(settings),id);
+      db.prepare('UPDATE project_issues SET finalized=NULL WHERE projectId=?').run(id);
+      return {id,settings,updatedDocuments:documents.length};
+    });},
     renameProject(id,name,previousName){
       return transaction(true,()=>{
         const current=db.prepare('SELECT name FROM projects WHERE id=?').get(id);
@@ -168,7 +185,7 @@ export function openStorage(filename, lockOptions) {
         return{id,name};
       });
     },
-    createDocument(projectId,name,body){const id=randomUUID(),secret=token();db.prepare('INSERT INTO documents VALUES (?,?,?,?,?,1,?)').run(id,projectId,name,secret,body,Date.now());return{id,name,token:secret,version:1};},
+    createDocument(projectId,name,body){const id=randomUUID(),secret=token();db.prepare('INSERT INTO documents VALUES (?,?,?,?,?,1,?)').run(id,projectId,name,secret,applyProjectSettings(body,settingsOf(projectId)),Date.now());return{id,name,token:secret,version:1};},
     read(secret){return db.prepare('SELECT id,name,body,version FROM documents WHERE token=?').get(secret);},
     sharedProjectName(secret){return db.prepare('SELECT p.name FROM documents d JOIN projects p ON p.id=d.projectId WHERE d.token=?').get(secret)?.name;},
     readHero(id) {
@@ -193,7 +210,7 @@ export function openStorage(filename, lockOptions) {
     },
     update(secret,version,body,leaseId){return transaction(true,()=>{
       const row=sharedRow(secret);locks.assert(row.id,leaseId);
-      const changed=db.prepare('UPDATE documents SET body=?,version=version+1,updated=? WHERE token=? AND version=?').run(body,Date.now(),secret,version).changes>0;
+      const changed=db.prepare('UPDATE documents SET body=?,version=version+1,updated=? WHERE token=? AND version=?').run(applyProjectSettings(body,settingsOf(row.projectId)),Date.now(),secret,version).changes>0;
       if(changed)locks.renew(row.id,leaseId);
       return changed;
     });},

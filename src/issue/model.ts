@@ -156,7 +156,7 @@ export interface ContentsEntry {
   showHero?: boolean;
 }
 export interface IssueResponse {
-  project: { id: string; name: string }; version: number; plan: IssuePlan | null; items: IssueItem[];
+  project: { id: string; name: string;settings?:import('../lib/projectSettings').ProjectSettings }; version: number; plan: IssuePlan | null; items: IssueItem[];
   sourcesChanged?: boolean;
   finalized?: { at: number; contentsStartNumber: number; documents: { id: string; version: number; pageCount: number; startNumber: number }[] } | null;
 }

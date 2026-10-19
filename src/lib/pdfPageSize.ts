@@ -41,13 +41,14 @@ export function fitPdfSheets(doc: Document, size: PdfPageSize, bleedMm = 0, crop
   const pages = Array.from(doc.querySelectorAll<HTMLElement>('.pdf-export-page'));
   if (!pages.length) return;
   const dimensions = pages.map(pdfPageDimensions);
+  const sourceBleeds=pages.map(page=>{const bleed=Number(page.dataset.canvasBleedMm??0);if(!Number.isFinite(bleed)||bleed<0||bleed>10)throw new Error('The canvas bleed is invalid.');return bleed;});
   const expected = PDF_PAGE_SIZES[size];
-  if (dimensions.some(page => page.width !== expected.width || page.height !== expected.height)) {
+  if (dimensions.some((page,i) => Math.abs(page.width-2*sourceBleeds[i]-expected.width)>.001 || Math.abs(page.height-2*sourceBleeds[i]-expected.height)>.001)) {
     throw new Error(`The ${expected.label} preview is not ready at ${expected.width} × ${expected.height} mm. Wait for the layout to update and try again; exporting a different canvas size would add borders or change its scale.`);
   }
-  if (!bleedMm && !cropMarks && size === 'a4' && dimensions.every(page => page.width === 210 && page.height === 297)) return;
-  // A separate 6 mm white slug holds 4 mm marks, with a 1 mm gap from bleed.
-  const slug=cropMarks?6:0,offset=bleedMm+slug;
+  if (!bleedMm && !cropMarks && !sourceBleeds.some(Boolean) && size === 'a4' && dimensions.every(page => page.width === 210 && page.height === 297)) return;
+  // Marks live within the requested bleed, never in an extra output border.
+  const slug=0,offset=bleedMm;
   const width=expected.width+2*offset,height=expected.height+2*offset;
   const css = doc.createElement('style');
   css.textContent = `
@@ -72,14 +73,14 @@ export function fitPdfSheets(doc: Document, size: PdfPageSize, bleedMm = 0, crop
   });
   pages.forEach((page, index) => {
     const source = dimensions[index];
-    const fit = pdfSheetGeometry(size, source.height, source.width);
+    const fit = {width:expected.width,height:expected.height,scale:1,left:0,top:0};
     // Bottom-bleed artwork must meet the output trim as well as its source
     // trim. Move any aspect-fit allowance above this opt-in sheet instead of
     // introducing a blank strip below its photograph. Scale/crop stay intact.
     const top = page.classList.contains('page--hero-bottom-bleed')
       ? Math.max(0, fit.height - source.height * fit.scale) : fit.top;
-    page.style.setProperty('--pdf-fit-left', `${fit.left+offset}mm`);
-    page.style.setProperty('--pdf-fit-top', `${top+offset}mm`);
+    page.style.setProperty('--pdf-fit-left', `${fit.left+offset-sourceBleeds[index]}mm`);
+    page.style.setProperty('--pdf-fit-top', `${top+offset-sourceBleeds[index]}mm`);
     page.style.setProperty('--pdf-fit-scale', String(fit.scale));
     const sheet = doc.createElement('div');
     sheet.className = 'pdf-export-sheet';
@@ -94,7 +95,7 @@ export function fitPdfSheets(doc: Document, size: PdfPageSize, bleedMm = 0, crop
     sheet.style.setProperty('break-after', index === pages.length - 1 ? 'auto' : 'page', 'important');
     sheet.style.setProperty('page-break-after', index === pages.length - 1 ? 'auto' : 'always', 'important');
     page.before(sheet);
-    if(bleedMm){
+    if(bleedMm&&!sourceBleeds[index]){
       // A separate artwork-only layer extends behind the unchanged trim page.
       // Never enlarge text, move margins or repaginate the source document.
       const artwork=page.cloneNode(true) as HTMLElement;
@@ -132,14 +133,12 @@ export function fitPdfSheets(doc: Document, size: PdfPageSize, bleedMm = 0, crop
       }
     }
     sheet.appendChild(page);
-    if(cropMarks){
+    if(cropMarks&&bleedMm>0){
       const marks=doc.createElementNS('http://www.w3.org/2000/svg','svg');
       marks.classList.add('pdf-crop-marks');marks.setAttribute('aria-hidden','true');
       marks.setAttribute('viewBox',`0 0 ${width} ${height}`);
       Object.assign(marks.style,{position:'absolute',inset:'0',width:`${width}mm`,height:`${height}mm`,pointerEvents:'none'});
-      const segments:number[][]=[];
-      for(const x of [offset,offset+expected.width])segments.push([x,1,x,5],[x,height-5,x,height-1]);
-      for(const y of [offset,offset+expected.height])segments.push([1,y,5,y],[width-5,y,width-1,y]);
+      const segments=cropMarkSegments(expected.width,expected.height,bleedMm);
       for(const [x1,y1,x2,y2] of segments){const line=doc.createElementNS(marks.namespaceURI,'line');for(const [key,value]of Object.entries({x1,y1,x2,y2,stroke:'#000','stroke-width':.0882}))line.setAttribute(key,String(value));marks.append(line);}
       sheet.append(marks);
     }
@@ -148,4 +147,13 @@ export function fitPdfSheets(doc: Document, size: PdfPageSize, bleedMm = 0, crop
     page.style.setProperty('page-break-after', 'auto', 'important');
   });
   return css;
+}
+
+/** Eight corner-only cut ticks, contained entirely in the bleed band. */
+export function cropMarkSegments(trimWidth:number,trimHeight:number,bleed:number){
+ if(bleed<=0)return [];
+ const width=trimWidth+2*bleed,height=trimHeight+2*bleed,inset=Math.min(.25,bleed*.1),end=bleed-Math.min(.5,bleed*.25),segments:number[][]=[];
+ for(const x of [bleed,bleed+trimWidth])segments.push([x,inset,x,end],[x,height-end,x,height-inset]);
+ for(const y of [bleed,bleed+trimHeight])segments.push([inset,y,end,y],[width-end,y,width-inset,y]);
+ return segments;
 }

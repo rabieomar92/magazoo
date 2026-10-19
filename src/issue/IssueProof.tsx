@@ -36,11 +36,12 @@ const Article = memo(function Article({ id, doc }: { id: string; doc: Doc }) {
  * and `exportIssuePdf` prints these same elements, one `clonePages` call per
  * article, exactly as printing that article on its own would.
  */
-export function IssueProof({ plan, entries, documents, magazineName, design, contentsStart, contentsSide = 'left', pageSize = 'a4', pagesRef, onOverflow, scale, onPageCounts, onPending, onError }: {
+export function IssueProof({ plan, entries, documents, magazineName, design, contentsStart, contentsSide = 'left', pageSize = 'a4', pagesRef, onOverflow, scale, onPageCounts, onPending, onError,bleedMm=0 }: {
   plan: IssuePlan; entries: readonly ContentsEntry[]; documents: readonly IssueSourceDocument[];
   magazineName: string; design?: ContentsDesign; contentsStart: number; scale: number;
   contentsSide?: 'left' | 'right';
   pageSize?: PdfPageSize;
+  bleedMm?:number;
   pagesRef: RefObject<HTMLDivElement | null>; onOverflow: (overflow: boolean) => void;
   onPageCounts?:(counts:Record<string,number>)=>void; onPending?:()=>void; onError?:(error:Error)=>void;
 }) {
@@ -88,7 +89,7 @@ export function IssueProof({ plan, entries, documents, magazineName, design, con
   const split = position < 0 ? plan.order.length : position;
   const article = (id: string) => {
     const source = docs.get(id);
-    return source?.externalPdf ? <div key={id} className="issue-proof-doc" data-issue-article={id}><ExternalPdfPages pdf={source.externalPdf} size={pageSize} /></div>
+    return source?.externalPdf ? <div key={id} className="issue-proof-doc" data-issue-article={id}><ExternalPdfPages pdf={source.externalPdf} size={pageSize} bleedMm={bleedMm}/></div>
       : source ? <Article key={id} id={id} doc={source.doc} /> : null;
   };
   return <div className="issue-proof-frame" style={{ width: box.width * scale, height: box.height * scale }}>
@@ -98,7 +99,7 @@ export function IssueProof({ plan, entries, documents, magazineName, design, con
       <div className="pages issue-proof-contents">
         <ContentsSpread entries={entries} title={plan.contentsTitle} subtitle={plan.contentsSubtitle}
           direction={plan.direction} startNumber={contentsStart} magazineName={magazineName}
-          design={design} mastheadSide={contentsSide} pageSize={pageSize} onOverflow={onOverflow} />
+          design={design} mastheadSide={contentsSide} pageSize={pageSize} bleedMm={bleedMm} onOverflow={onOverflow} />
       </div>
       {plan.order.slice(split + 1).map(article)}
     </div>

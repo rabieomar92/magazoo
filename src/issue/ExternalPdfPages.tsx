@@ -16,7 +16,7 @@ export function externalPdfSheet(src: string, size: PdfPageSize): HTMLElement {
   sheet.append(image); return sheet;
 }
 
-export function ExternalPdfPages({ pdf, size }: {pdf:ExternalIssuePdf;size:PdfPageSize}) {
+export function ExternalPdfPages({ pdf, size,bleedMm=0 }: {pdf:ExternalIssuePdf;size:PdfPageSize;bleedMm?:number}) {
   const [state,setState]=useState<{urls:string[];error:string}>({urls:[],error:''});
   useEffect(()=>{
     let alive=true;
@@ -24,10 +24,10 @@ export function ExternalPdfPages({ pdf, size }: {pdf:ExternalIssuePdf;size:PdfPa
     void renderIssuePdf(pdf).then(urls=>{if(alive)setState({urls,error:''});}).catch(error=>{if(alive)setState({urls:[],error:error instanceof Error?error.message:'Could not prepare the PDF.'});});
     return ()=>{alive=false;};
   },[pdf]);
-  const dimensions=pageDimensions({pageFormat:size});
+  const dimensions=pageDimensions({pageFormat:size,bleedMm,bleedCanvas:true});
   return <div className="pages issue-external-pdf-pages" data-preview-pending={!state.urls.length&&!state.error?'true':undefined}>
     {state.error && <div role="alert" data-layout-overflow="true" className="page">{state.error}</div>}
     {!state.urls.length&&!state.error&&<div className="issue-external-pdf-loading"><BusyIndicator label={`Preparing ${pdf.name}…`} /></div>}
-    {state.urls.map((src,index)=><div key={src} className="page issue-external-pdf-page" data-page-width-mm={dimensions.width} data-page-height-mm={dimensions.height} style={{width:`${dimensions.width}mm`,height:`${dimensions.height}mm`,position:'relative',padding:0,background:'#fff',overflow:'hidden'}}><img src={src} alt={`${pdf.name}, page ${index+1}`} style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'contain'}} /></div>)}
+    {state.urls.map((src,index)=><div key={src} className="page issue-external-pdf-page" data-page-width-mm={dimensions.width} data-page-height-mm={dimensions.height} data-canvas-bleed-mm={bleedMm} style={{width:`${dimensions.width}mm`,height:`${dimensions.height}mm`,position:'relative',padding:0,background:'#fff',overflow:'hidden'}}><img src={src} alt={`${pdf.name}, page ${index+1}`} style={{position:'absolute',inset:`${bleedMm}mm`,width:`calc(100% - ${2*bleedMm}mm)`,height:`calc(100% - ${2*bleedMm}mm)`,objectFit:'contain'}} /></div>)}
   </div>;
 }

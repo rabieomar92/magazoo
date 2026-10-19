@@ -1152,13 +1152,14 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
         if (!(page instanceof HTMLElement) || !page.classList.contains('page')) continue;
         page.dataset.pageWidthMm = String(physicalPage.width);
         page.dataset.pageHeightMm = String(pageHeight);
+        page.dataset.canvasBleedMm=String(doc.design.bleedCanvas?doc.design.bleedMm??0:0);
       }
     };
     stamp();
     const observer = new MutationObserver(stamp);
     observer.observe(host, { childList: true });
     return () => observer.disconnect();
-  }, [physicalPage.width, pageHeight, nPages]);
+  }, [physicalPage.width, pageHeight, nPages,doc.design.bleedCanvas,doc.design.bleedMm]);
 
 
   // Measure the real page after its header/template geometry has settled.
@@ -1603,7 +1604,7 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
       </div>
 
       <PageFooters doc={effectiveDoc} root={pagesRef} />
-      {!readOnly&&<CanvasBleedGuides root={pagesRef} bleedMm={doc.design.bleedMm}/>}
+      {!readOnly&&<CanvasBleedGuides root={pagesRef} bleedMm={doc.design.bleedMm} bleedCanvas={doc.design.bleedCanvas} size={doc.design.pageFormat}/>}
       {!readOnly&&<CanvasImagePanning doc={doc} root={pagesRef}/>}
       {!readOnly&&<CanvasImageResize doc={doc} root={pagesRef}/>}
       {!readOnly&&<CanvasNumericAdjust/>}

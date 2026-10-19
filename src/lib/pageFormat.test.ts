@@ -7,6 +7,11 @@ import { PDF_PAGE_SIZES } from './pdfPageSize';
 import { articlePageHeight } from './articleLayouts';
 
 describe('native magazine view model', () => {
+  it.each(TEMPLATE_META.map(meta=>meta.id))('uses an actual expanded editable canvas for %s',id=>{
+    const doc=presetFor(id);doc.design.pageFormat='jis-b5';doc.design.bleedCanvas=true;doc.design.bleedMm=5;
+    expect(pageDimensions(doc.design)).toEqual({width:192,height:267});
+    expect(cssVars(doc.design,id)).toMatchObject({'--page-w':'192mm','--page-h':'267mm'});
+  });
   it.each(TEMPLATE_META.flatMap(meta => (['a4','b5','jis-b5','magazine'] as const).map(size=>[meta.id,size] as const)))('converts %s to native %s without rewriting a single source field', (id,size) => {
     const source = presetFor(id);
     const before = JSON.stringify(source);

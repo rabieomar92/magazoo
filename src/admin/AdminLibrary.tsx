@@ -5,11 +5,12 @@ import { articleLabel, articleCategory, libraryRows, type LibraryItem, type Libr
 
 export interface DeleteTarget { name: string; path: string; project: boolean }
 
-export default function AdminLibrary({ projects, busy, onDelete, onCopy, link, onCompile, onRename }: {
+export default function AdminLibrary({ projects, busy, onDelete, onCopy, link, onCompile, onRename,onSettings }: {
   projects: LibraryProject[]; busy: boolean; onDelete: (target: DeleteTarget) => void;
   onCopy: (item: LibraryItem) => void; link: (token: string) => string;
   onCompile?: (projectId: string) => void;
   onRename?: (project: LibraryProject) => void;
+  onSettings?: (project: LibraryProject) => void;
 }) {
   const id = useId();
   const [query, setQuery] = useState('');
@@ -52,6 +53,7 @@ export default function AdminLibrary({ projects, busy, onDelete, onCopy, link, o
     </div>
     {!rows.length && <section className="admin-card admin-empty"><span className="admin-empty-icon"><AdminIcon name={projects.length ? 'search' : 'folder'}/></span><h3>{projects.length ? 'No matching documents.' : 'No projects yet.'}</h3><p>{projects.length ? 'Try a different file name or choose another project.' : 'Create a project, then add an article or import an existing JSON file.'}</p></section>}
     {[...groups.values()].map(({ project: p, items }) => <section className="admin-project" key={p.id} aria-labelledby={`${id}-project-${p.id}`}>
+      {onSettings&&<button className="admin-project-settings" disabled={busy} onClick={()=>onSettings(p)} aria-label={`Project settings for ${p.name}`}>Project settings</button>}
       <header className="admin-project-header"><div className="admin-project-heading"><span className="admin-project-icon"><AdminIcon name="folder"/></span><div><h3 id={`${id}-project-${p.id}`}>{p.name}</h3><span>{p.items.length} {p.items.length === 1 ? 'article' : 'articles'} in project{p.items.length > items.length && items.length > 0 ? ` · ${items.length} shown` : ''}</span></div></div><div className="admin-actions">{onCompile && <button className="admin-compile" disabled={busy || !p.items.length} onClick={() => onCompile(p.id)}><AdminIcon name="grid"/>Compile issue</button>}{onRename && <button disabled={busy} onClick={() => onRename(p)} aria-label={`Rename project ${p.name}`}>Rename</button>}<button disabled={busy} className="admin-icon-button danger-quiet" title={`Delete project ${p.name}`} aria-label={`Delete project ${p.name}`} onClick={() => onDelete({ name: p.name, path: `projects/${p.id}`, project: true })}><AdminIcon name="trash"/></button></div></header>
       <ul className="admin-article-grid" role="list">{items.map(item => {
         const date = new Date(item.updated);

@@ -383,6 +383,9 @@ export interface Design {
   /** Print-only buffer outside the trim, per edge. Does not change pagination. */
   bleedMm?: number;
   cropMarks?: boolean;
+  /** Actual editable artwork extends beyond trim when managed by a project. */
+  bleedCanvas?: boolean;
+  projectLayout?: boolean;
   textStyles?: Record<string, TextStyle>;
   /** Reference article compositions retain the magazine's 210 × 276 mm trim,
    * or can explicitly extend their text area to A4. Other templates ignore it. */

@@ -25,6 +25,7 @@ import type { ExternalIssuePdf } from './model';
 import { IssuePrintBrief } from './IssuePrintBrief';
 import {CanvasNumericAdjust} from '../paper/CanvasNumericAdjust';
 import {documentBleed} from '../lib/documentBleed';
+import {readProjectSettings} from '../lib/projectSettings';
 
 /** What the compiled sheets are built from, and the only thing that can put
  * the proof out of date. Everything else an editor can change — wording,
@@ -154,7 +155,7 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
   useLayoutEffect(() => {
     const stage = stageRef.current;
     if (!stage) return;
-    const dimensions = pageDimensions({ pageFormat: compositionFormat });
+    const dimensions = pageDimensions({ pageFormat: compositionFormat,bleedCanvas:true,bleedMm:data.project.settings?.bleedMm??0 });
     const pageWidth = dimensions.width * 96 / 25.4;
     const pageHeight = dimensions.height * 96 / 25.4;
     const measure = () => setFitScale(Math.min(1, Math.max(0.12,
@@ -163,7 +164,7 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
     const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure);
     observer?.observe(stage);
     return () => observer?.disconnect();
-  }, [compositionFormat]);
+  }, [compositionFormat,data.project.settings?.bleedMm]);
   const scale = zoom === 'fit' ? fitScale : zoom;
 
   const onCompiled = useCallback((result: CompiledIssue) => {
@@ -260,7 +261,8 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
     setFinalizedPlan(finalizationKey);
     setNotice('Issue finalised. Starting page numbers are saved to every article. Your two-page contents spread is ready.');
   });
-  const printBleed=documentBleed(plan.printSettings?.bleedMm??3);
+  const printBleed=documentBleed(data.project.settings?.bleedMm??plan.printSettings?.bleedMm??3);
+  const vendorPlan=data.project.settings?{...plan,printSettings:{binding:'saddle-stitch' as const,perfectMultiple:2 as const,...plan.printSettings,bleedMm:printBleed}}:plan;
   const exportIssue = (version:'online'|'print'='online') => execute(async () => {
     if (!ready || !proofVerified || proofStale || contentsOverflow) throw new Error('Wait for the assembled issue proof to finish compiling before exporting.');
     if (canvasView === 'arrange') {
@@ -275,8 +277,8 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
     await waitForPreviewResources(root);
     const actual = sheetCount(root);
     if (actual !== physicalPages) throw new Error(`The proof has ${actual} pages, but numbering was compiled for ${physicalPages}. Recompile the whole issue before exporting so the printed page numbers stay correct.`);
-    if(version==='print')await exportIssuePdf(`${data.project.name} - Print`, root, pdfSize,{bleedMm:printBleed,cropMarks:true});
-    else await exportIssuePdf(`${data.project.name} - Online`, root, pdfSize);
+    if(version==='print')await exportIssuePdf(`${data.project.name} - Bleed`, root, pdfSize,{bleedMm:printBleed,cropMarks:true});
+    else await exportIssuePdf(`${data.project.name} - Original`, root, pdfSize);
   });
 
   const blocked = busy || !ready || !proofVerified || contentsOverflow || proofStale;
@@ -385,13 +387,22 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
           <section className="card">
             <h2>Arrangement backup</h2>
             <button type="button" disabled={busy} onClick={()=>{
-              const file=new Blob([JSON.stringify({plan,items:articles.map(({id,name})=>({id,name}))},null,2)],{type:'application/json'});
+              const file=new Blob([JSON.stringify({plan,projectSettings:data.project.settings,items:articles.map(({id,name})=>({id,name}))},null,2)],{type:'application/json'});
               const url=URL.createObjectURL(file),link=document.createElement('a');link.href=url;link.download='magazoo-arrangement.json';link.click();window.setTimeout(()=>URL.revokeObjectURL(url),1000);
             }}>Download arrangement &amp; imported PDFs</button>
             <p className="field-hint">Restore reading order, contents wording, design and numbering after uploading the same article files. This does not replace article content.</p>
             <label className="field">Restore arrangement<input type="file" accept=".json,application/json" disabled={busy} onChange={async event=>{
               const input=event.currentTarget,file=input.files?.[0];if(!file)return;
-              try { const restored=restoreArrangement(JSON.parse(await file.text()),items);updatePlan(restored);setNotice('Arrangement restored. Recompile to update page numbers.');setError(''); }
+              try {
+                const backup=JSON.parse(await file.text()),restored=restoreArrangement(backup,items),settings=readProjectSettings(backup.projectSettings);
+                if(settings){
+                  const version=await save.flush();
+                  const response=await fetch(`${import.meta.env.BASE_URL}api/projects/${encodeURIComponent(data.project.id)}/settings`,{method:'PATCH',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({settings,previousSettings:data.project.settings??null}),signal:AbortSignal.timeout(60000)});
+                  if(!response.ok){const result=await response.json();throw new Error(result.error??'Project format could not be restored.');}
+                  await issueApi(data.project.id,csrf,'','PUT',{version,plan:restored});onReload();
+                }else updatePlan(restored);
+                setNotice('Arrangement restored. Recompile to update page numbers.');setError('');
+              }
               catch(failure){setError(failure instanceof Error?failure.message:'Could not restore arrangement.');}
               finally{input.value='';}
             }}/></label>
@@ -408,12 +419,12 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
           </section>
           <section className="card">
             <h2>Finalise &amp; export</h2>
-            <IssuePrintBrief title={data.project.name} plan={plan} items={items} assignments={assignments} size={pdfSize} disabled={busy||!ready||!proofVerified||proofStale} onChange={updatePlan}/>
-            <label className="field">PDF page size<select value={pdfSize} disabled={busy} onChange={event => setPdfSize(event.target.value as PdfPageSize)}>
+            <IssuePrintBrief title={data.project.name} plan={vendorPlan} items={items} assignments={assignments} size={pdfSize} disabled={busy||!ready||!proofVerified||proofStale} onChange={updatePlan}/>
+            <label className="field">PDF page size<select value={pdfSize} disabled={busy||!!data.project.settings} onChange={event => setPdfSize(event.target.value as PdfPageSize)}>
               {Object.entries(PDF_PAGE_SIZES).map(([key, size]) => <option key={key} value={key}>{size.label} · {size.width} × {size.height} mm</option>)}
             </select></label>
-            <label className="field">Print PDF bleed per edge (mm)<input type="number" min="0" max="10" step="0.5" value={printBleed} disabled={busy} onChange={event=>updatePlan({...plan,printSettings:{binding:'saddle-stitch',perfectMultiple:2,...plan.printSettings,bleedMm:documentBleed(event.target.valueAsNumber)}})}/></label>
-            <p className="field-hint">Online PDF: exact trim, no bleed or crop marks. Print PDF: {printBleed} mm bleed per edge plus crop marks in a separate 6 mm white area. Output {PDF_PAGE_SIZES[pdfSize].width+2*(printBleed+6)} × {PDF_PAGE_SIZES[pdfSize].height+2*(printBleed+6)} mm. Layout and page order stay identical. Confirm the bleed with your printer; imported PDF edges are extended too.</p>
+            <label className="field">Print PDF bleed per edge (mm)<input type="number" min="0" max="10" step="0.5" value={printBleed} disabled={busy||!!data.project.settings} onChange={event=>updatePlan({...plan,printSettings:{binding:'saddle-stitch',perfectMultiple:2,...plan.printSettings,bleedMm:documentBleed(event.target.valueAsNumber)}})}/></label>
+            <p className="field-hint">Original PDF: exact trim, no bleed or marks. Bleed PDF: {printBleed} mm per edge with corner cut marks; {PDF_PAGE_SIZES[pdfSize].width+2*printBleed} × {PDF_PAGE_SIZES[pdfSize].height+2*printBleed} mm, no extra border. Layout and page order stay identical. {data.project.settings?'Paper size and bleed are managed in Project settings.':'Use Project settings in the library to enable the same expanded editable canvas for every document.'} Imported PDFs retain their original trim artwork; provide bleed-ready source artwork where needed.</p>
             <p className="field-hint">A4, ISO B5, JIS B5 and Magazine lay out every article, cover and contents page directly at the selected paper size. Changing size recompiles the issue and may change its page counts; saved article content stays untouched. Choose the browser’s Save as PDF, Default margins (the publication sets them to zero), 100% scale and Background graphics. A system PDF printer or physical printer may need a matching custom paper size.</p>
             <p className="field-hint">Finalising writes each article’s starting page number back into the saved document, so a single-article export carries the same folio as the issue.</p>
             {contentsOverflow && ready && <p className="inline-alert" role="alert">The contents text does not fit its two pages. Shorten the heading or introduction, drop a subtitle, or uncheck some entries.</p>}
@@ -441,14 +452,14 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
         </div>
         <div className="stage-scroll" ref={stageRef}>
           {canvasView === 'arrange' && <section className="issue-canvas-order" aria-label="Arrange articles on canvas">
-            <div className="issue-arrange-heading"><h2>Arrange your issue</h2><div className="issue-arrange-actions"><IssuePrintBrief title={data.project.name} plan={plan} items={items} assignments={assignments} size={pdfSize} disabled={busy||!ready||!proofVerified||proofStale} onChange={updatePlan}/><IssuePdfImport disabled={busy} onImport={importPdf} /></div></div>
+            <div className="issue-arrange-heading"><h2>Arrange your issue</h2><div className="issue-arrange-actions"><IssuePrintBrief title={data.project.name} plan={vendorPlan} items={items} assignments={assignments} size={pdfSize} disabled={busy||!ready||!proofVerified||proofStale} onChange={updatePlan}/><IssuePdfImport disabled={busy} onImport={importPdf} /></div></div>
             <p>Drag an article to its new position. Its pages move together. Then recompile to refresh the page numbers.</p>
             <IssueOrder plan={plan} items={items} assignments={assignments} disabled={busy} onChange={updatePlan} onRemovePdf={removePdf} visual />
             {proofStale && <button type="button" className="primary" disabled={busy} onClick={() => { recompile(); setCanvasView('proof'); }}>Apply order &amp; recompile</button>}
           </section>}
           <div className={canvasView === 'arrange'?'issue-proof-offstage':undefined}>
           {ready
-            ? <IssueProof plan={proofPlan!} entries={entries} documents={compiled!.numbered} magazineName={data.project.name} design={proofDesign} contentsStart={contentsStart} contentsSide={assignments.find(row => row.id === CONTENTS_ID)?.mastheadSide} pageSize={pdfSize} scale={scale} pagesRef={pagesRef} onOverflow={setContentsOverflow} onPageCounts={onProofCounts} onPending={()=>setProofVerified(false)} onError={failure=>{setError(failure.message);setProofVerified(false);}} />
+            ? <IssueProof plan={proofPlan!} entries={entries} documents={compiled!.numbered} magazineName={data.project.name} design={proofDesign} contentsStart={contentsStart} contentsSide={assignments.find(row => row.id === CONTENTS_ID)?.mastheadSide} pageSize={pdfSize} bleedMm={data.project.settings?.bleedMm??0} scale={scale} pagesRef={pagesRef} onOverflow={setContentsOverflow} onPageCounts={onProofCounts} onPending={()=>setProofVerified(false)} onError={failure=>{setError(failure.message);setProofVerified(false);}} />
             : <div className="stage-progress">
                 {renderError
                   ? <><Wordmark className="stage-mark" /><h3>An article needs attention</h3><p role="alert">{renderError}</p><button className="primary" onClick={recompile}>Try again</button></>
@@ -468,8 +479,8 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
     <footer className="studio-actions">
       <div><strong>{isFinalized ? 'Issue finalised' : proofStale && ready ? 'Arrangement changed' : 'Ready when you are'}</strong><span>{busy ? 'Working… please wait.' : proofStale && ready ? 'Recompile so the page numbers match the order you have set.' : 'Finalising updates page numbers in the project’s saved articles.'}</span></div>
       <div>
-        <button disabled={blocked} onClick={() => void exportIssue('online')}>Export online PDF</button>
-        <button disabled={blocked} onClick={() => void exportIssue('print')}>Export print PDF</button>
+        <button disabled={blocked} onClick={() => void exportIssue('online')}>Export original PDF</button>
+        <button disabled={blocked} onClick={() => void exportIssue('print')}>Export bleed PDF</button>
         <button className="primary" disabled={blocked || isFinalized || save.status === 'error' || items.length === 0} onClick={() => void finalize()}>{isFinalized ? 'Finalised ✓' : busy ? 'Working…' : 'Finalise issue & page numbers'}</button>
       </div>
     </footer>
