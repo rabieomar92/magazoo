@@ -22,6 +22,7 @@ import {ImagePanControls,ImagePanPreview} from '../ImagePanControls';
 import {FramedImage} from '../../components/FramedImage';
 import {usePdfPreferences} from '../../store/pdfPreferences';
 import {ImageDeck} from '../ImageDeck';
+import {linkSpreadPhotos,linkedPair} from '../../lib/linkedSpread';
 
 const DEFAULT_FRAME = { scale: 1, offsetX: 0, offsetY: 0 };
 const imageDesign = (doc: Doc) => isReferenceArticle(doc.templateId) ? articleGridDesign(doc.design) : doc.design;
@@ -189,6 +190,16 @@ export function ArticleImagesSection() {
             key={image.id}
           >
             <div className="image-card-heading"><span>Page image {images.indexOf(image)+1}</span><RowButtons onRemove={() => remove(image.id)} /></div>
+            <label className="field">Facing-page photograph
+              <select aria-label={`Link page image ${images.indexOf(image)+1} into a spread`} value={linkedPair(sourceDoc,image)?.find(i=>i.id!==image.id)?.id??''} onChange={event=>update(doc=>{
+                if(event.target.value)linkSpreadPhotos(doc,image.id,event.target.value,imageDesign(doc),uid());
+                else {const link=doc.images.find(i=>i.id===image.id)?.spreadLink;doc.images.forEach(i=>{if(link&&i.spreadLink===link)delete i.spreadLink;});}
+              })}>
+                <option value="">Independent photograph</option>
+                {images.filter(other=>other.id!==image.id&&Math.abs(other.anchor.page-image.anchor.page)===1).map(other=><option key={other.id} value={other.id}>Link to image {images.indexOf(other)+1} · page {other.anchor.page}</option>)}
+              </select>
+              <small>Link uses this photograph across both frames, aligns their height and inner edges, and shares pan/zoom. Captions stay independent. Pages must face each other in the compiled issue.</small>
+            </label>
             <div className="figure-edit">
               {asset ? <ImagePanPreview key={image.assetId} label={`Page image ${images.indexOf(image)+1} crop preview`} frame={image.frame}
                 aspectRatio={previewGeometry!.visualWidth/previewGeometry!.visualHeight} background={sourceDoc.design.paperBg}

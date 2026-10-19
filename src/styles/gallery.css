@@ -14,6 +14,12 @@
   --paper-ink-soft: color-mix(in srgb, var(--paper-ink, #111418) 62%, var(--paper-bg, #fff));
 }
 
+/* Content must not change a fixed collage's track sizes independently on each
+   sheet: doing so moves one half of the shared photo away from its neighbour. */
+.gallery > .g-img,
+.gallery > .g-card { min-width:0; min-height:0; }
+@media screen { .gallery [data-gallery-overflow] { outline:1px solid #dc4355; outline-offset:2px; } }
+
 /* Gallery sheets use the article TagBar component and its shared styling
    verbatim. The gallery grid already supplies the gap below the head row, so
    suppress only TagBar's normal-flow bottom margin to avoid counting it twice. */
@@ -45,9 +51,13 @@
    left on page 2) so the two halves meet with no white gutter between them. */
 .gallery--p1 .g-fold {
   margin-right: calc(-1 * var(--margin));
+  border-top-right-radius:0;
+  border-bottom-right-radius:0;
 }
 .gallery--p2 .g-fold {
   margin-left: calc(-1 * var(--margin));
+  border-top-left-radius:0;
+  border-bottom-left-radius:0;
 }
 .g-img-empty {
   display: block;
@@ -151,10 +161,10 @@
 
 /* ---- Page 1: two heroes up top (right one is the fold); text pair + tall image below */
 .gallery--p1 {
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2,minmax(0,1fr));
   /* Four equal content tracks mirror page 2. The fold image occupies the first
      two on both sheets, giving its two viewports identical height and y-origin. */
-  grid-template-rows: auto 1fr 1fr 1fr 1fr;
+  grid-template-rows: auto repeat(4,minmax(0,1fr));
   grid-template-areas:
     'head   head'
     'img-1  img-2'
@@ -167,8 +177,8 @@
    Columns are 1fr 1fr so the fold cell matches page 1's fold cell width and the
    two halves line up exactly at the seam. */
 .gallery--p2 {
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: auto 1fr 1fr 1fr 1fr;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  grid-template-rows: auto repeat(4,minmax(0,1fr));
   grid-template-areas:
     'head  head'
     'img-2 card-3'
@@ -183,8 +193,8 @@
    override the gallery-1 grids above (same specificity, later in the file).
    The outer upper photo spans two rows, absorbing the old middle photo/gap. */
 .gallery2--p1 {
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: auto 1fr 1fr 1fr 1.05fr;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  grid-template-rows: auto repeat(3,minmax(0,1fr)) minmax(0,1.05fr);
   grid-template-areas:
     'head   head'
     'img-1  fold'
@@ -193,8 +203,8 @@
     'img-3  card-2';
 }
 .gallery2--p2 {
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: auto 1fr 1fr 1fr 1.05fr;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  grid-template-rows: auto repeat(3,minmax(0,1fr)) minmax(0,1.05fr);
   grid-template-areas:
     'head   head'
     'fold   img-4'
@@ -207,8 +217,8 @@
    fold spans the full width of each page (bleeding to the fold on the inner
    edge), with a mosaic of tiles above and below and two cards per page. */
 .gallery3--p1 {
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: auto 1fr 1.05fr 0.85fr 0.85fr;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  grid-template-rows: auto minmax(0,1fr) minmax(0,1.05fr) repeat(2,minmax(0,.85fr));
   grid-template-areas:
     'head   head'
     'img-1  img-2'
@@ -217,8 +227,8 @@
     'card-2 img-4';
 }
 .gallery3--p2 {
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: auto 1fr 1.05fr 0.85fr 0.85fr;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  grid-template-rows: auto minmax(0,1fr) minmax(0,1.05fr) repeat(2,minmax(0,.85fr));
   grid-template-areas:
     'head   head'
     'img-5  img-6'
@@ -231,8 +241,8 @@
    each page (crossing the fold), with only four small tiles; six text cards get
    the rest of the room, so the copy leads. */
 .gallery4--p1 {
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: auto 1.1fr 1.1fr 0.9fr 1fr;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  grid-template-rows: auto repeat(2,minmax(0,1.1fr)) minmax(0,.9fr) minmax(0,1fr);
   grid-template-areas:
     'head   head'
     'card-1 fold'
@@ -241,8 +251,8 @@
     'card-3 card-3';
 }
 .gallery4--p2 {
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: auto 1.1fr 1.1fr 0.9fr 1fr;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  grid-template-rows: auto repeat(2,minmax(0,1.1fr)) minmax(0,.9fr) minmax(0,1fr);
   grid-template-areas:
     'head   head'
     'fold   card-4'

@@ -2,7 +2,8 @@
 import type { CSSProperties } from 'react';
 import type { Doc } from '../schema/document';
 import type { Piece } from '../lib/paginate';
-import { MAG2_STRIP, splitPhoto } from '../lib/magSplit';
+import { MAG2_STRIP, framedSpreadPhoto } from '../lib/magSplit';
+import {documentBleed} from '../lib/documentBleed';
 import { pageDimensions } from '../lib/pageFormat';
 import { Flow } from './Flow';
 import { MagSplitHead } from './MagSplitHead';
@@ -19,6 +20,12 @@ const arOf = (doc: Doc) => {
   return p ? p.naturalWidth / p.naturalHeight : 16 / 9;
 };
 
+function splitGeometry(doc: Doc) {
+  const page = pageDimensions(doc.design);
+  const bleed = doc.design.bleedCanvas ? documentBleed(doc.design.bleedMm) : 0;
+  return {page, bleed, photo:framedSpreadPhoto(arOf(doc), MAG2_STRIP + page.width - 2 * bleed, page.height, doc.hero)};
+}
+
 interface Props {
   doc: Doc;
   vars: CSSProperties;
@@ -30,9 +37,8 @@ interface Props {
  *  photo continues on sheet 2 — see MagPhotoPage. */
 export function MagSplitCover({ doc, vars, pieces }: Props) {
   const photo = photoOf(doc);
-  const page = pageDimensions(doc.design);
-  const p = splitPhoto(arOf(doc), doc.hero, MAG2_STRIP, page);
-  const stripGeometry = doc.design.textDirection === 'rtl' ? { ...p, x: p.x - page.width } : p;
+  const {page,bleed,photo:p} = splitGeometry(doc);
+  const stripGeometry = doc.design.textDirection === 'rtl' ? { ...p, x: p.x - page.width + 2 * bleed } : p;
 
   return (
     <div className="page mag2-page" style={vars} data-page-width-mm={page.width} data-page-height-mm={page.height}>
@@ -72,9 +78,8 @@ export function MagPhotoPage({
   pageIndex: number;
 }) {
   const photo = photoOf(doc);
-  const page = pageDimensions(doc.design);
-  const p = splitPhoto(arOf(doc), doc.hero, MAG2_STRIP, page);
-  const photoGeometry = { ...p, x: p.x - (doc.design.textDirection === 'rtl' ? 0 : MAG2_STRIP) };
+  const {page,bleed,photo:p} = splitGeometry(doc);
+  const photoGeometry = { ...p, x: p.x - (doc.design.textDirection === 'rtl' ? 0 : MAG2_STRIP - 2 * bleed) };
 
   return (
     <div

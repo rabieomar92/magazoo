@@ -274,6 +274,11 @@
   .placed-image[data-image-readonly="true"] :is(.placed-image-frame,figcaption) { cursor:default; touch-action:pan-x pan-y; }
   .placed-image > figcaption { cursor:grab; touch-action:none; }
   .placed-image > figcaption { position:relative; }
+  /* Caption gestures take precedence over every image toolbar/frame. Do not
+     let hover controls occlude the box as it crosses into the photograph. */
+  .placed-image:has(> figcaption[data-caption-dragging]) { z-index:30; }
+  .placed-image > figcaption[data-caption-dragging] { z-index:31; cursor:grabbing; user-select:none; }
+  .placed-image:has(> figcaption[data-caption-dragging]) > .placed-image-tools { visibility:hidden; pointer-events:none; }
   .caption-resize { position:absolute; z-index:4; top:50%; width:10px; height:24px; min-height:0; padding:0; margin:0; border:2px solid #fff; border-radius:4px; background:#4f46e5; box-shadow:0 0 0 1px #6366f1; cursor:ew-resize; touch-action:none; opacity:0; transform:translate(-50%,-50%) scale(var(--canvas-control-scale,1)); }
   .caption-resize--left { left:0; }
   .caption-resize--right { left:100%; }

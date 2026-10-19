@@ -49,3 +49,19 @@ it('reattaches crop and pan actions when wrap editing replaces the image toolbar
   expect(page.querySelector('.canvas-crop-trigger')!.textContent).toBe('Crop photo');
  }finally{act(()=>root.unmount());}
 });
+
+it('previews both linked photographs during dragging, restores both on Escape',()=>{
+ const page=document.createElement('div');page.innerHTML=['a','b'].map((id,i)=>`<div class="page"><figure data-image-id="${id}"><div style="width:400px;height:200px"><img class="spread-photo-image" data-spread-region-width="700" data-spread-region-height="200" style="left:${10-i*300}px;top:20px"></div><div class="placed-image-tools"></div></figure></div>`).join('');document.body.append(page);
+ const host=document.createElement('div');document.body.append(host);const root=createRoot(host);
+ const doc={hero:{},images:[{id:'a',spreadLink:'pair'},{id:'b',spreadLink:'pair'}],templateId:'paper-8',design:{pageFormat:'a4'}} as unknown as Doc;
+ try{
+  act(()=>root.render(<CanvasImagePanning doc={doc} root={{current:page}}/>));
+  act(()=>page.querySelector<HTMLButtonElement>('button')!.click());
+  const surface=page.querySelector<HTMLElement>('[role="group"]')!;
+  vi.spyOn(surface,'getBoundingClientRect').mockReturnValue({width:200,height:100,left:0,top:0,right:200,bottom:100,x:0,y:0,toJSON:()=>({})});
+  for(const [type,x] of [['pointerdown',0],['pointermove',50]] as const)act(()=>surface.dispatchEvent(Object.assign(new Event(type,{bubbles:true}),{button:0,pointerId:1,clientX:x,clientY:0})));
+  const images=page.querySelectorAll('img');expect(images[0].style.left).toBe('110px');expect(images[1].style.left).toBe('-190px');
+  expect(state.update).not.toHaveBeenCalled();act(()=>window.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape'})));
+  expect(images[0].style.left).toBe('10px');expect(images[1].style.left).toBe('-290px');
+ }finally{act(()=>root.unmount());}
+});

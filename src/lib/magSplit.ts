@@ -27,6 +27,14 @@ export interface SplitPhoto {
 
 export type PhotoFrame = ImageFrame;
 
+/** Facing canvas windows overlap by both inner bleed bands. The finished
+ * fold advances one TRIM width, never one enlarged editable-canvas width. */
+export function spreadWindows(canvasWidth: number, bleed = 0) {
+  const inset = Math.max(0, Math.min(bleed, canvasWidth / 4));
+  const step = canvasWidth - 2 * inset;
+  return { width: canvasWidth + step, step };
+}
+
 export function framedSpreadPhoto(
   ar: number,
   regionW: number,

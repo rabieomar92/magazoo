@@ -189,6 +189,9 @@ export interface PlacedImage {
   align?: 'left' | 'center' | 'right';
   /** Zoom/pan inside the placed rectangle. Absent = centred 1× fill. */
   frame?: ImageFrame;
+  /** Explicit two-frame spread. Exactly two adjacent-page images share this
+   * identifier, source and framing; their inner bleed windows overlap. */
+  spreadLink?: string;
   /**
    * Text normally avoids the image's complete rectangular box. `contour`
    * keeps the same page-image and pagination machinery, but lets each occupied
@@ -207,8 +210,8 @@ export interface PlacedImage {
    * Missing values preserve straight existing paths with 0.8mm clearance. */
   wrapSmoothing?: number;
   wrapGapMm?: number;
-  /** Optional independent caption box, in absolute page millimetres. Its
-   * rendered position is nudged to the nearest image-free slot, never into art. */
+  /** Optional independent caption box, in absolute page millimetres. Explicit
+   * author placement can overlap photographs; only page edges constrain it. */
   captionPlacement?: { x:number; y:number; widthMm:number };
   /** Extend artwork from its column-sized layout footprint to selected trim
    * edges. The source keeps its aspect ratio via cover-cropping; captions stay

@@ -1,9 +1,10 @@
 /** @jsxImportSource ../lib/mathJsx */
-import { Fragment, type CSSProperties, type ReactNode } from 'react';
+import { Fragment, useLayoutEffect, useRef, type CSSProperties, type ReactNode } from 'react';
 import type { Doc, Block } from '../schema/document';
 import { parseRuns, renderTex } from '../lib/richtext';
-import { galleryFrameGeometry } from '../lib/galleryFrame';
-import {hasImagePan} from '../lib/imageFrame';
+import {FramedImage} from '../components/FramedImage';
+import {GalleryFoldImage} from '../components/GalleryFoldImage';
+import {documentBleed} from '../lib/documentBleed';
 import { galleryImageTarget, GALLERY_TWO_SLOTS } from '../lib/gallerySlots';
 import { galleryTextPosition } from '../lib/galleryTextPosition';
 import { galleryTileText } from '../lib/galleryText';
@@ -65,16 +66,6 @@ function ImageCaption({ block }: { block?: Block }) {
 function ImageCell({ doc, block, area, slot }: { doc: Doc; block?: Block; area: string; slot: number }) {
   const asset = block && block.type === 'figure' ? doc.assets[block.assetId] : undefined;
   const fr = block && block.type === 'figure' ? block.frame : undefined;
-  const geometry = galleryFrameGeometry(fr);
-  const imgStyle: CSSProperties = {
-    position: 'absolute',
-    width: `${geometry.width}%`,
-    height: `${geometry.height}%`,
-    left: `${geometry.left}%`,
-    top: `${geometry.top}%`,
-    objectFit: geometry.objectFit,
-    objectPosition: `${geometry.objectX}% ${geometry.objectY}%`,
-  };
   return (
     <figure
       className="g-img"
@@ -82,7 +73,7 @@ function ImageCell({ doc, block, area, slot }: { doc: Doc; block?: Block; area: 
       data-editor-tab="images"
       data-editor-target={galleryImageTarget(block, slot)}
     >
-      {asset ? <img src={asset.src} alt="" style={imgStyle} data-image-free-pan={hasImagePan(fr)?'true':undefined}/> : <span className="g-img-empty" />}
+      {asset ? <FramedImage asset={asset} frame={fr}/> : <span className="g-img-empty" />}
       <ImageCaption block={block} />
     </figure>
   );
@@ -95,19 +86,9 @@ function ImageCell({ doc, block, area, slot }: { doc: Doc; block?: Block; area: 
 function FoldCell({ doc, block, area, half, slot }: { doc: Doc; block?: Block; area: string; half: 'left' | 'right'; slot: number }) {
   const asset = block && block.type === 'figure' ? doc.assets[block.assetId] : undefined;
   const fr = block && block.type === 'figure' ? block.frame : undefined;
-  const geometry = galleryFrameGeometry(fr, 2);
   // In Arabic spreads the first sheet is on the right. Exchange the photo
   // windows, never mirror the artwork or any lettering inside it.
   const physicalHalf = doc.design.textDirection === 'rtl' ? (half === 'left' ? 'right' : 'left') : half;
-  const imgStyle: CSSProperties = {
-    position: 'absolute',
-    top: `${geometry.top}%`,
-    height: `${geometry.height}%`,
-    width: `${geometry.width}%`,
-    left: `${geometry.left - (physicalHalf === 'right' ? 100 : 0)}%`,
-    objectFit: geometry.objectFit,
-    objectPosition: `${geometry.objectX}% ${geometry.objectY}%`,
-  };
   return (
     <figure
       className={`g-img g-fold${asset ? '' : ' is-empty'}`}
@@ -115,7 +96,7 @@ function FoldCell({ doc, block, area, half, slot }: { doc: Doc; block?: Block; a
       data-editor-tab="images"
       data-editor-target={galleryImageTarget(block, slot)}
     >
-      {asset && <img src={asset.src} alt="" style={imgStyle} data-image-free-pan={hasImagePan(fr)?'true':undefined}/>}
+      {asset && <GalleryFoldImage asset={asset} frame={fr} half={physicalHalf} bleedMm={doc.design.bleedCanvas?documentBleed(doc.design.bleedMm):0}/>}
       {/* Caption only on the left half (page 1) so it isn't printed twice. */}
       {half === 'left' && <ImageCaption block={block} />}
     </figure>
@@ -174,7 +155,29 @@ function CardCell({ block, area }: { block?: Block; area: string }) {
  * image slots in order (fig[1] is the fold image spanning both pages); paragraphs
  * fill the text-card slots (2 on page 1, 3 on page 2).
  */
-export function GalleryPage({ doc, vars }: { doc: Doc; vars: CSSProperties }) {
+export function GalleryPage({doc,vars,onStatus}:{doc:Doc;vars:CSSProperties;onStatus?:(status:{pages:number;overflow:boolean})=>void}) {
+  const probe=useRef<HTMLSpanElement>(null);
+  useLayoutEffect(()=>{
+    const host=probe.current?.parentElement;if(!host)return;
+    const inspect=()=>{
+      let overflow=false;
+      host.querySelectorAll<HTMLElement>('.gallery .g-card,.gallery .g-caption-positioned').forEach(box=>{
+        if(!box.clientHeight||!box.clientWidth)return;
+        const exceeds=box.scrollHeight>box.clientHeight+2||box.scrollWidth>box.clientWidth+2;
+        box.toggleAttribute('data-gallery-overflow',exceeds);overflow ||= exceeds;
+      });
+      host.querySelectorAll<HTMLElement>('.gallery').forEach(page=>page.dataset.layoutOverflow=String(overflow));
+      onStatus?.({pages:2,overflow});
+    };
+    inspect();let disposed=false;document.fonts?.ready.then(()=>{if(!disposed)inspect();});
+    const observer=typeof ResizeObserver==='undefined'?null:new ResizeObserver(inspect);
+    host.querySelectorAll('.gallery .g-card,.gallery .g-caption-positioned').forEach(box=>observer?.observe(box));
+    return()=>{disposed=true;observer?.disconnect();};
+  },[doc,vars,onStatus]);
+  return <><GalleryContent doc={doc} vars={vars}/><span ref={probe} hidden data-editor-only="true"/></>;
+}
+
+function GalleryContent({ doc, vars }: { doc: Doc; vars: CSSProperties }) {
   if (doc.templateId === 'gallery-2') return <GalleryTwo doc={doc} vars={vars} />;
   if (doc.templateId === 'gallery-3') return <GalleryThree doc={doc} vars={vars} />;
   if (doc.templateId === 'gallery-4') return <GalleryFour doc={doc} vars={vars} />;

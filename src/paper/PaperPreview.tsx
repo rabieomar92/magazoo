@@ -1134,7 +1134,7 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
         : 'Text exceeds its frame. Shorten the heading or caption, or reduce its size.')
       : `${frontMatterStatus.pages} ${frontMatterStatus.pages===1?'page':'pages'} · ${isNews ? 'news & briefs' : isReference ? 'article' : 'front matter'}`}
     : isGallery
-    ? ({ level: 'ok', text: '2 pages · spread' } as const)
+    ? ({ level: frontMatterStatus.overflow?'warn':'ok', text: frontMatterStatus.overflow?'Gallery text exceeds its tile. Shorten it or reduce its size; the photograph alignment is preserved.':'2 pages · spread' } as const)
     : isFrontCover
       ? ({ level: 'ok', text: '1 page · cover' } as const)
     : isBackCover
@@ -1478,7 +1478,7 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
     <PreviewReadOnly.Provider value={readOnly}><PreviewPreserveSourceAnchors.Provider value={preserveSourceAnchors || !!doc.design.pageFormat}><div
         className={`paper-scroll${readOnly ? ' paper-scroll--readonly' : ''}${doc.design.textDirection === 'rtl' ? ' paper-scroll--rtl' : ''}`}
         data-preview-pending={pending ? 'true' : undefined}
-        data-preview-overflow={isStructured && frontMatterStatus.overflow ? 'true' : undefined}
+        data-preview-overflow={(isStructured||isGallery) && frontMatterStatus.overflow ? 'true' : undefined}
         data-preview-fit-message={fit.text}
         role={readOnly ? 'region' : undefined}
         aria-label={readOnly ? 'Read-only document preview' : undefined}
@@ -1510,7 +1510,7 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
           ) : isStructured ? (
             <FrontMatterPages doc={effectiveDoc} vars={vars} onStatus={reportFrontMatter} />
           ) : isGallery ? (
-            <GalleryPage doc={effectiveDoc} vars={vars} />
+            <GalleryPage doc={effectiveDoc} vars={vars} onStatus={reportFrontMatter}/>
           ) : isFrontCover ? (
             <MagazineFrontCover doc={effectiveDoc} vars={vars} />
           ) : isBackCover ? (

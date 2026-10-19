@@ -17,6 +17,7 @@ import { TagBar } from './TagBar';
 import { HeroCaption } from './HeroCaption';
 import {CoverTeasersResize} from './CoverTeasersResize';
 import {pageDimensions} from '../lib/pageFormat';
+import {documentBleed} from '../lib/documentBleed';
 
 type Paragraph = Extract<Block, { type: 'paragraph' }>;
 
@@ -87,6 +88,7 @@ export function MagazineFrontCover({ doc, vars }: { doc: Doc; vars: CSSPropertie
   const style: CSSProperties & { '--front-teaser-count': string } = {
     ...vars,
     ...coverVars,
+    ...(doc.design.bleedCanvas&&documentBleed(doc.design.bleedMm)>0?{'--bottom-margin':`${doc.design.margin+documentBleed(doc.design.bleedMm)}mm`}:{}),
     backgroundColor: doc.design.colors.hero,
     '--front-teaser-count': String(Math.max(1, teasers.length)),
     ...(Number.isFinite(coverDesign.teaserHeight)?{'--front-teasers-height':`${Math.max(12,Math.min(pageDimensions(doc.design).height-2*doc.design.margin-12,coverDesign.teaserHeight!))}mm`}:{}),

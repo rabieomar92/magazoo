@@ -22,6 +22,8 @@ import { articleGridDesign, isReferenceArticle } from '../lib/articleLayouts';
 import { useDoc } from '../store/useDoc';
 import { HighlightsBody } from './Sidebar';
 import { FramedImage } from '../components/FramedImage';
+import {SpreadPhotoImage} from '../components/SpreadPhotoImage';
+import {linkedSpreadPhoto} from '../lib/linkedSpread';
 import { usePreviewReadOnly, usePreserveSourceAnchors } from './PreviewReadOnly';
 import {DRAW_IMAGE_OUTLINE_EVENT,requestImageOutline} from '../lib/imageCanvas';
 import {CanvasImageOutline} from './CanvasImageOutline';
@@ -105,6 +107,7 @@ function PlacedImageItem({
     return ()=>window.removeEventListener(DRAW_IMAGE_OUTLINE_EVENT,draw);
   },[image.id,readOnly]);
   const geometry = placedImageGeometry(image, asset, design, pageHeight);
+  const linkedPhoto=linkedSpreadPhoto(doc,image,design,pageHeight);
   const captionRef=useRef<HTMLElement>(null);
   const captionDrag=useRef<{pointer:number;startX:number;startY:number;box:CaptionBox;scale:number;resolved:CaptionBox;originalStyle:string;originalFit?:string;moved?:boolean}|null>(null);
   const captionResize=useRef<{pointer:number;startX:number;box:CaptionBox;scale:number;side:'left'|'right';resolved:CaptionBox;originalStyle:string;originalFit?:string;moved?:boolean}|null>(null);
@@ -146,6 +149,7 @@ function PlacedImageItem({
     if(!freeCaption||!captionRef.current)return;
     const element=captionRef.current;
     const calculate=()=>{
+      if(captionDrag.current||captionResize.current)return;
       const bottom=geometry.visualTop+geometry.visualHeight*Math.max(...cropPoints(image.frame?.crop).map(p=>p.y))/100;
       positionCaption(element,{x:Number.isFinite(image.captionPlacement?.x)?image.captionPlacement!.x:geometry.left,
         y:Number.isFinite(image.captionPlacement?.y)?image.captionPlacement!.y:bottom+1,width:captionWidth,height:element.offsetHeight/(96/25.4)});
@@ -161,6 +165,7 @@ function PlacedImageItem({
     const pageRect=page.getBoundingClientRect(),box=event.currentTarget.getBoundingClientRect();
     const placement={x:(box.left-pageRect.left)/scale,y:(box.top-pageRect.top)/scale,width:box.width/scale,height:box.height/scale};
     captionDrag.current={pointer:event.pointerId,startX:event.clientX,startY:event.clientY,box:placement,scale,resolved:placement,originalStyle:event.currentTarget.getAttribute('style')??'',originalFit:event.currentTarget.dataset.captionUnplaced};
+    event.currentTarget.dataset.captionDragging='true';
     event.currentTarget.setPointerCapture?.(event.pointerId);
   };
   const moveCaption=(event:ReactPointerEvent<HTMLElement>)=>{
@@ -173,12 +178,14 @@ function PlacedImageItem({
   const finishCaption=(event:ReactPointerEvent<HTMLElement>)=>{
     const state=captionDrag.current;if(!state||state.pointer!==event.pointerId)return;
     event.stopPropagation();captionDrag.current=null;
+    delete event.currentTarget.dataset.captionDragging;
     if(state.moved)update(current=>{const i=current.images?.find(i=>i.id===image.id);if(i)i.captionPlacement={x:Math.round(state.resolved.x*100)/100,y:Math.round(state.resolved.y*100)/100,widthMm:Math.round(state.resolved.width*100)/100};});
     if(event.currentTarget.hasPointerCapture?.(event.pointerId))event.currentTarget.releasePointerCapture(event.pointerId);
   };
   const cancelCaption=(event:ReactPointerEvent<HTMLElement>)=>{
     const state=captionDrag.current;if(!state||state.pointer!==event.pointerId)return;
     event.stopPropagation();captionDrag.current=null;event.currentTarget.setAttribute('style',state.originalStyle);
+    delete event.currentTarget.dataset.captionDragging;
     if(state.originalFit===undefined)delete event.currentTarget.dataset.captionUnplaced;
     else event.currentTarget.dataset.captionUnplaced=state.originalFit;
   };
@@ -351,7 +358,7 @@ function PlacedImageItem({
       onLostPointerCapture={cancelDrag}
     >
       <div className="placed-image-frame">
-        <FramedImage asset={asset} frame={image.frame} />
+        {linkedPhoto?<SpreadPhotoImage asset={linkedPhoto.asset} geometry={linkedPhoto.geometry} frame={linkedPhoto.frame} region={linkedPhoto}/>:<FramedImage asset={asset} frame={image.frame} />}
       </div>
       {!readOnly && !outlineEditing && <div className="placed-image-tools" data-editor-only="true"><button type="button" className="placed-image-move" data-editor-only="true"
         aria-label="Move image" title="Drag image · arrows move one column or 1 mm · Shift + ↑/↓ moves 5 mm"

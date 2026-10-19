@@ -264,6 +264,24 @@ describe('PlacedImages', () => {
     act(()=>root.unmount());
   });
 
+  it('drags a caption into its own photo without snapping away, then retains the overlap after rendering',()=>{
+    const doc=emptyDoc();doc.design.sidebar=false;doc.assets.art={src:'',naturalWidth:500,naturalHeight:500};
+    doc.images=[{id:'overlap-caption',assetId:'art',caption:'Over the photo',widthCols:2,heightMm:80,anchor:{page:1,column:0,y:100}}];
+    useDoc.getState().load(doc);const host=document.createElement('div'),root=createRoot(host);document.body.append(host);
+    const render=()=>act(()=>root.render(<div className="page"><PlacedImages doc={useDoc.getState().doc} pageIndex={0}/></div>));render();
+    const page=host.querySelector<HTMLElement>('.page')!,cap=host.querySelector<HTMLElement>('figcaption')!;
+    page.getBoundingClientRect=()=>({x:0,y:0,left:0,top:0,width:210,height:297,right:210,bottom:297,toJSON(){}});
+    cap.getBoundingClientRect=()=>({x:14,y:181,left:14,top:181,width:80,height:10,right:94,bottom:191,toJSON(){}});
+    act(()=>{cap.dispatchEvent(pointerEvent('pointerdown',20,185));cap.dispatchEvent(pointerEvent('pointermove',30,130));});
+    expect(cap.dataset.captionDragging).toBe('true');expect(cap.style.top).toBe('26mm');
+    act(()=>cap.dispatchEvent(pointerEvent('pointerup',30,130)));render();
+    expect(useDoc.getState().doc.images[0].captionPlacement).toEqual({x:24,y:126,widthMm:80});
+    expect(host.querySelector<HTMLElement>('figcaption')!.style.top).toBe('26mm');
+    expect(host.querySelector<HTMLElement>('figcaption')!.dataset.captionDragging).toBeUndefined();
+    expect(useDoc.getState().doc.images[0].anchor.y).toBe(100);
+    act(()=>root.unmount());host.remove();
+  });
+
   it('materialises the default free highlights placement so autosave can retain it', () => {
     const doc = emptyDoc();
     doc.design.sidebar = true;

@@ -6,6 +6,7 @@ import { FramedImage } from '../components/FramedImage';
 import { BACK_COVER_TEXT_ROLES, backCoverLayout, backCoverTextColor, backCoverTextStyle } from '../lib/backCoverDesign';
 import { fontStack } from '../lib/fonts';
 import { TagBar } from './TagBar';
+import {documentBleed} from '../lib/documentBleed';
 
 function lines(text: string): ReactNode {
   return text.split(/\r?\n/).map((line, index) => (
@@ -148,8 +149,8 @@ export function BackCoverPage({ doc, vars }: { doc: Doc; vars: CSSProperties }) 
     '--back-brand-width': `${layout.brandWidth}mm`,
     '--back-brand-align': layout.brandAlign,
     '--back-brand-items': alignItems,
-    '--back-side-inset': `${layout.sideInset}mm`,
-    '--back-social-bottom': `${layout.bottomInset}mm`,
+    '--back-side-inset': `${layout.sideInset+(doc.design.bleedCanvas?documentBleed(doc.design.bleedMm):0)}mm`,
+    '--back-social-bottom': `${layout.bottomInset+(doc.design.bleedCanvas?documentBleed(doc.design.bleedMm):0)}mm`,
     '--back-footer-gap': `${layout.footerGap}mm`,
     '--back-qr-size': `${layout.qrSize}mm`,
     '--back-qr-gap': `${layout.qrGap}mm`,

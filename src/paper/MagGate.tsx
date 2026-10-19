@@ -3,7 +3,8 @@ import type { CSSProperties } from 'react';
 import {mathAwareWords} from '../lib/richtext';
 import type { Doc } from '../schema/document';
 import { pageDimensions } from '../lib/pageFormat';
-import { framedSpreadPhoto } from '../lib/magSplit';
+import { framedSpreadPhoto, spreadWindows } from '../lib/magSplit';
+import {documentBleed} from '../lib/documentBleed';
 import { MagTopBar } from './MagazineHead';
 import { PlacedImages } from './PlacedImages';
 import { SpreadPhotoImage } from '../components/SpreadPhotoImage';
@@ -30,9 +31,10 @@ function gateGeometry(doc: Doc, pageIndex: 0 | 1) {
     ? photo.asset.naturalWidth / photo.asset.naturalHeight
     : 16 / 9;
   const { width, height } = pageDimensions(doc.design);
-  const geometry = framedSpreadPhoto(ar, width * 2, height, photo.frame);
+  const windows = spreadWindows(width, doc.design.bleedCanvas ? documentBleed(doc.design.bleedMm) : 0);
+  const geometry = framedSpreadPhoto(ar, windows.width, height, photo.frame);
   const physicalHalf = doc.design.textDirection === 'rtl' ? 1 - pageIndex : pageIndex;
-  return { ...geometry, x: geometry.x - physicalHalf * width };
+  return { ...geometry, x: geometry.x - physicalHalf * windows.step };
 }
 
 /** magazine-3 gatefold, sheet 1 (left half of the photo). Masthead + big stacked

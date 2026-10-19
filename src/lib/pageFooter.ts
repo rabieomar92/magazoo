@@ -2,6 +2,7 @@ import type { Doc } from '../schema/document';
 import { barStartsRight } from './barSide';
 import { imagePalette } from './imagePalette';
 import { ALL_FONTS } from './fonts';
+import {documentBleed} from './documentBleed';
 
 export const DEFAULT_FOOTER_BOTTOM_OFFSET = 8;
 export const MAX_FOOTER_BOTTOM_OFFSET = 40;
@@ -15,13 +16,19 @@ export function footerBottomOffset(doc: Doc): number {
     : DEFAULT_FOOTER_BOTTOM_OFFSET;
 }
 
+export function footerCanvasBottomOffset(doc:Doc):number {
+  // The authored clearance is measured from the finished cut, not the outer
+  // editable bleed edge. Reserve the identical amount in every flow engine.
+  return footerBottomOffset(doc)+(doc.design.bleedCanvas?documentBleed(doc.design.bleedMm):0);
+}
+
 /** Reserve the footer line box, 2mm top padding and 1mm clearance. Horizontal
  * page margins must not secretly add template-dependent blank space here.
  * Line-grid rounding may leave less than one additional body line of air. */
 export function footerBottomMargin(doc: Doc): number {
   const size = pageFooter(doc, 0).fontSize;
   return doc.templateId === 'magazine-4' || doc.templateId === 'backcover-1' || doc.footer?.enabled === false ? doc.design.margin
-    : footerBottomOffset(doc) + size * 25.4 / 72 + 3;
+    : footerCanvasBottomOffset(doc) + size * 25.4 / 72 + 3;
 }
 
 export function footerInk(background = '#ffffff') {

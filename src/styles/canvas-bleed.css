@@ -4,6 +4,6 @@
  .page>.canvas-bleed-guide{position:absolute;inset:0;box-sizing:border-box;border:.6px dashed #87909b66;z-index:90;pointer-events:none}
 }
 @media print{.canvas-bleed-guide{display:none!important}}
-.canvas-trim-corners{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:91;overflow:visible}
+.page > .canvas-trim-corners{position:absolute;inset:0;width:100%;height:100%;max-width:none;max-height:none;margin:0;padding:0;pointer-events:none;z-index:91;overflow:visible}
 .canvas-trim-corners line{stroke:#677384;stroke-width:1;vector-effect:non-scaling-stroke;opacity:.65}
 @media print{.canvas-trim-corners{display:none!important}}

@@ -2,6 +2,7 @@
 import type { Doc } from '../schema/document';
 import { barStartsRight } from '../lib/barSide';
 import { topBarVisible } from '../lib/topBar';
+import {documentBleed} from '../lib/documentBleed';
 
 /** The paper rule with a tag block. A direct-on-page bar can opt into horizontal
  *  full bleed; bars already living in a full-bleed hero/top region must not. */
@@ -37,7 +38,7 @@ export function TagBar({
           : undefined
       }
     >
-      <span className="tag-bar-mark" />
+      <span className="tag-bar-mark" style={doc.design.bleedCanvas ? {width:`calc(var(--bar-h, 6mm) + ${documentBleed(doc.design.bleedMm)}mm)`} : undefined} />
       {/* Hugs its text: a longer tag simply lengthens the block and eats into
           the rule beside it. */}
       {topBarText && (
