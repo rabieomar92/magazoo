@@ -13,7 +13,7 @@ export interface ProjectFileHandle {
   createWritable(): Promise<{ write(data: Blob): Promise<void>; close(): Promise<void>; abort?(): Promise<void> }>;
 }
 export interface LocalTarget { kind:'file'; handle:ProjectFileHandle; modified:number; }
-export interface RemoteTarget { kind:'online'; token:string; version:number; name:string; }
+export interface RemoteTarget { kind:'online'; token:string; version:number; name:string; projectName?:string; }
 export type SaveTarget = LocalTarget | RemoteTarget;
 type Status = 'draft' | 'pending' | 'saving' | 'saved' | 'error' | 'conflict';
 export const useProjectFile = create<{

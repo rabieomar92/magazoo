@@ -227,7 +227,7 @@ function MosaicSpread({ entries, title, direction, startNumber, magazineName, de
     .map(item => item.index);
 
   const signature = `${entries.map((entry, i) => `${entry.id}:${entry.title}:${entry.subtitle}:${entry.hero?.src ?? ''}:${entry.badge ?? ''}:${entry.section ?? ''}:${entry.showHero ?? ''}:${ratios[i].toFixed(3)}`).join('|')}|${title}|${direction}|${JSON.stringify(design)}|${pageSize}`;
-  const [plan, setPlan] = useState<{ signature: string; tier: number; pages: number[][][]; gaps: number[][]; photos: boolean[] } | null>(null);
+  const [plan, setPlan] = useState<{ signature: string; tier: number; pages: number[][][]; gaps: number[][]; photos: boolean[];overflow:boolean } | null>(null);
   const settled = useRef(signature);
   if (settled.current !== signature) { settled.current = signature; const next = pinned ?? 0; if (tier !== next) setTier(next); }
   const first = useRef(true);
@@ -273,8 +273,8 @@ function MosaicSpread({ entries, title, direction, startNumber, magazineName, de
       setPlan(current => (current && current.signature === signature && current.tier === tier
         && JSON.stringify(current.pages) === JSON.stringify(packed.pages)
         && JSON.stringify(current.gaps) === JSON.stringify(gaps)
-        && JSON.stringify(current.photos) === JSON.stringify(photos) ? current
-        : { signature, tier, pages: packed.pages, gaps, photos }));
+        && JSON.stringify(current.photos) === JSON.stringify(photos) && current.overflow===over ? current
+        : { signature, tier, pages: packed.pages, gaps, photos,overflow:over }));
     };
     // The first paint of a spread measures straight away, so it is never seen
     // unplaced. After that the work is deferred a beat: an editor typing into
@@ -327,7 +327,7 @@ function MosaicSpread({ entries, title, direction, startNumber, magazineName, de
 
   return <>{[0, 1].map(index => (
     <section key={index} className={className(index)} dir={direction} lang={direction === 'rtl' ? 'ar' : 'en'} style={style}
-      data-page-width-mm={dimensions.width} data-page-height-mm={dimensions.height}
+      data-page-width-mm={dimensions.width} data-page-height-mm={dimensions.height} data-contents-overflow={current?.overflow?'true':'false'}
       aria-label={`${title || 'Contents'} · ${index + 1} of 2`}>
       <div className={`issue-contents-masthead${barStartsRight(mastheadSide, index) ? ' is-right' : ''}`}>
         <span className="issue-contents-kicker" dir="auto">{title || 'Contents'}</span>

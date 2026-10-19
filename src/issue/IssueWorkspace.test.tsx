@@ -98,14 +98,14 @@ it('uses Mosaic for legacy contents layouts without exposing ineffective feature
   expect(host.querySelector('option[value="feature"]')).toBeNull();
 });
 
-it.each(['a4', 'b5', 'jis-b5', 'magazine'])('exports the compiled issue at %s without saving or finalising the source data', async size => {
+it.each(['a4', 'b5', 'jis-b5', 'vendor-b5', 'magazine'])('exports the compiled issue at %s without saving or finalising the source data', async size => {
   const before = JSON.stringify(response);
   await act(async () => root.render(<IssueWorkspace projectId="project" csrf="test-token" onClose={() => undefined} />));
   act(() => host.querySelector<HTMLButtonElement>('#tab-output')!.click());
 
   const select = host.querySelector<HTMLSelectElement>('#panel-output select')!;
   expect([...select.options].map(option => option.textContent)).toEqual([
-    'A4 · 210 × 297 mm', 'B5 (ISO) · 176 × 250 mm', 'JIS B5 · 182 × 257 mm', 'Magazine · 203 × 267 mm',
+    'A4 · 210 × 297 mm', 'B5 (ISO) · 176 × 250 mm', 'JIS B5 · 182 × 257 mm', 'Vendor B5 · 182 × 258 mm', 'Magazine · 203 × 267 mm',
   ]);
   expect(select.value).toBe('a4');
   act(() => { select.value = size; select.dispatchEvent(new Event('change', { bubbles: true })); });
@@ -115,7 +115,7 @@ it.each(['a4', 'b5', 'jis-b5', 'magazine'])('exports the compiled issue at %s wi
   expect(button.disabled).toBe(false);
   await act(async () => button.click());
 
-  expect(exportIssuePdf).toHaveBeenCalledExactlyOnceWith('Test magazine', expect.any(HTMLDivElement), size);
+  expect(exportIssuePdf).toHaveBeenCalledExactlyOnceWith('Test magazine', expect.any(HTMLDivElement), size,0);
   const exportedRoot = vi.mocked(exportIssuePdf).mock.calls[0][1];
   expect(exportedRoot.querySelectorAll('.page')).toHaveLength(size === 'magazine' ? 4 : 3);
   expect(exportedRoot.dataset.proofSize).toBe(size);

@@ -305,7 +305,7 @@ export function ArticleImagesSection() {
                 options={[
                   { value: 'box', label: 'Box' },
                   { value: 'contour', label: 'Custom contour' },
-                  { value: 'polygon', label: 'Draw outline' },
+                  { value: 'polygon', label: 'Polygon points' },
                 ]}
                 onChange={(wrapShape) => wrapShape==='polygon'?requestImageOutline(image.id):change(image.id, (current) => { current.wrapShape = wrapShape; })}
               />

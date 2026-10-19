@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import type { PdfPageSize } from '../lib/pdfPageSize';
 
 const KEY = 'magazoo.pdf-page-size';
-const isSize = (value: unknown): value is PdfPageSize => value === 'a4' || value === 'b5' || value === 'jis-b5' || value === 'magazine';
+const isSize = (value: unknown): value is PdfPageSize => value === 'a4' || value === 'b5' || value === 'jis-b5' || value === 'vendor-b5' || value === 'magazine';
 function savedSize(): PdfPageSize {
   try { const value = localStorage.getItem(KEY); return isSize(value) ? value : 'a4'; }
   catch { return 'a4'; }

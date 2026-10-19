@@ -117,7 +117,7 @@ export function NewsContent() {
 
   return <Section title="News stories">
     <LabeledInput label="Issue / date" editorTarget="meta-volume" value={doc.meta.volume ?? ''}
-      onChange={value => update(d => { d.meta.volume = value; })} />
+      onChange={value => update(d => { d.meta.volume = value;d.meta.volumeMode='custom'; })} />
     <SegmentField<Design['bodyCols']> label="Page grid" value={pageColumns}
       options={[{ value: 2, label: '2 columns' }, { value: 3, label: '3 columns' }, { value: 4, label: '4 columns' }]}
       onChange={value => update(d => { d.design.bodyCols = value; })} />

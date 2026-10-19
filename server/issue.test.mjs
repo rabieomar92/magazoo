@@ -21,7 +21,7 @@ const makePlan = order => ({ order, startNumber: 1, countCovers: false, contents
 test('imported PDF cards and vendor settings survive saving and advance article numbering without changing PDF bytes',t=>{
   const {storage,project,add}=memory(t),article=add('article.json');
   const pdf={id:'pdf-12345678-1234-1234-1234-123456789012',name:'insert.pdf',src:'data:application/pdf;base64,'+Buffer.from('%PDF-1.7\nfixture').toString('base64'),pageCount:3,thumbnail:'data:image/png;base64,aGVsbG8='};
-  const plan={...makePlan(['__contents__',pdf.id,article.id]),externalPdfs:[pdf],contentsExcluded:[pdf.id],printSettings:{binding:'perfect',perfectMultiple:4,coverGsm:250,innerGsm:120,copies:500,spineMm:3.2,notes:'Verify proof'}};
+  const plan={...makePlan(['__contents__',pdf.id,article.id]),externalPdfs:[pdf],contentsExcluded:[pdf.id],printSettings:{binding:'perfect',perfectMultiple:4,coverGsm:250,innerGsm:120,copies:500,spineMm:3.2,bleedMm:5,notes:'Verify proof'}};
   storage.saveIssue(project.id,0,plan);
   assert.deepEqual(storage.readIssue(project.id).plan,plan);
   storage.finalizeIssue(project.id,1,plan,[{id:article.id,version:1,startNumber:6,pageCount:2}]);

@@ -5,13 +5,14 @@ interface PublicationPrint {
   source: () => HTMLElement | null;
   size: PdfPageSize;
   issue?: boolean;
+  bleedMm?: number;
   shortcut: () => void;
 }
 
 /** Ctrl/Command+P uses the asynchronous, resource-checked export. Browser-menu
  * Print gets the same page clones synchronously via beforeprint; if its source
  * is not ready, print a clear instruction instead of stale/clipped artwork. */
-export function registerPublicationPrint({ source, size, issue = false, shortcut }: PublicationPrint) {
+export function registerPublicationPrint({ source, size, issue = false, shortcut,bleedMm=0 }: PublicationPrint) {
   const roots: HTMLElement[] = [];
   let style: HTMLStyleElement | null = null;
   const cleanup = () => {
@@ -67,7 +68,7 @@ export function registerPublicationPrint({ source, size, issue = false, shortcut
         sheet.style.setProperty('page-break-after', index === printed.length - 1 ? 'auto' : 'always', 'important');
       });
       // Operate on the clones only; the selected trim must already match.
-      const fitting = fitPdfSheets(document, size);
+      const fitting = fitPdfSheets(document, size,bleedMm);
       if (fitting) {
         style.textContent += `@media print { ${fitting.textContent} }`;
         fitting.remove();

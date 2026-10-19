@@ -3,6 +3,7 @@ import { temporal } from 'zundo';
 import { emptyDoc, type Doc, type TemplateId } from '../schema/document';
 import { makeBackCover } from './backCover';
 import { shareUnchanged } from '../lib/structuralSharing';
+import {cloneImageFrame} from '../lib/imageFrame';
 
 // Session identity changes only on load, not on a normal immutable edit.
 // Async image decoding must not confuse typing with opening another article.
@@ -25,7 +26,7 @@ export function cloneDocForUpdate(doc: Doc): Doc {
     meta: { ...doc.meta },
     news: doc.news ? { stories: doc.news.stories.map(story => ({
       ...story,
-      frame: story.frame ? { ...story.frame } : undefined,
+      frame: story.frame ? cloneImageFrame(story.frame) : undefined,
       paragraphTops: story.paragraphTops ? [...story.paragraphTops] : undefined,
     })) } : undefined,
     footer: doc.footer ? { ...doc.footer } : undefined,
@@ -33,23 +34,24 @@ export function cloneDocForUpdate(doc: Doc): Doc {
     frontMatter: doc.frontMatter ? {
       ...doc.frontMatter,
       entries: doc.frontMatter.entries.map(entry => ({ ...entry })),
-      logo: doc.frontMatter.logo ? { ...doc.frontMatter.logo } : undefined,
-      signature: doc.frontMatter.signature ? { ...doc.frontMatter.signature } : undefined,
+      logo: doc.frontMatter.logo ? cloneImageFrame(doc.frontMatter.logo) : undefined,
+      signature: doc.frontMatter.signature ? cloneImageFrame(doc.frontMatter.signature) : undefined,
       signatureCrop: doc.frontMatter.signatureCrop ? { ...doc.frontMatter.signatureCrop } : undefined,
     } : undefined,
     backCover: doc.backCover ? {
       ...doc.backCover,
-      qr: { ...doc.backCover.qr },
-      logo: { ...doc.backCover.logo },
+      qr: cloneImageFrame(doc.backCover.qr),
+      logo: cloneImageFrame(doc.backCover.logo),
       socialLinks: doc.backCover.socialLinks?.map(link => ({ ...link })),
     } : undefined,
     blocks: doc.blocks.map((block) =>
       block.type === 'figure' && block.frame
-        ? { ...block, frame: { ...block.frame } }
+        ? { ...block, frame: cloneImageFrame(block.frame) }
         : { ...block },
     ),
     images: (doc.images ?? []).map((image) => ({
       ...image,
+      frame:image.frame?cloneImageFrame(image.frame):undefined,
       anchor: { ...image.anchor },
       bleed: image.bleed ? { ...image.bleed } : undefined,
       wrapContour: image.wrapContour
@@ -63,8 +65,8 @@ export function cloneDocForUpdate(doc: Doc): Doc {
       : undefined,
     highlights: [...doc.highlights],
     references: doc.references.map((reference) => ({ ...reference })),
-    hero: { ...doc.hero },
-    cover: doc.cover ? { ...doc.cover } : undefined,
+    hero: cloneImageFrame(doc.hero),
+    cover: doc.cover ? cloneImageFrame(doc.cover) : undefined,
     assets: Object.fromEntries(
       Object.entries(doc.assets).map(([id, asset]) => [id, { ...asset }]),
     ),

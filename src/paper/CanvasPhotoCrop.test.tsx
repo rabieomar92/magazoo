@@ -1,0 +1,20 @@
+import {act} from 'react';
+import {createRoot} from 'react-dom/client';
+import {afterEach,beforeEach,expect,it,vi} from 'vitest';
+import {CanvasPhotoCrop} from './CanvasPhotoCrop';
+beforeEach(()=>vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT',true));
+afterEach(()=>{vi.unstubAllGlobals();document.body.replaceChildren();});
+it('previews crop and zoom locally, applies once, and restores original DOM on cancel/unmount',()=>{
+ const parent=document.createElement('div');parent.style.cssText='width:400px;height:200px';
+ const image=document.createElement('img');image.style.cssText='width:400px;height:200px;left:0px;top:0px';parent.append(image);document.body.append(parent);
+ Object.defineProperties(image,{naturalWidth:{value:800},naturalHeight:{value:400}});
+ const before=image.style.cssText,host=document.createElement('div');document.body.append(host);const root=createRoot(host),apply=vi.fn(),cancel=vi.fn();
+ act(()=>root.render(<CanvasPhotoCrop image={image} frame={{scale:1,offsetX:0,offsetY:0}} onApply={apply} onCancel={cancel}/>));
+ const select=document.querySelector<HTMLSelectElement>('[aria-label="Crop shape"]')!;
+ act(()=>{select.value='diamond';select.dispatchEvent(new Event('change',{bubbles:true}));});
+ expect(image.style.clipPath).toContain('200px 0px');expect(apply).not.toHaveBeenCalled();
+ act(()=>document.querySelector<HTMLButtonElement>('.canvas-outline-apply')!.click());
+ expect(apply).toHaveBeenCalledTimes(1);expect(apply.mock.calls[0][0].crop.shape).toBe('diamond');
+ act(()=>window.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape'})));expect(cancel).toHaveBeenCalledOnce();
+ act(()=>root.unmount());expect(image.style.cssText).toBe(before);expect(parent.dataset.cropping).toBeUndefined();
+});

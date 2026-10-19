@@ -3,15 +3,19 @@ import { topBarVisible } from '../../lib/topBar';
 import { LabeledColor,LabeledInput,LabeledNumber,SegmentField,Section,Toggle } from '../Field';
 import {DEFAULT_TOP_BAR_OFFSET} from '../../schema/document';
 import {TypographyControl} from '../TypographyToolbar';
+import {useProjectFile} from '../../store/projectFiles';
 
 export function TopBarSection({complete=false}:{complete?:boolean}) {
   const doc = useDoc(s => s.doc);
   const update = useDoc(s => s.update);
+  const target=useProjectFile(s=>s.target);
+  const projectName=target?.kind==='online'?target.projectName:undefined;
   return <Section title={complete?'Top bar & masthead':'Top bar visibility'} collapsible defaultOpen={complete} editorTarget={complete?'design-topbar':undefined}>
     <Toggle label="Show top bar" checked={topBarVisible(doc)} onChange={visible => update(d => { d.design.showTopBar = visible; })} />
     {(complete||doc.templateId === 'backcover-1') && <LabeledInput label="Top bar text" editorTarget="meta-masthead" value={doc.meta.masthead ?? ''} onChange={value => update(d => { d.meta.masthead = value; })} />}
     {complete&&<>
-      <LabeledInput label="Issue / date" editorTarget="meta-volume" value={doc.meta.volume??''} onChange={value=>update(d=>{d.meta.volume=value;})}/>
+      <LabeledInput label="Issue / date" editorTarget="meta-volume" value={doc.meta.volume??''} onChange={value=>update(d=>{d.meta.volume=value;d.meta.volumeMode='custom';})}/>
+      {projectName && <button type="button" disabled={doc.meta.volumeMode==='project'} onClick={()=>update(d=>{d.meta.volume=projectName;d.meta.volumeMode='project';})}>Use project name</button>}
       <SegmentField label="First masthead side" value={doc.design.barSide??'left'} options={[{value:'left',label:'Left'},{value:'right',label:'Right'}]} onChange={value=>update(d=>{d.design.barSide=value;})}/>
       <LabeledNumber label="Distance from top edge" unit="mm" min={0} max={40} step={.5} value={doc.design.topBarOffset??DEFAULT_TOP_BAR_OFFSET} onChange={value=>update(d=>{d.design.topBarOffset=value;})}/>
       <LabeledColor label="Bar line" value={doc.design.barColor??'#111418'} onChange={value=>update(d=>{d.design.barColor=value;})}/>

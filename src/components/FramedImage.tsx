@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef, type CSSProperties } from 'react';
 import type { Asset } from '../schema/document';
 import '../styles/image-pan.css';
+import {cropClip} from '../lib/imageCrop';
 import {
   framedImageGeometry,
   normalizeImageFrame,
@@ -56,6 +57,7 @@ export function FramedImage({ asset, frame, fit = 'cover', className, style,alt=
       image.style.objectFit = 'fill';
       image.style.objectPosition = 'center';
       image.style.transform = 'none';
+      image.style.clipPath=cropClip(frame?.crop,measuredWidth||container.clientWidth,measuredHeight||container.clientHeight,geometry.left,geometry.top);
     };
 
     apply();
@@ -68,7 +70,7 @@ export function FramedImage({ asset, frame, fit = 'cover', className, style,alt=
     };
   // normalizeImageFrame returns a new object. Depending on that object used to
   // measure every photograph and recreate its observer on every text edit.
-  }, [asset.naturalHeight, asset.naturalWidth, fit, scale,offsetX,offsetY,panX,panY]);
+  }, [asset.naturalHeight, asset.naturalWidth, fit, scale,offsetX,offsetY,panX,panY,frame?.crop]);
 
   return (
     <img

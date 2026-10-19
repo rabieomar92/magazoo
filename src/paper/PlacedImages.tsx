@@ -15,7 +15,8 @@ import { pageDimensions } from '../lib/pageFormat';
 import {imageCaptionObstacle,safeCaptionPosition,type CaptionBox,type CaptionObstacle} from '../lib/imageCaption';
 import {footerBottomMargin} from '../lib/pageFooter';
 import {TOP_BAR_HEIGHT_MM} from '../lib/topBar';
-import { placedImageContourClip, placedImagePolygon, placedImagePolygonClip, placedImageGeometry, snapImageColumn } from '../lib/placedImage';
+import { placedImageGeometry, snapImageColumn } from '../lib/placedImage';
+import {cropPoints} from '../lib/imageCrop';
 import { defaultPlacedHighlights, placedHighlightsGeometry, highlightAvoidingTop } from '../lib/placedHighlights';
 import { articleGridDesign, isReferenceArticle } from '../lib/articleLayouts';
 import { useDoc } from '../store/useDoc';
@@ -143,7 +144,7 @@ function PlacedImageItem({
     if(!freeCaption||!captionRef.current)return;
     const element=captionRef.current;
     const calculate=()=>{
-      const bottom=geometry.visualTop+geometry.visualHeight*(image.wrapShape==='polygon'?Math.max(...placedImagePolygon(image).map(p=>p.y))/100:1);
+      const bottom=geometry.visualTop+geometry.visualHeight*Math.max(...cropPoints(image.frame?.crop).map(p=>p.y))/100;
       positionCaption(element,{x:Number.isFinite(image.captionPlacement?.x)?image.captionPlacement!.x:geometry.left,
         y:Number.isFinite(image.captionPlacement?.y)?image.captionPlacement!.y:bottom+1,width:captionWidth,height:element.offsetHeight/(96/25.4)});
     };
@@ -231,7 +232,7 @@ function PlacedImageItem({
     element.style.setProperty('--placed-caption-left', `${next.captionLeft}mm`);
     element.style.setProperty('--placed-caption-width', `${next.width}mm`);
     element.style.setProperty('--placed-caption-space', `${Math.max(0, pageHeight - next.visualTop - next.visualHeight)}mm`);
-    if (image.wrapShape === 'polygon') element.style.setProperty('--placed-polygon-tail', `${next.visualHeight*(1-Math.max(...placedImagePolygon(image).map(point=>point.y))/100)}mm`);
+    element.style.setProperty('--placed-polygon-tail', `${next.visualHeight*(1-Math.max(...cropPoints(image.frame?.crop).map(point=>point.y))/100)}mm`);
   };
 
   const commitAnchor = (column: number, y: number) =>
@@ -319,10 +320,7 @@ function PlacedImageItem({
     '--placed-caption-left': `${geometry.captionLeft}mm`,
     '--placed-caption-width': `${geometry.width}mm`,
     '--placed-caption-space': `${Math.max(0, pageHeight - geometry.visualTop - geometry.visualHeight)}mm`,
-    '--placed-polygon-tail': `${image.wrapShape === 'polygon' ? geometry.visualHeight * (1-Math.max(...placedImagePolygon(image).map(point=>point.y))/100) : 0}mm`,
-    ...(image.wrapShape === 'contour' || image.wrapShape === 'polygon'
-      ? { '--placed-contour-clip': image.wrapShape === 'polygon' ? placedImagePolygonClip(image) : placedImageContourClip(image) }
-      : {}),
+    '--placed-polygon-tail': `${geometry.visualHeight * (1-Math.max(...cropPoints(image.frame?.crop).map(point=>point.y))/100)}mm`,
   } as CSSProperties;
   const hasBleed = Boolean(
     image.bleed?.left || image.bleed?.right || image.bleed?.top || image.bleed?.bottom,
@@ -365,7 +363,7 @@ function PlacedImageItem({
         }}>
         <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="M10 2v16M2 10h16M7 5l3-3 3 3M7 15l3 3 3-3M5 7l-3 3 3 3M15 7l3 3-3 3" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
         Move image
-      </button><button type="button" className="placed-image-draw" onPointerDown={event=>event.stopPropagation()} onClick={event=>{event.stopPropagation();requestImageOutline(image.id);}}>Draw border</button></div>}
+      </button><button type="button" className="placed-image-draw" onPointerDown={event=>event.stopPropagation()} onClick={event=>{event.stopPropagation();requestImageOutline(image.id);}}>Edit wrap points</button></div>}
       {!readOnly&&outlineEditing&&<CanvasImageOutline image={image} asset={asset} onCancel={closeOutline}
         onApply={(points,smoothing,gap)=>{
           update(current=>{const source=current.images?.find(i=>i.id===image.id);if(source){source.wrapShape='polygon';source.wrapPolygon=points;source.wrapSmoothing=smoothing;source.wrapGapMm=gap;}});

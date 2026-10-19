@@ -1,4 +1,5 @@
 import { migrate } from '../schema/document';
+import {withProjectIssueLabel} from '../lib/projectIssueLabel';
 import { loadSession } from './db';
 import { bindTarget, useProjectFile } from './projectFiles';
 import { useDoc } from './useDoc';
@@ -15,7 +16,8 @@ export async function loadSharedProject(token:string, cancelled=()=>false, disca
     if(error instanceof EditLeaseError && error.status===423 && !memory) {
       const response=await fetch(`${import.meta.env.BASE_URL}api/documents/shared`,{headers:{Authorization:`Bearer ${token}`}});
       if(!response.ok)throw new Error('Could not load the read-only preview. Please try again.');
-      if(!cancelled()){useDoc.getState().load(migrate((await response.json()).doc));bindTarget(null,null);}
+      const saved=await response.json();
+      if(!cancelled()){useDoc.getState().load(withProjectIssueLabel(migrate(saved.doc),saved.projectName));bindTarget(null,null);}
       return;
     }
     throw error;
@@ -24,9 +26,9 @@ export async function loadSharedProject(token:string, cancelled=()=>false, disca
   try {
   const recovery=discardRecovery ? undefined : memory ?? (cached?.pending && cached.target?.kind==='online' ? cached:undefined);
   const recovered=!!recovery;
-  const doc=migrate(recovery ? recovery.doc : latest.doc);
+  const doc=withProjectIssueLabel(migrate(recovery ? recovery.doc : latest.doc),latest.projectName);
   const version=recovery?.target?.kind==='online' ? recovery.target.version:latest.version;
-  bindTarget({kind:'online',token,name:latest.name,version},recovered?null:doc);
+  bindTarget({kind:'online',token,name:latest.name,version,projectName:latest.projectName},recovered?null:doc);
   useDoc.getState().load(doc);
   if(recovered && version!==latest.version){
     await releaseOwnedLease(token,latest.leaseId);

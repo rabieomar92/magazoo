@@ -51,7 +51,7 @@ export function openStorage(filename, lockOptions) {
   db.exec('CREATE TABLE IF NOT EXISTS app_settings (key TEXT PRIMARY KEY,value TEXT NOT NULL)');
   const locks = editLocks(db, lockOptions);
   const sharedRow = secret => {
-    const row = db.prepare('SELECT id,name,body,version FROM documents WHERE token=?').get(secret);
+    const row = db.prepare('SELECT id,name,body,version,projectId FROM documents WHERE token=?').get(secret);
     if (!row) issueError(404, 'Document not found or link revoked.');
     return row;
   };
@@ -170,6 +170,7 @@ export function openStorage(filename, lockOptions) {
     },
     createDocument(projectId,name,body){const id=randomUUID(),secret=token();db.prepare('INSERT INTO documents VALUES (?,?,?,?,?,1,?)').run(id,projectId,name,secret,body,Date.now());return{id,name,token:secret,version:1};},
     read(secret){return db.prepare('SELECT id,name,body,version FROM documents WHERE token=?').get(secret);},
+    sharedProjectName(secret){return db.prepare('SELECT p.name FROM documents d JOIN projects p ON p.id=d.projectId WHERE d.token=?').get(secret)?.name;},
     readHero(id) {
       const row = db.prepare('SELECT body FROM documents WHERE id=?').get(id);
       return row ? heroSource(row.body) : undefined;
@@ -187,7 +188,7 @@ export function openStorage(filename, lockOptions) {
         if (action === 'renew') return locks.renew(row.id, leaseId);
         if (action !== 'acquire') issueError(400, 'Unknown editing session action.');
         const lease = locks.acquire(row.id, leaseId);
-        return { ...lease, name:row.name, version:row.version, doc:JSON.parse(row.body) };
+        return { ...lease, name:row.name, version:row.version, doc:JSON.parse(row.body), projectName:db.prepare('SELECT name FROM projects WHERE id=?').get(row.projectId)?.name };
       });
     },
     update(secret,version,body,leaseId){return transaction(true,()=>{

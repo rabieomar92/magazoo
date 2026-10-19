@@ -80,6 +80,10 @@ function printSettings(plan) {
   const value=plan.printSettings;
   if(!object(value)||!['saddle-stitch','perfect'].includes(value.binding)||![2,4,8,16,32].includes(value.perfectMultiple))issueError(400,'Invalid print specification settings.');
   const result={binding:value.binding,perfectMultiple:value.perfectMultiple};
+  if(value.bleedMm!==undefined){
+    if(!Number.isFinite(value.bleedMm)||value.bleedMm<0||value.bleedMm>10)issueError(400,'Bleed must be between 0 and 10 mm.');
+    result.bleedMm=value.bleedMm;
+  }
   for(const [key,min,max] of [['coverGsm',50,600],['innerGsm',35,400],['copies',1,1000000],['spineMm',0,100]]){
     if(value[key]===undefined)continue;
     if(!Number.isFinite(value[key])||value[key]<min||value[key]>max||(key!=='spineMm'&&!Number.isInteger(value[key])))issueError(400,`Invalid print specification: ${key}.`);

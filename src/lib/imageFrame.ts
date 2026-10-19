@@ -1,3 +1,4 @@
+import type {ImageCrop} from './imageCrop';
 export interface ImageFrame {
   scale: number;
   offsetX: number;
@@ -5,6 +6,8 @@ export interface ImageFrame {
   /** Free translation in percent of the frame, independent of legacy crop focus. */
   panX?: number;
   panY?: number;
+  /** Visible photo boundary, independent of text wrapping. */
+  crop?: ImageCrop;
 }
 
 export interface FramedImageGeometry {
@@ -15,6 +18,9 @@ export interface FramedImageGeometry {
 }
 
 export type ImageFit = 'cover' | 'contain';
+export function cloneImageFrame<T extends ImageFrame>(frame:T):T {
+ return {...frame,...(frame.crop?{crop:{...frame.crop,points:frame.crop.points.map(p=>({...p}))}}:{})};
+}
 
 const clamp = (value: number, low: number, high: number) =>
   Math.min(high, Math.max(low, value));
@@ -26,6 +32,7 @@ export function normalizeImageFrame(frame?: Partial<ImageFrame>): ImageFrame {
     offsetY: clamp(Number.isFinite(frame?.offsetY) ? frame!.offsetY! : 0, -50, 50),
     ...(frame?.panX !== undefined ? {panX: imagePan(frame.panX)} : {}),
     ...(frame?.panY !== undefined ? {panY: imagePan(frame.panY)} : {}),
+    ...(frame?.crop ? {crop:frame.crop} : {}),
   };
 }
 

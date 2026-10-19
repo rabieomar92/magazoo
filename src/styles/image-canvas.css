@@ -1,6 +1,6 @@
-.canvas-outline { position:absolute; inset:0 0 auto; height:var(--placed-image-h); z-index:10; pointer-events:auto; background:#e2e8f0; outline:2px solid #6366f1; }
+.canvas-outline { position:absolute; inset:0 0 auto; height:var(--placed-image-h); z-index:30; pointer-events:auto; background:transparent; outline:2px solid #6366f1; }
 .canvas-outline > img { pointer-events:none; }
-.canvas-outline > svg { position:absolute; inset:0; width:100%; height:100%; cursor:crosshair; touch-action:none; }
+.canvas-outline > svg { position:absolute; inset:0; width:100%; height:100%; cursor:default; touch-action:none; overflow:visible; }
 .canvas-outline :is(polygon,polyline) { fill:#4f46e530; stroke:#fff; stroke-width:2; vector-effect:non-scaling-stroke; stroke-linejoin:round; }
 .canvas-outline polyline { fill:none; }
 .placed-image[data-outline-editing] { z-index:20; }
@@ -18,3 +18,13 @@
 .canvas-outline-buttons .canvas-outline-apply { background:#4f46e5; border-color:#4f46e5; color:#fff; }
 .canvas-outline-tools :is(button,input):focus-visible { outline:2px solid #6366f1; outline-offset:2px; }
 @media print { .canvas-outline,.canvas-outline-tools { display:none !important; } }
+.canvas-outline .polygon-edge{stroke:transparent;stroke-width:12;vector-effect:non-scaling-stroke;cursor:copy;pointer-events:stroke}
+.canvas-outline .polygon-point{fill:white;stroke:#5145d9;stroke-width:2;vector-effect:non-scaling-stroke;cursor:move;pointer-events:all}
+.canvas-outline .polygon-point.is-selected{fill:#c9c2ff}
+.canvas-crop-surface{height:100%;inset:0}
+.crop-pan-area{position:absolute;inset:0;touch-action:none}
+[data-cropping=true]{z-index:30!important;overflow:visible!important}
+.placed-image:has([data-cropping=true])>.placed-image-tools{display:none}
+.placed-image:has([data-cropping=true])>.canvas-height-handle{display:none}
+.canvas-outline-tools,.canvas-outline-tools button,.canvas-outline-tools input,.canvas-outline-tools select{border-radius:0}
+.canvas-outline-tools select{padding:5px;border:1px solid #cbd5e1;background:white;color:#243247}

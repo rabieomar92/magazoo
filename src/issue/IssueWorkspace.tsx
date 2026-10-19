@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { migrate } from '../schema/document';
+import {withProjectIssueLabel} from '../lib/projectIssueLabel';
 import { exportIssuePdf, issuePageGroups, waitForPreviewResources } from '../lib/pdfExport';
 import { PDF_PAGE_SIZES, type PdfPageSize } from '../lib/pdfPageSize';
 import { pageDimensions, withPageFormat } from '../lib/pageFormat';
@@ -22,6 +23,7 @@ import { withExternalPdfItems } from './externalPdfModel';
 import { releaseIssuePdf } from './externalPdf';
 import type { ExternalIssuePdf } from './model';
 import { IssuePrintBrief } from './IssuePrintBrief';
+import {CanvasNumericAdjust} from '../paper/CanvasNumericAdjust';
 
 /** What the compiled sheets are built from, and the only thing that can put
  * the proof out of date. Everything else an editor can change — wording,
@@ -37,7 +39,7 @@ export default function IssueWorkspace({ projectId, csrf, onClose }: { projectId
     const controller = new AbortController();
     setLoaded(null); setError('');
     void issueApi<IssueResponse>(projectId, csrf, '', 'GET', undefined, controller.signal).then(data => {
-      const items = data.items.map(item => ({ ...item, doc: migrate(item.doc) }));
+      const items = data.items.map(item => ({ ...item, doc: withProjectIssueLabel(migrate(item.doc),data.project.name) }));
       const nativeFormat=items[0]?.doc.design.pageFormat;
       if(nativeFormat&&items.every(item=>item.doc.design.pageFormat===nativeFormat))usePdfPreferences.getState().setSize(nativeFormat);
       setLoaded({ ...data, items });
@@ -271,13 +273,13 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
     await waitForPreviewResources(root);
     const actual = sheetCount(root);
     if (actual !== physicalPages) throw new Error(`The proof has ${actual} pages, but numbering was compiled for ${physicalPages}. Recompile the whole issue before exporting so the printed page numbers stay correct.`);
-    await exportIssuePdf(data.project.name, root, pdfSize);
+    await exportIssuePdf(data.project.name, root, pdfSize,plan.printSettings?.bleedMm??0);
   });
 
   const blocked = busy || !ready || !proofVerified || contentsOverflow || proofStale;
   const printState=useRef({blocked,exportIssue});
   useLayoutEffect(()=>{printState.current={blocked,exportIssue};});
-  useEffect(() => registerPublicationPrint({source:()=>printState.current.blocked?null:pagesRef.current,size:pdfSize,issue:true,shortcut:()=>void printState.current.exportIssue()}),[pdfSize]);
+  useEffect(() => registerPublicationPrint({source:()=>printState.current.blocked?null:pagesRef.current,size:pdfSize,issue:true,bleedMm:plan.printSettings?.bleedMm??0,shortcut:()=>void printState.current.exportIssue()}),[pdfSize,plan.printSettings?.bleedMm]);
   return <main className="studio" aria-busy={busy}>
     <header className="studio-bar">
       <div className="studio-bar-lead">
@@ -407,6 +409,8 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
             <label className="field">PDF page size<select value={pdfSize} disabled={busy} onChange={event => setPdfSize(event.target.value as PdfPageSize)}>
               {Object.entries(PDF_PAGE_SIZES).map(([key, size]) => <option key={key} value={key}>{size.label} · {size.width} × {size.height} mm</option>)}
             </select></label>
+            <label className="field">Bleed per edge (mm)<input type="number" min="0" max="10" step="0.5" value={plan.printSettings?.bleedMm??0} disabled={busy} onChange={event=>updatePlan({...plan,printSettings:{binding:'saddle-stitch',perfectMultiple:2,...plan.printSettings,bleedMm:Math.max(0,Math.min(10,Number(event.target.value)))}})}/></label>
+            <p className="field-hint">Trim: {PDF_PAGE_SIZES[pdfSize].width} × {PDF_PAGE_SIZES[pdfSize].height} mm. Output with bleed: {PDF_PAGE_SIZES[pdfSize].width+2*(plan.printSettings?.bleedMm??0)} × {PDF_PAGE_SIZES[pdfSize].height+2*(plan.printSettings?.bleedMm??0)} mm. Set the amount requested by your printer, such as 3 or 5 mm; zero exports at trim size. Text remains at its original size and position. Background artwork extends into the extra area; no guide lines are printed.</p>
             <p className="field-hint">A4, ISO B5, JIS B5 and Magazine lay out every article, cover and contents page directly at the selected paper size. Changing size recompiles the issue and may change its page counts; saved article content stays untouched. Choose the browser’s Save as PDF, Default margins (the publication sets them to zero), 100% scale and Background graphics. A system PDF printer or physical printer may need a matching custom paper size.</p>
             <p className="field-hint">Finalising writes each article’s starting page number back into the saved document, so a single-article export carries the same folio as the issue.</p>
             {contentsOverflow && ready && <p className="inline-alert" role="alert">The contents text does not fit its two pages. Shorten the heading or introduction, drop a subtitle, or uncheck some entries.</p>}
@@ -467,6 +471,7 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
     </footer>
 
     {busy && <div className="studio-busy"><MagazooLoader variant="banner" label="Magazoo is working…" detail="Please keep this window open." /></div>}
+    {!busy&&<CanvasNumericAdjust/>}
 
     {!ready && !renderError && <IssueCompiler key={`${compileToken}-${compositionFormat}`} sources={sources} plan={plan} items={items} onComplete={onCompiled} onError={onCompileError} onProgress={onProgress} />}
   </main>;

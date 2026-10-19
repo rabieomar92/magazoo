@@ -31,8 +31,8 @@ export function CanvasImageResize({doc,root}:{doc:Doc;root:RefObject<HTMLDivElem
         if(id&&doc.images.some(item=>item.id===id)){next.push({frame,owner:placed!,target:{kind:'image',id}});continue;}
         // Full-page covers/backgrounds and fixed spread strips have no
         // independent height. Do not offer an inert control for those frames.
-        const owner=image.closest<HTMLElement>('[data-editor-target="image-hero"]');
-        if(owner&&!['magazine-2','magazine-3','magazine-4','backcover-1','frontmatter-board'].includes(doc.templateId??''))next.push({frame,owner,target:{kind:'hero'}});
+        const owner=image.closest<HTMLElement>(doc.templateId==='frontmatter-board'?'[data-editor-target="image-cover"]':'[data-editor-target="image-hero"]');
+        if(owner&&!['magazine-2','magazine-3','magazine-4','backcover-1'].includes(doc.templateId??''))next.push({frame,owner,target:{kind:'hero'}});
       }
       setCandidates(previous=>previous.length===next.length&&previous.every((c,i)=>c.frame===next[i].frame&&JSON.stringify(c.target)===JSON.stringify(next[i].target))?previous:next);
     };

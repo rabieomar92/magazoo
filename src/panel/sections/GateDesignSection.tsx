@@ -78,7 +78,7 @@ export function GateDesignSection({headingsOnly=false}:{headingsOnly?:boolean}) 
       <div className="gate-control-stack">
         <Section title="Masthead" editorTarget="design-topbar">
           <LabeledInput label="Masthead text" editorTarget="meta-masthead" value={meta.masthead ?? ''} onChange={v => update(d => { d.meta.masthead = v; })} />
-          <LabeledInput label="Volume / date" editorTarget="meta-volume" value={meta.volume ?? ''} onChange={v => update(d => { d.meta.volume = v; })} />
+          <LabeledInput label="Volume / date" editorTarget="meta-volume" value={meta.volume ?? ''} onChange={v => update(d => { d.meta.volume = v;d.meta.volumeMode='custom'; })} />
           <LabeledNumber label="Distance from top edge" unit="mm" value={design.topBarOffset ?? DEFAULT_TOP_BAR_OFFSET} min={0} max={40} onChange={v => update(d => { d.design.topBarOffset = clampGate(v, 0, 40); })} />
           <LabeledColor label="Bar line" value={design.barColor ?? '#111418'} onChange={v => update(d => { d.design.barColor = v; })} />
           <LabeledColor label="Masthead background" value={design.barTagColor ?? '#bfbfbf'} onChange={v => update(d => { d.design.barTagColor = v; })} />

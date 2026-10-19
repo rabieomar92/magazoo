@@ -17,9 +17,10 @@ export function MetaSection({headingOnly=false}:{headingOnly?:boolean}) {
   const headerWidth = useDoc(s => s.doc.design.headerWidthCols);
   const hasHeaderWidth = useDoc(s => supportsArticleHeaderWidth(s.doc.templateId));
 
-  const set = (key: keyof typeof meta) => (v: string) =>
+  const set = (key: Exclude<keyof typeof meta,'volumeMode'>) => (v: string) =>
     update((d) => {
       d.meta[key] = v;
+      if(key==='volume')d.meta.volumeMode='custom';
     });
 
   const setBarColor = (v: string) =>

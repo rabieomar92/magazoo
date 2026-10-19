@@ -14,6 +14,7 @@ test('project rename is admin-only, validates names and preserves documents and 
   storage.saveIssue(project.id,0,plan);
   const before=storage.readIssue(project.id);
   const saved=storage.read(item.token);
+  assert.equal(storage.sharedProjectName(item.token),'Original');
   const path=`projects/${project.id}`;
   const data={name:'Renamed',previousName:'Original'};
   assert.equal((await request(path,{method:'PATCH',data})).status,401);
@@ -29,9 +30,11 @@ test('project rename is admin-only, validates names and preserves documents and 
   assert.deepEqual(await result.json(),{id:project.id,name:'Renamed'});
   assert.equal((await admin(path,{method:'PATCH',data:{...data,name:'Stale overwrite'}})).status,409);
   assert.deepEqual(storage.read(item.token),saved);
+  assert.equal(storage.sharedProjectName(item.token),'Renamed');
   const after=storage.readIssue(project.id);
   assert.deepEqual({...after,project:{...after.project}},{...before,project:{...before.project,name:'Renamed'}});
-  assert.equal((await request('documents/shared',{headers:{Authorization:`Bearer ${item.token}`}})).status,200);
+  const shared=await request('documents/shared',{headers:{Authorization:`Bearer ${item.token}`}});
+  assert.equal(shared.status,200);assert.equal((await shared.json()).projectName,'Renamed');
 });
 async function fixture(t){
   const storage=openStorage(':memory:');

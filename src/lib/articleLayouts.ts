@@ -51,13 +51,15 @@ export function articleGeometry(id: ReferenceArticleId, design: Design, measured
   // Zero is the legacy automatic composition. An explicit inset title position
   // must be able to move up as well as down, without crossing a visible masthead.
   const customInsetTop = inset && (design.firstPageTopMargin ?? 0) > 0;
-  const titleTop = customInsetTop ? Math.max(contentTop, design.firstPageTopMargin!)
+  const requestedImmersion=id==='paper-4'&&heroHeight>0&&Number.isFinite(design.heroImmersionMm)?Math.max(0,Math.min(heroHeight,design.heroImmersionMm!)):0;
+  const nativeTitleTop = customInsetTop ? Math.max(contentTop, design.firstPageTopMargin!)
     : Math.max(26, contentTop, bottomHero ? 26 : (inset ? layout.titleTop : layout.titleTop + delta), design.firstPageTopMargin ?? 0);
+  const titleTop=bottomHero?nativeTitleTop:Math.max(contentTop,nativeTitleTop-requestedImmersion);
   // Preset coordinates are only a pre-measurement fallback. Keeping their
   // original title/deck reserve after measuring a shorter header leaves a
   // phantom blank band (especially with an absent subtitle).
   const bodyTop = measuredHeader > 0 ? titleTop + measuredHeader + gutter
-    : Math.max(titleTop + gutter, customInsetTop ? 0 : bottomHero ? 26 : inset ? layout.bodyTop : layout.bodyTop + delta);
+    : Math.max(titleTop + gutter, customInsetTop ? 0 : bottomHero ? 26 : inset ? layout.bodyTop : layout.bodyTop + delta-requestedImmersion);
   const titleTextTop=titleTop+Math.max(0,titleOffset);
   const bottom = height - (footerReserve > 0 ? footerReserve : margin);
   const imageBottom = bottomBleed ? height : bottom;
@@ -73,7 +75,8 @@ export function articleGeometry(id: ReferenceArticleId, design: Design, measured
     ? bodyTop + heroHeight + insetCaptionSpace + gutter
     : i * (col + gutter) < titleWidth - .01 ? bodyTop : titleTextTop);
   const gridOrigin=titleWidth<span(columns)-.01?titleTextTop:bodyTop;
-  return { layout, width, height, margin, gutter, columns, col, span, titleCols, titleWidth, titleTop, titleTextTop, gridOrigin, bodyTop, bottom, image, starts, bottomHero, bottomBleed, contentTop };
+  const immersionDepth=bottomHero?Math.min(requestedImmersion,Math.max(0,image.height-captionHeight-gutter-4)):nativeTitleTop-titleTop;
+  return { layout, width, height, margin, gutter, columns, col, span, titleCols, titleWidth, titleTop, titleTextTop, gridOrigin, bodyTop, bottom, image, starts, bottomHero, bottomBleed, contentTop,immersionDepth };
 }
 
 /** Split each column top-to-bottom around placed photographs, then advance
@@ -85,7 +88,7 @@ export function articleRegions(g: ReturnType<typeof articleGeometry>, throughPag
       const column = rtl ? g.columns - 1 - logical : logical;
       const x = g.margin + column * (g.col + g.gutter);
       let cursor = page === 0 ? g.starts[column] : g.contentTop;
-      const bottomArt = g.bottomHero ? [{page:0,left:g.image.x,top:g.image.y,width:g.image.width,height:g.height-g.image.y}] : [];
+      const bottomArt = g.bottomHero ? [{page:0,left:g.image.x,top:g.image.y+g.immersionDepth,width:g.image.width,height:g.height-g.image.y-g.immersionDepth}] : [];
       const cuts = [...obstacles,...bottomArt].filter(o => o.page === page && o.left < x + g.col && o.left + o.width > x)
         .map(o => ({ top: o.top - 2, bottom: o.top + o.height + 2 })).sort((a, b) => a.top - b.top);
       for (const cut of cuts) {
@@ -110,7 +113,7 @@ export function referenceArticleDesign(id: ReferenceArticleId, base: Design): De
   const bg = id === 'paper-4' ? '#241711' : id === 'paper-5' ? '#094441' : '#ffffff';
   return { ...base, articlePageSize: 'reference', bodyCols: 4, margin: 14, gutter: 4,
     heroHeight: layout.heroHeight, heroWidthCols: undefined, showHero: true, imageTheme: false, heroAtBottom: false, heroBottomBleed: false, articleLeading: 1.28,
-    firstPageTopMargin: 0, subtitleGap: 1.5, bodyAlign: 'left', sidebar: true, highlightsPlacement: 'page1-flow',
+    firstPageTopMargin: 0, heroImmersionMm:undefined, subtitleGap: 1.5, bodyAlign: 'left', sidebar: true, highlightsPlacement: 'page1-flow',
     fontBody: 'Georgia', fontDisplay: 'Avenir Next LT Pro', fontSubtitle: 'Avenir Next LT Pro Light',
     fontCategory: 'Avenir Next LT Pro Light', fontAuthor: 'Avenir Next LT Pro', fontAffiliation: 'Avenir Next LT Pro', paperBg: bg,
     subtitleColor: undefined, authorColor: undefined, affiliationColor: undefined,

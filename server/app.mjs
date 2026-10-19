@@ -81,7 +81,7 @@ export function createApp({storage,origin,passwordHash,staticDir,authOptions={},
           if(req.method==='POST') { const data=await body(req,4096);return send(200,storage.editLease(secret,data?.action,data?.leaseId)); }
           fail(405,'Method not allowed.');
         }
-        if(req.method==='GET')return send(200,{name:item.name,version:item.version,doc:JSON.parse(item.body)});
+        if(req.method==='GET')return send(200,{name:item.name,version:item.version,doc:JSON.parse(item.body),projectName:storage.sharedProjectName?.(secret)});
         if(req.method==='PUT'){
           const version=Number(req.headers['if-match']);if(!Number.isSafeInteger(version)||version<1)fail(428,'A document version is required.');
           const json=validateDoc(await body(req));

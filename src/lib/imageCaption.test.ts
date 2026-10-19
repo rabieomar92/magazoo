@@ -27,8 +27,11 @@ describe('independent image captions',()=>{
     const d=emptyDoc().design;
     const i:PlacedImage={id:'x',assetId:'a',widthCols:2,caption:'Copy',heightMm:100,anchor:{page:1,column:0,y:140},bleed:{bottom:true},wrapShape:'polygon',wrapSmoothing:1,wrapPolygon:[{x:50,y:10},{x:90,y:50},{x:50,y:90},{x:10,y:50}]};
     const outline=imageCaptionObstacle(i,{src:'',naturalWidth:600,naturalHeight:600},d,267);
-    expect(outline.points).toHaveLength(256);
-    expect(Math.max(...outline.points.map(p=>p.y))).toBeCloseTo(254.3);
+    expect(outline.points).toHaveLength(4);
+    expect(Math.max(...outline.points.map(p=>p.y))).toBeCloseTo(267);
+    i.frame={scale:1,offsetX:0,offsetY:0,crop:{shape:'polygon',points:i.wrapPolygon!}};
+    const cropped=imageCaptionObstacle(i,{src:'',naturalWidth:600,naturalHeight:600},d,267);
+    expect(Math.max(...cropped.points.map(p=>p.y))).toBeCloseTo(254.3);
     expect(i.anchor.y).toBe(140);
   });
   it('never overlaps rectangular images across a matrix of sizes, positions and captions',()=>{

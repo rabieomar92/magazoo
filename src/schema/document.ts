@@ -200,8 +200,8 @@ export interface PlacedImage {
   /** Percentage of the image height that is clear at the top/bottom of each
    * occupied column, stored from the physical left edge to the right edge. */
   wrapContour?: { top: number[]; bottom: number[] };
-  /** Author-drawn closed image outline, in percentages of the visible frame.
-   * Pagination and the visible crop share its even-odd fill rule. */
+  /** Polygonal text exclusion boundary, in percentages of the image frame.
+   * Controls wrapping only; ImageFrame.crop independently controls visible pixels. */
   wrapPolygon?: { x: number; y: number }[];
   /** Curve tension (0 = straight segments) and text clearance in millimetres.
    * Missing values preserve straight existing paths with 0.8mm clearance. */
@@ -379,7 +379,7 @@ export interface TextStyle {
 export interface Design {
   /** Render-only output override; selected paper size is a browser preference,
    * not an authoring change. Missing keeps the original A4/reference layout. */
-  pageFormat?: 'a4' | 'b5' | 'jis-b5' | 'magazine';
+  pageFormat?: 'a4' | 'b5' | 'jis-b5' | 'vendor-b5' | 'magazine';
   textStyles?: Record<string, TextStyle>;
   /** Reference article compositions retain the magazine's 210 × 276 mm trim,
    * or can explicitly extend their text area to A4. Other templates ignore it. */
@@ -512,6 +512,8 @@ export interface Design {
    * template's native first-page composition.
    */
   firstPageTopMargin?: number;
+  /** Immersive Bleed only: extra text overlap into the hero, in mm. */
+  heroImmersionMm?: number;
   gateTitle?: GateTextPlacement;
   gateText?: GateTextPlacement;
   gateTitleLayout?: 'stacked' | 'natural';
@@ -761,6 +763,7 @@ export interface Doc {
     coverCaption?: string;
     /** Volume/date line, e.g. "VOL. IX · NO.2 · MARCH 2026". */
     volume?: string;
+    volumeMode?: 'project' | 'custom';
     /** Location tag overlaid on the page-2 hero photo. */
     location?: string;
     /** Pull-quote body shown inside the spread. */

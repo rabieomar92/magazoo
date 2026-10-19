@@ -1,5 +1,6 @@
 import type {PlacedImage,Asset,Design} from '../schema/document';
-import {placedImageGeometry,placedImagePolygon,placedImageContour} from './placedImage';
+import {placedImageGeometry} from './placedImage';
+import {cropPoints} from './imageCrop';
 
 type Point={x:number;y:number};
 export interface CaptionObstacle { points:Point[]; gap:number }
@@ -30,13 +31,7 @@ function bandsAt(obstacle:CaptionObstacle,left:number,right:number) {
 
 export function imageCaptionObstacle(image:PlacedImage,asset:Asset,design:Design,pageHeight:number,gap=.8):CaptionObstacle {
   const g=placedImageGeometry(image,asset,design,pageHeight);
-  let points:Point[];
-  if(image.wrapShape==='polygon')points=placedImagePolygon(image);
-  else if(image.wrapShape==='contour') {
-    const slices=placedImageContour(image);
-    points=slices.flatMap((s,i)=>[{x:i*100/slices.length,y:s.top},{x:(i+1)*100/slices.length,y:s.top}]);
-    for(let i=slices.length-1;i>=0;i--)points.push({x:(i+1)*100/slices.length,y:100-slices[i].bottom},{x:i*100/slices.length,y:100-slices[i].bottom});
-  } else points=[{x:0,y:0},{x:100,y:0},{x:100,y:100},{x:0,y:100}];
+  const points=cropPoints(image.frame?.crop);
   return {gap,points:points.map(p=>({x:g.visualLeft+g.visualWidth*p.x/100,y:g.visualTop+g.visualHeight*p.y/100}))};
 }
 

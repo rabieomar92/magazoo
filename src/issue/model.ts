@@ -19,6 +19,8 @@ export interface IssuePrintSettings {
   perfectMultiple: 2 | 4 | 8 | 16 | 32;
   coverGsm?: number; innerGsm?: number; copies?: number; spineMm?: number;
   paperFinish?: string; notes?: string;
+  /** Extra artwork outside each trim edge; does not alter article layout. */
+  bleedMm?: number;
 }
 
 export interface ExternalIssuePdf {

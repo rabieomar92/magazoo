@@ -20,7 +20,7 @@ export function FrontMatterContent() {
   const field = (key: 'aboutTitle' | 'about' | 'noteTitle' | 'note' | 'contact', value: string) => change(f => { f[key] = value; });
   return <>
     <Section title={board ? 'Publication contact' : 'Publication details'}>
-      {!board && <LabeledInput editorTarget="meta-volume" label="Issue / date" value={doc.meta.volume ?? ''} onChange={volume => update(d => { d.meta.volume = volume; })} />}
+      {!board && <LabeledInput editorTarget="meta-volume" label="Issue / date" value={doc.meta.volume ?? ''} onChange={volume => update(d => { d.meta.volume = volume;d.meta.volumeMode='custom'; })} />}
       {dean && <LabeledInput label="Sign-off" value={content.signoff ?? ''} onChange={v => change(f => {f.signoff=v;})} />}
       {!board && <LabeledInput editorTarget="meta-photo-credit" label="Feature photo credit" value={doc.meta.photoCredit ?? ''} onChange={v => update(d => {d.meta.photoCredit=v;})} />}
       {board && <LabeledInput editorTarget="fm-contact" label="Publication contact / website" value={content.contact} onChange={v => field('contact',v)} />}

@@ -86,7 +86,7 @@ describe('PlacedImages', () => {
     let captured=false;Object.defineProperty(image,'setPointerCapture',{value:()=>{captured=true;}});
     const button=host.querySelector<HTMLButtonElement>('.placed-image-draw')!;
     act(()=>{button.dispatchEvent(pointerEvent('pointerdown',20,20));button.click();});
-    expect(captured).toBe(false);expect(host.querySelector('[aria-label="Draw image border on canvas"]')).not.toBeNull();
+    expect(captured).toBe(false);expect(host.querySelector('[aria-label="Edit polygon points"]')).not.toBeNull();
     expect(useDoc.temporal.getState().pastStates).toHaveLength(0);
     act(()=>document.querySelector<HTMLButtonElement>('.canvas-outline-apply')!.click());
     expect(useDoc.getState().doc.images[0].wrapShape).toBe('polygon');
@@ -148,8 +148,8 @@ describe('PlacedImages', () => {
     act(()=>root.render(<PlacedImages doc={doc} pageIndex={0} readOnly/>));
     const figure=host.querySelector<HTMLElement>('.placed-image')!;
     expect(figure.classList.contains('placed-image--polygon')).toBe(true);
-    expect(parseFloat(figure.style.getPropertyValue('--placed-polygon-tail'))).toBeCloseTo(20);
-    expect(figure.style.getPropertyValue('--placed-contour-clip')).toContain('100% 80%');
+    expect(parseFloat(figure.style.getPropertyValue('--placed-polygon-tail'))).toBe(0);
+    expect(figure.style.getPropertyValue('--placed-contour-clip')).toBe('');
     expect(figure.querySelector('.placed-image-frame figcaption')).toBeNull();
     expect(figure.querySelector(':scope > figcaption')?.textContent).toBe('Protected caption');
     expect(doc.images[0].wrapPolygon![2].y).toBe(80);

@@ -453,7 +453,7 @@ export function cloneIssuePages(containers: readonly HTMLElement[], targetDocume
  * export uses, so an article's pages in the issue PDF and the same article's
  * own PDF come out of identical code reading identical DOM.
  */
-export async function exportIssuePdf(title: string, root: HTMLElement, size: PdfPageSize = 'a4') {
+export async function exportIssuePdf(title: string, root: HTMLElement, size: PdfPageSize = 'a4', bleedMm = 0) {
   await waitForPreviewResources(root);
   const containers = issuePageContainers(root);
   const sheets = containers.flatMap(container => Array.from(container.children).filter(
@@ -519,7 +519,8 @@ export async function exportIssuePdf(title: string, root: HTMLElement, size: Pdf
     await waitForFonts(printDocument);
     await Promise.all(Array.from(printDocument.images).map(waitForImage));
     await compositePrintHeroFades(printDocument);
-    fitPdfSheets(printDocument, size);
+    fitPdfSheets(printDocument, size, bleedMm);
+    if(bleedMm)await Promise.all(Array.from(printDocument.images).map(waitForImage));
     await nextPaint(printWindow);
     await nextPaint(printWindow);
 

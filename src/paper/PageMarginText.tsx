@@ -5,15 +5,17 @@ import { fontStack } from '../lib/fonts';
 import { barStartsRight } from '../lib/barSide';
 import { marginTextSettings, pageMarginText } from '../lib/pageMarginText';
 import { requestEditorTargetFocus } from '../lib/editorNavigation';
+import {useMarginTextDrag} from './useMarginTextDrag';
 
 /** Out of flow, so credits never change column geometry or pagination.
  * Real text and inline physical units survive standalone/compiled exports. */
 export function PageMarginText({ doc, index }: { doc: Doc; index: number }) {
   const text = pageMarginText(doc, index);
-  if (!text) return null;
   const settings = marginTextSettings(doc);
   // Use the same physical-page rule as TagBar, including issue-assigned starts.
   const right = barStartsRight(doc.design.barSide, index);
+  const drag=useMarginTextDrag(doc,right);
+  if (!text) return null;
   const railStyle: CSSProperties = {
     position: 'absolute', zIndex: 21, margin: 0, padding: 0,
     left: right ? 'auto' : `${settings.edgeOffset}mm`,
@@ -29,14 +31,15 @@ export function PageMarginText({ doc, index }: { doc: Doc; index: number }) {
     whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
     fontFamily: fontStack(settings.fontFamily), fontSize: `${settings.fontSize}pt`,
     fontWeight: 400, fontStyle: 'normal', lineHeight: 1.2, letterSpacing: '0.02em',
-    textAlign: 'start', textTransform: 'none',
+    textAlign: 'start', textTransform: 'none',touchAction:drag.readOnly?undefined:'none',cursor:drag.readOnly?undefined:'grab',
     color: settings.color ?? 'color-mix(in srgb, var(--paper-ink, #111) 65%, var(--paper-bg, #fff))',
   };
   return <div className="page-margin-rail" style={railStyle}>
     <div className="page-margin-text" style={style} dir="auto"
       data-editor-tab="design" data-editor-target={`page-margin-text-${index + 1}`}
-      onClick={() => requestEditorTargetFocus('design', `page-margin-text-${index + 1}`)}
-      title="Edit page margin text">{text}</div>
+      onPointerDown={drag.onPointerDown}
+      onClick={(event) => {if(drag.consumeClick()){event.stopPropagation();return;}requestEditorTargetFocus('design', `page-margin-text-${index + 1}`);}}
+      title={drag.readOnly?undefined:'Drag to position side text · click to edit · Escape cancels'}>{text}</div>
     {/* Only the spacer shrinks at the top boundary, never the credit itself.
         CSS handles font changes and print without screen-space measurement. */}
     <div aria-hidden="true" className="page-margin-offset" style={{ height: `${settings.bottomOffset}mm`, flex: '0 1 auto', minHeight: 0 }} />

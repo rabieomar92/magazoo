@@ -3,6 +3,18 @@ import { cloneIssuePages, clonePages } from './pdfExport';
 import { fitPdfSheets, PDF_PAGE_SIZES, pdfPageDimensions, pdfSheetGeometry } from './pdfPageSize';
 
 describe('PDF output sheet fitting', () => {
+  it.each([0,3,5])('adds %s mm bleed outside vendor B5 without moving text within trim',bleed=>{
+    const source=document.createElement('div');source.innerHTML='<div class="page" data-page-width-mm="182" data-page-height-mm="258"><p>Unscaled text</p><img src="/photo.png"/></div>';
+    const output=document.implementation.createHTMLDocument();clonePages(source,output);fitPdfSheets(output,'vendor-b5',bleed);
+    expect(output.head.textContent).toContain(`size: ${182+2*bleed}mm ${258+2*bleed}mm`);
+    const page=output.querySelector<HTMLElement>('.pdf-export-page')!;
+    expect(page.style.getPropertyValue('--pdf-fit-scale')).toBe('1');
+    expect(page.style.getPropertyValue('--pdf-fit-left')).toBe(`${bleed}mm`);
+    expect(page.textContent).toBe('Unscaled text');
+    expect(output.querySelectorAll('.pdf-export-page')).toHaveLength(1);
+    const duplicate=output.querySelector<HTMLElement>('.pdf-bleed-artwork');
+    if(duplicate){expect(duplicate.textContent).toBe('Unscaled text');expect(duplicate.querySelector('p span')?.getAttribute('style')).toContain('visibility: hidden');}
+  });
   it('prints native portrait JIS B5 at 100% without margins or rescaling', () => {
     expect(pdfSheetGeometry('jis-b5',257,182)).toEqual({width:182,height:257,scale:1,left:0,top:0});
   });

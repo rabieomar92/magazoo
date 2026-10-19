@@ -362,3 +362,10 @@
 .issue-external-pdf-loading { padding:24px; color:var(--ink-2); background:#fff; }
 .issue-proof-offstage { position:fixed; left:-20000px; top:0; width:900px; visibility:hidden; pointer-events:none; }
 @media(max-width:420px) { .issue-binding-row { flex-wrap:wrap; gap:8px; padding:12px 0; } .issue-binding-row .issue-binding-result { margin-left:34px; } }
+.issue-order-visual li { position:relative; }
+.issue-picture-picker { width:100%; min-width:0; color:var(--ink-2); }
+.issue-picture-inline { display:flex; align-items:center; gap:10px; }
+.studio .issue-picture-inline select { flex:1; min-width:0; height:30px; padding:3px 6px; border:0; border-bottom:1px solid var(--border,#dce1eb); border-radius:0; background:transparent; font-size:11px; }
+.issue-picture-inline label { display:flex; align-items:center; gap:4px; white-space:nowrap; font-size:11px; }
+.issue-picture-picker p { height:16px; margin:4px 0 0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:10px; line-height:16px; }
+.issue-picture-warning { color:#935513; }

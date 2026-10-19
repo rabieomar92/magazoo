@@ -7,6 +7,8 @@ import {pageDimensions} from '../lib/pageFormat';
 import {MAG2_STRIP} from '../lib/magSplit';
 import {currentDocumentSession,useDoc} from '../store/useDoc';
 import '../styles/canvas-image-pan.css';
+import {CanvasPhotoCrop} from './CanvasPhotoCrop';
+import {cropClip} from '../lib/imageCrop';
 
 type Target={kind:'hero'|'cover';id?:never}|{kind:'image';id:string};
 type Candidate={image:HTMLImageElement;frame:HTMLElement;target:Target};
@@ -24,6 +26,8 @@ const frameOf=(doc:Doc,target:Target)=>target.kind==='image'?doc.images.find(ite
  * contour stay still. A draft does not paginate/autosave until Apply. */
 export function CanvasImagePanning({doc,root}:{doc:Doc;root:RefObject<HTMLDivElement|null>}){
   const[candidates,setCandidates]=useState<Candidate[]>([]),[active,setActive]=useState<Candidate|null>(null);
+  const[cropping,setCropping]=useState<Candidate|null>(null);
+  useEffect(()=>setCropping(null),[doc]);
   const draft=useRef<{candidate:Candidate;style:string;freePan:string|null;panX:number;panY:number;session:number;doc:Doc}|null>(null);
   const drag=useRef<{id:number;x:number;y:number;width:number;height:number;zoom:number;left:number;top:number;panX:number;panY:number}|null>(null);
   const applyRef=useRef<HTMLButtonElement>(null);
@@ -63,6 +67,8 @@ export function CanvasImagePanning({doc,root}:{doc:Doc;root:RefObject<HTMLDivEle
     current.panX=imagePan(state.panX+dx*100);current.panY=imagePan(state.panY+dy*100);
     current.candidate.image.style.left=`${state.left+(current.panX-state.panX)/100*state.width/state.zoom}px`;
     current.candidate.image.style.top=`${state.top+(current.panY-state.panY)/100*state.height/state.zoom}px`;
+    const crop=frameOf(doc,current.candidate.target)?.crop;
+    if(crop)current.candidate.image.style.clipPath=cropClip(crop,state.width/state.zoom,state.height/state.zoom,parseFloat(current.candidate.image.style.left),parseFloat(current.candidate.image.style.top));
   };
   const apply=()=>{
     const state=draft.current;if(!state)return;
@@ -74,6 +80,8 @@ export function CanvasImagePanning({doc,root}:{doc:Doc;root:RefObject<HTMLDivEle
     });
   };
   return <>{candidates.map((candidate,index)=>createPortal(<button type="button" className="canvas-pan-trigger" data-editor-only="true" aria-label={candidate.target.kind==='image'?'Pan page image on canvas':'Pan hero image on canvas'} onPointerDown={event=>event.stopPropagation()} onClick={event=>{event.stopPropagation();open(candidate);}}>Pan photo</button>,candidate.target.kind==='image'?candidate.frame.parentElement?.querySelector('.placed-image-tools')??candidate.frame:candidate.frame,String(index)))}
+    {candidates.filter(c=>c.image.classList.contains('framed-image')).map((candidate,index)=>createPortal(<button type="button" className="canvas-pan-trigger canvas-crop-trigger" data-editor-only="true" onPointerDown={e=>e.stopPropagation()} onClick={e=>{e.stopPropagation();cancel();setCropping(candidate);}}>Crop photo</button>,candidate.target.kind==='image'?candidate.frame.parentElement?.querySelector('.placed-image-tools')??candidate.frame:candidate.frame,`crop-${index}`))}
+    {cropping&&<CanvasPhotoCrop image={cropping.image} frame={frameOf(doc,cropping.target)} onCancel={()=>setCropping(null)} onApply={frame=>{const target=cropping.target;setCropping(null);useDoc.getState().update(current=>{if(target.kind==='image'){const item=current.images.find(i=>i.id===target.id);if(item)item.frame=frame;}else Object.assign(current[target.kind]!,frame);});}}/>}
     {active&&createPortal(<div className="canvas-pan-surface" data-editor-only="true" role="group" aria-label="Drag photograph inside its frame" onPointerDown={down} onPointerMove={move} onPointerUp={event=>{move(event);drag.current=null;}} onPointerCancel={cancel} onLostPointerCapture={()=>{drag.current=null;}}/>,active.frame)}
     {active&&createPortal(<section className="canvas-pan-toolbar" role="dialog" aria-label="Pan photograph" data-editor-only="true"><div><strong>Reposition photograph</strong><span>Drag the photo on the page. Its frame and text boundary stay fixed.</span></div><button type="button" onClick={cancel}>Cancel</button><button ref={applyRef} type="button" onClick={apply}>Apply position</button></section>,document.body)}</>;
 }

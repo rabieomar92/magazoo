@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react';
-import { CONTENTS_ID, issueDocumentLabel, issueHero, reorderIssue, type IssueAssignment, type IssueItem, type IssuePlan } from './model';
+import { CONTENTS_ID, issueDocumentLabel, issueHero, issueHeroChoices, reorderIssue, type IssueAssignment, type IssueItem, type IssuePlan } from './model';
+import {ContentsPicturePicker} from './ContentsPicturePicker';
 import { IssueBindingCheck } from './IssueBindingCheck';
 
 export function IssueOrder({ plan, items, assignments, disabled, onChange, visual = false, onRemovePdf }: {
@@ -11,6 +12,7 @@ export function IssueOrder({ plan, items, assignments, disabled, onChange, visua
   const [drag, setDrag] = useState<{ id: string; over: string } | null>(null);
   const [keyboard, setKeyboard] = useState<{ id: string; original: string[] } | null>(null);
   const [announcement, setAnnouncement] = useState('');
+  const suppressPictureClick=useRef(false);
   useEffect(() => () => cleanup.current(), []);
   const byId = new Map(items.map(item => [item.id, item]));
   const move = (id: string, delta: number) => {
@@ -23,6 +25,7 @@ export function IssueOrder({ plan, items, assignments, disabled, onChange, visua
   const pointerStart = (event: PointerEvent<HTMLButtonElement>, id: string) => {
     if (disabled || event.button !== 0 || keyboard) return;
     event.preventDefault();
+    suppressPictureClick.current=false;
     cleanup.current();
     const button = event.currentTarget;
     // The canvas/inspector owns scrolling; the card list must not create a
@@ -86,7 +89,7 @@ export function IssueOrder({ plan, items, assignments, disabled, onChange, visua
       }
       frame = requestAnimationFrame(scroll);
     };
-    const update = (e: globalThis.PointerEvent) => { x = e.clientX; hit(e.clientX, e.clientY); };
+    const update = (e: globalThis.PointerEvent) => { if(Math.hypot(e.clientX-event.clientX,e.clientY-event.clientY)>4)suppressPictureClick.current=true; x = e.clientX; hit(e.clientX, e.clientY); };
     const stop = (settle = false) => {
       cancelAnimationFrame(frame);
       window.removeEventListener('pointermove', update);
@@ -151,10 +154,12 @@ export function IssueOrder({ plan, items, assignments, disabled, onChange, visua
         const title = contents ? plan.contentsTitle || 'Contents' : item?.doc.meta.title || item?.name || 'Untitled';
         const pages = row ? row.counted ? (row.pageCount === 1 ? `${row.startNumber}` : `${row.startNumber}–${row.startNumber + row.pageCount - 1}`) : 'Cover' : '…';
         const selected = !plan.contentsExcluded.includes(id);
-        const thumbnail = item ? issueHero(item.doc) : undefined;
+        const pictureStyle=plan.contentsStyle?.[id];
+        const thumbnail = item ? pictureStyle?.assetId ? item.doc.assets[pictureStyle.assetId] : issueHero(item.doc) : undefined;
         const kind = contents ? 'Contents' : item?.externalPdf ? 'Imported PDF' : item ? issueDocumentLabel(item.doc) : 'Document';
         return <li key={id} data-issue-order-id={id} className={`${contents ? 'issue-order-contents' : ''}${drag?.id === id || keyboard?.id === id ? ' is-grabbed' : ''}${drag?.over === id && drag.id !== id ? ' is-drop-target' : ''}`}>
-          <button type="button" className="issue-grip" aria-label={`Move ${contents ? 'contents spread' : item?.name}`} aria-describedby={visual ? 'canvas-drag-help' : 'issue-drag-help'} aria-pressed={drag?.id === id || keyboard?.id === id} disabled={disabled} onPointerDown={e => pointerStart(e, id)} onKeyDown={e => keyMove(e, id)}>{visual ? <><span className="issue-seat-number">{String(index + 1).padStart(2, '0')}</span><span className="issue-order-thumb">{thumbnail?.src ? <img src={thumbnail.src} alt="" draggable={false} loading="lazy" decoding="async" /> : <span>{kind}</span>}</span></> : <svg width="16" height="24" viewBox="0 0 16 24" aria-hidden="true">{[5, 12, 19].flatMap(y => [5, 11].map(x => <circle key={`${x}-${y}`} cx={x} cy={y} r="1.5" fill="currentColor" />))}</svg>}</button>
+          <button type="button" className="issue-grip" aria-label={`Move ${contents ? 'contents spread' : item?.name}`} aria-describedby={visual ? 'canvas-drag-help' : 'issue-drag-help'} aria-pressed={drag?.id === id || keyboard?.id === id} disabled={disabled} onPointerDown={e => pointerStart(e, id)} onClick={()=>{if(visual&&item&&!item.externalPdf&&!suppressPictureClick.current){const choices=issueHeroChoices(item.doc);if(choices.length>1){const current=choices.findIndex(choice=>choice.id===(plan.contentsStyle?.[id]?.assetId??choices[0]?.id));onChange({...plan,contentsStyle:{...plan.contentsStyle,[id]:{...plan.contentsStyle?.[id],assetId:choices[(current+1)%choices.length].id,hero:true,frame:undefined}}});}}}} onKeyDown={e => keyMove(e, id)}>{visual ? <><span className="issue-seat-number">{String(index + 1).padStart(2, '0')}</span><span className="issue-order-thumb">{thumbnail?.src ? <img src={thumbnail.src} alt="" draggable={false} loading="lazy" decoding="async" /> : <span>{kind}</span>}</span></> : <svg width="16" height="24" viewBox="0 0 16 24" aria-hidden="true">{[5, 12, 19].flatMap(y => [5, 11].map(x => <circle key={`${x}-${y}`} cx={x} cy={y} r="1.5" fill="currentColor" />))}</svg>}</button>
+          {visual&&item&&!item.externalPdf&&<ContentsPicturePicker item={item} plan={plan} disabled={disabled} onChange={onChange}/>}
           <div className="issue-order-copy">{visual && <span className="issue-order-kind">{kind}</span>}<span className="issue-order-type">{contents ? 'Generated · 2-page contents' : `${index + 1} · ${item?.name}`}</span><strong dir="auto">{title}</strong><small>{contents ? 'Titles, subtitles & photographs update from your articles' : row ? `${row.pageCount} physical ${row.pageCount === 1 ? 'page' : 'pages'}` : 'Measuring pages…'}</small>
             {!contents && <label className="issue-toc-check"><input type="checkbox" checked={selected} disabled={disabled} onChange={() => onChange({ ...plan, contentsExcluded: selected ? [...plan.contentsExcluded, id] : plan.contentsExcluded.filter(excluded => excluded !== id) })} />List in contents</label>}
           </div>

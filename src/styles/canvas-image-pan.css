@@ -10,3 +10,6 @@
 .canvas-pan-toolbar button:last-child{background:#5145d9;border-color:#5145d9;color:white;}
 @media(max-width:600px){.canvas-pan-toolbar{flex-wrap:wrap;bottom:12px;}.canvas-pan-toolbar>div{flex-basis:100%;}.canvas-pan-trigger{opacity:1;}}
 @media print{.canvas-pan-trigger,.canvas-pan-surface,.canvas-pan-toolbar{display:none!important;}}
+.canvas-pan-trigger{cursor:pointer}
+.canvas-crop-trigger{top:48px}
+[data-cropping=true]>.canvas-pan-trigger{display:none}
