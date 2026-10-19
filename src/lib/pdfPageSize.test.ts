@@ -159,6 +159,9 @@ describe('PDF output sheet fitting', () => {
     const marks=output.querySelector('.pdf-crop-marks')!;
     expect(marks.getAttribute('viewBox')).toBe(`0 0 ${trim.width+10} ${trim.height+10}`);
     expect(marks.querySelectorAll('line')).toHaveLength(8);
+    expect((marks as SVGElement).style.zIndex).toBe('1');
+    expect(marks.querySelector('path')?.getAttribute('stroke')).toBe('#fff');
+    expect(marks.querySelector('path')?.getAttribute('stroke-width')).toBe('.35');
     expect(marks.querySelector('line')!.getAttribute('x1')).toBe('5');
     expect(marks.querySelector('line')!.getAttribute('y2')).toBe('4.5');
     expect(output.querySelectorAll('.pdf-bleed-strip')).toHaveLength(8);

@@ -31,3 +31,4 @@
 .placed-image:has([data-cropping=true])>.canvas-height-handle{display:none}
 .canvas-outline-tools,.canvas-outline-tools button,.canvas-outline-tools input,.canvas-outline-tools select{border-radius:0}
 .canvas-outline-tools select{padding:5px;border:1px solid #cbd5e1;background:white;color:#243247}
+.page>.canvas-crop-surface{position:absolute;inset:0;height:100%;z-index:30}

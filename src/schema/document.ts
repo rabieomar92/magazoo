@@ -507,6 +507,8 @@ export interface Design {
    * sheets alternate relative to this base side.
    */
   barSide?: 'left' | 'right';
+  /** Keep the outer edge of the masthead box on the text margin on either side. */
+  mastheadAlignMargin?: boolean;
   /** Physical distance from the page's top trim edge to the top bar, in mm. */
   topBarOffset?: number;
   /** Physical side of the split/inset hero in Paper 2 and Inset Research.

@@ -258,7 +258,8 @@
 @media screen {
   .placed-image-tools {
     position:absolute; z-index:3; left:50%; top:calc(var(--placed-image-h) * .5);
-    display:flex; align-items:center; gap:4px; white-space:nowrap; padding:3px;
+    display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:4px; white-space:normal; padding:4px;
+    box-sizing:border-box; width:max-content; max-width:min(420px,calc(100vw - 32px));
     border:1px solid #c7d2fe; border-radius:9px; background:#fff;
     box-shadow:0 2px 9px #0f172a26; pointer-events:auto;
     transform:translate(-50%,-50%) scale(var(--canvas-control-scale,1));

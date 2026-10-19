@@ -17,6 +17,7 @@ export function TopBarSection({complete=false}:{complete?:boolean}) {
       <LabeledInput label="Issue / date" editorTarget="meta-volume" value={doc.meta.volume??''} onChange={value=>update(d=>{d.meta.volume=value;d.meta.volumeMode='custom';})}/>
       {projectName && <button type="button" disabled={doc.meta.volumeMode==='project'} onClick={()=>update(d=>{d.meta.volume=projectName;d.meta.volumeMode='project';})}>Use project name</button>}
       <SegmentField label="First masthead side" value={doc.design.barSide??'left'} options={[{value:'left',label:'Left'},{value:'right',label:'Right'}]} onChange={value=>update(d=>{d.design.barSide=value;})}/>
+      <Toggle label="Align masthead box to text margin" checked={doc.design.mastheadAlignMargin!==false} onChange={value=>update(d=>{d.design.mastheadAlignMargin=value;})}/>
       <LabeledNumber label="Distance from top edge" unit="mm" min={0} max={40} step={.5} value={doc.design.topBarOffset??DEFAULT_TOP_BAR_OFFSET} onChange={value=>update(d=>{d.design.topBarOffset=value;})}/>
       <LabeledColor label="Bar line" value={doc.design.barColor??'#111418'} onChange={value=>update(d=>{d.design.barColor=value;})}/>
       <LabeledColor label="Masthead background" value={doc.design.barTagColor??'#bfbfbf'} onChange={value=>update(d=>{d.design.barTagColor=value;})}/>

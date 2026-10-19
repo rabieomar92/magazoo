@@ -38,7 +38,9 @@ export function TagBar({
           : undefined
       }
     >
-      <span className="tag-bar-mark" style={doc.design.bleedCanvas ? {width:`calc(var(--bar-h, 6mm) + ${documentBleed(doc.design.bleedMm)}mm)`} : undefined} />
+      <span className="tag-bar-mark" style={doc.design.mastheadAlignMargin!==false
+        ? {width:'var(--margin)',minWidth:`${doc.design.bleedCanvas?documentBleed(doc.design.bleedMm):0}mm`}
+        : doc.design.bleedCanvas ? {width:`calc(var(--bar-h, 6mm) + ${documentBleed(doc.design.bleedMm)}mm)`} : undefined} />
       {/* Hugs its text: a longer tag simply lengthens the block and eats into
           the rule beside it. */}
       {topBarText && (

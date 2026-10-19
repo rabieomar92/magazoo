@@ -56,12 +56,12 @@ export function fitPdfSheets(doc: Document, size: PdfPageSize, bleedMm = 0, crop
     html, body { width: ${width}mm !important; min-width: ${width}mm !important; }
     .pdf-export-sheet { position: relative !important; box-sizing: border-box !important;
       width: ${width}mm !important; height: ${height}mm !important; margin: 0 !important;
-      padding: 0 !important; overflow: hidden !important;
+      padding: 0 !important; overflow: hidden !important; isolation: isolate !important;
       break-inside: avoid !important; page-break-inside: avoid !important;
       print-color-adjust: exact !important; -webkit-print-color-adjust: exact !important; }
     .pdf-export-sheet > .pdf-export-page { position: absolute !important;
       left: var(--pdf-fit-left) !important; top: var(--pdf-fit-top) !important; right: auto !important; bottom: auto !important;
-      transform: scale(var(--pdf-fit-scale)) !important; transform-origin: top left !important;
+      transform: scale(var(--pdf-fit-scale)) !important; transform-origin: top left !important; z-index: 0 !important;
       break-after: auto !important; page-break-after: auto !important; }
     .pdf-bleed-artwork, .pdf-bleed-artwork * { color: transparent !important; text-shadow: none !important; }
     .pdf-bleed-artwork::before,.pdf-bleed-artwork::after,.pdf-bleed-artwork *::before,.pdf-bleed-artwork *::after { color: transparent !important; text-shadow:none !important; }
@@ -137,8 +137,15 @@ export function fitPdfSheets(doc: Document, size: PdfPageSize, bleedMm = 0, crop
       const marks=doc.createElementNS('http://www.w3.org/2000/svg','svg');
       marks.classList.add('pdf-crop-marks');marks.setAttribute('aria-hidden','true');
       marks.setAttribute('viewBox',`0 0 ${width} ${height}`);
-      Object.assign(marks.style,{position:'absolute',inset:'0',width:`${width}mm`,height:`${height}mm`,pointerEvents:'none'});
+      // A positioned/high-z-index cover used to paint above this SVG. Keep
+      // marks in their own final layer, with a fine white knockout so black
+      // ticks remain legible over dark photographs as well as white paper.
+      Object.assign(marks.style,{position:'absolute',inset:'0',width:`${width}mm`,height:`${height}mm`,pointerEvents:'none',zIndex:'1',display:'block',visibility:'visible',opacity:'1'});
       const segments=cropMarkSegments(expected.width,expected.height,bleedMm);
+      const halo=doc.createElementNS(marks.namespaceURI,'path');
+      halo.setAttribute('d',segments.map(([x1,y1,x2,y2])=>`M ${x1} ${y1} L ${x2} ${y2}`).join(' '));
+      halo.setAttribute('stroke','#fff');halo.setAttribute('stroke-width','.35');halo.setAttribute('fill','none');
+      marks.append(halo);
       for(const [x1,y1,x2,y2] of segments){const line=doc.createElementNS(marks.namespaceURI,'line');for(const [key,value]of Object.entries({x1,y1,x2,y2,stroke:'#000','stroke-width':.0882}))line.setAttribute(key,String(value));marks.append(line);}
       sheet.append(marks);
     }

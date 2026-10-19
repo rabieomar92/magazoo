@@ -5,6 +5,7 @@ import {canvasElementControls,canvasTextTarget,type ElementControl} from '../lib
 import {currentDocumentSession,useDoc} from '../store/useDoc';
 import {textStyleSelector} from '../lib/textStyles';
 import '../styles/canvas-element-handles.css';
+import {canvasToolbarPosition} from '../lib/canvasToolbarPosition';
 
 type Selection={element:HTMLElement;key?:string;page?:number};
 type Gesture={control:ElementControl;element:HTMLElement;pointer:number;x:number;y:number;scale:number;leading:number;next:number;session:number;doc:Doc;style:string;moved:boolean};
@@ -12,6 +13,13 @@ type Gesture={control:ElementControl;element:HTMLElement;pointer:number;x:number
 export function CanvasElementHandles({doc,root}:{doc:Doc;root:RefObject<HTMLDivElement|null>}){
  const [selection,setSelection]=useState<Selection|null>(null),[box,setBox]=useState<DOMRect|null>(null),[draft,setDraft]=useState<string>('');
  const gesture=useRef<Gesture|null>(null);
+ const tools=useRef<HTMLDivElement|null>(null);
+ const [toolPosition,setToolPosition]=useState({left:12,top:12});
+ useLayoutEffect(()=>{
+  if(!box||!tools.current)return;
+  const measure=()=>{const r=tools.current!.getBoundingClientRect();const next=canvasToolbarPosition(box,r.width,r.height,window.innerWidth,window.innerHeight);setToolPosition(old=>old.left===next.left&&old.top===next.top?old:next);};
+  measure();const observer=new ResizeObserver(measure);observer.observe(tools.current);window.addEventListener('resize',measure);return()=>{observer.disconnect();window.removeEventListener('resize',measure);};
+ },[box,doc]);
  const cancel=()=>{const state=gesture.current;if(state)state.element.style.cssText=state.style;gesture.current=null;setDraft('');};
  useEffect(()=>{
   const choose=(event:MouseEvent)=>{
@@ -56,7 +64,7 @@ export function CanvasElementHandles({doc,root}:{doc:Doc;root:RefObject<HTMLDivE
   cancel();if(commit)useDoc.getState().update(d=>state.control.save(d,state.next));
  };
  return createPortal(<div className="canvas-element-outline" data-editor-only="true" style={{left:box.left,top:box.top,width:box.width,height:box.height}}>
-  <div className="canvas-element-tools" role="group" aria-label="Selected element drag handles" style={box.bottom+70>window.innerHeight?{top:'auto',bottom:'100%',paddingBottom:6}:undefined}>
+  <div ref={tools} className="canvas-element-tools" role="group" aria-label="Selected element drag handles" style={toolPosition}>
    {controls.map(control=><button key={control.id} data-drag-axis={control.axis} type="button" aria-label={`Drag ${control.label.toLowerCase()}`} title={`${control.label}: ${control.value.toFixed(2)} ${control.unit} · drag ${control.axis==='x'?'horizontally':'vertically'} · arrows fine-tune · Escape cancels`} onPointerDown={e=>begin(e,control)} onPointerMove={event=>{
     const state=gesture.current;if(!state||state.pointer!==event.pointerId)return;
     const control=state.control;
