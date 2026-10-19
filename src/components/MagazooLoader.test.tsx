@@ -18,13 +18,11 @@ afterEach(() => {
   host.remove();
 });
 
-it('renders one animal-free lettering layer and eight independently moving characters', () => {
+it('keeps the original illustrated logo intact without walking sprite layers', () => {
   act(() => root.render(<MagazooLoader label="Preparing pages" />));
-  expect(host.querySelectorAll('.magazoo-loader-base')).toHaveLength(1);
-  expect(host.querySelector('.magazoo-loader-base')?.getAttribute('href')).toContain('magazoo-letters.png');
-  expect(host.querySelectorAll('.magazoo-loader-animal')).toHaveLength(8);
-  expect(host.querySelectorAll('.magazoo-animal-gait')).toHaveLength(8);
-  expect([...host.querySelectorAll('.magazoo-animal-gait')].every(frame => frame.getAttribute('href')?.includes('magazoo-animals.png'))).toBe(true);
+  expect(host.querySelectorAll('.magazoo-loader-mark')).toHaveLength(1);
+  expect(host.querySelector('.magazoo-loader-mark')?.getAttribute('src')).toContain('magazoo-mark.png');
+  expect(host.querySelector('.magazoo-loader-animal,.magazoo-animal-gait')).toBeNull();
   expect(host.querySelector('mask,use')).toBeNull();
   expect(host.querySelector('.magazoo-loader-shine')).toBeNull();
   expect(host.querySelector('[role="progressbar"]')).toBeNull();

@@ -115,7 +115,7 @@ describe('freeform page-image controls', () => {
     const svg=host.querySelector<SVGSVGElement>('[aria-label="Edit polygon points"]')!;
     svg.getBoundingClientRect=()=>({x:0,y:0,left:0,top:0,width:100,height:100,right:100,bottom:100,toJSON(){}});
     const pointer=(type:string,x:number,y:number)=>{const event=new MouseEvent(type,{bubbles:true,button:0,clientX:x,clientY:y});Object.defineProperty(event,'pointerId',{value:5});svg.dispatchEvent(event);};
-    act(()=>svg.querySelector('circle')!.dispatchEvent(Object.assign(new MouseEvent('pointerdown',{bubbles:true,button:0,clientX:0,clientY:0}),{pointerId:5})));
+    act(()=>svg.querySelector('[data-vertex]')!.dispatchEvent(Object.assign(new MouseEvent('pointerdown',{bubbles:true,button:0,clientX:0,clientY:0}),{pointerId:5})));
     act(()=>pointer('pointermove',20,10));
     act(()=>pointer('pointerup',20,10));
     expect(useDoc.getState().doc.images[0].wrapPolygon).toBeUndefined();

@@ -1,9 +1,12 @@
 import { CONTENTS_ID, type IssuePlan } from './model';
+import {decodeIssuePdf} from './externalPdfData';
 
 /** Restore by filename: uploading articles creates new database identifiers. */
 export function restoreArrangement(value: unknown, current: readonly {id:string;name:string}[]): IssuePlan {
   const saved = value as {plan?:IssuePlan;items?:{id:string;name:string}[]};
   if (!saved?.plan || !Array.isArray(saved.items) || !Array.isArray(saved.plan.order) || !Array.isArray(saved.plan.contentsExcluded)) throw new Error('This file does not contain a saved issue arrangement.');
+  if(saved.plan.externalPdfs!==undefined&&!Array.isArray(saved.plan.externalPdfs))throw new Error('The backup has an invalid imported PDF list.');
+  for(const pdf of saved.plan.externalPdfs??[])decodeIssuePdf(pdf?.src);
   const pdfIds = new Set((saved.plan.externalPdfs??[]).map(pdf=>pdf.id));
   const articles = current.filter(item=>!item.id.startsWith('pdf-'));
   const savedArticles = saved.items.filter(item=>!pdfIds.has(item.id));

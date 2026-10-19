@@ -6,13 +6,14 @@ interface PublicationPrint {
   size: PdfPageSize;
   issue?: boolean;
   bleedMm?: number;
+  cropMarks?: boolean;
   shortcut: () => void;
 }
 
 /** Ctrl/Command+P uses the asynchronous, resource-checked export. Browser-menu
  * Print gets the same page clones synchronously via beforeprint; if its source
  * is not ready, print a clear instruction instead of stale/clipped artwork. */
-export function registerPublicationPrint({ source, size, issue = false, shortcut,bleedMm=0 }: PublicationPrint) {
+export function registerPublicationPrint({ source, size, issue = false, shortcut,bleedMm=0,cropMarks=false }: PublicationPrint) {
   const roots: HTMLElement[] = [];
   let style: HTMLStyleElement | null = null;
   const cleanup = () => {
@@ -68,7 +69,7 @@ export function registerPublicationPrint({ source, size, issue = false, shortcut
         sheet.style.setProperty('page-break-after', index === printed.length - 1 ? 'auto' : 'always', 'important');
       });
       // Operate on the clones only; the selected trim must already match.
-      const fitting = fitPdfSheets(document, size,bleedMm);
+      const fitting = fitPdfSheets(document, size,bleedMm,cropMarks);
       if (fitting) {
         style.textContent += `@media print { ${fitting.textContent} }`;
         fitting.remove();

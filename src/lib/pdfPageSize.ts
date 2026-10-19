@@ -36,7 +36,7 @@ export function pdfSheetGeometry(size: PdfPageSize, sourceHeight = 297, sourceWi
 
 /** Called only on the print clone, after author styles have loaded. Never
  * change editor geometry, pagination, source images, or the compiled proof. */
-export function fitPdfSheets(doc: Document, size: PdfPageSize, bleedMm = 0) {
+export function fitPdfSheets(doc: Document, size: PdfPageSize, bleedMm = 0, cropMarks = false) {
   if(!Number.isFinite(bleedMm)||bleedMm<0||bleedMm>10)throw new Error('Bleed must be between 0 and 10 mm per edge.');
   const pages = Array.from(doc.querySelectorAll<HTMLElement>('.pdf-export-page'));
   if (!pages.length) return;
@@ -45,8 +45,10 @@ export function fitPdfSheets(doc: Document, size: PdfPageSize, bleedMm = 0) {
   if (dimensions.some(page => page.width !== expected.width || page.height !== expected.height)) {
     throw new Error(`The ${expected.label} preview is not ready at ${expected.width} × ${expected.height} mm. Wait for the layout to update and try again; exporting a different canvas size would add borders or change its scale.`);
   }
-  if (!bleedMm && size === 'a4' && dimensions.every(page => page.width === 210 && page.height === 297)) return;
-  const width=expected.width+2*bleedMm,height=expected.height+2*bleedMm;
+  if (!bleedMm && !cropMarks && size === 'a4' && dimensions.every(page => page.width === 210 && page.height === 297)) return;
+  // A separate 6 mm white slug holds 4 mm marks, with a 1 mm gap from bleed.
+  const slug=cropMarks?6:0,offset=bleedMm+slug;
+  const width=expected.width+2*offset,height=expected.height+2*offset;
   const css = doc.createElement('style');
   css.textContent = `
     @page { size: ${width}mm ${height}mm; margin: 0; }
@@ -76,14 +78,19 @@ export function fitPdfSheets(doc: Document, size: PdfPageSize, bleedMm = 0) {
     // introducing a blank strip below its photograph. Scale/crop stay intact.
     const top = page.classList.contains('page--hero-bottom-bleed')
       ? Math.max(0, fit.height - source.height * fit.scale) : fit.top;
-    page.style.setProperty('--pdf-fit-left', `${fit.left+bleedMm}mm`);
-    page.style.setProperty('--pdf-fit-top', `${top+bleedMm}mm`);
+    page.style.setProperty('--pdf-fit-left', `${fit.left+offset}mm`);
+    page.style.setProperty('--pdf-fit-top', `${top+offset}mm`);
     page.style.setProperty('--pdf-fit-scale', String(fit.scale));
     const sheet = doc.createElement('div');
     sheet.className = 'pdf-export-sheet';
     sheet.dataset.paperSize = size;
     // Any aspect-ratio allowance should match dark/coloured paper too.
     sheet.style.backgroundColor = doc.defaultView?.getComputedStyle(page).backgroundColor ?? '#fff';
+    if(cropMarks){
+      const background=doc.createElement('div');
+      Object.assign(background.style,{position:'absolute',left:`${slug}mm`,top:`${slug}mm`,width:`${expected.width+2*bleedMm}mm`,height:`${expected.height+2*bleedMm}mm`,backgroundColor:sheet.style.backgroundColor});
+      sheet.style.backgroundColor='#fff';sheet.append(background);
+    }
     sheet.style.setProperty('break-after', index === pages.length - 1 ? 'auto' : 'page', 'important');
     sheet.style.setProperty('page-break-after', index === pages.length - 1 ? 'auto' : 'always', 'important');
     page.before(sheet);
@@ -118,13 +125,24 @@ export function fitPdfSheets(doc: Document, size: PdfPageSize, bleedMm = 0) {
       ];
       for(const region of regions){
         const strip=doc.createElement('div');strip.className='pdf-bleed-strip';strip.setAttribute('aria-hidden','true');
-        Object.assign(strip.style,{position:'absolute',left:`${region.x}mm`,top:`${region.y}mm`,width:`${region.sw}mm`,height:`${region.sh}mm`,overflow:'hidden',transformOrigin:'top left',transform:`scale(${region.scaleX},${region.scaleY})`,contain:'paint',pointerEvents:'none'});
+        Object.assign(strip.style,{position:'absolute',left:`${region.x+slug}mm`,top:`${region.y+slug}mm`,width:`${region.sw}mm`,height:`${region.sh}mm`,overflow:'hidden',transformOrigin:'top left',transform:`scale(${region.scaleX},${region.scaleY})`,contain:'paint',pointerEvents:'none'});
         const edge=artwork.cloneNode(true) as HTMLElement;
         edge.style.setProperty('left',`${-region.sx}mm`,'important');edge.style.setProperty('top',`${-region.sy}mm`,'important');
         strip.appendChild(edge);sheet.appendChild(strip);
       }
     }
     sheet.appendChild(page);
+    if(cropMarks){
+      const marks=doc.createElementNS('http://www.w3.org/2000/svg','svg');
+      marks.classList.add('pdf-crop-marks');marks.setAttribute('aria-hidden','true');
+      marks.setAttribute('viewBox',`0 0 ${width} ${height}`);
+      Object.assign(marks.style,{position:'absolute',inset:'0',width:`${width}mm`,height:`${height}mm`,pointerEvents:'none'});
+      const segments:number[][]=[];
+      for(const x of [offset,offset+expected.width])segments.push([x,1,x,5],[x,height-5,x,height-1]);
+      for(const y of [offset,offset+expected.height])segments.push([1,y,5,y],[width-5,y,width-1,y]);
+      for(const [x1,y1,x2,y2] of segments){const line=doc.createElementNS(marks.namespaceURI,'line');for(const [key,value]of Object.entries({x1,y1,x2,y2,stroke:'#000','stroke-width':.0882}))line.setAttribute(key,String(value));marks.append(line);}
+      sheet.append(marks);
+    }
     page.style.setProperty('box-sizing', 'border-box', 'important');
     page.style.setProperty('break-after', 'auto', 'important');
     page.style.setProperty('page-break-after', 'auto', 'important');

@@ -453,7 +453,7 @@ export function cloneIssuePages(containers: readonly HTMLElement[], targetDocume
  * export uses, so an article's pages in the issue PDF and the same article's
  * own PDF come out of identical code reading identical DOM.
  */
-export async function exportIssuePdf(title: string, root: HTMLElement, size: PdfPageSize = 'a4', bleedMm = 0) {
+export async function exportIssuePdf(title: string, root: HTMLElement, size: PdfPageSize = 'a4', print?: {bleedMm:number;cropMarks:boolean}) {
   await waitForPreviewResources(root);
   const containers = issuePageContainers(root);
   const sheets = containers.flatMap(container => Array.from(container.children).filter(
@@ -519,8 +519,8 @@ export async function exportIssuePdf(title: string, root: HTMLElement, size: Pdf
     await waitForFonts(printDocument);
     await Promise.all(Array.from(printDocument.images).map(waitForImage));
     await compositePrintHeroFades(printDocument);
-    fitPdfSheets(printDocument, size, bleedMm);
-    if(bleedMm)await Promise.all(Array.from(printDocument.images).map(waitForImage));
+    fitPdfSheets(printDocument, size,print?.bleedMm??0,print?.cropMarks??false);
+    if(print?.bleedMm)await Promise.all(Array.from(printDocument.images).map(waitForImage));
     await nextPaint(printWindow);
     await nextPaint(printWindow);
 
@@ -559,7 +559,7 @@ export async function waitForPreviewResources(source: HTMLElement) {
   }
 }
 
-export async function exportPreviewPdf(title: string, suppliedSource?: HTMLElement, size: PdfPageSize = 'a4') {
+export async function exportPreviewPdf(title: string, suppliedSource?: HTMLElement, size: PdfPageSize = 'a4',bleedMm=0,cropMarks=false) {
   const source = suppliedSource ?? document.querySelector<HTMLElement>('.pages');
   if (!source) throw new Error('The page preview is not ready yet.');
 
@@ -602,7 +602,8 @@ export async function exportPreviewPdf(title: string, suppliedSource?: HTMLEleme
     await waitForFonts(printDocument);
     await Promise.all(Array.from(printDocument.images).map(waitForImage));
     await compositePrintHeroFades(printDocument);
-    fitPdfSheets(printDocument, size);
+    fitPdfSheets(printDocument, size,bleedMm,cropMarks);
+    if(bleedMm)await Promise.all(Array.from(printDocument.images).map(waitForImage));
     await nextPaint(printWindow);
     await nextPaint(printWindow);
 

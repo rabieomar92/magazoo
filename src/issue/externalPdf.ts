@@ -1,6 +1,7 @@
 import type { ExternalIssuePdf } from './model';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+import {decodeIssuePdf} from './externalPdfData';
 
 export const MAX_PDF_BYTES = 8 * 1024 * 1024;
 export const MAX_PDF_PAGES = 20;
@@ -14,8 +15,7 @@ async function openPdf(src: string) {
   const base = `${import.meta.env.BASE_URL}pdfjs/`;
   // Decode the self-contained backup locally. Fetching a data: URL is blocked
   // by the production connect-src policy, even though image previews allow it.
-  const encoded = src.slice(src.indexOf(',') + 1);
-  const data = Uint8Array.from(atob(encoded), character => character.charCodeAt(0));
+  const data = decodeIssuePdf(src);
   const task = pdfjs.getDocument({ data,
     cMapUrl: `${base}cmaps/`, cMapPacked: true, standardFontDataUrl: `${base}standard_fonts/`, wasmUrl: `${base}wasm/` });
   task.onPassword = () => { void task.destroy(); };

@@ -19,3 +19,8 @@ it('restores original PDF bytes and vendor settings with stable PDF ids',()=>{
  expect(restored.order).toEqual(['new-b',pdf.id,'__contents__','new-a']);
  expect(restored.printSettings).toEqual(saved.plan.printSettings);
 });
+it('rejects truncated PDF data before replacing the existing arrangement',()=>{
+ const damaged={...backup,plan:{...plan,externalPdfs:[{id:'pdf-kept',src:'data:application/pdf;base64,JVBERi0[Truncated]'}]}};
+ expect(()=>restoreArrangement(damaged,backup.items)).toThrow('incomplete or damaged embedded PDF');
+ expect(backup.plan.order).toEqual(['old-b','__contents__','old-a']);
+});

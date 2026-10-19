@@ -24,6 +24,7 @@ import { releaseIssuePdf } from './externalPdf';
 import type { ExternalIssuePdf } from './model';
 import { IssuePrintBrief } from './IssuePrintBrief';
 import {CanvasNumericAdjust} from '../paper/CanvasNumericAdjust';
+import {documentBleed} from '../lib/documentBleed';
 
 /** What the compiled sheets are built from, and the only thing that can put
  * the proof out of date. Everything else an editor can change — wording,
@@ -259,7 +260,8 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
     setFinalizedPlan(finalizationKey);
     setNotice('Issue finalised. Starting page numbers are saved to every article. Your two-page contents spread is ready.');
   });
-  const exportIssue = () => execute(async () => {
+  const printBleed=documentBleed(plan.printSettings?.bleedMm??3);
+  const exportIssue = (version:'online'|'print'='online') => execute(async () => {
     if (!ready || !proofVerified || proofStale || contentsOverflow) throw new Error('Wait for the assembled issue proof to finish compiling before exporting.');
     if (canvasView === 'arrange') {
       setCanvasView('proof');
@@ -273,13 +275,14 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
     await waitForPreviewResources(root);
     const actual = sheetCount(root);
     if (actual !== physicalPages) throw new Error(`The proof has ${actual} pages, but numbering was compiled for ${physicalPages}. Recompile the whole issue before exporting so the printed page numbers stay correct.`);
-    await exportIssuePdf(data.project.name, root, pdfSize,plan.printSettings?.bleedMm??0);
+    if(version==='print')await exportIssuePdf(`${data.project.name} - Print`, root, pdfSize,{bleedMm:printBleed,cropMarks:true});
+    else await exportIssuePdf(`${data.project.name} - Online`, root, pdfSize);
   });
 
   const blocked = busy || !ready || !proofVerified || contentsOverflow || proofStale;
   const printState=useRef({blocked,exportIssue});
   useLayoutEffect(()=>{printState.current={blocked,exportIssue};});
-  useEffect(() => registerPublicationPrint({source:()=>printState.current.blocked?null:pagesRef.current,size:pdfSize,issue:true,bleedMm:plan.printSettings?.bleedMm??0,shortcut:()=>void printState.current.exportIssue()}),[pdfSize,plan.printSettings?.bleedMm]);
+  useEffect(() => registerPublicationPrint({source:()=>printState.current.blocked?null:pagesRef.current,size:pdfSize,issue:true,shortcut:()=>void printState.current.exportIssue()}),[pdfSize]);
   return <main className="studio" aria-busy={busy}>
     <header className="studio-bar">
       <div className="studio-bar-lead">
@@ -409,8 +412,8 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
             <label className="field">PDF page size<select value={pdfSize} disabled={busy} onChange={event => setPdfSize(event.target.value as PdfPageSize)}>
               {Object.entries(PDF_PAGE_SIZES).map(([key, size]) => <option key={key} value={key}>{size.label} · {size.width} × {size.height} mm</option>)}
             </select></label>
-            <label className="field">Bleed per edge (mm)<input type="number" min="0" max="10" step="0.5" value={plan.printSettings?.bleedMm??0} disabled={busy} onChange={event=>updatePlan({...plan,printSettings:{binding:'saddle-stitch',perfectMultiple:2,...plan.printSettings,bleedMm:Math.max(0,Math.min(10,Number(event.target.value)))}})}/></label>
-            <p className="field-hint">Trim: {PDF_PAGE_SIZES[pdfSize].width} × {PDF_PAGE_SIZES[pdfSize].height} mm. Output with bleed: {PDF_PAGE_SIZES[pdfSize].width+2*(plan.printSettings?.bleedMm??0)} × {PDF_PAGE_SIZES[pdfSize].height+2*(plan.printSettings?.bleedMm??0)} mm. Set the amount requested by your printer, such as 3 or 5 mm; zero exports at trim size. Text remains at its original size and position. Background artwork extends into the extra area; no guide lines are printed.</p>
+            <label className="field">Print PDF bleed per edge (mm)<input type="number" min="0" max="10" step="0.5" value={printBleed} disabled={busy} onChange={event=>updatePlan({...plan,printSettings:{binding:'saddle-stitch',perfectMultiple:2,...plan.printSettings,bleedMm:documentBleed(event.target.valueAsNumber)}})}/></label>
+            <p className="field-hint">Online PDF: exact trim, no bleed or crop marks. Print PDF: {printBleed} mm bleed per edge plus crop marks in a separate 6 mm white area. Output {PDF_PAGE_SIZES[pdfSize].width+2*(printBleed+6)} × {PDF_PAGE_SIZES[pdfSize].height+2*(printBleed+6)} mm. Layout and page order stay identical. Confirm the bleed with your printer; imported PDF edges are extended too.</p>
             <p className="field-hint">A4, ISO B5, JIS B5 and Magazine lay out every article, cover and contents page directly at the selected paper size. Changing size recompiles the issue and may change its page counts; saved article content stays untouched. Choose the browser’s Save as PDF, Default margins (the publication sets them to zero), 100% scale and Background graphics. A system PDF printer or physical printer may need a matching custom paper size.</p>
             <p className="field-hint">Finalising writes each article’s starting page number back into the saved document, so a single-article export carries the same folio as the issue.</p>
             {contentsOverflow && ready && <p className="inline-alert" role="alert">The contents text does not fit its two pages. Shorten the heading or introduction, drop a subtitle, or uncheck some entries.</p>}
@@ -465,7 +468,8 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
     <footer className="studio-actions">
       <div><strong>{isFinalized ? 'Issue finalised' : proofStale && ready ? 'Arrangement changed' : 'Ready when you are'}</strong><span>{busy ? 'Working… please wait.' : proofStale && ready ? 'Recompile so the page numbers match the order you have set.' : 'Finalising updates page numbers in the project’s saved articles.'}</span></div>
       <div>
-        <button disabled={blocked} onClick={() => void exportIssue()}>{busy ? 'Please wait…' : `Export ${pdfSize === 'magazine' ? '203 × 267 mm' : pdfSize.toUpperCase()} issue PDF`}</button>
+        <button disabled={blocked} onClick={() => void exportIssue('online')}>Export online PDF</button>
+        <button disabled={blocked} onClick={() => void exportIssue('print')}>Export print PDF</button>
         <button className="primary" disabled={blocked || isFinalized || save.status === 'error' || items.length === 0} onClick={() => void finalize()}>{isFinalized ? 'Finalised ✓' : busy ? 'Working…' : 'Finalise issue & page numbers'}</button>
       </div>
     </footer>

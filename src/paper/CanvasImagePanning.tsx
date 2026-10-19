@@ -11,7 +11,7 @@ import {CanvasPhotoCrop} from './CanvasPhotoCrop';
 import {cropClip} from '../lib/imageCrop';
 
 type Target={kind:'hero'|'cover';id?:never}|{kind:'image';id:string};
-type Candidate={image:HTMLImageElement;frame:HTMLElement;target:Target};
+type Candidate={image:HTMLImageElement;frame:HTMLElement;target:Target;tools:Element};
 function canvasPanTarget(image:HTMLImageElement,doc:Doc):Target|null{
   const placed=image.closest<HTMLElement>('[data-image-id]')?.dataset.imageId;
   if(placed&&doc.images.some(item=>item.id===placed))return {kind:'image',id:placed};
@@ -36,8 +36,8 @@ export function CanvasImagePanning({doc,root}:{doc:Doc;root:RefObject<HTMLDivEle
   useLayoutEffect(()=>{
     const host=root.current;if(!host)return;
     const collect=()=>{
-      const next=[...host.querySelectorAll<HTMLImageElement>('.page img.framed-image,.page img.spread-photo-image')].flatMap(image=>{const target=canvasPanTarget(image,doc),frame=image.parentElement;return target&&frame&&!image.closest('[data-editor-only]')?[{image,frame,target}]:[];});
-      setCandidates(previous=>previous.length===next.length&&previous.every((item,index)=>item.image===next[index].image&&JSON.stringify(item.target)===JSON.stringify(next[index].target))?previous:next);
+      const next=[...host.querySelectorAll<HTMLImageElement>('.page img.framed-image,.page img.spread-photo-image')].flatMap(image=>{const target=canvasPanTarget(image,doc),frame=image.parentElement;return target&&frame&&!image.closest('[data-editor-only]')?[{image,frame,target,tools:target.kind==='image'?frame.parentElement?.querySelector('.placed-image-tools')??frame:frame}]:[];});
+      setCandidates(previous=>previous.length===next.length&&previous.every((item,index)=>item.image===next[index].image&&item.tools===next[index].tools&&JSON.stringify(item.target)===JSON.stringify(next[index].target))?previous:next);
     };
     collect();const observer=new MutationObserver(collect);observer.observe(host,{subtree:true,childList:true});return()=>observer.disconnect();
   },[doc,root]);
@@ -79,8 +79,8 @@ export function CanvasImagePanning({doc,root}:{doc:Doc;root:RefObject<HTMLDivEle
       else{const frame=current[candidate.target.kind];if(frame)Object.assign(frame,pan);}
     });
   };
-  return <>{candidates.map((candidate,index)=>createPortal(<button type="button" className="canvas-pan-trigger" data-editor-only="true" aria-label={candidate.target.kind==='image'?'Pan page image on canvas':'Pan hero image on canvas'} onPointerDown={event=>event.stopPropagation()} onClick={event=>{event.stopPropagation();open(candidate);}}>Pan photo</button>,candidate.target.kind==='image'?candidate.frame.parentElement?.querySelector('.placed-image-tools')??candidate.frame:candidate.frame,String(index)))}
-    {candidates.filter(c=>c.image.classList.contains('framed-image')).map((candidate,index)=>createPortal(<button type="button" className="canvas-pan-trigger canvas-crop-trigger" data-editor-only="true" onPointerDown={e=>e.stopPropagation()} onClick={e=>{e.stopPropagation();cancel();setCropping(candidate);}}>Crop photo</button>,candidate.target.kind==='image'?candidate.frame.parentElement?.querySelector('.placed-image-tools')??candidate.frame:candidate.frame,`crop-${index}`))}
+  return <>{candidates.map((candidate,index)=>createPortal(<button type="button" className="canvas-pan-trigger" data-editor-only="true" aria-label={candidate.target.kind==='image'?'Pan page image on canvas':'Pan hero image on canvas'} onPointerDown={event=>event.stopPropagation()} onClick={event=>{event.stopPropagation();open(candidate);}}>Pan photo</button>,candidate.tools,String(index)))}
+    {candidates.filter(c=>c.image.classList.contains('framed-image')).map((candidate,index)=>createPortal(<button type="button" className="canvas-pan-trigger canvas-crop-trigger" data-editor-only="true" onPointerDown={e=>e.stopPropagation()} onClick={e=>{e.stopPropagation();cancel();setCropping(candidate);}}>Crop photo</button>,candidate.tools,`crop-${index}`))}
     {cropping&&<CanvasPhotoCrop image={cropping.image} frame={frameOf(doc,cropping.target)} onCancel={()=>setCropping(null)} onApply={frame=>{const target=cropping.target;setCropping(null);useDoc.getState().update(current=>{if(target.kind==='image'){const item=current.images.find(i=>i.id===target.id);if(item)item.frame=frame;}else Object.assign(current[target.kind]!,frame);});}}/>}
     {active&&createPortal(<div className="canvas-pan-surface" data-editor-only="true" role="group" aria-label="Drag photograph inside its frame" onPointerDown={down} onPointerMove={move} onPointerUp={event=>{move(event);drag.current=null;}} onPointerCancel={cancel} onLostPointerCapture={()=>{drag.current=null;}}/>,active.frame)}
     {active&&createPortal(<section className="canvas-pan-toolbar" role="dialog" aria-label="Pan photograph" data-editor-only="true"><div><strong>Reposition photograph</strong><span>Drag the photo on the page. Its frame and text boundary stay fixed.</span></div><button type="button" onClick={cancel}>Cancel</button><button ref={applyRef} type="button" onClick={apply}>Apply position</button></section>,document.body)}</>;

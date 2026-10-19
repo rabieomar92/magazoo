@@ -147,6 +147,23 @@ describe('PDF output sheet fitting', () => {
       expect(source.outerHTML).toBe(original);
     } finally { iframe.remove(); source.remove(); }
   });
+  it.each(['a4','b5','jis-b5','vendor-b5','magazine'] as const)('places eight crop marks outside bleed without scaling %s artwork', size => {
+    const trim=PDF_PAGE_SIZES[size],source=document.createElement('div');
+    source.innerHTML=`<div class="page" data-page-width-mm="${trim.width}" data-page-height-mm="${trim.height}"><p>Original text</p></div>`;
+    const original=source.outerHTML,output=document.implementation.createHTMLDocument();
+    clonePages(source,output);fitPdfSheets(output,size,5,true);
+    const page=output.querySelector<HTMLElement>('.pdf-export-page')!;
+    expect(page.style.getPropertyValue('--pdf-fit-scale')).toBe('1');
+    expect(page.style.getPropertyValue('--pdf-fit-left')).toBe('11mm');
+    expect(page.style.getPropertyValue('--pdf-fit-top')).toBe('11mm');
+    const marks=output.querySelector('.pdf-crop-marks')!;
+    expect(marks.getAttribute('viewBox')).toBe(`0 0 ${trim.width+22} ${trim.height+22}`);
+    expect(marks.querySelectorAll('line')).toHaveLength(8);
+    expect(marks.querySelector('line')!.getAttribute('x1')).toBe('11');
+    expect(marks.querySelector('line')!.getAttribute('y2')).toBe('5');
+    expect(output.querySelectorAll('.pdf-bleed-strip')).toHaveLength(8);
+    expect(source.outerHTML).toBe(original);
+  });
   it('reads both native dimensions and retains legacy height-only reference metadata', () => {
     const page = document.createElement('div');
     expect(pdfPageDimensions(page)).toEqual({width:210,height:297});

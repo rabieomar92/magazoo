@@ -63,6 +63,7 @@ import {CanvasImagePanning} from './CanvasImagePanning';
 import {CanvasImageResize} from './CanvasImageResize';
 import {CanvasNumericAdjust} from './CanvasNumericAdjust';
 import {CanvasElementHandles} from './CanvasElementHandles';
+import {CanvasBleedGuides} from './CanvasBleedGuides';
 
 type PreviewPagination = Pagination & { layoutRevision: number };
 const EMPTY: PreviewPagination = { pages: [], fill: 0, spill: 0, layoutRevision: 0 };
@@ -1602,6 +1603,7 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
       </div>
 
       <PageFooters doc={effectiveDoc} root={pagesRef} />
+      {!readOnly&&<CanvasBleedGuides root={pagesRef} bleedMm={doc.design.bleedMm}/>}
       {!readOnly&&<CanvasImagePanning doc={doc} root={pagesRef}/>}
       {!readOnly&&<CanvasImageResize doc={doc} root={pagesRef}/>}
       {!readOnly&&<CanvasNumericAdjust/>}

@@ -10,6 +10,7 @@ import { Wordmark } from '../components/Wordmark';
 import { MagazooLoader } from '../components/MagazooLoader';
 import { registerPublicationPrint } from '../lib/nativePrint';
 import { BusyIndicator } from '../components/BusyIndicator';
+import {documentBleed} from '../lib/documentBleed';
 
 const SAVE_LABEL: Record<SaveState, string> = {
   idle: 'Ready',
@@ -34,6 +35,8 @@ export function Toolbar({ onPreviewToolsHost, onToggleSidebar, sidebarCollapsed 
   const project={status:projectStatusValue,message:projectMessage};
   const projectStatus = { draft: 'Draft', pending: 'Unsaved changes', saving: 'Saving…', saved: 'Saved', error: 'Save failed', conflict: 'Save conflict' }[project.status];
   const title = useDoc((s) => s.doc.meta.title);
+  const bleedMm=useDoc(s=>documentBleed(s.doc.design.bleedMm));
+  const cropMarks=useDoc(s=>s.doc.design.cropMarks===true);
   const [exporting, setExporting] = useState(false);
   const opening=useFileActivity(state=>state.opening);
   const [pdfSize, setPdfSize] = usePdfPageSize();
@@ -51,7 +54,7 @@ export function Toolbar({ onPreviewToolsHost, onToggleSidebar, sidebarCollapsed 
       if (document.querySelector('.pages > .page[data-layout-overflow="true"]')) {
         throw new Error('One or more blocks exceed the printable frame. Check the red-outlined page and resolve its layout warning before exporting.');
       }
-      await exportPreviewPdf(title, undefined, pdfSize);
+      await exportPreviewPdf(title, undefined, pdfSize,bleedMm,cropMarks);
     } catch (error) {
       console.error('PDF export failed:', error);
       alert(error instanceof Error ? error.message : 'Could not prepare the PDF.');
@@ -62,7 +65,7 @@ export function Toolbar({ onPreviewToolsHost, onToggleSidebar, sidebarCollapsed 
 
   const preparedExport=useRef(exportPdf);
   useLayoutEffect(()=>{preparedExport.current=exportPdf;});
-  useEffect(() => registerPublicationPrint({source:()=>document.querySelector<HTMLElement>('.pages'),size:pdfSize,shortcut:()=>void preparedExport.current()}),[pdfSize]);
+  useEffect(() => registerPublicationPrint({source:()=>document.querySelector<HTMLElement>('.pages'),size:pdfSize,bleedMm,cropMarks,shortcut:()=>void preparedExport.current()}),[pdfSize,bleedMm,cropMarks]);
 
   // Keyboard: ⌘/Ctrl+Z undo, +Shift redo (or ⌘Y), ⌘S Save As.
   useEffect(() => {

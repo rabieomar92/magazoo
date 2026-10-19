@@ -296,7 +296,7 @@ export function ArticleImagesSection() {
                 <LabeledNumber label="Caption width" unit="mm" value={image.captionPlacement.widthMm} min={5} max={pageDimensions(design).width} step={.5}
                   onChange={v=>change(image.id,current=>{current.captionPlacement!.widthMm=v;})}/>
               </div>}
-              <p className="hint">Drag the caption to move it. Drag either side handle to resize its width. Text avoids the caption box, and the caption stays outside the image border. If it cannot fit, the preview shows a warning.</p>
+              <p className="hint">Drag the caption anywhere on the page, including inside the image frame or beside its wrap outline. Drag either side handle to resize its width. Body text flows around the caption box.</p>
               </details>
               <details className="control-disclosure"><summary>Text wrapping & outline</summary>
               <SegmentField<'box' | 'contour' | 'polygon'>

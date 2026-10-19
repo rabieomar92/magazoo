@@ -37,3 +37,15 @@ it('does not apply a crop to a different document session',()=>{
 it('uses the full spread width when panning the Particle Feature strip',()=>{
   const f=fixture(true);try{f.pointer('pointerdown',0,0);f.pointer('pointerup',50,25);f.apply();state.update.mock.calls[0][0](f.doc);expect(f.doc.hero.panX).toBeCloseTo(100/(255*96/25.4)*100);expect(f.doc.hero.panY).toBeCloseTo(50/(297*96/25.4)*100);}finally{act(()=>f.root.unmount());}
 });
+it('reattaches crop and pan actions when wrap editing replaces the image toolbar',async()=>{
+ const page=document.createElement('div');page.innerHTML='<div class="page"><figure data-image-id="photo"><div><img class="framed-image"></div><div class="placed-image-tools"></div></figure></div>';document.body.append(page);
+ const host=document.createElement('div');document.body.append(host);const root=createRoot(host);
+ const doc={hero:{},images:[{id:'photo'}],templateId:'paper-1',design:{}} as unknown as Doc;
+ try{
+  await act(async()=>root.render(<CanvasImagePanning doc={doc} root={{current:page}}/>));
+  expect(page.querySelectorAll('.placed-image-tools button')).toHaveLength(2);
+  await act(async()=>{const tools=document.createElement('div');tools.className='placed-image-tools';page.querySelector('.placed-image-tools')!.replaceWith(tools);});
+  expect(page.querySelectorAll('.placed-image-tools button')).toHaveLength(2);
+  expect(page.querySelector('.canvas-crop-trigger')!.textContent).toBe('Crop photo');
+ }finally{act(()=>root.unmount());}
+});

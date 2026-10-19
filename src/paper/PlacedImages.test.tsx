@@ -19,6 +19,19 @@ const pointerEvent = (type: string, x: number, y: number) => {
 };
 
 describe('PlacedImages', () => {
+  it.each(['paper-1','paper-2','paper-3','paper-4','paper-5','paper-6','paper-7','paper-8','magazine-1','magazine-2','magazine-3'] as const)('%s retains an explicitly placed caption inside the image frame in editor and compilation',template=>{
+    const doc=presetFor(template);doc.design.sidebar=false;doc.assets.art={src:'data:image/png;base64,AA',naturalWidth:500,naturalHeight:500};
+    doc.images=[{id:'inside',assetId:'art',caption:'In the empty area beside the subject',widthCols:2,heightMm:80,anchor:{page:1,column:0,y:100},wrapShape:'polygon',wrapPolygon:[{x:60,y:0},{x:100,y:0},{x:100,y:100}],captionPlacement:{x:25,y:110,widthMm:25}}];
+    const host=document.createElement('div'),root=createRoot(host);document.body.append(host);
+    for(const readOnly of [false,true]){
+      act(()=>root.render(<div className="page"><PlacedImages doc={doc} pageIndex={0} readOnly={readOnly}/></div>));
+      const figure=host.querySelector<HTMLElement>('.placed-image')!,caption=host.querySelector<HTMLElement>('figcaption')!;
+      expect(parseFloat(figure.style.left)+parseFloat(caption.style.left)).toBeCloseTo(25);
+      expect(parseFloat(figure.style.top)+parseFloat(caption.style.top)).toBeCloseTo(110);
+      expect(caption.dataset.captionUnplaced).toBe('false');
+    }
+    expect(doc.images[0].captionPlacement).toEqual({x:25,y:110,widthMm:25});act(()=>root.unmount());host.remove();
+  });
   beforeEach(() => {
     (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean })
       .IS_REACT_ACT_ENVIRONMENT = true;

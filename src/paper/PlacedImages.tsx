@@ -118,28 +118,30 @@ function PlacedImageItem({
     obstacles.push(rectangle(0,Math.max(1,top)),rectangle(pageHeight-footerBottomMargin(doc),pageHeight));
     return obstacles;
   },[doc,design,image.anchor.page,pageHeight]);
-  const positionCaption=useCallback((element:HTMLElement,desired:CaptionBox,avoidLater=false)=>{
+  const positionCaption=useCallback((element:HTMLElement,desired:CaptionBox,manual=!!image.captionPlacement)=>{
     const obstacles=[...captionObstacles];
     const page=element.closest<HTMLElement>('.page,[data-article-image-page]');
-    if(page){
+    if(page&&!manual){
       const pageRect=page.getBoundingClientRect(),scale=pageRect.width/pageDimensions(design).width;
       if(scale>0){
         const captions=Array.from(page.querySelectorAll<HTMLElement>('.placed-image > figcaption'));
         const index=captions.indexOf(element);
-        for(const other of captions.filter((c,i)=>c!==element&&(avoidLater||i<index||!c.parentElement?.classList.contains('placed-image--free-caption')))){
+        for(const other of captions.filter((c,i)=>c!==element&&(i<index||!c.parentElement?.classList.contains('placed-image--free-caption')))){
           const box=other.getBoundingClientRect();if(!box.width||!box.height)continue;
           const left=(box.left-pageRect.left)/scale,right=(box.right-pageRect.left)/scale,top=(box.top-pageRect.top)/scale,bottom=(box.bottom-pageRect.top)/scale;
           obstacles.push({gap:.8,points:[{x:left,y:top},{x:right,y:top},{x:right,y:bottom},{x:left,y:bottom}]});
         }
       }
     }
-    const resolved=safeCaptionPosition(desired,pageDimensions(design).width,pageHeight,obstacles);
+    // Explicit coordinates and canvas gestures belong to the author. Keep
+    // them on the sheet, but never snap them out of an image or another box.
+    const resolved=safeCaptionPosition(desired,pageDimensions(design).width,pageHeight,manual?[]:obstacles);
     element.style.position='absolute';element.style.left=`${resolved.x-geometry.visualLeft}mm`;
     element.style.top=`${resolved.y-geometry.visualTop}mm`;element.style.bottom='auto';
     element.style.width=`${resolved.width}mm`;element.style.marginLeft='0';element.style.transform='none';
     element.dataset.captionUnplaced=String(!resolved.fits);
     return resolved;
-  },[captionObstacles,design,pageHeight,geometry.visualLeft,geometry.visualTop]);
+  },[captionObstacles,design,pageHeight,geometry.visualLeft,geometry.visualTop,image.captionPlacement]);
   useLayoutEffect(()=>{
     if(!freeCaption||!captionRef.current)return;
     const element=captionRef.current;
@@ -376,7 +378,7 @@ function PlacedImageItem({
           data-editor-target={`article-caption-${image.id}`}
           dir={design.textDirection ?? 'ltr'}
           style={{ textAlign: image.align ?? 'left',...(freeCaption?{width:`${captionWidth}mm`}:{}) }}
-          title={readOnly?undefined:'Drag caption independently; it stays outside image borders'}
+          title={readOnly?undefined:'Drag caption anywhere on the page, including over the image'}
           onPointerDown={startCaptionDrag} onPointerMove={moveCaption} onPointerUp={finishCaption}
           onPointerCancel={cancelCaption} onLostPointerCapture={cancelCaption}
         >

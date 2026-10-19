@@ -50,7 +50,7 @@ it.each(['a4', 'b5', 'jis-b5', 'magazine'])('exports the selected %s sheet witho
   expect(select.value).toBe(size);
 
   await act(async () => host.querySelector<HTMLButtonElement>('[aria-label="Export PDF"]')!.click());
-  expect(exportPreviewPdf).toHaveBeenCalledExactlyOnceWith(sourceDoc.meta.title, undefined, size);
+  expect(exportPreviewPdf).toHaveBeenCalledExactlyOnceWith(sourceDoc.meta.title, undefined, size,0,false);
   expect(useDoc.getState().doc).toBe(sourceDoc);
   expect(JSON.stringify(useDoc.getState().doc)).toBe(sourceJson);
   expect(useProjectFile.getState()).toBe(fileState);
@@ -71,5 +71,5 @@ it('remembers the selected paper size across toolbar remounts without saving the
 it('uses the prepared PDF export for the browser print shortcut',async()=>{
   act(()=>root.render(<Toolbar onPreviewToolsHost={()=>undefined}/>));
   await act(async()=>window.dispatchEvent(new KeyboardEvent('keydown',{key:'p',ctrlKey:true,cancelable:true})));
-  expect(exportPreviewPdf).toHaveBeenCalledExactlyOnceWith(useDoc.getState().doc.meta.title,undefined,'a4');
+  expect(exportPreviewPdf).toHaveBeenCalledExactlyOnceWith(useDoc.getState().doc.meta.title,undefined,'a4',0,false);
 });

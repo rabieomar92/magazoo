@@ -380,6 +380,9 @@ export interface Design {
   /** Render-only output override; selected paper size is a browser preference,
    * not an authoring change. Missing keeps the original A4/reference layout. */
   pageFormat?: 'a4' | 'b5' | 'jis-b5' | 'vendor-b5' | 'magazine';
+  /** Print-only buffer outside the trim, per edge. Does not change pagination. */
+  bleedMm?: number;
+  cropMarks?: boolean;
   textStyles?: Record<string, TextStyle>;
   /** Reference article compositions retain the magazine's 210 × 276 mm trim,
    * or can explicitly extend their text area to A4. Other templates ignore it. */

@@ -15,7 +15,7 @@ export interface MagazooLoaderProps {
 /**
  * The single branded wait state used throughout Magazoo.
  *
- * Only the original wordmark and its animals animate. Actual progress is
+ * The original illustrated mark has a subtle idle motion. Actual progress is
  * shown when available, without a decorative sweep or indeterminate track.
  */
 export function MagazooLoader({

@@ -21,6 +21,9 @@
 .canvas-outline .polygon-edge{stroke:transparent;stroke-width:12;vector-effect:non-scaling-stroke;cursor:copy;pointer-events:stroke}
 .canvas-outline .polygon-point{fill:white;stroke:#5145d9;stroke-width:2;vector-effect:non-scaling-stroke;cursor:move;pointer-events:all}
 .canvas-outline .polygon-point.is-selected{fill:#c9c2ff}
+.canvas-outline .polygon-point-hit{fill:transparent;stroke:none;pointer-events:all}
+.canvas-outline .polygon-point-visible{pointer-events:none;vector-effect:non-scaling-stroke}
+.canvas-outline .polygon-point:focus-visible .polygon-point-visible{stroke:#17114c;stroke-width:3}
 .canvas-crop-surface{height:100%;inset:0}
 .crop-pan-area{position:absolute;inset:0;touch-action:none}
 [data-cropping=true]{z-index:30!important;overflow:visible!important}

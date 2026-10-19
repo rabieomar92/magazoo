@@ -12,6 +12,7 @@ import { BodySection } from './sections/BodySection';
 import { HighlightsSection } from './sections/HighlightsSection';
 import { ReferencesSection } from './sections/ReferencesSection';
 import { DesignSection } from './sections/DesignSection';
+import {BleedSection} from './sections/BleedSection';
 import { ArticleImagesSection } from './sections/ArticleImagesSection';
 import { FrontMatterContent, FrontMatterImages, FrontMatterDesign } from './sections/FrontMatterSection';
 import { NewsContent, NewsImages } from './sections/NewsSection';
@@ -232,6 +233,7 @@ export function Panel() {
         {tab==='sidetext'&&<PageMarginTextSection expanded initialPage={marginPage}/>}
         <div className="panel-design-pane" hidden={tab !== 'design'}>
           <p className="typography-relocated-note">Font and text styling controls are in the top toolbar. Page layout, backgrounds and object positioning stay here.</p>
+          <BleedSection/>
           {isBackCover ? <BackCoverDesign /> : isFrontMatter || isNews ? <FrontMatterDesign pageOnly/> : <DesignSection pageOnly/>}
           <PhotoBackgroundSection /><DirectionSection />
         </div>

@@ -21,8 +21,8 @@ export function buildPrintBrief(title:string,plan:IssuePlan,items:readonly Issue
     physical+=row.pageCount;return result;
   });
   return {title,settings,pages,trim,padding,basis,perfect,order,
-    bleedMm:settings.bleedMm??0,
-    output:`${trim.width+2*(settings.bleedMm??0)} × ${trim.height+2*(settings.bleedMm??0)} mm`,
+    bleedMm:settings.bleedMm??3,
+    output:`${trim.width+2*((settings.bleedMm??3)+6)} × ${trim.height+2*((settings.bleedMm??3)+6)} mm (crop marks included)`,
     closed:`${trim.width} × ${trim.height} mm`,
     open:`${trim.width*2} × ${trim.height} mm`,
     coverOpen:perfect?(settings.spineMm===undefined?`${trim.width*2} + spine × ${trim.height} mm`:`${trim.width*2+settings.spineMm} × ${trim.height} mm`):`${trim.width*2} × ${trim.height} mm`,
