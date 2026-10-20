@@ -8,6 +8,7 @@ import RenameProjectDialog from './RenameProjectDialog';
 import { AdminIcon } from './AdminIcon';
 import { Wordmark } from '../components/Wordmark';
 import { MagazooLoader } from '../components/MagazooLoader';
+import {WorkspaceLoading} from '../components/WorkspaceLoading';
 import {LoginBackground} from './LoginBackground';
 import {PasswordDialog} from './PasswordDialog';
 import {ProjectSetup,ProjectSettingsDialog} from './ProjectSetup';
@@ -81,7 +82,7 @@ export default function AdminPage() {
     try { await fn(); } catch (e) { setError(e instanceof Error ? e.message : 'Request failed.'); }
     finally { setBusy(false); }
   };
-  if (csrf && compilingProject) return <Suspense fallback={<MagazooLoader label="Opening issue studio…" detail="Preparing the issue compiler and saved arrangement." />}><IssueWorkspace projectId={compilingProject} csrf={csrf} onClose={() => { setCompilingProject(null); void run(() => refresh()); }} /></Suspense>;
+  if (csrf && compilingProject) return <Suspense fallback={<WorkspaceLoading destination="issue"><MagazooLoader label="Opening issue studio…" detail="Preparing the issue compiler and saved arrangement." /></WorkspaceLoading>}><IssueWorkspace projectId={compilingProject} csrf={csrf} onClose={() => { setCompilingProject(null); void run(() => refresh()); }} /></Suspense>;
   return <main className={`admin-page${!csrf?' admin-page--signin':''}`}>
     {csrf&&busy && <div className="admin-loading"><MagazooLoader variant="banner" label="Working… Please wait." /></div>}
     {csrf&&<header className="admin-header">

@@ -15,6 +15,7 @@ import { useIssueAutosave } from './useIssueAutosave';
 import './issue.css';
 import { Wordmark } from '../components/Wordmark';
 import { MagazooLoader } from '../components/MagazooLoader';
+import {WorkspaceLoading} from '../components/WorkspaceLoading';
 import { registerPublicationPrint } from '../lib/nativePrint';
 import { restoreArrangement } from './arrangementBackup';
 import { BusyIndicator } from '../components/BusyIndicator';
@@ -50,9 +51,9 @@ export default function IssueWorkspace({ projectId, csrf, onClose }: { projectId
   }, [projectId, csrf, reload]);
   if (!loaded) return <main className="studio is-booting">
     <header className="studio-bar"><div className="studio-bar-lead"><Wordmark className="studio-brand" /><span className="studio-chip">Issue studio</span></div><button onClick={onClose}>Back to library</button></header>
-    <div className="studio-boot">{error
-      ? <><h1>Could not open this issue</h1><p role="alert">{error}</p><button className="primary" onClick={() => setReload(value => value + 1)}>Try again</button></>
-      : <MagazooLoader label="Opening your project" detail="Loading its saved articles and issue arrangement…" />}</div>
+    {error?<div className="studio-boot">
+      <h1>Could not open this issue</h1><p role="alert">{error}</p><button className="primary" onClick={() => setReload(value => value + 1)}>Try again</button>
+      </div>:<WorkspaceLoading destination="issue" showToolbar={false}><MagazooLoader label="Opening your project" detail="Loading its saved articles and issue arrangement…" /></WorkspaceLoading>}
   </main>;
   return <IssueEditor key={`${projectId}-${reload}`} data={loaded} csrf={csrf} onClose={onClose} onReload={() => setReload(value => value + 1)} />;
 }
@@ -463,13 +464,13 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
             : <div className="stage-progress">
                 {renderError
                   ? <><Wordmark className="stage-mark" /><h3>An article needs attention</h3><p role="alert">{renderError}</p><button className="primary" onClick={recompile}>Try again</button></>
-                  : <MagazooLoader
+                  : <WorkspaceLoading destination="issue" canvasOnly pageSize={pdfSize}><MagazooLoader
                       tone="dark"
                       label={progress.pass > 1 ? 'Numbering the pages' : 'Setting the issue'}
                       detail={`${progress.pass > 1 ? 'Printing folios onto' : 'Measuring'} ${progress.name || 'article layouts'} · Pass ${progress.pass} of ${progress.passes} · ${progress.completed} of ${progress.total} articles`}
                       value={progress.completed}
                       max={Math.max(1, progress.total)}
-                    />}
+                    /></WorkspaceLoading>}
               </div>}
           </div>
         </div>

@@ -44,6 +44,16 @@ it('keeps the inline wait state compact and omits the progress track', () => {
   expect(host.querySelector('[role="progressbar"]')).toBeNull();
   expect(host.querySelector('video,img')).toBeNull();
   expect(host.querySelector('.magazoo-loader-ring')).not.toBeNull();
+  expect(host.querySelector('.magazoo-loader-skeleton')).toBeNull();
+});
+
+it('keeps the film free of generic invented content and fake progress',()=>{
+  act(()=>root.render(<MagazooLoader label="Opening project"/>));
+  expect(host.querySelector('.magazoo-loader-film')).not.toBeNull();
+  expect(host.querySelector('.magazoo-loader-skeleton')).toBeNull();
+  expect(host.querySelector('[role="progressbar"]')).toBeNull();
+  act(()=>root.render(<MagazooLoader variant="banner" label="Saving"/>));
+  expect(host.querySelector('.magazoo-loader-skeleton')).toBeNull();
 });
 
 it('plays the supplied compressed film silently and falls back to a still on failure',()=>{

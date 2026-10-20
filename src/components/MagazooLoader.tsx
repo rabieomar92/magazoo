@@ -29,6 +29,7 @@ function LoadingFilm(){
     : <img src={`${base}magazoo-loading-mono.webp`} width={752} height={416} alt=""/>}</span>;
 }
 
+
 /**
  * Quiet monochrome film for waiting panels; small controls keep a simple ring.
  */

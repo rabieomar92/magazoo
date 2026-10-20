@@ -3,6 +3,7 @@ import AdminPage from './admin/AdminPage';
 import { ErrorBoundary } from './ErrorBoundary';
 import { isAdminHash } from './routing';
 import { MagazooLoader } from './components/MagazooLoader';
+import {WorkspaceLoading} from './components/WorkspaceLoading';
 const App = lazy(() => import('./App'));
 
 export function Root(){
@@ -23,5 +24,5 @@ export function Root(){
     };
     window.addEventListener('hashchange',change);return()=>{live=false;window.removeEventListener('hashchange',change);};
   },[hash]);
-  return <ErrorBoundary><Suspense fallback={<MagazooLoader label="Loading Magazoo editor…" detail="Preparing your publication workspace." />}>{isAdminHash(hash)?<AdminPage/>:<App key={hash}/>}</Suspense></ErrorBoundary>;
+  return <ErrorBoundary><Suspense fallback={<WorkspaceLoading destination={isAdminHash(hash)?'library':'editor'}><MagazooLoader label="Loading Magazoo…" detail="Preparing your publication workspace." /></WorkspaceLoading>}>{isAdminHash(hash)?<AdminPage/>:<App key={hash}/>}</Suspense></ErrorBoundary>;
 }

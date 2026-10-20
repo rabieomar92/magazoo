@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { MagazooLoader } from './components/MagazooLoader';
+import {WorkspaceLoading} from './components/WorkspaceLoading';
 import { useDoc } from './store/useDoc';
 import { hydrate, startAutosave } from './store/persist';
 import { Toolbar } from './panel/Toolbar';
@@ -160,7 +161,7 @@ export default function App() {
     setIsCollapsed(false);
   }, []);
 
-  if (!ready) return <div className="app"><MagazooLoader label="Opening your article…" detail="Loading saved content and preparing the editor."/></div>;
+  if (!ready) return <div className="app"><WorkspaceLoading destination="editor" panelWidth={panelWidth}><MagazooLoader label="Opening your article…" detail="Loading saved content and preparing the editor."/></WorkspaceLoading></div>;
   if(sharedError)return <main className="admin-page"><div className="admin-content"><h1>Unable to open this shared document</h1><p role="alert">{sharedError}</p><a href={import.meta.env.BASE_URL}>Return to your local editor</a></div></main>;
   if(token&&leaseStatus!=='active')return <ErrorBoundary><SharedEditingAccess token={token}/></ErrorBoundary>;
 

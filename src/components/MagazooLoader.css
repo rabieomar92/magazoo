@@ -1,16 +1,16 @@
-.magazoo-loader{--ml-accent:#5748e8;--ml-muted:#68738a;--ml-track:#e5e8f0;display:flex;align-items:center;justify-content:center;gap:12px;min-width:0;color:#172033;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif}
-.magazoo-loader.is-dark{color:#f7f8ff;--ml-muted:#aab3c6;--ml-track:#2b3348;--ml-accent:#a69eff}
+.magazoo-loader{--ml-accent:#111;--ml-muted:#666;--ml-track:#e8e8e8;display:flex;align-items:center;justify-content:center;gap:12px;min-width:0;color:#111;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif}
+.magazoo-loader.is-dark{color:#fff;--ml-muted:#ccc;--ml-track:#444;--ml-accent:#fff}
 .magazoo-loader-ring{width:18px;height:18px;color:var(--ml-accent);border-width:1.5px}
 .magazoo-loader-film{display:block;flex:none;width:160px;aspect-ratio:752/416;overflow:hidden;background:#fff;border-radius:0}
-.magazoo-loader-film :is(video,img){display:block;width:100%;height:100%;object-fit:contain}
+.magazoo-loader-film :is(video,img){display:block;width:100%;height:100%;object-fit:contain;filter:grayscale(1) contrast(1.4)}
 .magazoo-loader.is-banner .magazoo-loader-film{width:80px}
 .magazoo-loader.is-card{flex-direction:column;gap:20px}
-.magazoo-loader.is-card .magazoo-loader-film{width:min(360px,100%)}
+.magazoo-loader.is-card .magazoo-loader-film{width:min(480px,100%)}
 .magazoo-loader.is-card .magazoo-loader-copy{text-align:center;width:min(100%,300px)}
 .magazoo-loader-copy{display:grid;gap:4px;min-width:0;text-align:left}
 .magazoo-loader-copy strong{font-size:13px;font-weight:550;line-height:1.4}
 .magazoo-loader-copy small{color:var(--ml-muted);font-size:12px;line-height:1.5}
-.magazoo-loader.is-card{width:min(400px,calc(100% - 40px));margin:64px auto;padding:16px 0}
+.magazoo-loader.is-card{width:min(560px,calc(100% - 40px));margin:64px auto;padding:16px 0;background:#fff;color:#111;--ml-accent:#111;--ml-muted:#666;--ml-track:#e8e8e8}
 .magazoo-loader.is-banner{justify-content:flex-start;gap:10px}
 .magazoo-loader.is-inline{display:inline-flex;gap:7px;color:inherit}
 .magazoo-loader.is-inline .magazoo-loader-ring{width:1em;height:1em;color:inherit}
