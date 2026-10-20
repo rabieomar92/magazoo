@@ -10,6 +10,7 @@ it('previews crop and zoom locally, applies once, and restores original DOM on c
  Object.defineProperties(image,{naturalWidth:{value:800},naturalHeight:{value:400}});
  const before=image.style.cssText,host=document.createElement('div');document.body.append(host);const root=createRoot(host),apply=vi.fn(),cancel=vi.fn();
  act(()=>root.render(<CanvasPhotoCrop image={image} frame={{scale:1,offsetX:0,offsetY:0}} onApply={apply} onCancel={cancel}/>));
+ expect(image.style.left).toBe('0px');expect(image.style.top).toBe('0px');
  const select=document.querySelector<HTMLSelectElement>('[aria-label="Crop shape"]')!;
  act(()=>{select.value='diamond';select.dispatchEvent(new Event('change',{bubbles:true}));});
  expect(image.style.clipPath).toContain('200px 0px');expect(apply).not.toHaveBeenCalled();
@@ -17,4 +18,9 @@ it('previews crop and zoom locally, applies once, and restores original DOM on c
  expect(apply).toHaveBeenCalledTimes(1);expect(apply.mock.calls[0][0].crop.shape).toBe('diamond');
  act(()=>window.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape'})));expect(cancel).toHaveBeenCalledOnce();
  act(()=>root.unmount());expect(image.style.cssText).toBe(before);expect(parent.dataset.cropping).toBeUndefined();
+});
+it('keeps pan offsets visible while editing instead of resetting them with the inset shorthand',()=>{
+ const parent=document.createElement('div');parent.style.cssText='width:400px;height:200px';const image=document.createElement('img');parent.append(image);document.body.append(parent);Object.defineProperties(image,{naturalWidth:{value:800},naturalHeight:{value:400}});
+ const host=document.createElement('div');document.body.append(host);const root=createRoot(host);
+ try{act(()=>root.render(<CanvasPhotoCrop image={image} frame={{scale:1,offsetX:0,offsetY:0,panX:10,panY:20}} onApply={()=>{}} onCancel={()=>{}}/>));expect(image.style.left).toBe('40px');expect(image.style.top).toBe('40px');}finally{act(()=>root.unmount());}
 });

@@ -11,6 +11,13 @@ beforeEach(() => { vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true); host = docum
 afterEach(() => { act(() => root.unmount()); host.remove(); vi.unstubAllGlobals(); });
 const render = (data = projects) => act(() => root.render(<AdminLibrary {...props} projects={data} />));
 const click = (text: string) => act(() => (Array.from(host.querySelectorAll('button')).find(b => b.textContent === text)!).click());
+it('keeps all project actions in one responsive header group',()=>{
+ const onSettings=vi.fn();act(()=>root.render(<AdminLibrary {...props} projects={[projects[0]]} onSettings={onSettings} onCompile={vi.fn()} onRename={vi.fn()}/>));
+ const actions=host.querySelector('.admin-project-header .admin-project-actions')!;
+ expect([...actions.querySelectorAll('button')].map(b=>b.textContent)).toEqual(['Compile issue','Project settings','Rename','']);
+ act(()=>actions.querySelector<HTMLButtonElement>('[aria-label="Project settings for Physics"]')!.click());expect(onSettings).toHaveBeenCalledWith(projects[0]);
+ expect(host.querySelector('.admin-project>.admin-project-settings')).toBeNull();
+});
 it('offers rename for populated and empty projects, with the correct project identity', () => {
   const onRename = vi.fn();
   act(() => root.render(<AdminLibrary {...props} projects={projects} onRename={onRename} />));

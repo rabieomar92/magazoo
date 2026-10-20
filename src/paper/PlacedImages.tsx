@@ -11,6 +11,7 @@ import {
 } from 'react';
 import {DEFAULT_TOP_BAR_OFFSET,type Asset, type Design, type Doc, type PlacedImage } from '../schema/document';
 import { PAGE_H, grid } from '../lib/geometry';
+import {PhotoToolIcon} from '../components/PhotoToolIcon';
 import { pageDimensions } from '../lib/pageFormat';
 import {imageCaptionObstacle,safeCaptionPosition,type CaptionBox,type CaptionObstacle} from '../lib/imageCaption';
 import {footerBottomMargin} from '../lib/pageFooter';
@@ -361,7 +362,7 @@ function PlacedImageItem({
         {linkedPhoto?<SpreadPhotoImage asset={linkedPhoto.asset} geometry={linkedPhoto.geometry} frame={linkedPhoto.frame} region={linkedPhoto}/>:<FramedImage asset={asset} frame={image.frame} />}
       </div>
       {!readOnly && !outlineEditing && <div className="placed-image-tools" data-editor-only="true"><button type="button" className="placed-image-move" data-editor-only="true"
-        aria-label="Move image" title="Drag image · arrows move one column or 1 mm · Shift + ↑/↓ moves 5 mm"
+        aria-label="Move image" title="Move image" aria-description="Drag to position. Arrow keys move one column or 1 mm; Shift with up or down moves 5 mm."
         onKeyDown={event=>{
           if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key))return;
           event.preventDefault();event.stopPropagation();
@@ -370,9 +371,8 @@ function PlacedImageItem({
           const y=event.key==='ArrowUp'?geometry.top-step:event.key==='ArrowDown'?geometry.top+step:geometry.top;
           commitAnchor(Math.max(0,Math.min(column,grid(design).totalCols-geometry.widthCols)),Math.max(0,Math.min(y,geometry.maxTop)));
         }}>
-        <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="M10 2v16M2 10h16M7 5l3-3 3 3M7 15l3 3 3-3M5 7l-3 3 3 3M15 7l3 3-3 3" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-        Move image
-      </button><button type="button" className="placed-image-draw" onPointerDown={event=>event.stopPropagation()} onClick={event=>{event.stopPropagation();requestImageOutline(image.id);}}>Edit wrap points</button></div>}
+        <PhotoToolIcon name="move"/>
+      </button><button type="button" className="placed-image-draw" aria-label="Edit wrap points" title="Edit text-wrap boundary" onPointerDown={event=>event.stopPropagation()} onClick={event=>{event.stopPropagation();requestImageOutline(image.id);}}><PhotoToolIcon name="wrap"/></button></div>}
       {!readOnly&&outlineEditing&&<CanvasImageOutline image={image} asset={asset} onCancel={closeOutline}
         onApply={(points,smoothing,gap)=>{
           update(current=>{const source=current.images?.find(i=>i.id===image.id);if(source){source.wrapShape='polygon';source.wrapPolygon=points;source.wrapSmoothing=smoothing;source.wrapGapMm=gap;}});

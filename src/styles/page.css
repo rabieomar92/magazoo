@@ -265,7 +265,7 @@
     transform:translate(-50%,-50%) scale(var(--canvas-control-scale,1));
     opacity:0; transition:opacity .12s;
   }
-  .placed-image-tools button { display:flex; align-items:center; gap:5px; white-space:nowrap; min-height:29px; padding:5px 8px; margin:0; border:0; border-radius:5px; background:#fff; color:#312e81; font:600 12px/1.2 system-ui,sans-serif; letter-spacing:normal; text-transform:none; cursor:pointer; touch-action:none; }
+  .placed-image-tools button { display:flex; align-items:center; justify-content:center; flex:none; width:32px; height:32px; gap:0; white-space:nowrap; min-height:32px; padding:7px; margin:0; border:0; border-radius:0; background:#fff; color:#312e81; font:600 12px/1.2 system-ui,sans-serif; letter-spacing:normal; text-transform:none; cursor:pointer; touch-action:none; }
   .placed-image-tools button:hover { background:#eef2ff; }
   .placed-image-tools .placed-image-move { cursor:grab; }
   .placed-image:is(:hover,:focus-within,[data-dragging]) > .placed-image-tools { opacity:1; }

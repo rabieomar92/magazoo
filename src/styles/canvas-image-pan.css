@@ -11,7 +11,7 @@
 @media(max-width:600px){.canvas-pan-toolbar{flex-wrap:wrap;bottom:12px;}.canvas-pan-toolbar>div{flex-basis:100%;}.canvas-pan-trigger{opacity:1;}}
 @media print{.canvas-pan-trigger,.canvas-pan-surface,.canvas-pan-toolbar{display:none!important;}}
 .canvas-pan-trigger{cursor:pointer}
-.canvas-crop-trigger{top:48px}
+.canvas-crop-trigger{top:8px;right:48px}
 [data-cropping=true]>.canvas-pan-trigger{display:none}
 .canvas-pan-toolbar{box-sizing:border-box;border-radius:0;gap:8px;padding:12px 14px}
 .canvas-pan-toolbar button{border-radius:0;white-space:nowrap}
@@ -20,3 +20,15 @@
    positioning rule must never put editor buttons/surfaces into text flow. */
 .page>.canvas-pan-trigger{position:absolute;z-index:10}
 .page>.canvas-pan-surface{position:absolute;inset:0;z-index:25}
+.canvas-pan-trigger{display:grid;place-items:center;box-sizing:border-box;width:32px;height:32px;min-height:32px;padding:6px;border-radius:0}
+.photo-tool-icon{display:block;flex:none;width:18px;height:18px;pointer-events:none}
+/* Text columns deliberately paint above normal photographs. During a pan,
+   lift the frame itself, not just its child surface: a child z-index cannot
+   escape its frame's stacking context to receive the pointer through text. */
+@media screen{
+ .page :has(>.canvas-pan-surface){z-index:30}
+ .placed-image:has(.canvas-pan-surface)>.placed-image-tools{visibility:hidden;pointer-events:none}
+}
+.canvas-pan-toolbar.canvas-photo-panel{display:grid;grid-template-columns:1fr auto;gap:10px}
+.canvas-pan-toolbar.canvas-photo-panel>div{grid-column:1/-1;padding-right:28px}
+.canvas-pan-toolbar>.canvas-photo-panel-grip{width:28px;height:28px;min-height:28px;padding:5px;border:0;background:transparent;color:#64748b}

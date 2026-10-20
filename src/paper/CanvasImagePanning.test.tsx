@@ -46,7 +46,8 @@ it('reattaches crop and pan actions when wrap editing replaces the image toolbar
   expect(page.querySelectorAll('.placed-image-tools button')).toHaveLength(2);
   await act(async()=>{const tools=document.createElement('div');tools.className='placed-image-tools';page.querySelector('.placed-image-tools')!.replaceWith(tools);});
   expect(page.querySelectorAll('.placed-image-tools button')).toHaveLength(2);
-  expect(page.querySelector('.canvas-crop-trigger')!.textContent).toBe('Crop photo');
+  expect(page.querySelector('.canvas-crop-trigger')!.getAttribute('aria-label')).toBe('Crop photo');
+  expect(page.querySelector('.canvas-crop-trigger svg')).not.toBeNull();
  }finally{act(()=>root.unmount());}
 });
 

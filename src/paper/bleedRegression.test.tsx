@@ -16,6 +16,7 @@ describe('all-template trim and top bar regressions',()=>{
   const pan=readFileSync('src/styles/canvas-image-pan.css','utf8');
   expect(pan).toContain('.page>.canvas-pan-surface{position:absolute;inset:0;z-index:25}');
   expect(pan).toContain('.page>.canvas-pan-trigger{position:absolute;z-index:10}');
+  expect(pan).toContain('.page :has(>.canvas-pan-surface){z-index:30}');
   expect(readFileSync('src/styles/image-canvas.css','utf8')).toContain('.page>.canvas-crop-surface{position:absolute;');
   expect(readFileSync('src/styles/canvas-image-resize.css','utf8')).toContain('.page>.canvas-height-handle{position:absolute;');
  });

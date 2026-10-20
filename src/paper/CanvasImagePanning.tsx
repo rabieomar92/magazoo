@@ -10,6 +10,8 @@ import {currentDocumentSession,useDoc} from '../store/useDoc';
 import '../styles/canvas-image-pan.css';
 import {CanvasPhotoCrop} from './CanvasPhotoCrop';
 import {cropClip} from '../lib/imageCrop';
+import {PhotoToolIcon} from '../components/PhotoToolIcon';
+import {CanvasPhotoPanel} from './CanvasPhotoPanel';
 
 type Target={kind:'hero'|'cover';id?:never}|{kind:'image'|'gallery';id:string};
 type Candidate={image:HTMLImageElement;frame:HTMLElement;target:Target;tools:Element};
@@ -94,9 +96,9 @@ export function CanvasImagePanning({doc,root}:{doc:Doc;root:RefObject<HTMLDivEle
       else{const frame=current[candidate.target.kind];if(frame)Object.assign(frame,pan);}
     });
   };
-  return <>{candidates.map((candidate,index)=>createPortal(<button type="button" className="canvas-pan-trigger" data-editor-only="true" aria-label={candidate.target.kind==='image'?'Pan page image on canvas':'Pan hero image on canvas'} onPointerDown={event=>event.stopPropagation()} onClick={event=>{event.stopPropagation();open(candidate);}}>Pan photo</button>,candidate.tools,String(index)))}
-    {candidates.filter(c=>c.image.classList.contains('framed-image')).map((candidate,index)=>createPortal(<button type="button" className="canvas-pan-trigger canvas-crop-trigger" data-editor-only="true" onPointerDown={e=>e.stopPropagation()} onClick={e=>{e.stopPropagation();cancel();setCropping(candidate);}}>Crop photo</button>,candidate.tools,`crop-${index}`))}
+  return <>{candidates.map((candidate,index)=>createPortal(<button type="button" className="canvas-pan-trigger" data-editor-only="true" title="Pan photo" aria-label={candidate.target.kind==='image'?'Pan page image on canvas':'Pan hero image on canvas'} onPointerDown={event=>event.stopPropagation()} onClick={event=>{event.stopPropagation();open(candidate);}}><PhotoToolIcon name="pan"/></button>,candidate.tools,String(index)))}
+    {candidates.filter(c=>c.image.classList.contains('framed-image')).map((candidate,index)=>createPortal(<button type="button" className="canvas-pan-trigger canvas-crop-trigger" data-editor-only="true" aria-label="Crop photo" title="Crop photo" onPointerDown={e=>e.stopPropagation()} onClick={e=>{e.stopPropagation();cancel();setCropping(candidate);}}><PhotoToolIcon name="crop"/></button>,candidate.tools,`crop-${index}`))}
     {cropping&&<CanvasPhotoCrop image={cropping.image} frame={frameOf(doc,cropping.target)} onCancel={()=>setCropping(null)} onApply={frame=>{const target=cropping.target;setCropping(null);useDoc.getState().update(current=>{if(target.kind==='image'){const item=current.images.find(i=>i.id===target.id);if(item)item.frame=frame;}else if(target.kind==='gallery'){const block=current.blocks.find(b=>b.type==='figure'&&b.id===target.id);if(block?.type==='figure')block.frame=frame;}else Object.assign(current[target.kind]!,frame);});}}/>}
     {active&&createPortal(<div className="canvas-pan-surface" data-editor-only="true" role="group" aria-label="Drag photograph inside its frame" onPointerDown={down} onPointerMove={move} onPointerUp={event=>{move(event);drag.current=null;}} onPointerCancel={cancel} onLostPointerCapture={()=>{drag.current=null;}}/>,active.frame)}
-    {active&&createPortal(<section className="canvas-pan-toolbar" role="dialog" aria-label="Pan photograph" data-editor-only="true"><div><strong>Reposition photograph</strong><span>Drag the photo on the page. Its frame and text boundary stay fixed.</span></div><button type="button" onClick={cancel}>Cancel</button><button ref={applyRef} type="button" onClick={apply}>Apply position</button></section>,document.body)}</>;
+    {active&&<CanvasPhotoPanel anchor={active.frame} className="canvas-pan-toolbar" label="Pan photograph"><div><strong>Reposition photograph</strong><span>Drag the photo on the page. Its frame and text boundary stay fixed.</span></div><button type="button" onClick={cancel}>Cancel</button><button ref={applyRef} type="button" onClick={apply}>Apply position</button></CanvasPhotoPanel>}</>;
 }
