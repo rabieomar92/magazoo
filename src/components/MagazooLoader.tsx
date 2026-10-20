@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from 'react';
+import {useEffect,useState,type CSSProperties,type ReactNode} from 'react';
 import './MagazooLoader.css';
 import './BusyIndicator.css';
 
@@ -12,8 +12,25 @@ export interface MagazooLoaderProps {
   max?: number;
 }
 
+/** No audio, no player controls and no animation for reduced-motion readers. */
+function LoadingFilm(){
+  const [animate,setAnimate]=useState(false),[failed,setFailed]=useState(false);
+  useEffect(()=>{
+    const preference=window.matchMedia?.('(prefers-reduced-motion: reduce)');
+    const sync=()=>setAnimate(!!preference&&!preference.matches);
+    sync();preference?.addEventListener('change',sync);
+    return()=>preference?.removeEventListener('change',sync);
+  },[]);
+  const base=import.meta.env.BASE_URL;
+  return <span className="magazoo-loader-film" aria-hidden="true">{animate&&!failed
+    ? <video autoPlay muted loop playsInline preload="metadata" poster={`${base}magazoo-loading-mono.webp`} width={752} height={416} onError={()=>setFailed(true)}>
+        <source src={`${base}magazoo-loading-mono.mp4`} type="video/mp4"/>
+      </video>
+    : <img src={`${base}magazoo-loading-mono.webp`} width={752} height={416} alt=""/>}</span>;
+}
+
 /**
- * Quiet shared wait state: a small ring, a label and real progress when known.
+ * Quiet monochrome film for waiting panels; small controls keep a simple ring.
  */
 export function MagazooLoader({
   label = 'Loading Magazoo…', detail, className, variant = 'card', tone = 'light', value, max,
@@ -29,7 +46,7 @@ export function MagazooLoader({
       aria-live="polite"
       aria-busy="true"
     >
-      <span className="busy-indicator-ring magazoo-loader-ring" aria-hidden="true" />
+      {variant==='inline'?<span className="busy-indicator-ring magazoo-loader-ring" aria-hidden="true" />:<LoadingFilm/>}
       <span className="magazoo-loader-copy">
         <strong>{label}</strong>
         {detail && <small>{detail}</small>}
