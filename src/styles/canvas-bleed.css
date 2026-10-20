@@ -5,5 +5,7 @@
 }
 @media print{.canvas-bleed-guide{display:none!important}}
 .page > .canvas-trim-corners{position:absolute;inset:0;width:100%;height:100%;max-width:none;max-height:none;margin:0;padding:0;pointer-events:none;z-index:91;overflow:visible}
-.canvas-trim-corners line{stroke:#172033;stroke-width:1.75;vector-effect:non-scaling-stroke;opacity:1;filter:drop-shadow(0 0 1px #fff) drop-shadow(0 0 1px #fff)}
+.canvas-trim-corners :is(line,path){vector-effect:non-scaling-stroke;stroke-linecap:butt;fill:none;opacity:1;filter:none}
+.canvas-trim-corners .canvas-trim-keyline{stroke:#fff;stroke-width:3}
+.canvas-trim-corners line{stroke:#111;stroke-width:2}
 @media print{.canvas-trim-corners{display:none!important}}

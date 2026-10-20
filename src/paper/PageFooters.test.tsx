@@ -2,9 +2,21 @@ import {act} from 'react';
 import {createRoot} from 'react-dom/client';
 import {afterEach,expect,it,vi} from 'vitest';
 import {PageFooters} from './PageFooters';
-import {presetFor} from '../store/presets';
+import {presetFor,TEMPLATES} from '../store/presets';
 
 afterEach(()=>{document.body.replaceChildren();vi.unstubAllGlobals();});
+it.each(TEMPLATES.map(t=>t.id))('%s aligns both footer ends with text margins, without adding bleed twice',id=>{
+ vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT',true);
+ const pages=document.createElement('div');pages.innerHTML='<div class="page"></div><div class="page"></div>';document.body.append(pages);
+ const host=document.createElement('div');document.body.append(host);const root=createRoot(host),doc=presetFor(id);
+ try{for(const bleed of [0,5,10])for(const margin of [6,16,24]){
+  doc.design.margin=margin;doc.design.bleedCanvas=true;doc.design.bleedMm=bleed;
+  act(()=>root.render(<PageFooters doc={{...doc,design:{...doc.design}}} root={{current:pages}}/>));
+  for(const footer of pages.querySelectorAll<HTMLElement>('.page-folio')){
+   expect(footer.style.paddingLeft).toBe('var(--margin)');expect(footer.style.paddingRight).toBe('var(--margin)');
+  }
+ }}finally{act(()=>root.unmount());}
+});
 it('adds a non-interactive editor-only footer boundary to every physical sheet',()=>{
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT',true);
   const pages=document.createElement('div');pages.innerHTML='<div class="page"></div><div class="page"></div>';document.body.append(pages);

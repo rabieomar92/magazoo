@@ -14,5 +14,6 @@ export function CanvasBleedGuides({root,bleedMm,bleedCanvas=false,size='a4',page
   return()=>{observer.disconnect();delete host.dataset.bleedGuides;if(old)host.style.setProperty('--canvas-bleed',old);else host.style.removeProperty('--canvas-bleed');};
  },[root,bleed,bleedCanvas,pageSelector]);
  const trim=paperSize(size);
- return bleed?<>{pages.map((page,i)=>createPortal(<><div className="canvas-bleed-guide" data-editor-only="true" aria-hidden="true" style={bleedCanvas?{inset:`${bleed}mm`}:undefined}/>{bleedCanvas&&<svg className="canvas-trim-corners" data-editor-only="true" aria-hidden="true" viewBox={`0 0 ${trim.width+2*bleed} ${trim.height+2*bleed}`} preserveAspectRatio="none">{cropMarkSegments(trim.width,trim.height,bleed).map(([x1,y1,x2,y2],j)=><line key={j} x1={x1} y1={y1} x2={x2} y2={y2}/>)}</svg>}</>,page,String(i)))}</>:null;
+ const segments=cropMarkSegments(trim.width,trim.height,bleed);
+ return bleed?<>{pages.map((page,i)=>createPortal(<><div className="canvas-bleed-guide" data-editor-only="true" aria-hidden="true" style={bleedCanvas?{inset:`${bleed}mm`}:undefined}/>{bleedCanvas&&<svg className="canvas-trim-corners" data-editor-only="true" aria-hidden="true" viewBox={`0 0 ${trim.width+2*bleed} ${trim.height+2*bleed}`} preserveAspectRatio="none"><path className="canvas-trim-keyline" d={segments.map(([x1,y1,x2,y2])=>`M ${x1} ${y1} L ${x2} ${y2}`).join(' ')}/>{segments.map(([x1,y1,x2,y2],j)=><line key={j} x1={x1} y1={y1} x2={x2} y2={y2}/>)}</svg>}</>,page,String(i)))}</>:null;
 }

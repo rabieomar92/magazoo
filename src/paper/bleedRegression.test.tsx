@@ -12,6 +12,13 @@ describe('all-template trim and top bar regressions',()=>{
   const css=readFileSync('src/styles/canvas-bleed.css','utf8');
   expect(css).toMatch(/\.page\s*>\s*\.canvas-trim-corners\s*\{position:absolute;inset:0/);
  });
+ it('uses opaque crisp ticks with a hard keyline rather than a blurred glow',()=>{
+  const css=readFileSync('src/styles/canvas-bleed.css','utf8');
+  expect(css).not.toMatch(/drop-shadow|blur\(/);
+  expect(css).toContain('stroke-linecap:butt');
+  expect(css).toContain('.canvas-trim-corners line{stroke:#111;stroke-width:2}');
+  expect(css).toContain('.canvas-trim-keyline{stroke:#fff;stroke-width:3}');
+ });
  it('keeps full-page photo tools out of page flow',()=>{
   const pan=readFileSync('src/styles/canvas-image-pan.css','utf8');
   expect(pan).toContain('.page>.canvas-pan-surface{position:absolute;inset:0;z-index:25}');
