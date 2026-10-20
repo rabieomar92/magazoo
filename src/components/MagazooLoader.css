@@ -1,10 +1,11 @@
 .magazoo-loader{--ml-accent:#5748e8;--ml-muted:#68738a;--ml-track:#e5e8f0;display:flex;align-items:center;justify-content:center;gap:12px;min-width:0;color:#172033;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif}
 .magazoo-loader.is-dark{color:#f7f8ff;--ml-muted:#aab3c6;--ml-track:#2b3348;--ml-accent:#a69eff}
 .magazoo-loader-ring{width:18px;height:18px;color:var(--ml-accent);border-width:1.5px}
-.magazoo-loader-film{display:block;flex:none;width:160px;aspect-ratio:752/416;overflow:hidden;background:#fff;border-radius:6px}
+.magazoo-loader-film{display:block;flex:none;width:160px;aspect-ratio:752/416;overflow:hidden;background:#fff;border-radius:0}
 .magazoo-loader-film :is(video,img){display:block;width:100%;height:100%;object-fit:contain}
 .magazoo-loader.is-banner .magazoo-loader-film{width:80px}
-.magazoo-loader.is-card{flex-direction:column;gap:14px}
+.magazoo-loader.is-card{flex-direction:column;gap:20px}
+.magazoo-loader.is-card .magazoo-loader-film{width:min(360px,100%)}
 .magazoo-loader.is-card .magazoo-loader-copy{text-align:center;width:min(100%,300px)}
 .magazoo-loader-copy{display:grid;gap:4px;min-width:0;text-align:left}
 .magazoo-loader-copy strong{font-size:13px;font-weight:550;line-height:1.4}

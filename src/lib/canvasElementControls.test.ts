@@ -2,6 +2,13 @@ import {expect,it} from 'vitest';
 import {canvasElementControls,canvasTextTarget} from './canvasElementControls';
 import {presetFor,TEMPLATES} from '../store/presets';
 
+it.each(['.fm-header','.fm-board-list-header','.news-header','.mag2-head-content'])('moves %s without altering typography',selector=>{
+ const doc=presetFor('magazine-2'),header=document.createElement('header');header.className=selector.slice(1);
+ const control=canvasElementControls(doc,header).find(c=>c.id==='headerSpacing')!;
+ expect(control.axis).toBe('y');expect(control.paint).toBe('moveY');control.save(doc,12.5);
+ expect(doc.design.headerOffsetMm).toBe(12.5);expect(doc.design.sizes.title).toBe(presetFor('magazine-2').design.sizes.title);
+});
+
 it.each(TEMPLATES.map(t=>t.id))('%s never offers typography drag handles',id=>{
  const doc=presetFor(id),element=document.createElement('p');element.className='subtitle';element.style.fontSize='16px';element.style.lineHeight='20px';
  const header=document.createElement('div');header.className='header';header.append(element);document.body.append(header);

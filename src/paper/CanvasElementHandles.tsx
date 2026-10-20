@@ -25,7 +25,7 @@ export function CanvasElementHandles({doc,root}:{doc:Doc;root:RefObject<HTMLDivE
   const choose=(event:MouseEvent)=>{
    if(gesture.current||!(event.target instanceof Element)||event.target.closest('[data-editor-only]'))return;
    const target=event.target;if(!target.closest('.page'))return;
-   const explicit=target.closest<HTMLElement>('.header,.article-header-position,.tag-bar,.page-folio,.fm-header,.news-header,[data-editor-target="image-hero"],[data-editor-target="image-backcover-qr"],[data-editor-target="image-backcover-logo"],[data-editor-target="image-logo"],[data-editor-target="image-signature"]');
+   const explicit=target.closest<HTMLElement>('.header,.article-header-position,.tag-bar,.page-folio,.fm-header,.fm-board-list-header,.news-header,.mag2-head-content,.mag-cover-mid,[data-editor-target="image-hero"],[data-editor-target="image-backcover-qr"],[data-editor-target="image-backcover-logo"],[data-editor-target="image-logo"],[data-editor-target="image-signature"]');
    const text=canvasTextTarget(doc,target);
    const next=text??(explicit?{element:explicit}:undefined);
    setSelection(next&&canvasElementControls(doc,next.element,'key' in next?next.key:undefined).length?{...next,page:[...root.current!.querySelectorAll('.page')].indexOf(next.element.closest('.page')!)}:null);

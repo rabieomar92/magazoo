@@ -116,3 +116,16 @@ it('passes the native Magazine size through to both generated contents pages', (
   expect(pages.map(page => [page.style.getPropertyValue('--page-w'), page.style.getPropertyValue('--page-h')]))
     .toEqual([['203mm', '267mm'], ['203mm', '267mm']]);
 });
+
+it('shows project trim guides on both contents pages without adding them to article pages twice',()=>{
+ const pagesRef=createRef<HTMLDivElement>();
+ const plan:IssuePlan={order:['__contents__'],startNumber:1,countCovers:false,contentsTitle:'Contents',contentsSubtitle:'',contentsExcluded:[],direction:'ltr'};
+ act(()=>root.render(<IssueProof plan={plan} entries={[]} documents={[]} magazineName="Test" contentsStart={1} pageSize="jis-b5" bleedMm={5} scale={.5} pagesRef={pagesRef} onOverflow={()=>{}}/>));
+ const pages=[...host.querySelectorAll<HTMLElement>('.issue-contents-page')];
+ expect(pages).toHaveLength(2);
+ for(const page of pages){
+  expect(page.dataset.canvasBleedMm).toBe('5');
+  expect(page.querySelectorAll('.canvas-trim-corners line')).toHaveLength(8);
+  expect(page.querySelector<SVGElement>('.canvas-trim-corners')?.getAttribute('viewBox')).toBe('0 0 192 267');
+ }
+});

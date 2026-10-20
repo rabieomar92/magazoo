@@ -2,7 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { migrate } from '../schema/document';
 import {withProjectIssueLabel} from '../lib/projectIssueLabel';
 import { exportIssuePdf, issuePageGroups, waitForPreviewResources } from '../lib/pdfExport';
-import { PDF_PAGE_SIZES, type PdfPageSize } from '../lib/pdfPageSize';
+import { paperSize,paperSizeOptions, type PdfPageSize } from '../lib/pdfPageSize';
 import { pageDimensions, withPageFormat } from '../lib/pageFormat';
 import { usePdfPageSize, usePdfPreferences } from '../store/pdfPreferences';
 import { issueApi } from './api';
@@ -421,10 +421,10 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
             <h2>Finalise &amp; export</h2>
             <IssuePrintBrief title={data.project.name} plan={vendorPlan} items={items} assignments={assignments} size={pdfSize} disabled={busy||!ready||!proofVerified||proofStale} onChange={updatePlan}/>
             <label className="field">PDF page size<select value={pdfSize} disabled={busy||!!data.project.settings} onChange={event => setPdfSize(event.target.value as PdfPageSize)}>
-              {Object.entries(PDF_PAGE_SIZES).map(([key, size]) => <option key={key} value={key}>{size.label} · {size.width} × {size.height} mm</option>)}
+              {Object.entries(paperSizeOptions(pdfSize)).map(([key, size]) => <option key={key} value={key}>{size.label} · {size.width} × {size.height} mm</option>)}
             </select></label>
             <label className="field">Print PDF bleed per edge (mm)<input type="number" min="0" max="10" step="0.5" value={printBleed} disabled={busy||!!data.project.settings} onChange={event=>updatePlan({...plan,printSettings:{binding:'saddle-stitch',perfectMultiple:2,...plan.printSettings,bleedMm:documentBleed(event.target.valueAsNumber)}})}/></label>
-            <p className="field-hint">Original PDF: exact trim, no bleed or marks. Bleed PDF: {printBleed} mm per edge with corner cut marks; {PDF_PAGE_SIZES[pdfSize].width+2*printBleed} × {PDF_PAGE_SIZES[pdfSize].height+2*printBleed} mm, no extra border. Layout and page order stay identical. {data.project.settings?'Paper size and bleed are managed in Project settings.':'Use Project settings in the library to enable the same expanded editable canvas for every document.'} Imported PDFs retain their original trim artwork; provide bleed-ready source artwork where needed.</p>
+            <p className="field-hint">Original PDF: exact trim, no bleed or marks. Bleed PDF: {printBleed} mm per edge with corner cut marks; {paperSize(pdfSize).width+2*printBleed} × {paperSize(pdfSize).height+2*printBleed} mm, no extra border. Layout and page order stay identical. {data.project.settings?'Paper size and bleed are managed in Project settings.':'Use Project settings in the library to enable the same expanded editable canvas for every document.'} Imported PDFs retain their original trim artwork; provide bleed-ready source artwork where needed.</p>
             <p className="field-hint">A4, ISO B5, JIS B5 and Magazine lay out every article, cover and contents page directly at the selected paper size. Changing size recompiles the issue and may change its page counts; saved article content stays untouched. Choose the browser’s Save as PDF, Default margins (the publication sets them to zero), 100% scale and Background graphics. A system PDF printer or physical printer may need a matching custom paper size.</p>
             <p className="field-hint">Finalising writes each article’s starting page number back into the saved document, so a single-article export carries the same folio as the issue.</p>
             {contentsOverflow && ready && <p className="inline-alert" role="alert">The contents text does not fit its two pages. Shorten the heading or introduction, drop a subtitle, or uncheck some entries.</p>}

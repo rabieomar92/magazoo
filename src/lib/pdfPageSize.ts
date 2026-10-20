@@ -1,5 +1,5 @@
 /** Every selected output size is also the native canvas trim. */
-export type PdfPageSize = 'a4' | 'b5' | 'jis-b5' | 'vendor-b5' | 'magazine';
+export type PdfPageSize = 'a4' | 'b5' | 'jis-b5' | 'vendor-b5' | 'magazine' | `custom:${number}x${number}`;
 export const PDF_PAGE_SIZES = {
   a4: { label: 'A4', width: 210, height: 297 },
   b5: { label: 'B5 (ISO)', width: 176, height: 250 },
@@ -7,6 +7,23 @@ export const PDF_PAGE_SIZES = {
   'vendor-b5': { label: 'Vendor B5', width: 182, height: 258 },
   magazine: { label: 'Magazine', width: 203, height: 267 },
 } as const;
+
+/** Encode physical trim dimensions in the saved format so backups are self-contained. */
+export function customPageSize(width:number,height:number):PdfPageSize{
+  if(!Number.isFinite(width)||!Number.isFinite(height)||width<50||height<50||width>480||height>480)throw new Error('Custom trim width and height must be between 50 and 480 mm.');
+  return `custom:${Math.round(width*100)/100}x${Math.round(height*100)/100}`;
+}
+export function paperSize(size:PdfPageSize):{label:string;width:number;height:number}{
+  if(Object.hasOwn(PDF_PAGE_SIZES,size))return PDF_PAGE_SIZES[size as keyof typeof PDF_PAGE_SIZES];
+  const match=/^custom:(\d+(?:\.\d{1,2})?)x(\d+(?:\.\d{1,2})?)$/.exec(size);
+  if(!match)throw new Error('Choose a supported paper size.');
+  const width=Number(match[1]),height=Number(match[2]);customPageSize(width,height);
+  return {label:'Custom',width,height};
+}
+export function isPdfPageSize(value:unknown):value is PdfPageSize{
+  if(typeof value!=='string')return false;try{paperSize(value as PdfPageSize);return true;}catch{return false;}
+}
+export function paperSizeOptions(size:PdfPageSize){return size.startsWith('custom:')?{...PDF_PAGE_SIZES,[size]:paperSize(size)}:PDF_PAGE_SIZES;}
 
 function checkedDimension(value: string | undefined, fallback: number, name: string) {
   const dimension = value === undefined ? fallback : Number(value);
@@ -29,7 +46,7 @@ export function pdfPageDimensions(page: HTMLElement) {
 export function pdfSheetGeometry(size: PdfPageSize, sourceHeight = 297, sourceWidth = 210) {
   checkedDimension(String(sourceWidth), 210, 'width');
   checkedDimension(String(sourceHeight), 297, 'height');
-  const { width, height } = PDF_PAGE_SIZES[size];
+  const { width, height } = paperSize(size);
   const scale = Math.min(width / sourceWidth, height / sourceHeight);
   return { width, height, scale, left: Math.max(0, (width - sourceWidth * scale) / 2), top: Math.max(0, (height - sourceHeight * scale) / 2) };
 }
@@ -42,7 +59,7 @@ export function fitPdfSheets(doc: Document, size: PdfPageSize, bleedMm = 0, crop
   if (!pages.length) return;
   const dimensions = pages.map(pdfPageDimensions);
   const sourceBleeds=pages.map(page=>{const bleed=Number(page.dataset.canvasBleedMm??0);if(!Number.isFinite(bleed)||bleed<0||bleed>10)throw new Error('The canvas bleed is invalid.');return bleed;});
-  const expected = PDF_PAGE_SIZES[size];
+  const expected = paperSize(size);
   if (dimensions.some((page,i) => Math.abs(page.width-2*sourceBleeds[i]-expected.width)>.001 || Math.abs(page.height-2*sourceBleeds[i]-expected.height)>.001)) {
     throw new Error(`The ${expected.label} preview is not ready at ${expected.width} × ${expected.height} mm. Wait for the layout to update and try again; exporting a different canvas size would add borders or change its scale.`);
   }

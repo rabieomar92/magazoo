@@ -95,6 +95,7 @@ export function cssVars(d: Design, templateId?: TemplateId, bottomMargin = d.mar
     '--hero-slot-h': `max(${nativeHeroSlot}, calc(${firstPageTop}mm - ${d.gutter}mm))`,
     '--topbar-offset': `${topBarOffset}mm`,
     '--first-page-top': `${firstPageTop}mm`,
+    '--header-offset': `${Math.max(0,Math.min(page.height/2,Number.isFinite(d.headerOffsetMm)?d.headerOffsetMm!:0))}mm`,
     '--cols-1': String(g.cols1),
     '--cols-2': String(g.cols2),
     // Raw body column count — the magazine spread reads this directly (it has no

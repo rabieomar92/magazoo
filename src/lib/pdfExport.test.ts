@@ -29,6 +29,17 @@ describe('print stylesheet readiness', () => {
 });
 
 describe('PDF export layout contract', () => {
+  it('preserves measured front-matter header height in the print clone only',()=>{
+    const source=document.createElement('div');source.className='pages';source.innerHTML='<div class="page" data-page-width-mm="210"><header class="fm-header">Heading</header></div>';
+    const page=source.firstElementChild as HTMLElement,header=page.firstElementChild as HTMLElement;
+    page.getBoundingClientRect=()=>({width:210*96/25.4/2} as DOMRect);
+    header.getBoundingClientRect=()=>({height:100} as DOMRect);
+    const print=document.implementation.createHTMLDocument('print');clonePages(source,print);
+    expect((print.querySelector('.fm-header') as HTMLElement).style.height).toBe('200px');
+    const proof=document.implementation.createHTMLDocument('proof');clonePages(source,proof,{freezeColumns:false});
+    expect((proof.querySelector('.fm-header') as HTMLElement).style.height).toBe('');
+    expect(header.style.height).toBe('');
+  });
   it('retains ancestor selectors, language and custom properties without copying editor UI or zoom boxes',()=>{
     const shell=document.createElement('main');shell.id='editor-context';shell.className='workspace';shell.style.setProperty('--publication-font','Arial');
     shell.innerHTML='<aside>Editor controls</aside><div class="paper-scroll" lang="ms"><div class="pages-frame" style="transform:scale(.6)"><div class="pages"><div class="page"><h1 class="title">Exact title</h1></div></div></div></div>';

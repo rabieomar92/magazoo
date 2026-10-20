@@ -7,6 +7,7 @@ import type { Doc } from '../schema/document';
 import type { PdfPageSize } from '../lib/pdfPageSize';
 import { ExternalPdfPages } from './ExternalPdfPages';
 import { waitForPreviewResources } from '../lib/pdfExport';
+import {CanvasBleedGuides} from '../paper/CanvasBleedGuides';
 
 /**
  * One article in the compiled issue — the article's own editor preview.
@@ -103,5 +104,6 @@ export function IssueProof({ plan, entries, documents, magazineName, design, con
       </div>
       {plan.order.slice(split + 1).map(article)}
     </div>
+    <CanvasBleedGuides root={pagesRef} size={pageSize} bleedMm={bleedMm} bleedCanvas pageSelector=".issue-proof-contents .page,.issue-external-pdf-page"/>
   </div>;
 }

@@ -1,4 +1,4 @@
-import { fitPdfSheets, PDF_PAGE_SIZES, pdfPageDimensions, type PdfPageSize } from './pdfPageSize';
+import { fitPdfSheets, paperSize, pdfPageDimensions, type PdfPageSize } from './pdfPageSize';
 import { freezeParagraphLines } from './pdfTextLines';
 import { compositePrintHeroFades } from './pdfHeroFade';
 
@@ -39,7 +39,7 @@ export function waitForStablePreview(source: HTMLElement): Promise<void> {
  * resulting PDF remains searchable and sharp at any zoom level.
  */
 export function pdfExportCss(size: PdfPageSize = 'a4') {
-  const { width, height } = PDF_PAGE_SIZES[size];
+  const { width, height } = paperSize(size);
   return `
   @page { size: ${width}mm ${height}mm; margin: 0; }
   html, body {
@@ -338,6 +338,20 @@ function freezeColumnLayout(source: HTMLElement, clone: HTMLElement) {
  */
 export function clonePages(source: HTMLElement, targetDocument: Document, { freezeColumns = true } = {}) {
   const pages = source.cloneNode(true) as HTMLElement;
+  if(freezeColumns){
+    // The front-matter header is an auto-height flex item. Removing editor
+    // controls and paged text rounding can shorten it by a fraction of a mm,
+    // moving every photograph/body frame underneath. Preserve its measured
+    // canvas height, without scaling text or disturbing any authored position.
+    const headers=[...source.querySelectorAll<HTMLElement>('.fm-header')];
+    const copies=[...pages.querySelectorAll<HTMLElement>('.fm-header')];
+    headers.forEach((header,index)=>{const copy=copies[index],page=header.closest<HTMLElement>('.page');if(!copy||!page)return;
+      const scale=page.getBoundingClientRect().width/(Number(page.dataset.pageWidthMm??210)*96/25.4);
+      const height=header.getBoundingClientRect().height/scale;
+      if(!(height>0&&Number.isFinite(height)))return;
+      copy.style.setProperty('box-sizing','border-box','important');copy.style.setProperty('height',`${height}px`,'important');
+    });
+  }
   // The print iframe has no surrounding document language. Losing inherited
   // English/Bahasa Melayu changes automatic hyphenation and therefore contour
   // line breaks even when every width/font/shape is identical to the preview.

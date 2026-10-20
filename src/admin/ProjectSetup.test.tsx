@@ -1,4 +1,15 @@
 import {act} from 'react';import {createRoot} from 'react-dom/client';import {expect,it,vi} from 'vitest';import {ProjectSetup} from './ProjectSetup';
+it('edits and reviews a saved custom size without reverting to a preset',()=>{
+ vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT',true);const host=document.createElement('div');document.body.append(host);const root=createRoot(host),save=vi.fn();
+ try{
+  act(()=>root.render(<ProjectSetup name="Custom issue" initial={{paperSize:'custom:190.5x260.25',bleedMm:5}} editing busy={false} onSave={save} onCancel={()=>{}}/>));
+  expect(host.querySelector('select')!.value).toBe('custom');
+  expect(host.textContent).toContain('200.5 × 270.25 mm');
+  const submit=()=>act(()=>host.querySelector('form')!.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true})));
+  submit();expect(host.textContent).toContain('190.5 × 260.25 mm');submit();
+  expect(save).toHaveBeenCalledWith({paperSize:'custom:190.5x260.25',bleedMm:5});
+ }finally{act(()=>root.unmount());host.remove();vi.unstubAllGlobals();}
+});
 it('reviews paper and per-edge bleed before creating a project',()=>{
  vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT',true);const host=document.createElement('div');document.body.append(host);const root=createRoot(host),save=vi.fn();
  try{

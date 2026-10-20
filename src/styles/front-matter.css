@@ -33,7 +33,7 @@
   padding-top: max(17mm, calc(var(--topbar-offset) + 10mm - var(--margin)));
   box-sizing: border-box;
 }
-.fm-header { flex: none; margin-bottom: 9mm; }
+.fm-header { flex: none; margin-bottom: 9mm; padding-top:var(--header-offset,0mm); }
 .fm-kicker {
   margin: 0 0 4mm;
   color: var(--accent);
@@ -86,7 +86,7 @@
 .fm-page--dean .fm-column { gap: 0; }
 .fm-page--dean .fm-paragraph { font-family: var(--sans); }
 .fm-page--dean .fm-paragraph:has(.decorative-quote) { padding-block: .65em; }
-.fm-page--dean .fm-header { padding-top: var(--fm-dean-category-gap,0mm); }
+.fm-page--dean .fm-header { padding-top: calc(var(--fm-dean-category-gap,0mm) + var(--header-offset,0mm)); }
 .fm-page--dean .fm-header h1 { margin-bottom: var(--fm-dean-title-gap,8mm); }
 .fm-page--dean .fm-subtitle,
 .fm-page--dean .fm-identity { margin-top: 0; }
@@ -220,6 +220,7 @@
 .fm-board-list-header {
   grid-column: 1 / -1;
   min-width: 0;
+  padding-top: var(--header-offset,0mm);
 }
 .fm-board-list-header h1 {
   margin: 0;

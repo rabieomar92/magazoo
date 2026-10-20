@@ -20,7 +20,7 @@
   padding-top: max(13mm, calc(var(--topbar-offset) + 13mm - var(--margin)));
 }
 
-.news-header { flex: none; margin-bottom: 6mm; }
+.news-header { flex: none; margin-bottom: 6mm; padding-top:var(--header-offset,0mm); }
 .news-header h1 {
   margin: 0;
   font: 700 var(--fs-title)/1.2 var(--serif);

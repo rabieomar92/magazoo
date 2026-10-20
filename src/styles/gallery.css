@@ -86,6 +86,14 @@
   background: rgba(0, 0, 0, 0.6);
   pointer-events: auto;
 }
+.g-caption-box{position:relative;box-sizing:border-box;flex-shrink:0;min-width:5mm;max-width:100%;pointer-events:auto}
+@media screen{
+ .g-caption-box:is(:hover,:focus-within){outline:1px dashed #818cf8;outline-offset:-1px}
+ .g-caption-box>.gallery-caption-resize{position:absolute;z-index:20;top:50%;width:10px;height:10px;min-width:0;min-height:0;margin:0;padding:0;border:2px solid #fff;border-radius:50%;background:#4f46e5;box-shadow:0 0 0 1px #6366f1;cursor:ew-resize;touch-action:none;opacity:0;transform:translateY(-50%) scale(var(--canvas-control-scale,1));}
+ .gallery-caption-resize--left{left:2px}.gallery-caption-resize--right{right:2px}
+ .g-caption-box:is(:hover,:focus-within)>.gallery-caption-resize{opacity:1}
+}
+@media print{.gallery-caption-resize{display:none!important}}
 .g-img figcaption .g-title {
   color: #fff;
   font-size: 9.5pt;

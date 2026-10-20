@@ -337,6 +337,8 @@
 .project-setup-review{display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:14px}
 .project-setup-review dt{color:#667085}.project-setup-review dd{margin:0}
 .project-settings-dialog{width:min(680px,calc(100vw - 48px))}
+.project-custom-dimensions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+@media(max-width:420px){.project-custom-dimensions{grid-template-columns:minmax(0,1fr);gap:0}}
 .admin-project-actions{display:flex;align-items:center;flex-wrap:wrap;gap:8px;min-width:0}
 .admin-page .admin-project-actions button{box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;min-height:38px;margin:0;white-space:nowrap}
 .admin-page .admin-pagination select{min-width:88px;padding-inline:12px 30px}

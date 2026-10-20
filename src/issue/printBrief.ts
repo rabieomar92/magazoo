@@ -1,11 +1,11 @@
 import { bindingPadding, bindingPageCounts } from './binding';
 import { CONTENTS_ID, issueDocumentLabel, issuePlainText, type IssueAssignment, type IssueItem, type IssuePlan } from './model';
-import { PDF_PAGE_SIZES, type PdfPageSize } from '../lib/pdfPageSize';
+import { paperSize, type PdfPageSize } from '../lib/pdfPageSize';
 
 export function buildPrintBrief(title:string,plan:IssuePlan,items:readonly IssueItem[],assignments:readonly IssueAssignment[],size:PdfPageSize) {
   const settings=plan.printSettings??{binding:'saddle-stitch',perfectMultiple:2};
   const pages=bindingPageCounts(items,assignments);
-  const trim=PDF_PAGE_SIZES[size];
+  const trim=paperSize(size);
   const perfect=settings.binding==='perfect';
   const basis=perfect?pages.interior:pages.total;
   const padding=bindingPadding(basis,perfect?settings.perfectMultiple:4);

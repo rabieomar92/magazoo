@@ -43,7 +43,12 @@ export function canvasElementControls(doc:Doc,element:HTMLElement,_key?:string):
  const onOwner=(selector:string)=>{controls[controls.length-1].element=owner(selector)??element;};
  if(owner('.tag-bar')){add('bar','Top bar position','y',doc.design.topBarOffset??DEFAULT_TOP_BAR_OFFSET,0,40,(d,v)=>{d.design.topBarOffset=v;},'moveY');onOwner('.tag-bar');}
  if(owner('.page-folio')){add('footer','Footer position','y',footerBottomOffset(doc),0,40,(d,v)=>{d.footer={...d.footer,bottomOffset:v};},'moveY');onOwner('.page-folio');}
- const heading=owner('.header,.article-header-position');
+ const heading=owner('.header,.article-header-position,.mag-cover-mid');
+ const flowingHeading=owner('.fm-header,.fm-board-list-header,.news-header,.mag2-head-content');
+ if(flowingHeading){
+  add('headerSpacing','Header position','y',doc.design.headerOffsetMm??0,0,pageDimensions(doc.design).height/2,(d,v)=>{d.design.headerOffsetMm=v;},'moveY');
+  controls[controls.length-1].element=flowingHeading;
+ }
  if(heading&& !['magazine-2','magazine-3','magazine-4','frontmatter-dean'].includes(doc.templateId??'')){
   const page=heading.closest<HTMLElement>('.page');const top=page?(heading.getBoundingClientRect().top-page.getBoundingClientRect().top)/(page.getBoundingClientRect().width/(parseFloat(getComputedStyle(page).width)/mm)):0;
   add('heading','Heading position','y',doc.design.firstPageTopMargin||top,0,250,(d,v)=>{d.design.firstPageTopMargin=v;},'moveY');

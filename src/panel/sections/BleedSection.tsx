@@ -1,12 +1,12 @@
 import {useDoc} from '../../store/useDoc';
 import {usePdfPageSize} from '../../store/pdfPreferences';
-import {PDF_PAGE_SIZES} from '../../lib/pdfPageSize';
+import {paperSize} from '../../lib/pdfPageSize';
 import {documentBleed} from '../../lib/documentBleed';
 import {LabeledNumber,Section,Toggle} from '../Field';
 export function BleedSection(){
  const bleed=useDoc(s=>documentBleed(s.doc.design.bleedMm)),update=useDoc(s=>s.update);
  const marks=useDoc(s=>s.doc.design.cropMarks??s.doc.design.projectLayout===true),project=useDoc(s=>s.doc.design.projectLayout===true);
- const [size]=usePdfPageSize(),trim=PDF_PAGE_SIZES[size];
+ const [size]=usePdfPageSize(),trim=paperSize(size);
  return <Section title="Print bleed">{project?<p className="hint">{bleed} mm per edge · managed in Project settings for all documents.</p>:<LabeledNumber label="Bleed per edge" unit="mm" min={0} max={10} step={.5} value={bleed} onChange={value=>update(doc=>{doc.design.bleedMm=documentBleed(value);doc.design.bleedCanvas=true;})}/>}
  <Toggle label="Include printed crop marks" checked={marks} onChange={value=>update(doc=>{doc.design.cropMarks=value;})}/>
  {!bleed&&<p className="hint" role="status">Crop marks need a bleed greater than 0 mm. No marks are printed on a zero-bleed sheet.</p>}

@@ -118,6 +118,9 @@ export type Block =
       /** Gallery caption position inside its photo: 0 top, 50 middle, 100 bottom.
        *  Absent keeps the existing bottom caption strip. */
       captionVerticalPosition?: number;
+      /** Gallery caption text-box insets, physical mm inside the photo frame. */
+      captionInsetLeftMm?: number;
+      captionInsetRightMm?: number;
       /**
        * Horizontal position of the image within its row when `span` is a
        * partial width (2 | 3 | 4) narrower than the row it's actually laid
@@ -382,7 +385,7 @@ export interface TextStyle {
 export interface Design {
   /** Render-only output override; selected paper size is a browser preference,
    * not an authoring change. Missing keeps the original A4/reference layout. */
-  pageFormat?: 'a4' | 'b5' | 'jis-b5' | 'vendor-b5' | 'magazine';
+  pageFormat?: import('../lib/pdfPageSize').PdfPageSize;
   /** Print-only buffer outside the trim, per edge. Does not change pagination. */
   bleedMm?: number;
   cropMarks?: boolean;
@@ -524,6 +527,8 @@ export interface Design {
    * template's native first-page composition.
    */
   firstPageTopMargin?: number;
+  /** Additional header spacing for magazine, front-matter and news layouts. */
+  headerOffsetMm?: number;
   /** Immersive Bleed only: extra text overlap into the hero, in mm. */
   heroImmersionMm?: number;
   gateTitle?: GateTextPlacement;

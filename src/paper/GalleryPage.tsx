@@ -11,6 +11,7 @@ import { galleryTileText } from '../lib/galleryText';
 import { TagBar } from './TagBar';
 import { PageArtwork } from '../components/PageArtwork';
 import { requestBlockEditorFocus } from '../lib/editorNavigation';
+import {GalleryCaptionBox} from './GalleryCaptionBox';
 
 /** Inline **bold** / *italic* / __underline__ + `$…$` math → styled nodes. */
 function renderRuns(text: string): ReactNode {
@@ -59,7 +60,7 @@ function ImageCaption({ block }: { block?: Block }) {
   } as CSSProperties;
   return <figcaption className="g-caption-positioned" style={style}
     data-editor-tab="images" data-editor-target={`gallery-caption-${block.id}`}>
-    <TileText text={block.caption} className="g-cap" caption />
+    <GalleryCaptionBox block={block}><TileText text={block.caption} className="g-cap" caption /></GalleryCaptionBox>
   </figcaption>;
 }
 

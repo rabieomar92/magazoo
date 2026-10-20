@@ -7,6 +7,12 @@ import { PDF_PAGE_SIZES } from './pdfPageSize';
 import { articlePageHeight } from './articleLayouts';
 
 describe('native magazine view model', () => {
+  it.each(TEMPLATE_META.map(meta=>meta.id))('uses custom trim plus per-edge bleed in %s without resizing text',id=>{
+    const doc=presetFor(id);const before=JSON.stringify(doc.blocks);doc.design.pageFormat='custom:190.5x260';doc.design.bleedCanvas=true;doc.design.bleedMm=5;
+    expect(pageDimensions(doc.design)).toEqual({width:200.5,height:270});
+    expect(cssVars(doc.design,id)).toMatchObject({'--page-w':'200.5mm','--page-h':'270mm'});
+    expect(JSON.stringify(doc.blocks)).toBe(before);
+  });
   it.each(TEMPLATE_META.map(meta=>meta.id))('uses an actual expanded editable canvas for %s',id=>{
     const doc=presetFor(id);doc.design.pageFormat='jis-b5';doc.design.bleedCanvas=true;doc.design.bleedMm=5;
     expect(pageDimensions(doc.design)).toEqual({width:192,height:267});

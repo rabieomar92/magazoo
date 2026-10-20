@@ -294,6 +294,8 @@
 
 /* --- boot ------------------------------------------------------------- */
 .studio-boot { margin:14vh auto; width:min(420px,calc(100% - 40px)); padding:24px 0; text-align:center; }
+.studio.is-booting{background:#fff}
+.studio.is-booting .studio-bar{background:#fff;box-shadow:none}
 .studio-boot h1 { font:650 22px/1.2 var(--ui); margin:0 0 8px; letter-spacing:-.02em; }
 .studio-boot p { color:var(--ink-2); margin:0 0 16px; }
 .studio-boot .magazoo-loader.is-card { width:100%; margin:0; padding:0; border:0; background:transparent; box-shadow:none; }

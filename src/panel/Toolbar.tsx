@@ -4,7 +4,7 @@ import { useDoc } from '../store/useDoc';
 import { openProject, saveProject, saveProjectAs, useProjectFile, useFileActivity } from '../store/projectFiles';
 import { useSaveStatus, type SaveState } from '../store/saveStatus';
 import { exportPreviewPdf } from '../lib/pdfExport';
-import { PDF_PAGE_SIZES, type PdfPageSize } from '../lib/pdfPageSize';
+import { paperSize,paperSizeOptions, type PdfPageSize } from '../lib/pdfPageSize';
 import { usePdfPageSize } from '../store/pdfPreferences';
 import { Wordmark } from '../components/Wordmark';
 import { MagazooLoader } from '../components/MagazooLoader';
@@ -157,16 +157,16 @@ export function Toolbar({ onPreviewToolsHost, onToggleSidebar, sidebarCollapsed 
         </div>
         <div className="toolbar-group toolbar-group--export" role="group" aria-label="PDF output">
           <select className="tool-btn select-control pdf-size-select" aria-label="PDF page size" value={pdfSize} disabled={exporting||projectLayout}
-            title={`Canvas and output: ${PDF_PAGE_SIZES[pdfSize].width} × ${PDF_PAGE_SIZES[pdfSize].height} mm at 100%. This browser remembers your choice; your article JSON is unchanged.`}
+            title={`Canvas and output: ${paperSize(pdfSize).width} × ${paperSize(pdfSize).height} mm at 100%. This browser remembers your choice; your article JSON is unchanged.`}
             onChange={event => setPdfSize(event.target.value as PdfPageSize)}>
-            {Object.entries(PDF_PAGE_SIZES).map(([key, size]) => <option key={key} value={key}>{size.label} · {size.width} × {size.height} mm</option>)}
+            {Object.entries(paperSizeOptions(pdfSize)).map(([key, size]) => <option key={key} value={key}>{size.label} · {size.width} × {size.height} mm</option>)}
           </select>
           <button
             className="tool-btn tool-btn--primary"
             onClick={() => void exportPdf()}
             disabled={exporting}
             aria-busy={exporting}
-            title={`Export ${PDF_PAGE_SIZES[pdfSize].label} pages to PDF — choose Save as PDF, Default margins (the publication sets zero), 100% scale, and background graphics`}
+            title={`Export ${paperSize(pdfSize).label} pages to PDF — choose Save as PDF, Default margins (the publication sets zero), 100% scale, and background graphics`}
             aria-label={exporting ? 'Preparing PDF' : 'Export PDF'}
           >
             {exporting

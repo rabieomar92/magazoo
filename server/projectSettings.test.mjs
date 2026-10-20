@@ -1,5 +1,14 @@
 import {test} from 'node:test';import assert from 'node:assert/strict';
 import {openStorage} from './storage.mjs';
+import {validateProjectSettings} from './projectSettings.mjs';
+test('custom project trim persists in article JSON and rejects unsafe dimensions',()=>{
+ const storage=openStorage(':memory:');try{
+  const settings={paperSize:'custom:190.5x260.25',bleedMm:5};const p=storage.createProject('Custom issue',settings);
+  const a=storage.createDocument(p.id,'article.json',JSON.stringify({meta:{title:'Keep'},design:{},blocks:[]}));
+  assert.equal(JSON.parse(storage.read(a.token).body).design.pageFormat,settings.paperSize);assert.deepEqual(storage.list()[0].settings,settings);
+  for(const paperSize of ['custom:49x260','custom:481x260','custom:190.123x260','custom:NaNx260'])assert.throws(()=>validateProjectSettings({paperSize,bleedMm:5}),/paper size/);
+ }finally{storage.close();}
+});
 test('project format applies to new, imported, updated and existing documents without altering content',()=>{
  const storage=openStorage(':memory:');try{
   const settings={paperSize:'jis-b5',bleedMm:5},p=storage.createProject('Issue',settings);

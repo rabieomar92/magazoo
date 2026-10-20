@@ -665,10 +665,10 @@
 }
 
 .mag2-head-content {
-  padding-top: max(
+  padding-top: calc(max(
     0mm,
     calc(var(--first-page-top, 0mm) - var(--topbar-offset, 10mm) - var(--bar-h) - var(--gutter))
-  );
+  ) + var(--header-offset,0mm));
 }
 
 .mag2-kicker {
