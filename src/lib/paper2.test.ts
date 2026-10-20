@@ -1,8 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { emptyDoc } from '../schema/document';
-import { paper2VerticalVars, paper2VacantTextStarts } from './paper2';
+import { paper2VerticalVars, paper2VacantTextStarts,stablePaper2Measurement } from './paper2';
 
 describe('Physics Letter hero alignment', () => {
+  it('settles subpixel header feedback without ignoring meaningful edits',()=>{
+    expect(stablePaper2Measurement(143.3125,143.318)).toBe(143.3125);
+    expect(stablePaper2Measurement(143.3125,143.2)).toBe(143.2);
+    expect(stablePaper2Measurement(143.3125,NaN)).toBe(143.3125);
+  });
   it('aligns vacant-side text exactly to the headline while keeping the lower text on that line grid',()=>{
     for(const titleOffset of [0,18.7,31.2])for(const head of [90,127.8,203])for(const line of [12,17.3,24]){
       const result=paper2VacantTextStarts(head,titleOffset,line,18.9);

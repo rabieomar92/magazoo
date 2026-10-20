@@ -372,6 +372,8 @@ export interface BackCoverDesign {
 /** Optional component typography. Missing properties preserve the template's
  * original style; stable object keys allow independent paragraph/caption edits. */
 export interface TextStyle {
+  /** Caption black-background opacity in percent. Absent preserves template styling. */
+  backgroundOpacity?: number;
   fontFamily?: string;
   fontSize?: number;
   fontWeight?: number;

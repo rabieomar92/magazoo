@@ -183,6 +183,27 @@ describe('PDF output sheet fitting', () => {
       expect(source.outerHTML).toBe(original);
     }
   });
+  it('clips only the paint when trimming an expanded canvas, without a paged overflow container',()=>{
+    const source=document.createElement('div');
+    source.innerHTML='<div class="page" data-page-width-mm="192" data-page-height-mm="268" data-canvas-bleed-mm="5"><section style="display:flex"><p>Keep this content</p></section></div>';
+    const original=source.outerHTML;
+    const trim=document.implementation.createHTMLDocument();clonePages(source,trim);
+    const css=fitPdfSheets(trim,'vendor-b5',0,false)!;
+    expect(css.textContent).toContain('overflow: visible !important; clip-path: inset(0) !important;');
+    expect(css.textContent).toContain('contain: strict !important;');
+    expect(css.textContent).toContain('left: 0 !important; top: 0 !important;');
+    expect(css.textContent).toContain('translate(var(--pdf-fit-left), var(--pdf-fit-top)) scale(var(--pdf-fit-scale))');
+    expect(trim.querySelector<HTMLElement>('.page')!.style.getPropertyValue('--pdf-fit-top')).toBe('-5mm');
+    expect(trim.querySelector('.page')!.textContent).toBe('Keep this content');
+    const bleed=document.implementation.createHTMLDocument();clonePages(source,bleed);
+    const bleedCss=fitPdfSheets(bleed,'vendor-b5',5,true)!;
+    expect(bleedCss.textContent).toContain('overflow: hidden !important;');
+    expect(bleedCss.textContent).not.toContain('clip-path: inset(0)');
+    expect(bleedCss.textContent).not.toContain('contain: strict');
+    expect(bleedCss.textContent).not.toContain('translate(var(--pdf-fit-left)');
+    expect(bleed.querySelectorAll('.pdf-crop-marks line')).toHaveLength(8);
+    expect(source.outerHTML).toBe(original);
+  });
   it('reads both native dimensions and retains legacy height-only reference metadata', () => {
     const page = document.createElement('div');
     expect(pdfPageDimensions(page)).toEqual({width:210,height:297});

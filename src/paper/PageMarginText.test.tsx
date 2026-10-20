@@ -26,6 +26,13 @@ beforeEach(() => {
 afterEach(() => { act(() => root.unmount()); host.remove(); vi.unstubAllGlobals(); });
 
 describe('physical page margin text', () => {
+  it('slightly dims saved margin colours without rewriting the document',async()=>{
+    const doc=presetFor('magazine-3');doc.marginText={enabled:true,mode:'all',text:'Photo credit',color:'#ffffff'};
+    await act(async()=>root.render(<Sheets doc={doc}/>));
+    const text=host.querySelector<HTMLElement>('.page-margin-text')!;
+    expect(text.style.opacity).toBe('0.8');expect(text.style.color).toBe('rgb(255, 255, 255)');
+    expect(doc.marginText.color).toBe('#ffffff');
+  });
   it.each(['left', 'right', undefined] as const)('follows the masthead on every sheet when starting %s', async barSide => {
     for (const mode of ['all', 'per-page'] as const) {
       const doc = presetFor('gallery-1');

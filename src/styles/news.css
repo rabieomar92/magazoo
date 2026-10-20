@@ -17,7 +17,9 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  padding-top: max(13mm, calc(var(--topbar-offset) + 13mm - var(--margin)));
+  /* Start 4 mm below the 6 mm masthead, without adding another full
+     page-margin-sized spacer. Shared with the measuring sheet and print. */
+  padding-top: max(0mm, calc(var(--topbar-offset) + 10mm - var(--margin)));
 }
 
 .news-header { flex: none; margin-bottom: 6mm; padding-top:var(--header-offset,0mm); }

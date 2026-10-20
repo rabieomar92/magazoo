@@ -49,6 +49,20 @@ function edit(input: HTMLTextAreaElement, value: string) {
   });
 }
 
+it('offers bottom-edge photo bleed directly beside the image without changing its crop',()=>{
+ mount('paper-3');
+ act(()=>useDoc.getState().update(d=>{d.design.heroAtBottom=true;}));
+ const label=[...node.querySelectorAll('label')].find(e=>e.textContent?.includes('Extend photo to bottom bleed edge'))!;
+ const toggle=label.querySelector<HTMLInputElement>('input')!;
+ const before={...useDoc.getState().doc.hero};
+ expect(toggle.checked).toBe(false);
+ act(()=>toggle.click());
+ expect(useDoc.getState().doc.design.heroBottomBleed).toBe(true);
+ expect(useDoc.getState().doc.hero).toEqual(before);
+ act(()=>toggle.click());
+ expect(useDoc.getState().doc.design.heroBottomBleed).toBe(false);
+});
+
 const heroTemplates: TemplateId[] = [
   'paper-1', 'paper-2', 'paper-3', 'paper-4', 'paper-5', 'paper-6', 'paper-7', 'paper-8',
   'magazine-1', 'magazine-2', 'frontmatter-dean', 'frontmatter-contents',

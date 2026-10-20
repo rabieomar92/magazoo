@@ -16,7 +16,7 @@ const LABELS: Record<string, string> = {
   strapline: 'Strapline', kicker: 'Category / kicker', storyTag: 'Story tag', teaserTitle: 'Teaser title', teaserBody: 'Teaser description', footerBrand: 'Footer publication',
   brand: 'Brand name', tagline: 'Tagline', website: 'Website', qrLabel: 'QR description',
   socialLabel: 'Social-media labels', socialUrl: 'Social-media links', footerText: 'Footer text', imprint: 'Issue mark',
-  caption: 'Image / equation captions', heroCaption: 'Hero image caption', coverCaption: 'Cover image caption', highlights: 'Highlights', references: 'References',
+  caption: 'All figure captions', heroCaption: 'Hero image caption', coverCaption: 'Cover image caption', highlights: 'Highlights', references: 'References',
   newsHeadline: 'Story headlines', newsCaption: 'Story captions', newsKicker: 'Story kickers', newsDeck: 'Story introductions', newsByline: 'Story bylines',
 };
 type Group = { group: string; label: string; property?: keyof TextStyle | 'tracking'; also?: string };
@@ -187,7 +187,9 @@ export function TypographyControl({ group, label, also = '', order = 50, childre
   if (!context) return <>{children}</>;
   const active = context.active;
   const localSelection = !!(active?.startsWith('block:') || active?.startsWith('news:') || active?.startsWith('gallery-caption:') || active === 'marginText');
-  const captionShared = active?.startsWith('gallery-caption:') && group === 'subtitle';
+  // Individual gallery captions use their own complete controls. Exposing the
+  // subtitle defaults here produced two colour pickers, one silently overridden.
+  const captionShared = false;
   const sharedFallback = !localSelection && group === 'body' && active !== null && !textStyleSelector(active) && !context.groups.some(item => item.group === active);
   const pairedSocial = active === 'socialUrl' && group === 'socialLabel';
   // The publication-name field is shared by the masthead and footer brand.

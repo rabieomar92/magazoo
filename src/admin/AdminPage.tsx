@@ -9,7 +9,7 @@ import { AdminIcon } from './AdminIcon';
 import { Wordmark } from '../components/Wordmark';
 import { MagazooLoader } from '../components/MagazooLoader';
 import {WorkspaceLoading} from '../components/WorkspaceLoading';
-import {LoginBackground} from './LoginBackground';
+import {WelcomePage,EditorLoginDialog} from './WelcomePage';
 import {PasswordDialog} from './PasswordDialog';
 import {ProjectSetup,ProjectSettingsDialog} from './ProjectSetup';
 const IssueWorkspace = lazy(() => import('../issue/IssueWorkspace'));
@@ -35,7 +35,8 @@ function DeleteDialog({target, close, remove}: {target: DeleteTarget; close: () 
   </dialog>;
 }
 
-export default function AdminPage() {
+export default function AdminPage({welcome=false}:{welcome?:boolean}) {
+  const [loginOpen,setLoginOpen]=useState(false);
   const [compilingProject, setCompilingProject] = useState<string | null>(null);
   const [csrf, setCsrf] = useState('');
   const [checked, setChecked] = useState(false);
@@ -83,6 +84,15 @@ export default function AdminPage() {
     finally { setBusy(false); }
   };
   if (csrf && compilingProject) return <Suspense fallback={<WorkspaceLoading destination="issue"><MagazooLoader label="Opening issue studio…" detail="Preparing the issue compiler and saved arrangement." /></WorkspaceLoading>}><IssueWorkspace projectId={compilingProject} csrf={csrf} onClose={() => { setCompilingProject(null); void run(() => refresh()); }} /></Suspense>;
+  if(!csrf||welcome)return <WelcomePage signedIn={!!csrf} onLogin={()=>{if(csrf)location.hash='#admin';else setLoginOpen(true);}}>
+    {loginOpen&&<EditorLoginDialog busy={busy} close={()=>{setLoginOpen(false);setPassword('');setPasswordVisible(false);setError('');}}>
+      {error&&<div className="admin-alert" role="alert">{error}</div>}
+      <div className="admin-login-auth" aria-busy={!checked||busy}>{!checked?<p><BusyIndicator label="Checking admin session…"/></p>:<form onSubmit={e=>{e.preventDefault();void run(async()=>{const data=await api('auth/login','','POST',{password});setPassword('');setPasswordVisible(false);setCsrf(data.csrf);await refresh(data.csrf);setLoginOpen(false);setNotice('Signed in.');if(welcome)location.hash='#admin';});}}>
+        <label htmlFor="admin-login-password">Administrator password</label><div className="admin-login-password"><input id="admin-login-password" type={passwordVisible?'text':'password'} required minLength={8} maxLength={512} value={password} onChange={e=>setPassword(e.target.value)} autoComplete="current-password" autoFocus disabled={busy}/><button className="admin-login-reveal" type="button" disabled={busy} aria-label={passwordVisible?'Hide password':'Show password'} aria-pressed={passwordVisible} onClick={()=>setPasswordVisible(value=>!value)}><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>{passwordVisible&&<path d="m3 3 18 18"/>}</svg></button></div>
+        <button className="primary" disabled={busy||password.length<8}>{busy?<BusyIndicator label="Signing in…"/>:'Sign in to workspace'}<AdminIcon name="arrow"/></button>
+      </form>}</div><a className="admin-login-editor" href={`${import.meta.env.BASE_URL}#editor`}>Open editor without signing in<AdminIcon name="arrow"/></a>
+    </EditorLoginDialog>}
+  </WelcomePage>;
   return <main className={`admin-page${!csrf?' admin-page--signin':''}`}>
     {csrf&&busy && <div className="admin-loading"><MagazooLoader variant="banner" label="Working… Please wait." /></div>}
     {csrf&&<header className="admin-header">
@@ -98,15 +108,7 @@ export default function AdminPage() {
     </header>}
     <div className={`admin-content${!csrf?' admin-content--signin':''}`}>
       {csrf&&error && <div className="admin-alert" role="alert">{error}</div>}{csrf&&notice&&notice!=='Signed in.' && <div className="admin-notice" role="status">{notice}</div>}
-      {!csrf ? <div className="admin-login-layout"><LoginBackground enabled={checked}/><section className="admin-card admin-login" aria-labelledby="admin-login-title">
-        <div className="admin-login-brand"><Wordmark/></div><h1 id="admin-login-title">Sign in</h1><p>Administrator access</p>
-        {error&&<div className="admin-alert" role="alert">{error}</div>}
-        <div className="admin-login-auth" aria-busy={!checked||busy}>{!checked?<p className="admin-login-check"><BusyIndicator label="Checking admin session…"/></p>:<form onSubmit={e => { e.preventDefault(); void run(async () => { const data = await api('auth/login', '', 'POST', {password}); setPassword(''); setPasswordVisible(false); setCsrf(data.csrf); await refresh(data.csrf); setNotice('Signed in.'); }); }}>
-          <label htmlFor="admin-login-password">Administrator password</label><div className="admin-login-password"><input id="admin-login-password" type={passwordVisible?'text':'password'} required minLength={8} maxLength={512} value={password} onChange={e => setPassword(e.target.value)} autoComplete="current-password" autoFocus disabled={busy}/><button className="admin-login-reveal" type="button" disabled={busy} aria-label={passwordVisible?'Hide password':'Show password'} aria-pressed={passwordVisible} onClick={()=>setPasswordVisible(value=>!value)}><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>{passwordVisible&&<path d="m3 3 18 18"/>}</svg></button></div>
-          <button className="primary" disabled={busy || password.length < 8}>{busy ? <BusyIndicator label="Signing in…"/> : 'Sign in to workspace'}<AdminIcon name="arrow"/></button>
-        </form>}</div>
-        <a className="admin-login-editor" href={`${import.meta.env.BASE_URL}#editor`}>Open editor<AdminIcon name="arrow"/></a>
-      </section></div> : <>
+      <>
         <section id="admin-create-panel" ref={creatorRef} className="admin-card admin-create-panel" hidden={!creator} aria-labelledby="admin-create-title">
           <header><div><h2 id="admin-create-title">{creator === 'project' ? 'Create a project' : 'Add an article'}</h2><p>{creator === 'project' ? 'Group articles in a named project.' : 'Create a blank document or import a Magazoo JSON file.'}</p></div><button className="admin-icon-button" disabled={busy} aria-label="Close create panel" onClick={closeCreator}><AdminIcon name="close"/></button></header>
           {creator==='project'&&<ProjectSetup name={name} onName={setName} busy={busy} onCancel={closeCreator} onSave={settings=>void run(async()=>{const created=await api('projects',csrf,'POST',{name,settings});setName('');await refresh();setProjectId(created.id);closeCreator();setNotice('Project created. Add an article when you are ready.');})}/>}
@@ -116,7 +118,7 @@ export default function AdminPage() {
         </section>
         <AdminLibrary projects={projects} busy={busy} onDelete={setDeleting} onRename={setRenaming} onSettings={setSettingsProject} onCompile={setCompilingProject} link={sharedLink} onCopy={item => void run(async () => { await navigator.clipboard.writeText(sharedLink(item.token)); setNotice(`Private editing link copied for ${item.name}.`); })} />
         <aside className="admin-sharing-note"><AdminIcon name="shield"/><p>Share thoughtfully. Anyone with a private link can access that article; only one person can edit it at a time. Keep links with your editorial team.</p></aside>
-      </>}
+      </>
       {csrf&&<footer className="admin-footnote"><span>Keep regular server backups. Deleting a project revokes its article links.</span></footer>}
     </div>
     {csrf&&passwordSettings&&<PasswordDialog close={()=>setPasswordSettings(false)} save={async data=>{const renewed=await api('auth/password',csrf,'POST',data);setCsrf(renewed.csrf);setNotice('Password changed. Other administrator sessions have been signed out.');}}/>}

@@ -36,6 +36,19 @@ it('copies only physical pages and preserves each article’s design without edi
 
 const item = (id: string) => ({ id, name: id.toUpperCase(), doc: presetFor('paper-1') });
 
+it('preserves caption background alpha in compiled pages without fading the text or covering gallery photos',()=>{
+ const source=document.createElement('div');source.className='pages';
+ source.innerHTML='<section class="page"><p data-editor-target="meta-hero-caption">Hero caption</p><figure class="g-img"><figcaption data-editor-target="gallery-caption-one"><div class="g-cap"><p>Gallery caption</p></div></figcaption></figure></section>';
+ const rules=document.createElement('style');rules.textContent='[data-editor-target="meta-hero-caption"]{background:rgba(0,0,0,.35);color:white}.g-cap{background:rgba(0,0,0,.75)}';
+ host.append(rules,source);
+ const [copy]=snapshotIssuePages(source,{heroCaption:{backgroundOpacity:35},'gallery-caption:one':{backgroundOpacity:75}});
+ rules.remove();
+ expect(copy.querySelector<HTMLElement>('.g-cap')!.style.background).toContain('0.75');
+ expect(copy.querySelector<HTMLElement>('section>p,p')!.style.background).toContain('0.35');
+ expect(copy.querySelector<HTMLElement>('figcaption')!.style.background).toBe('');
+ expect(copy.querySelector<HTMLElement>('p')!.style.opacity).toBe('');
+});
+
 it('keeps component font overrides after the live article styles and editor targets are removed', () => {
   const source=document.createElement('div');source.className='pages';
   source.innerHTML='<section class="page"><header class="header"><h1 class="title">Title</h1></header><p data-source-block-id="one">Styled <strong>inline emphasis</strong></p><p data-source-block-id="two">Unchanged</p></section>';

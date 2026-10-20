@@ -1,7 +1,7 @@
-.magazoo-loader{--ml-accent:#111;--ml-muted:#666;--ml-track:#e8e8e8;display:flex;align-items:center;justify-content:center;gap:12px;min-width:0;color:#111;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif}
-.magazoo-loader.is-dark{color:#fff;--ml-muted:#ccc;--ml-track:#444;--ml-accent:#fff}
-.magazoo-loader-ring{width:18px;height:18px;color:var(--ml-accent);border-width:1.5px}
-.magazoo-loader-film{display:block;flex:none;width:160px;aspect-ratio:752/416;overflow:hidden;background:#fff;border-radius:0}
+.magazoo-loader{--ml-accent:#111111;--ml-muted:#666666;--ml-track:#e8e8e8;display:flex;align-items:center;justify-content:center;gap:12px;min-width:0;color:#111111;font-family:var(--ui-font,Arial,sans-serif)}
+.magazoo-loader.is-dark{color:#ffffff;--ml-muted:#cccccc;--ml-track:#444444;--ml-accent:#ffffff}
+.magazoo-loader-ring{width:22px;height:18px;color:var(--ml-accent)}
+.magazoo-loader-film{display:block;flex:none;width:160px;aspect-ratio:752/416;overflow:hidden;background:#ffffff;border-radius:0}
 .magazoo-loader-film :is(video,img){display:block;width:100%;height:100%;object-fit:contain;filter:grayscale(1) contrast(1.4)}
 .magazoo-loader.is-banner .magazoo-loader-film{width:80px}
 .magazoo-loader.is-card{flex-direction:column;gap:20px}
@@ -10,10 +10,10 @@
 .magazoo-loader-copy{display:grid;gap:4px;min-width:0;text-align:left}
 .magazoo-loader-copy strong{font-size:13px;font-weight:550;line-height:1.4}
 .magazoo-loader-copy small{color:var(--ml-muted);font-size:12px;line-height:1.5}
-.magazoo-loader.is-card{width:min(560px,calc(100% - 40px));margin:64px auto;padding:16px 0;background:#fff;color:#111;--ml-accent:#111;--ml-muted:#666;--ml-track:#e8e8e8}
+.magazoo-loader.is-card{width:min(560px,calc(100% - 40px));margin:64px auto;padding:16px 0;background:#ffffff;color:#111111;--ml-accent:#111111;--ml-muted:#666666;--ml-track:#e8e8e8}
 .magazoo-loader.is-banner{justify-content:flex-start;gap:10px}
 .magazoo-loader.is-inline{display:inline-flex;gap:7px;color:inherit}
-.magazoo-loader.is-inline .magazoo-loader-ring{width:1em;height:1em;color:inherit}
+.magazoo-loader.is-inline .magazoo-loader-ring{width:1.35em;height:1em;color:inherit}
 .magazoo-loader.is-inline .magazoo-loader-copy{display:block}
 .magazoo-loader.is-inline .magazoo-loader-copy strong{font:inherit;color:inherit}
 .magazoo-loader-track{position:relative;display:block;height:3px;width:100%;min-width:100px;margin-top:6px;overflow:hidden;border-radius:3px;background:var(--ml-track)}

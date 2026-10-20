@@ -15,7 +15,7 @@ export function marginTextSettings(doc: Doc) {
     enabled: raw?.enabled === true,
     mode: raw?.mode === 'all' ? 'all' as const : 'per-page' as const,
     edgeOffset: bounded(raw?.edgeOffset, 6, 2, 30),
-    bottomOffset: bounded(raw?.bottomOffset, 20, 0, MAX_MARGIN_TEXT_BOTTOM_OFFSET),
+    bottomOffset: bounded(raw?.bottomOffset, 22, 0, MAX_MARGIN_TEXT_BOTTOM_OFFSET),
     fontFamily: ALL_FONTS.includes(raw?.fontFamily ?? '') ? raw!.fontFamily! : 'Helvetica',
     fontSize: bounded(raw?.fontSize, 6.5, 5, 12),
     color: typeof raw?.color === 'string' && /^#[\da-f]{3}(?:[\da-f]{3})?$/i.test(raw.color) ? raw.color : undefined,

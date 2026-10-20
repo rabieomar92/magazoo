@@ -1,8 +1,8 @@
 import { clonePages } from '../lib/pdfExport';
 import type { Design, TextStyle } from '../schema/document';
-import { textStyleSelector } from '../lib/textStyles';
+import { textStyleSelector,captionBackgroundSelector } from '../lib/textStyles';
 
-const STYLE_PROPERTIES: Record<keyof TextStyle, string> = {
+const STYLE_PROPERTIES: Record<Exclude<keyof TextStyle,'backgroundOpacity'>, string> = {
   fontFamily: 'font-family', fontSize: 'font-size', fontWeight: 'font-weight',
   italic: 'font-style', underline: 'text-decoration-line', color: 'color',
   align: 'text-align', lineHeight: 'line-height',
@@ -36,6 +36,10 @@ export function snapshotIssuePages(source: HTMLElement, textStyles?: Design['tex
     // before removing editor targets. Existing inherited styling stays intact.
     const copiesByNode = new Map(Array.from(originalText, (node, i) => [node, copiedText[i]]));
     for (const [key, style] of Object.entries(textStyles ?? {})) {
+      const backgroundSelector=captionBackgroundSelector(key);
+      if(backgroundSelector&&style?.backgroundOpacity!==undefined)for(const node of original.querySelectorAll<HTMLElement>(backgroundSelector)){
+        const target=copiesByNode.get(node);if(target){target.style.setProperty('background',getComputedStyle(node).background,'important');target.style.setProperty('backdrop-filter','none','important');}
+      }
       const selector = textStyleSelector(key);
       if (!selector || !style || typeof style !== 'object') continue;
       for (const node of original.querySelectorAll<HTMLElement>(selector)) {

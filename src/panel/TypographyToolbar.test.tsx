@@ -33,6 +33,24 @@ function group(value: string) {
 }
 
 describe('typography relocation', () => {
+  it('changes caption background opacity independently of the text with undo support',()=>{
+    render('magazine-2');group('heroCaption');
+    const input=host.querySelector<HTMLInputElement>('[aria-label="Background opacity (%)"]')!;
+    act(()=>{Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value')!.set!.call(input,'35');input.dispatchEvent(new Event('input',{bubbles:true}));});
+    expect(useDoc.getState().doc.design.textStyles?.heroCaption).toEqual({backgroundOpacity:35});
+    expect(migrate(JSON.parse(JSON.stringify(useDoc.getState().doc))).design.textStyles?.heroCaption.backgroundOpacity).toBe(35);
+    act(()=>useDoc.temporal.getState().undo());expect(useDoc.getState().doc.design.textStyles?.heroCaption?.backgroundOpacity).toBeUndefined();
+  });
+  it.each(TEMPLATE_META.map(meta=>[meta.id]))('%s applies caption colour on live picker input, clearing only conflicting caption colours',template=>{
+    render(template);
+    act(()=>useDoc.getState().update(d=>{d.design.textStyles={caption:{color:'#555555'},'image-caption:test':{color:'#666666',fontSize:8},heroCaption:{color:'#777777'}};}));
+    group('caption');
+    const input=host.querySelector<HTMLInputElement>('[data-complete-property="color"] input')!;
+    act(()=>{Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value')!.set!.call(input,'#cc2244');input.dispatchEvent(new Event('input',{bubbles:true}));});
+    const styles=useDoc.getState().doc.design.textStyles!;
+    expect(styles.caption.color).toBe('#cc2244');
+    expect(styles['image-caption:test']).toEqual({fontSize:8});expect(styles.heroCaption.color).toBeUndefined();
+  });
   it('keeps an unmounted gate quote selected without exposing unrelated body defaults',()=>{
     render('magazine-3');
     act(()=>host.querySelector<HTMLButtonElement>('[role=tab][aria-label="Headers"]')!.click());group('quote');

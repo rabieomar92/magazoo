@@ -20,7 +20,7 @@ export function CanvasElementHandles({doc,root}:{doc:Doc;root:RefObject<HTMLDivE
   const measure=()=>{const r=tools.current!.getBoundingClientRect();const next=canvasToolbarPosition(box,r.width,r.height,window.innerWidth,window.innerHeight);setToolPosition(old=>old.left===next.left&&old.top===next.top?old:next);};
   measure();const observer=new ResizeObserver(measure);observer.observe(tools.current);window.addEventListener('resize',measure);return()=>{observer.disconnect();window.removeEventListener('resize',measure);};
  },[box,doc]);
- const cancel=()=>{const state=gesture.current;if(state)state.element.style.cssText=state.style;gesture.current=null;setDraft('');};
+ const cancel=()=>{const state=gesture.current;if(state){state.element.style.cssText=state.style;delete state.element.dataset.layoutDragging;delete state.element.dataset.dragging;}gesture.current=null;setDraft('');};
  useEffect(()=>{
   const choose=(event:MouseEvent)=>{
    if(gesture.current||!(event.target instanceof Element)||event.target.closest('[data-editor-only]'))return;
@@ -43,7 +43,7 @@ export function CanvasElementHandles({doc,root}:{doc:Doc;root:RefObject<HTMLDivE
   const observer=new ResizeObserver(measure);if(selection)observer.observe(selection.element);
   return()=>{observer.disconnect();window.removeEventListener('scroll',measure,true);window.removeEventListener('resize',measure);};
  },[selection,doc,root]);
- useEffect(()=>{cancel();return()=>{const state=gesture.current;if(state)state.element.style.cssText=state.style;gesture.current=null;};},[doc,selection]);
+ useEffect(()=>{cancel();return()=>{const state=gesture.current;if(state){state.element.style.cssText=state.style;delete state.element.dataset.layoutDragging;delete state.element.dataset.dragging;}gesture.current=null;};},[doc,selection]);
  useEffect(()=>{
   const key=(event:KeyboardEvent)=>{if(event.key==='Escape'){cancel();setSelection(null);}};
   window.addEventListener('keydown',key);return()=>window.removeEventListener('keydown',key);
@@ -57,6 +57,11 @@ export function CanvasElementHandles({doc,root}:{doc:Doc;root:RefObject<HTMLDivE
   const element=control.element??selection.element;
   const css=getComputedStyle(element),leading=parseFloat(css.lineHeight)/parseFloat(css.fontSize)||1.2;
   gesture.current={control,element,pointer:event.pointerId,x:event.clientX,y:event.clientY,scale,leading,next:control.value,session:currentDocumentSession(),doc:useDoc.getState().doc,style:element.style.cssText,moved:false};
+  if(control.paint==='gateWidth'||control.paint==='gateInset'){
+   const parent=element.offsetParent as HTMLElement|null,origin=parent?.getBoundingClientRect(),r=element.getBoundingClientRect();
+   if(origin){const rtl=doc.design.textDirection==='rtl';Object.assign(element.style,{position:'absolute',insetInlineStart:'auto',insetInlineEnd:'auto',left:rtl?'auto':`${(r.left-origin.left)/scale}mm`,right:rtl?`${(origin.right-r.right)/scale}mm`:'auto',top:`${(r.top-origin.top)/scale}mm`,width:`${r.width/scale}mm`,margin:'0'});}
+   element.dataset.layoutDragging='true';element.dataset.dragging='true';
+  }
  };
  const finish=(event:ReactPointerEvent<HTMLButtonElement>)=>{
   const state=gesture.current;if(!state||state.pointer!==event.pointerId)return;
@@ -74,13 +79,14 @@ export function CanvasElementHandles({doc,root}:{doc:Doc;root:RefObject<HTMLDivE
     state.next=Number((Math.round(Math.max(control.min,Math.min(control.max,control.value+sign*delta))/control.step)*control.step).toFixed(4));
     const el=state.element;
     if(control.paint==='moveY')el.style.transform=`translateY(${sign*(state.next-control.value)}mm)`;
-    if(control.paint==='width')el.style.width=`${state.next}mm`;
+    if(control.paint==='width'||control.paint==='gateWidth')el.style.width=`${state.next}mm`;
+    if(control.paint==='gateInset')el.style.transform=`translateX(${sign*(state.next-control.value)}mm)`;
     setDraft(`${control.label}: ${state.next.toFixed(control.step<.1?2:1)} ${control.unit}`);
    }} onPointerUp={finish} onPointerCancel={finish} onClick={e=>e.stopPropagation()} onKeyDown={event=>{
     if(!['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(event.key))return;
     event.preventDefault();event.stopPropagation();const direction=(['ArrowUp','ArrowLeft'].includes(event.key)?-1:1)*(control.direction??(control.id==='footer'?-1:1));
     useDoc.getState().update(d=>control.save(d,Math.max(control.min,Math.min(control.max,control.value+direction*control.step*(event.shiftKey?10:1)))));
-   }}>{control.axis==='x'?'↔':'↕'} {control.label}{control.id==='size'||control.id==='leading'?` ${gesture.current?.control.id===control.id?gesture.current.next.toFixed(control.id==='size'?1:2):control.value.toFixed(control.id==='size'?1:2)}${control.unit}`:''}</button>)}
+   }}><span>{control.id==='gateWidth'?'Width':control.id==='gateInset'?'Inset':control.label}</span><span className="canvas-control-reading">{(gesture.current?.control.id===control.id?gesture.current.next:control.value).toFixed(control.step<.1?2:1)} <small>{control.unit}</small></span></button>)}
    <button type="button" aria-label="Dismiss element handles" onClick={()=>setSelection(null)}>×</button>
   </div>
   {draft&&<output className="canvas-element-value" aria-live="polite">{draft}</output>}

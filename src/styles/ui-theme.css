@@ -1,0 +1,13 @@
+/* Interface only. Publication sheets keep their own fonts, colours and artwork. */
+@font-face{font-family:'Google Sans';font-style:normal;font-weight:400 700;font-display:swap;src:url('/fonts/google-sans/GoogleSans-latin.woff2') format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'Google Sans';font-style:normal;font-weight:400 700;font-display:swap;src:url('/fonts/google-sans/GoogleSans-latin-ext.woff2') format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C4,U+2113,U+2C60-2C7F,U+A720-A7FF}
+:root{--ui-font:'Google Sans',Arial,sans-serif}
+body{font-family:var(--ui-font);background:#fff;color:#111}
+.admin-page.admin-page,.studio.studio,.app.app{--ui:var(--ui-font);--ink:#111;--ink-2:#555;--ink-3:#777;--muted:#666;--faint:#999;--line:#dedede;--line-2:#ededed;--line-soft:#ededed;--surface:#fff;--surface-2:#fafafa;--canvas:#f6f6f6;--field:#fafafa;--field-hover:#f2f2f2;--brand:#111;--brand-ink:#333;--brand-wash:#ededed;--brand-line:#aaa;--accent:#111;--accent-strong:#333;--accent-soft:#eee;--brand-accent:#111;--navy:#111;--good:#333;--good-wash:#f2f2f2;--bad:#111;--bad-wash:#eee;--bad-line:#aaa;--warn:#444;--warn-wash:#f5f5f5;--ring:0 0 0 3px #0002;font-family:var(--ui-font)}
+:is(.admin-header,.toolbar,.editor-panel,.panel,.typography-toolbar,.studio-header,.issue-controls,.shared-access-card,.workspace-loading,.magazoo-loader,.welcome-page,.welcome-login-dialog){font-family:var(--ui-font)}
+:is(.admin-page,.studio,.app,.admin-dialog,.admin-password-dialog,.welcome-login-dialog,.canvas-photo-panel,.canvas-element-adjust,.canvas-numeric-adjust) :is(button,input,select,textarea){font-family:var(--ui-font)}
+.admin-page .brand-mark-img,.toolbar .brand-mark-img,.studio-bar .brand-mark-img{filter:grayscale(1)}
+.admin-page button.primary,.studio button.primary,.app .btn-primary,.app .tool-btn-primary,.canvas-pan-actions>button:last-child{background:#111;border-color:#111;color:#fff}
+:is(.admin-page,.studio,.app) :is(input[type=checkbox],input[type=range]){accent-color:#111}
+/* State is communicated by labels, icons, borders and contrast, not hue. */
+@media screen{.caption-resize,.gallery-caption-resize,.hero-caption-resize{background:#111!important;border-color:white!important;box-shadow:0 0 0 1px #555!important}}

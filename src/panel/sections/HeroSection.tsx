@@ -5,7 +5,7 @@ import { loadImage, ImageLoadError } from '../../lib/loadImage';
 import type { ImageFrame } from '../../lib/imageFrame';
 import type { ImageFit } from '../../lib/imageFrame';
 import { FramedImage } from '../../components/FramedImage';
-import { LabeledNumber, LabeledRange, LabeledTextarea, Section, SegmentField } from '../Field';
+import { LabeledNumber, LabeledRange, LabeledTextarea, Section, SegmentField, Toggle } from '../Field';
 import { heroCaptionText } from '../../lib/heroCaption';
 import { emptyFrontMatter } from '../../store/frontMatter';
 import { emptyBackCover } from '../../store/backCover';
@@ -175,6 +175,11 @@ export function ImagePicker({ slot, title, blurb, fit = 'cover', thumbAspectRati
           </div>
 
           {children}
+          {slot==='hero' && doc.design.heroAtBottom===true && (doc.templateId==='paper-3'||isReferenceArticle(doc.templateId)) && <>
+            <Toggle label="Extend photo to bottom bleed edge" checked={doc.design.heroBottomBleed===true}
+              onChange={value=>update(d=>{d.design.heroBottomBleed=value;})}/>
+            <p className="hint">Fill the footer band with the photograph, right to the outer page edge including project bleed. The footer stays readable over the image. Turn off to restore the solid band.</p>
+          </>}
           {(slot === 'hero' || slot === 'cover') && <>
             <LabeledTextarea label={slot === 'cover' && !board ? 'Cover image caption' : 'Hero image caption'}
               editorTarget={`meta-${captionKey === 'coverCaption' ? 'cover' : 'hero'}-caption`}

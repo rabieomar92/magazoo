@@ -27,6 +27,7 @@ import { IssuePrintBrief } from './IssuePrintBrief';
 import {CanvasNumericAdjust} from '../paper/CanvasNumericAdjust';
 import {documentBleed} from '../lib/documentBleed';
 import {readProjectSettings} from '../lib/projectSettings';
+import {moduleLoadErrorMessage} from '../lib/moduleLoadError';
 
 /** What the compiled sheets are built from, and the only thing that can put
  * the proof out of date. Everything else an editor can change — wording,
@@ -82,6 +83,7 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
   const [error, setError] = useState('');
   const [progress, setProgress] = useState<CompileProgress>({ completed: 0, total: data.items.length, name: '', pass: 1, passes: 2 });
   const [busy, setBusy] = useState(false);
+  const [finalizing,setFinalizing]=useState(false);
   const [pdfSize, setPdfSize] = usePdfPageSize();
   const compositionFormat = pdfSize;
   const [compiledFormat, setCompiledFormat] = useState<typeof compositionFormat | null>(null);
@@ -196,7 +198,7 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
     const timer = window.setTimeout(() => setProofVersion(value => value + 1), 420);
     return () => window.clearTimeout(timer);
   }, [plan]);
-  const onCompileError = useCallback((failure: Error) => setRenderError(failure.message), []);
+  const onCompileError = useCallback((failure: Error) => setRenderError(moduleLoadErrorMessage(failure.message)), []);
   const onProgress = useCallback((value: CompileProgress) => setProgress(value), []);
 
   const updatePlan = (next: IssuePlan) => { setPlan(next); setNotice(''); };
@@ -249,10 +251,10 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
   };
   const execute = async (action: () => Promise<void>) => {
     setBusy(true); setError('');
-    try { await action(); } catch (failure) { setError(failure instanceof Error ? failure.message : 'The operation could not be completed.'); }
+    try { await action(); } catch (failure) { setError(moduleLoadErrorMessage(failure instanceof Error ? failure.message : 'The operation could not be completed.')); }
     finally { setBusy(false); }
   };
-  const finalize = () => execute(async () => {
+  const finalize = async () => {setFinalizing(true);try{await execute(async () => {
     if (!ready || !proofVerified || contentsOverflow || proofStale) throw new Error('Wait for the assembled issue proof to settle before finalising.');
     const version = await save.flush();
     const documents = assignments.filter(row => row.id !== CONTENTS_ID && !items.find(item=>item.id===row.id)?.externalPdf).map(row => ({ id: row.id, version: items.find(item => item.id === row.id)!.version, startNumber: row.startNumber, pageCount: row.pageCount }));
@@ -261,7 +263,7 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
     setItems(previous => previous.map(item => ({ ...item, version: result.items.find(updated => updated.id === item.id)?.version ?? item.version })));
     setFinalizedPlan(finalizationKey);
     setNotice('Issue finalised. Starting page numbers are saved to every article. Your two-page contents spread is ready.');
-  });
+  });}finally{setFinalizing(false);}};
   const printBleed=documentBleed(data.project.settings?.bleedMm??plan.printSettings?.bleedMm??3);
   const vendorPlan=data.project.settings?{...plan,printSettings:{binding:'saddle-stitch' as const,perfectMultiple:2 as const,...plan.printSettings,bleedMm:printBleed}}:plan;
   const exportIssue = (version:'online'|'print'='online') => execute(async () => {
@@ -486,7 +488,9 @@ function IssueEditor({ data, csrf, onClose, onReload }: { data: IssueResponse; c
       </div>
     </footer>
 
-    {busy && <div className="studio-busy"><MagazooLoader variant="banner" label="Magazoo is working…" detail="Please keep this window open." /></div>}
+    {busy && <div className={`studio-busy${finalizing?' studio-busy--finalizing':''}`}>
+      <WorkspaceLoading destination="issue" canvasOnly pageSize={pdfSize}><MagazooLoader label={finalizing?'Finalising page numbers':'Preparing your issue'} detail={finalizing?'Saving the compiled page numbers to your articles. Please keep this window open.':'Please keep this window open while Magazoo finishes.'} /></WorkspaceLoading>
+    </div>}
     {!busy&&<CanvasNumericAdjust/>}
 
     {!ready && !renderError && <IssueCompiler key={`${compileToken}-${compositionFormat}`} sources={sources} plan={plan} items={items} onComplete={onCompiled} onError={onCompileError} onProgress={onProgress} />}

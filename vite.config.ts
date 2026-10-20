@@ -15,6 +15,10 @@ export default defineConfig(() => {
 
   return {
     plugins: [react()],
+    // Keep immutable, content-hashed chunks referenced by tabs already open
+    // on the local server. Clearing dist on each build breaks lazy PDF imports
+    // in those tabs midway through editing/compilation.
+    build: { emptyOutDir: false },
     server: { proxy: { '/api': 'http://127.0.0.1:8787' } },
     base,
   };

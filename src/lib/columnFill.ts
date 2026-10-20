@@ -531,7 +531,12 @@ export function fillColumnsAroundImages(
     for (const bounds of segments) {
       const height = bounds.bottom - bounds.top;
       if (height <= 0) continue;
-      const reserve=bounds.bottom>=columnHeight-.01?Math.max(0,safetyBoost):segmentSafety;
+      // writableSegments already rounds the exclusion edge DOWN to a complete
+      // baseline. Subtracting the fractional segmentSafety from that exact
+      // capacity loses an entire additional line above a highlight/photo box.
+      // Keep explicit collision-refit safety, and still run the real glyph
+      // overflow check; do not add a second unconditional edge allowance.
+      const reserve=Math.max(0,safetyBoost);
       probe.style.height = `${Math.max(0, height - reserve)}px`;
       const filled = fillTextRegion(rest, probe, isOverflowing, !opened);
       columns[columnIndex].segments.push({ ...bounds, order: segmentOrder, pieces: filled.placed });

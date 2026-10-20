@@ -8,6 +8,8 @@ let root: ReturnType<typeof createRoot>;
 const projects=[{id:'p',name:'Physics',items:[]}];
 let request:ReturnType<typeof vi.fn>;
 beforeEach(()=>{
+  Object.defineProperty(HTMLDialogElement.prototype,'showModal',{configurable:true,value:function(this:HTMLDialogElement){this.open=true;}});
+  Object.defineProperty(HTMLDialogElement.prototype,'close',{configurable:true,value:function(this:HTMLDialogElement){this.open=false;}});
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT',true);
   vi.spyOn(HTMLMediaElement.prototype,'play').mockResolvedValue();vi.spyOn(HTMLMediaElement.prototype,'pause').mockImplementation(()=>{});
   request=vi.fn(async(url:string,options:RequestInit)=>({ok:true,json:async()=>url.endsWith('auth/session')?{csrf:'test-csrf'}:url.endsWith('projects')&&options.method==='POST'?{id:'new'}:projects}));
@@ -19,22 +21,22 @@ const render=()=>act(async()=>root.render(<AdminPage/>));
 const click=(text:string)=>act(async()=>[...host.querySelectorAll('button')].find(b=>b.textContent===text)!.click());
 const fill=(field:HTMLInputElement,value:string)=>act(()=>{Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value')!.set!.call(field,value);field.dispatchEvent(new Event('input',{bubbles:true}));});
 const submit=(form:HTMLFormElement)=>act(async()=>{form.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));});
-it('layers the supplied film separately from the sign-in form, without a top bar or marketing introduction',async()=>{
+it('welcomes visitors with a monochrome editorial page and opens login only on request',async()=>{
   request.mockImplementation(async()=>({ok:false,json:async()=>({error:'Sign in required.'})}));
   await render();
-  expect(host.querySelector('.admin-header')).toBeNull();expect(host.querySelector('.admin-intro')).toBeNull();
-  expect(host.querySelector('.admin-footnote')).toBeNull();expect(host.textContent).not.toContain('Good stories start here');
-  const card=host.querySelector('.admin-login')!;
-  expect(card.querySelector('img[alt="Magazoo!"]')).not.toBeNull();expect(card.querySelector('h1')!.textContent).toBe('Sign in');
-  expect(card.querySelector('a')!.getAttribute('href')).toBe('/#editor');
-  const layout=host.querySelector('.admin-login-layout')!;
-  expect(layout.children[0].className).toBe('admin-login-visual');expect(layout.children[1]).toBe(card);
-  expect(card.querySelector('video')).toBeNull(); // film never interferes with form input or readability.
-  expect(host.querySelector('.admin-page--signin')).not.toBeNull();
+  expect(host.querySelector('.welcome-page')).not.toBeNull();expect(host.querySelector('h1')?.textContent).toBe('Ideas,in print.');
+  expect(host.textContent).toContain('Magazoo is a workspace for creating magazines');expect(host.querySelector('.welcome-intro')?.textContent).not.toContain('School of Physics');expect(host.querySelector('.welcome-footer')?.textContent).toContain('M. R. Omar');expect(host.querySelector('.welcome-footer img')).toBeNull();expect(host.querySelector('.welcome-try')?.getAttribute('href')).toBe('/#editor');expect(host.querySelector('.welcome-details')).toBeNull();
+  expect(host.querySelectorAll('.welcome-real-spread img')).toHaveLength(2);expect(host.querySelector('.welcome-nav')).toBeNull();
+  expect(host.querySelector('dialog')).toBeNull();expect(host.querySelector('input[type=password]')).toBeNull();
+  await act(async()=>host.querySelector<HTMLButtonElement>('.welcome-cta')!.click());
+  expect(host.querySelector<HTMLDialogElement>('dialog')?.open).toBe(true);
+  expect(host.querySelector('#admin-login-password')).not.toBeNull();
+  await act(async()=>host.querySelector<HTMLButtonElement>('[aria-label="Close editor login"]')!.click());
+  expect(host.querySelector('dialog')).toBeNull();
 });
 it('lets the author reveal and conceal their password without submitting or changing it',async()=>{
   request.mockImplementation(async()=>({ok:false,json:async()=>({error:'Sign in required.'})}));
-  await render();const field=host.querySelector<HTMLInputElement>('#admin-login-password')!;
+  await render();await act(async()=>host.querySelector<HTMLButtonElement>('.welcome-cta')!.click());const field=host.querySelector<HTMLInputElement>('#admin-login-password')!;
   fill(field,'Local-test-only');const requestsBefore=request.mock.calls.length;
   const reveal=host.querySelector<HTMLButtonElement>('[aria-label="Show password"]')!;
   await act(async()=>reveal.click());expect(field.type).toBe('text');expect(field.value).toBe('Local-test-only');
@@ -44,7 +46,7 @@ it('lets the author reveal and conceal their password without submitting or chan
 });
 it('preserves the existing sign-in request and switches to the normal library after successful login',async()=>{
   request.mockImplementation(async(url:string)=>({ok:!url.endsWith('auth/session'),json:async()=>url.endsWith('auth/session')?{error:'Sign in required.'}:url.endsWith('auth/login')?{csrf:'test-csrf'}:projects}));
-  await render();const form=host.querySelector('form')!;
+  await render();await act(async()=>host.querySelector<HTMLButtonElement>('.welcome-cta')!.click());const form=host.querySelector('form')!;
   fill(form.querySelector('input')!,'Local-test-only');await submit(form);
   const login=request.mock.calls.find(([url])=>url.endsWith('auth/login'))!;
   expect(login[1].method).toBe('POST');expect(JSON.parse(String(login[1].body))).toEqual({password:'Local-test-only'});
@@ -55,8 +57,8 @@ it('preserves the existing sign-in request and switches to the normal library af
 });
 it('keeps a failed sign-in inside the card and preserves the entered password for correction',async()=>{
   request.mockImplementation(async(url:string)=>({ok:false,json:async()=>({error:url.endsWith('auth/login')?'Incorrect admin password.':'Sign in required.'})}));
-  await render();const form=host.querySelector('form')!;fill(form.querySelector('input')!,'Local-test-only');await submit(form);
-  expect(host.querySelector('.admin-login [role=alert]')?.textContent).toBe('Incorrect admin password.');
+  await render();await act(async()=>host.querySelector<HTMLButtonElement>('.welcome-cta')!.click());const form=host.querySelector('form')!;fill(form.querySelector('input')!,'Local-test-only');await submit(form);
+  expect(host.querySelector('.welcome-login-dialog [role=alert]')?.textContent).toBe('Incorrect admin password.');
   expect(form.querySelector('input')!.value).toBe('Local-test-only');expect(host.querySelector('.admin-login-editor')).not.toBeNull();
 });
 it('shows the library first, with creation forms closed and no API mutations',async()=>{

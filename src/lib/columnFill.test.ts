@@ -19,6 +19,20 @@ it('resumes below images and floating captions only on full baseline steps',()=>
 });
 const text = (t: string) => ({ kind: 'text' as const, text: t });
 
+it('keeps the last complete baseline above a rectangular callout instead of reserving it twice',()=>{
+ const probe=document.createElement('div');
+ const native=getComputedStyle;
+ const spy=vi.spyOn(globalThis,'getComputedStyle').mockImplementation(el=>{
+   const used=native(el);return new Proxy(used,{get(target,key){if(key==='lineHeight')return '10px';if(key==='fontSize')return '8px';return Reflect.get(target,key,target);}});
+ });
+ try{
+   const result=fillColumnsAroundImages([text('one two three four five six seven eight')],probe,[[{top:40,bottom:100}],[]],100,
+     el=>words(el.textContent??'').length>Math.floor((parseFloat(el.style.height)||0)/10));
+   expect(result.columns[0].segments.flatMap(s=>s.pieces).flatMap(p=>words(p.text))).toEqual(['one','two','three','four']);
+   expect(result.remainder).toEqual([]);
+ }finally{spy.mockRestore();}
+});
+
 const budgetOverflow = (budget: number) => (el: HTMLElement) => (el.textContent?.length ?? 0) > budget;
 const imageWordsInReadingOrder = (columns: FilledImageColumn[]) =>
   columns

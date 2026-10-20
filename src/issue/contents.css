@@ -177,6 +177,11 @@
   gap:calc(5mm * var(--contents-gap-scale,1)); padding:13mm 14mm 12mm;
 }
 .issue-contents-mosaic .issue-contents-masthead { padding-bottom:3mm; }
+
+/* Headline and issue label share the actual article text edges, including
+   the canvas bleed inset; neither gets a second decorative horizontal inset. */
+.page.issue-contents-page { padding-left:var(--margin); padding-right:var(--margin); }
+.issue-contents-page .issue-contents-masthead { padding-left:0; padding-right:0; }
 .issue-contents-mosaic .issue-contents-kicker { font-size:calc(9pt * var(--contents-scale,1)); letter-spacing:.2em; color:inherit; }
 .issue-contents-mosaic .issue-contents-body { position:relative; }
 

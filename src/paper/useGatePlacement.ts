@@ -65,6 +65,7 @@ export function useGatePlacement(doc: Doc, side: 'title' | 'text', vars: CSSProp
       return;
     }
     const measure = () => {
+      if(copy.dataset.layoutDragging==='true')return;
       const rect = frame.getBoundingClientRect();
       const scale = rect.width / frame.clientWidth || 1;
       const pxPerMm = frame.clientWidth / (page.width - 2 * doc.design.margin);

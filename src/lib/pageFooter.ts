@@ -2,9 +2,8 @@ import type { Doc } from '../schema/document';
 import { barStartsRight } from './barSide';
 import { imagePalette } from './imagePalette';
 import { ALL_FONTS } from './fonts';
-import {documentBleed} from './documentBleed';
 
-export const DEFAULT_FOOTER_BOTTOM_OFFSET = 8;
+export const DEFAULT_FOOTER_BOTTOM_OFFSET = 10;
 export const MAX_FOOTER_BOTTOM_OFFSET = 40;
 export const DEFAULT_FOOTER_FONT_SIZE = 7;
 export const DEFAULT_FOOTER_FONT = 'Helvetica';
@@ -17,9 +16,9 @@ export function footerBottomOffset(doc: Doc): number {
 }
 
 export function footerCanvasBottomOffset(doc:Doc):number {
-  // The authored clearance is measured from the finished cut, not the outer
-  // editable bleed edge. Reserve the identical amount in every flow engine.
-  return footerBottomOffset(doc)+(doc.design.bleedCanvas?documentBleed(doc.design.bleedMm):0);
+  // Like the top bar, this is measured from the outer editable canvas edge.
+  // Do not add bleed a second time in either placement or flow reservation.
+  return footerBottomOffset(doc);
 }
 
 /** Reserve the footer line box, 2mm top padding and 1mm clearance. Horizontal

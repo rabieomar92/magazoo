@@ -17,10 +17,11 @@ export const TEXT_SELECTORS: Record<string, string> = {
   masthead: `${TRACKING_SELECTORS.masthead}, .front-cover-masthead`,
   volume: '.tag-bar-detail, .front-cover-volume',
   strapline: '.front-cover-strap',
-  storyTag: `${TRACKING_SELECTORS.storyTag}, .front-cover-story-tag`,
+  storyTag: `${TRACKING_SELECTORS.storyTag}, .front-cover-story-tag, [data-editor-target="meta-location"]`,
   photoCredit: `${TRACKING_SELECTORS.photoCredit}, .front-cover-photo-credit`,
   teaserTitle: '.front-cover-teaser h2', teaserBody: '.front-cover-teaser p',
   footerBrand: '.front-cover-footer-brand',
+  caption: `${TRACKING_SELECTORS.caption}, .article-hero-caption, .p2-hero-cap, [data-editor-target="meta-hero-caption"], [data-editor-target="meta-cover-caption"], [data-editor-target="meta-location"], .news-story figcaption, :where(.g-img figcaption) :is(.g-title,.g-desc)`,
   heroCaption: '.article-hero-caption, .p2-hero-cap, [data-editor-target="meta-hero-caption"]',
   coverCaption: '[data-editor-target="meta-cover-caption"]',
   highlights: '.highlights, .mag2-hl li',
@@ -58,6 +59,13 @@ export function textStyleSelector(key: string): string | undefined {
   return TEXT_SELECTORS[key] ?? trackingSelector(key);
 }
 
+export function captionBackgroundSelector(key:string):string|undefined{
+  if(key==='caption')return '.placed-image figcaption, .flow-fig figcaption, .flow-eq figcaption, .fm-board-caption, .article-hero-caption, .p2-hero-cap, [data-editor-target="meta-hero-caption"], [data-editor-target="meta-cover-caption"], [data-editor-target="meta-location"], .news-story figcaption, :where(.g-img) .g-cap';
+  if(key.startsWith('gallery-caption:'))return `[data-editor-target=${cssQuote(`gallery-caption-${key.slice(16)}`)}] .g-cap`;
+  if(key.startsWith('image-caption:')||/^news:.*:caption$/.test(key))return textStyleSelector(key);
+  if(['heroCaption','coverCaption','newsCaption','storyTag'].includes(key))return TEXT_SELECTORS[key];
+}
+
 export function textStylesCss(design: Design, scope: string, blocks:Doc['blocks']=[]): string {
   // Native per-object controls must beat shared typography defaults too.
   // Inline styles alone lose to the shared !important rules. Include native
@@ -85,7 +93,8 @@ export function textStylesCss(design: Design, scope: string, blocks:Doc['blocks'
       :block.type==='figure'?{...(block.captionAlign?{align:block.captionAlign}:{})}:{};
     styles[key]={...native,...styles[key]};
   }
-  return Object.entries(styles).sort(([a],[b]) => Number(a.includes(':'))-Number(b.includes(':'))).flatMap(([key, style]) => {
+  const priority=(key:string)=>key==='caption'?-1:Number(key.includes(':'));
+  return Object.entries(styles).sort(([a],[b]) => priority(a)-priority(b)).flatMap(([key, style]) => {
     const selector = textStyleSelector(key);
     if (!selector || !style || typeof style !== 'object') return [];
     const rules: string[] = [];
@@ -107,7 +116,17 @@ export function textStylesCss(design: Design, scope: string, blocks:Doc['blocks'
       // compute correctly but have no available horizontal space to act on.
       if (['brand','tagline','website','qrLabel','footerText','imprint'].includes(key)) rules.push('align-self:stretch','width:100%','box-sizing:border-box');
     }
-    const output=rules.length ? [`[data-tracking-scope=${cssQuote(scope)}] :is(${selector}) { ${rules.map(rule=>`${rule} !important`).join(';')}; }`] : [];
+    // The all-caption selector contains element selectors (figcaption). Hero
+    // and cover captions can be p/div/span nodes: source order alone cannot
+    // beat that extra specificity. Give these explicit caption slots priority.
+    const captionSlot=key==='heroCaption'||key==='coverCaption'||key==='storyTag';
+    const scopeSelector=`[data-tracking-scope=${cssQuote(scope)}]${captionSlot?'[data-tracking-scope]':''}`;
+    const output=rules.length ? [`${scopeSelector} :is(${selector}) { ${rules.map(rule=>`${rule} !important`).join(';')}; }`] : [];
+    const backgroundSelector=captionBackgroundSelector(key);
+    if(backgroundSelector&&typeof style.backgroundOpacity==='number'&&Number.isFinite(style.backgroundOpacity)){
+      const alpha=Math.max(0,Math.min(100,style.backgroundOpacity))/100;
+      output.push(`${scopeSelector} :is(${backgroundSelector}) { background:rgba(0,0,0,${alpha}) !important;backdrop-filter:none !important; }`);
+    }
     if (['socialLabel','socialUrl'].includes(key) && ['left','center','right','justify'].includes(style.align ?? '')) {
       output.push(`[data-tracking-scope=${cssQuote(scope)}] .back-cover-social-copy { flex:1; }`);
     }

@@ -9,7 +9,7 @@ export function marginTextDragPosition(edge:number,bottom:number,dx:number,dy:nu
  const round=(n:number)=>Math.round(n*10)/10;
  return {edgeOffset:round(Math.max(2,Math.min(30,edge+(right?-dx:dx)))),bottomOffset:round(Math.max(0,Math.min(pageHeight,bottom-dy)))};
 }
-export function useMarginTextDrag(doc:Doc,right:boolean){
+export function useMarginTextDrag(doc:Doc,right:boolean,displayedBottom?:number){
  const readOnly=usePreviewReadOnly(),cleanup=useRef(()=>{}),suppressClick=useRef(false);
  useEffect(()=>()=>cleanup.current(),[doc]);
  const onPointerDown=(event:ReactPointerEvent<HTMLElement>)=>{
@@ -18,7 +18,7 @@ export function useMarginTextDrag(doc:Doc,right:boolean){
   const dimensions=pageDimensions(doc.design),css=getComputedStyle(page),width=parseFloat(css.width)/(96/25.4)||dimensions.width;
   const scale=page.getBoundingClientRect().width/width,height=page.getBoundingClientRect().height/scale;if(!(scale>0))return;
   event.stopPropagation();cleanup.current();suppressClick.current=false;
-  const startX=event.clientX,startY=event.clientY,settings=marginTextSettings(doc),session=currentDocumentSession(),pointer=event.pointerId;
+  const startX=event.clientX,startY=event.clientY,settings={...marginTextSettings(doc),...(displayedBottom===undefined?{}:{bottomOffset:displayedBottom})},session=currentDocumentSession(),pointer=event.pointerId;
   let moved=false,next={edgeOffset:settings.edgeOffset,bottomOffset:settings.bottomOffset};
   const reset=()=>{rail.style.transform='';text.style.cursor='';window.removeEventListener('pointermove',move,true);window.removeEventListener('pointerup',finish,true);window.removeEventListener('pointercancel',finish,true);window.removeEventListener('keydown',key,true);};
   const move=(e:PointerEvent)=>{

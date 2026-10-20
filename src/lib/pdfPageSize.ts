@@ -67,18 +67,27 @@ export function fitPdfSheets(doc: Document, size: PdfPageSize, bleedMm = 0, crop
   // Marks live within the requested bleed, never in an extra output border.
   const slug=0,offset=bleedMm;
   const width=expected.width+2*offset,height=expected.height+2*offset;
+  // A negative-positioned expanded canvas inside overflow:hidden triggers
+  // Chromium's paged overflow fragmentation: flex/grid descendants can be
+  // painted a sheet too low or disappear, although screen geometry is valid.
+  // Clip the finished paint instead of creating a scroll/fragmentation box,
+  // and translate the painting rather than negatively positioning layout.
+  // Strict containment keeps the expanded layout overflow from adding a
+  // trailing physical sheet even though only its trim rectangle is painted.
+  // Only original/trim output needs this; leave the working bleed path alone.
+  const trimExpandedCanvas=bleedMm===0&&sourceBleeds.some(Boolean);
   const css = doc.createElement('style');
   css.textContent = `
     @page { size: ${width}mm ${height}mm; margin: 0; }
     html, body { width: ${width}mm !important; min-width: ${width}mm !important; }
     .pdf-export-sheet { position: relative !important; box-sizing: border-box !important;
       width: ${width}mm !important; height: ${height}mm !important; margin: 0 !important;
-      padding: 0 !important; overflow: hidden !important; isolation: isolate !important;
+      padding: 0 !important; overflow: ${trimExpandedCanvas?'visible':'hidden'} !important; ${trimExpandedCanvas?'clip-path: inset(0) !important; contain: strict !important;':''} isolation: isolate !important;
       break-inside: avoid !important; page-break-inside: avoid !important;
       print-color-adjust: exact !important; -webkit-print-color-adjust: exact !important; }
     .pdf-export-sheet > .pdf-export-page { position: absolute !important;
-      left: var(--pdf-fit-left) !important; top: var(--pdf-fit-top) !important; right: auto !important; bottom: auto !important;
-      transform: scale(var(--pdf-fit-scale)) !important; transform-origin: top left !important; z-index: 0 !important;
+      left: ${trimExpandedCanvas?'0':'var(--pdf-fit-left)'} !important; top: ${trimExpandedCanvas?'0':'var(--pdf-fit-top)'} !important; right: auto !important; bottom: auto !important;
+      transform: ${trimExpandedCanvas?'translate(var(--pdf-fit-left), var(--pdf-fit-top)) ':''}scale(var(--pdf-fit-scale)) !important; transform-origin: top left !important; z-index: 0 !important;
       break-after: auto !important; page-break-after: auto !important; }
     .pdf-bleed-artwork, .pdf-bleed-artwork * { color: transparent !important; text-shadow: none !important; }
     .pdf-bleed-artwork::before,.pdf-bleed-artwork::after,.pdf-bleed-artwork *::before,.pdf-bleed-artwork *::after { color: transparent !important; text-shadow:none !important; }

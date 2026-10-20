@@ -29,6 +29,17 @@ describe('print stylesheet readiness', () => {
 });
 
 describe('PDF export layout contract', () => {
+  it('freezes the measured contents body in the export only, avoiding paged flex blanking',()=>{
+    const source=document.createElement('div');source.className='pages';
+    source.innerHTML='<section class="page issue-contents-mosaic" data-page-width-mm="192"><div class="issue-contents-body"><div class="issue-mosaic-columns"><article data-contents-id="one">Real entry</article></div></div></section>';
+    source.querySelector<HTMLElement>('.page')!.getBoundingClientRect=()=>({width:192*96/25.4*.5} as DOMRect);
+    source.querySelector<HTMLElement>('.issue-contents-body')!.getBoundingClientRect=()=>({height:433.4775} as DOMRect);
+    const before=source.outerHTML,target=document.implementation.createHTMLDocument();clonePages(source,target);
+    const body=target.querySelector<HTMLElement>('.issue-contents-body')!;
+    expect(parseFloat(body.style.height)).toBeCloseTo(866.955,3);expect(body.style.display).toBe('block');expect(body.style.flex).toBe('0 0 auto');
+    expect(target.querySelector<HTMLElement>('.issue-mosaic-columns')!.style.height).toBe('100%');
+    expect(target.querySelector('[data-contents-id="one"]')?.textContent).toBe('Real entry');expect(source.outerHTML).toBe(before);
+  });
   it('preserves measured front-matter header height in the print clone only',()=>{
     const source=document.createElement('div');source.className='pages';source.innerHTML='<div class="page" data-page-width-mm="210"><header class="fm-header">Heading</header></div>';
     const page=source.firstElementChild as HTMLElement,header=page.firstElementChild as HTMLElement;

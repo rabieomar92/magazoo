@@ -58,6 +58,13 @@ export function FramedImage({ asset, frame, fit = 'cover', className, style,alt=
       image.style.objectPosition = 'center';
       image.style.transform = 'none';
       image.style.clipPath=cropClip(frame?.crop,measuredWidth||container.clientWidth,measuredHeight||container.clientHeight,geometry.left,geometry.top);
+      // A freely panned photo can start inside its frame. Keep the fade at
+      // the actual visible photo edge, not in the empty strip above/below it.
+      if(container.classList.contains('article-hero--fade')){
+        const h=measuredHeight||container.clientHeight;
+        container.style.setProperty('--hero-fade-top',`${Math.min(h,Math.max(0,geometry.top))}px`);
+        container.style.setProperty('--hero-fade-bottom',`${Math.min(h,Math.max(0,h-geometry.top-geometry.height))}px`);
+      }
     };
 
     apply();

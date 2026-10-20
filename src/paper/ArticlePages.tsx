@@ -20,6 +20,7 @@ import { TagBar } from './TagBar';
 import { PlacedImages } from './PlacedImages';
 import {HeroCaption} from './HeroCaption';
 import {useHeroCaptionLayout} from './useHeroCaptionLayout';
+import {heroFadeClearStop} from '../lib/heroFade';
 import {lineGridUp,lineGridDown} from '../lib/lineGrid';
 import {unscaledVerticalOffset} from '../lib/previewGeometry';
 import '../styles/article-layouts.css';
@@ -69,6 +70,7 @@ export function ArticlePages({ doc, vars, onStatus, readOnly = false }: { doc: D
     '--article-caption-color': doc.design.articleCaptionColor,
     '--article-caption-align': doc.design.articleCaptionAlign ?? 'left',
     '--hero-bottom-caption-clearance': `${g.height-g.bottom+2}mm`,
+    '--hero-fade-clear-stop': `${heroFadeClearStop(g.image.height,g.immersionDepth)}%`,
   } as CSSProperties;
   const calloutWidth = placement === 'free' ? placedHighlightsGeometry(doc.highlightBox ?? defaultPlacedHighlights(gridDesign, g.height), gridDesign, 0, g.height).width
     : placement === 'below' ? g.span(g.columns) : g.col;

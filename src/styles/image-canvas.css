@@ -1,40 +1,40 @@
-.canvas-outline { position:absolute; inset:0 0 auto; height:var(--placed-image-h); z-index:30; pointer-events:auto; background:transparent; outline:2px solid #6366f1; }
+.canvas-outline { position:absolute; inset:0 0 auto; height:var(--placed-image-h); z-index:30; pointer-events:auto; background:transparent; outline:2px solid #6f6f6f; }
 .canvas-outline > img { pointer-events:none; }
 .canvas-outline > svg { position:absolute; inset:0; width:100%; height:100%; cursor:default; touch-action:none; overflow:visible; }
-.canvas-outline :is(polygon,polyline) { fill:#4f46e530; stroke:#fff; stroke-width:2; vector-effect:non-scaling-stroke; stroke-linejoin:round; }
+.canvas-outline :is(polygon,polyline) { fill:#53535330; stroke:#ffffff; stroke-width:2; vector-effect:non-scaling-stroke; stroke-linejoin:round; }
 .canvas-outline polyline { fill:none; }
 .placed-image[data-outline-editing] { z-index:20; }
-.canvas-outline-tools { position:fixed; z-index:10000; bottom:20px; left:50%; transform:translateX(-50%); box-sizing:border-box; width:min(680px,calc(100vw - 32px)); max-height:45vh; overflow:auto; display:grid; gap:12px; padding:15px 18px; border:1px solid #dbe3ee; border-radius:14px; color:#243247; background:#fff; box-shadow:0 12px 48px #0f172a30; font:13px/1.4 system-ui,sans-serif; text-align:left; letter-spacing:normal; }
+.canvas-outline-tools { position:fixed; z-index:10000; bottom:20px; left:50%; transform:translateX(-50%); box-sizing:border-box; width:min(680px,calc(100vw - 32px)); max-height:45vh; overflow:auto; display:grid; gap:12px; padding:15px 18px; border:1px solid #e2e2e2; border-radius:14px; color:#313131; background:#ffffff; box-shadow:0 12px 48px #17171730; font:13px/1.4 var(--ui-font,Arial,sans-serif); text-align:left; letter-spacing:normal; }
 .canvas-outline-instructions { display:grid; gap:3px; }
 .canvas-outline-instructions strong { font-weight:650; }
-.canvas-outline-instructions span { color:#64748b; font-size:12px; }
+.canvas-outline-instructions span { color:#727272; font-size:12px; }
 .canvas-outline-settings { display:flex; gap:20px; flex-wrap:wrap; }
 .canvas-outline-settings label { display:flex; align-items:center; gap:8px; font-size:12px; }
-.canvas-outline-settings input { box-sizing:border-box; width:64px; min-height:28px; padding:3px 5px; border:1px solid #cbd5e1; border-radius:5px; background:#fff; color:#243247; font:inherit; }
-.canvas-outline-settings input[type="range"] { width:110px; accent-color:#4f46e5; }
+.canvas-outline-settings input { box-sizing:border-box; width:64px; min-height:28px; padding:3px 5px; border:1px solid #d4d4d4; border-radius:5px; background:#ffffff; color:#313131; font:inherit; }
+.canvas-outline-settings input[type="range"] { width:110px; accent-color:#535353; }
 .canvas-outline-buttons { display:flex; justify-content:flex-end; gap:7px; flex-wrap:wrap; }
-.canvas-outline-buttons button { min-height:32px; padding:6px 11px; border:1px solid #dbe3ee; border-radius:7px; background:#f8fafc; color:#334155; cursor:pointer; font:600 12px/1.3 system-ui,sans-serif; }
+.canvas-outline-buttons button { min-height:32px; padding:6px 11px; border:1px solid #e2e2e2; border-radius:7px; background:#fafafa; color:#3f3f3f; cursor:pointer; font:600 12px/1.3 var(--ui-font,Arial,sans-serif); }
 .canvas-outline-buttons button:disabled { opacity:.45; cursor:default; }
-.canvas-outline-buttons .canvas-outline-apply { background:#4f46e5; border-color:#4f46e5; color:#fff; }
-.canvas-outline-tools :is(button,input):focus-visible { outline:2px solid #6366f1; outline-offset:2px; }
+.canvas-outline-buttons .canvas-outline-apply { background:#535353; border-color:#535353; color:#ffffff; }
+.canvas-outline-tools :is(button,input):focus-visible { outline:2px solid #6f6f6f; outline-offset:2px; }
 @media print { .canvas-outline,.canvas-outline-tools { display:none !important; } }
 .canvas-outline .polygon-edge{stroke:transparent;stroke-width:12;vector-effect:non-scaling-stroke;cursor:copy;pointer-events:stroke}
-.canvas-outline .polygon-point{fill:white;stroke:#5145d9;stroke-width:2;vector-effect:non-scaling-stroke;cursor:move;pointer-events:all}
-.canvas-outline .polygon-point.is-selected{fill:#c9c2ff}
+.canvas-outline .polygon-point{fill:white;stroke:#525252;stroke-width:2;vector-effect:non-scaling-stroke;cursor:move;pointer-events:all}
+.canvas-outline .polygon-point.is-selected{fill:#c8c8c8}
 .canvas-outline .polygon-point-hit{fill:transparent;stroke:none;pointer-events:all}
 .canvas-outline .polygon-point-visible{pointer-events:none;vector-effect:non-scaling-stroke}
-.canvas-outline .polygon-point:focus-visible .polygon-point-visible{stroke:#17114c;stroke-width:3}
+.canvas-outline .polygon-point:focus-visible .polygon-point-visible{stroke:#171717;stroke-width:3}
 .canvas-crop-surface{height:100%;inset:0}
 .crop-pan-area{position:absolute;inset:0;touch-action:none}
 [data-cropping=true]{z-index:30!important;overflow:visible!important}
 .placed-image:has([data-cropping=true])>.placed-image-tools{display:none}
 .placed-image:has([data-cropping=true])>.canvas-height-handle{display:none}
 .canvas-outline-tools,.canvas-outline-tools button,.canvas-outline-tools input,.canvas-outline-tools select{border-radius:0}
-.canvas-outline-tools select{padding:5px;border:1px solid #cbd5e1;background:white;color:#243247}
+.canvas-outline-tools select{padding:5px;border:1px solid #d4d4d4;background:white;color:#313131}
 .page>.canvas-crop-surface{position:absolute;inset:0;height:100%;z-index:30}
 .canvas-photo-panel{box-sizing:border-box;width:min(360px,calc(100vw - 24px));max-height:calc(100vh - 24px);padding:14px;gap:10px}
 .canvas-photo-panel>strong{padding-right:30px}
 .canvas-photo-panel .canvas-outline-settings{gap:12px}
 .canvas-photo-panel .canvas-outline-buttons{justify-content:flex-start}
-.canvas-photo-panel-grip{position:absolute;top:8px;right:8px;display:grid;place-items:center;width:28px;height:28px;min-height:28px;padding:5px;border:0;background:transparent;color:#64748b;cursor:grab;touch-action:none}
+.canvas-photo-panel-grip{position:absolute;top:8px;right:8px;display:grid;place-items:center;width:28px;height:28px;min-height:28px;padding:5px;border:0;background:transparent;color:#727272;cursor:grab;touch-action:none}
 .canvas-photo-panel-grip:active{cursor:grabbing}

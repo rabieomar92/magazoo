@@ -1,5 +1,5 @@
-.image-boundary-editor { min-width:0; border:1px solid #e2e7f1; border-radius:10px; padding:12px; background:#f8faff; }
+.image-boundary-editor { min-width:0; border:1px solid #e7e7e7; border-radius:10px; padding:12px; background:#fafafa; }
 .image-boundary-coordinates { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin:8px 0; }
-.image-boundary-apply { width:100%; color:#fff; background:#5143d8; border-color:#5143d8; }
-.image-boundary-apply:hover { background:#4134b8; }
-.image-boundary-editor :is(button,input,select):focus-visible { outline:2px solid #5143d8; outline-offset:2px; }
+.image-boundary-apply { width:100%; color:#ffffff; background:#515151; border-color:#515151; }
+.image-boundary-apply:hover { background:#404040; }
+.image-boundary-editor :is(button,input,select):focus-visible { outline:2px solid #515151; outline-offset:2px; }

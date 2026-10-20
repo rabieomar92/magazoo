@@ -45,7 +45,7 @@ export function PageMarginTextSection({expanded=false,initialPage=1}:{expanded?:
             : { ...d.marginText, pages: { ...d.marginText?.pages, [String(page)]: v } };
         })} />
       <p className="hint">Page 1 is the first sheet of this document, regardless of its printed page number. Leave text blank to show nothing. Switching modes or turning this off keeps your saved text.</p>
-      <p className="hint">Automatically follows the masthead side on each page, alternating left and right. This also applies when compiling an issue.</p>
+      <p className="hint">Starts on the masthead side, alternating left and right. It moves vertically or switches sides to avoid bleed photographs. Full-page photographs use a contrast backing when no clear margin exists. The same placement is retained when compiling an issue.</p>
       <LabeledNumber label="Distance from side edge" unit="mm" value={settings.edgeOffset} min={2} max={30} step={0.5} onChange={v => set('edgeOffset', v)} />
       <LabeledNumber label="Distance from bottom edge" unit="mm" value={settings.bottomOffset} min={0} max={MAX_MARGIN_TEXT_BOTTOM_OFFSET} step={0.5} onChange={v => set('bottomOffset', v)} />
       <p className="hint">Move vertically across the full page (0–{MAX_MARGIN_TEXT_BOTTOM_OFFSET} mm). At the top edge, the text stops moving so the complete credit stays on the sheet.</p>

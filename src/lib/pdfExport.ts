@@ -339,6 +339,23 @@ function freezeColumnLayout(source: HTMLElement, clone: HTMLElement) {
 export function clonePages(source: HTMLElement, targetDocument: Document, { freezeColumns = true } = {}) {
   const pages = source.cloneNode(true) as HTMLElement;
   if(freezeColumns){
+    // Chromium can paint only the masthead of a flex/grid contents page after
+    // fitPdfSheets places it in an absolute, clipped trim sheet. Screen and
+    // print-media DOM measurements still look correct in that failure. Freeze
+    // the known writable body rather than asking paged flex layout to resolve
+    // it again. Only the export clone changes; card widths/order stay authored.
+    const contents=[...source.querySelectorAll<HTMLElement>('.issue-contents-mosaic .issue-contents-body')];
+    const copiedContents=[...pages.querySelectorAll<HTMLElement>('.issue-contents-mosaic .issue-contents-body')];
+    contents.forEach((body,index)=>{
+      const copy=copiedContents[index],page=body.closest<HTMLElement>('.page');if(!copy||!page)return;
+      const scale=page.getBoundingClientRect().width/(pdfPageDimensions(page).width*96/25.4);
+      const height=body.getBoundingClientRect().height/scale;
+      if(!(height>0&&Number.isFinite(height)))return;
+      copy.style.setProperty('height',`${height}px`,'important');
+      copy.style.setProperty('flex','none','important');
+      copy.style.setProperty('display','block','important');
+      copy.querySelector<HTMLElement>('.issue-mosaic-columns')?.style.setProperty('height','100%','important');
+    });
     // The front-matter header is an auto-height flex item. Removing editor
     // controls and paged text rounding can shorten it by a fraction of a mm,
     // moving every photograph/body frame underneath. Preserve its measured

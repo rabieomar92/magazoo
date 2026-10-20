@@ -11,6 +11,12 @@ export function paper2VacantTextStarts(headerHeight:number,titleOffset:number,li
   return{headHeight,leftGap:headHeight-headerHeight,baselineGap:titleOffset-gutter};
 }
 
+/** Layout engines quantize CSS lengths. Do not feed sub-pixel measurement
+ * noise back into React's measure → render → measure cycle. */
+export function stablePaper2Measurement(previous:number,next:number):number{
+  return !Number.isFinite(next)||Math.abs(previous-next)<.05?previous:next;
+}
+
 /**
  * paper-2 keeps the shared column grid of `geometry.ts` untouched — same column
  * width on every page — and only spends the top of sheet 1 differently: the

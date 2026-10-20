@@ -4,6 +4,10 @@ import { cloneDocForUpdate, useDoc } from '../store/useDoc';
 import { marginTextSettings, pageMarginText } from './pageMarginText';
 
 describe('page margin text', () => {
+  it('defaults the vertical distance to 22mm without replacing manual offsets',()=>{
+    const doc=emptyDoc();expect(marginTextSettings(doc).bottomOffset).toBe(22);
+    doc.marginText={bottomOffset:35};expect(marginTextSettings(doc).bottomOffset).toBe(35);
+  });
   it('is disabled in existing documents and omits blank page entries', () => {
     const doc = emptyDoc();
     expect(pageMarginText(doc, 0)).toBe('');

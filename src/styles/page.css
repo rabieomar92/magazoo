@@ -1,3 +1,5 @@
+@import './caption-spacing.css';
+
 @page {
   /* Lock to portrait A4 so the print dialog can't switch it to landscape. */
   size: A4 portrait;

@@ -28,7 +28,7 @@ import {
 import { wrapAll } from '../lib/textWrap';
 import { applyMark, insertMath } from '../lib/activeEditor';
 import { MAG2_STRIP } from '../lib/magSplit';
-import { paper2Grid, paper2Fit, paper2VerticalVars, paper2VacantTextStarts } from '../lib/paper2';
+import { paper2Grid, paper2Fit, paper2VerticalVars, paper2VacantTextStarts, stablePaper2Measurement } from '../lib/paper2';
 import { defaultPlacedHighlights } from '../lib/placedHighlights';
 import { placedImageContour, placedImagePolygon, placedImageWrapGap } from '../lib/placedImage';
 import { physicalPageFit, populatedPhysicalPages,hasObstacleColumns } from '../lib/physicalFlowPages';
@@ -624,21 +624,23 @@ export const PaperPreviewLayout = memo(function PaperPreviewLayout({
       let leftGap=0;
       if(doc.design.showHero===false&&!sharedHeading&&head&&page){
         const scale=page.getBoundingClientRect().width/Number.parseFloat(getComputedStyle(page).width);
-        const previousLeft=Number.parseFloat(getComputedStyle(page).getPropertyValue('--p2-left-baseline-gap'))||0;
+        const usedPadding=Number.parseFloat(getComputedStyle(head).paddingBottom)||0;
         const title=head.querySelector<HTMLElement>('.title');
         const titleOffset=title&&scale>0?(title.getBoundingClientRect().top-head.getBoundingClientRect().top)/scale:0;
         const naturalHeight=scale>0?head.getBoundingClientRect().height/scale:headH;
-        const aligned=paper2VacantTextStarts(naturalHeight-previousLeft,titleOffset,leading,doc.design.gutter*MM_PX);
+        // Remove the USED padding, not the unrounded CSS-variable request.
+        // Otherwise CSS length quantization accumulates on each measurement.
+        const aligned=paper2VacantTextStarts(naturalHeight-usedPadding+doc.design.gutter*MM_PX,titleOffset,leading,doc.design.gutter*MM_PX);
         headH=aligned.headHeight;leftGap=aligned.leftGap;baselineGap=aligned.baselineGap;
       }else if(page&&left&&right){
         const scale=page.getBoundingClientRect().width/Number.parseFloat(getComputedStyle(page).width);
         const previousGap=Number.parseFloat(getComputedStyle(page).getPropertyValue('--p2-baseline-gap'))||0;
         if(scale>0){const delta=(right.getBoundingClientRect().top-left.getBoundingClientRect().top)/scale-previousGap;baselineGap=lineGridUp(delta,leading)-delta;}
       }
-      setP2HeadPx(headH);
-      setP2HeroPx(heroH);
-      setP2BaselinePx(baselineGap);
-      setP2LeftBaselinePx(leftGap);
+      setP2HeadPx(previous=>stablePaper2Measurement(previous,headH));
+      setP2HeroPx(previous=>stablePaper2Measurement(previous,heroH));
+      setP2BaselinePx(previous=>stablePaper2Measurement(previous,baselineGap));
+      setP2LeftBaselinePx(previous=>stablePaper2Measurement(previous,leftGap));
 
       const root = hl.closest<HTMLElement>('.measure-root');
       if (root) {

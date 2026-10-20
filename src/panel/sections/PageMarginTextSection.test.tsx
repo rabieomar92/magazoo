@@ -33,7 +33,8 @@ afterEach(() => { act(() => root.unmount()); host.remove(); useDoc.getState().lo
 describe('page margin text controls', () => {
   it('explains automatic masthead-side placement instead of offering a fixed page edge', () => {
     act(() => field<HTMLInputElement>('Show vertical margin text').click());
-    expect(host.textContent).toContain('Automatically follows the masthead side on each page');
+    expect(host.textContent).toContain('Starts on the masthead side');
+    expect(host.textContent).toContain('switches sides to avoid bleed photographs');
     expect([...host.querySelectorAll('.field-label')].some(label => label.textContent === 'Page edge')).toBe(false);
   });
 

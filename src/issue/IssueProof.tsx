@@ -100,7 +100,7 @@ export function IssueProof({ plan, entries, documents, magazineName, design, con
       <div className="pages issue-proof-contents">
         <ContentsSpread entries={entries} title={plan.contentsTitle} subtitle={plan.contentsSubtitle}
           direction={plan.direction} startNumber={contentsStart} magazineName={magazineName}
-          design={design} mastheadSide={contentsSide} pageSize={pageSize} bleedMm={bleedMm} onOverflow={onOverflow} />
+          design={design} mastheadSide={contentsSide} pageSize={pageSize} bleedMm={bleedMm} marginMm={documents.find(source=>!source.externalPdf)?.doc.design.margin??16} onOverflow={onOverflow} />
       </div>
       {plan.order.slice(split + 1).map(article)}
     </div>

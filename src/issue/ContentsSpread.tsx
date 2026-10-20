@@ -16,6 +16,7 @@ export interface ContentsSpreadProps {
   mastheadSide?: 'left' | 'right';
   pageSize?: PdfPageSize;
   bleedMm?:number;
+  marginMm?:number;
 }
 
 /**
@@ -162,9 +163,9 @@ const CARD_GAP_MM = 7;
 const MAX_EXTRA_GAP_MM = 11;
 /** B5 remains an output fit of the original composition; Magazine is native. */
 const contentsDimensions = (size: PdfPageSize,bleedMm=0) => pageDimensions({ pageFormat: size,bleedMm,bleedCanvas:true });
-function contentsPageStyle(size: PdfPageSize,bleedMm=0) {
+function contentsPageStyle(size: PdfPageSize,bleedMm=0,marginMm=16) {
   const dimensions = contentsDimensions(size,bleedMm);
-  return { '--page-w': `${dimensions.width}mm`, '--page-h': `${dimensions.height}mm` } as CSSProperties;
+  return { '--page-w': `${dimensions.width}mm`, '--page-h': `${dimensions.height}mm`, '--margin': `${marginMm+bleedMm}mm` } as CSSProperties;
 }
 
 /**
@@ -198,13 +199,14 @@ function pictureScore(entry: ContentsEntry, salt: number) {
  * density, the surplus is reported rather than drawn off the page, and the
  * studio shows the editor which way to go.
  */
-function MosaicSpread({ entries, title, direction, startNumber, magazineName, design, onOverflow, mastheadSide, pageSize,bleedMm=0 }: {
+function MosaicSpread({ entries, title, direction, startNumber, magazineName, design, onOverflow, mastheadSide, pageSize,bleedMm=0,marginMm=16 }: {
   entries: readonly ContentsEntry[]; title: string; direction: 'ltr' | 'rtl';
   startNumber: number; magazineName: string; design: ContentsDesign;
   onOverflow?: (overflow: boolean) => void;
   mastheadSide: 'left' | 'right';
   pageSize: PdfPageSize;
   bleedMm?:number;
+  marginMm?:number;
 }) {
   const probe = useRef<HTMLDivElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
@@ -297,7 +299,7 @@ function MosaicSpread({ entries, title, direction, startNumber, magazineName, de
   }, [signature, tier, pinned, entries, design.gapScale, onOverflow]);
 
   const style = {
-    ...contentsPageStyle(pageSize,bleedMm),
+    ...contentsPageStyle(pageSize,bleedMm,marginMm),
     '--contents-paper': design.pageColor,
     '--contents-ink': design.textColor,
     '--contents-bar': design.topBarColor,
@@ -367,11 +369,12 @@ function MosaicSpread({ entries, title, direction, startNumber, magazineName, de
   ))}</>;
 }
 
-function ContentsPage({ group, index, title, subtitle, direction, startNumber, magazineName, design, onOverflow, mastheadSide, pageSize }: {
+function ContentsPage({ group, index, title, subtitle, direction, startNumber, magazineName, design, onOverflow, mastheadSide, pageSize,marginMm=16 }: {
   group: readonly ContentsEntry[]; index: number; title: string; subtitle: string; direction: 'ltr' | 'rtl';
   startNumber: number; magazineName: string; design: ContentsDesign; onOverflow: (overflow: boolean) => void;
   mastheadSide: 'left' | 'right';
   pageSize: PdfPageSize;
+  marginMm?:number;
 }) {
   const page = useRef<HTMLElement>(null);
   const pinned = design.density === 'auto' ? null : PINNED[design.density];
@@ -399,7 +402,7 @@ function ContentsPage({ group, index, title, subtitle, direction, startNumber, m
   }, [tier, pinned, signature, onOverflow]);
 
   const style = {
-    ...contentsPageStyle(pageSize),
+    ...contentsPageStyle(pageSize,0,marginMm),
     '--contents-paper': design.pageColor,
     '--contents-ink': design.textColor,
     '--contents-bar': design.topBarColor,
@@ -514,7 +517,7 @@ function ContentsPage({ group, index, title, subtitle, direction, startNumber, m
   </section>;
 }
 
-export function ContentsSpread({ entries, title = 'Contents', subtitle = '', direction = 'ltr', startNumber = 1, magazineName = 'Magazoo!', design = DEFAULT_CONTENTS_DESIGN, onOverflow, mastheadSide = 'left', pageSize = 'a4',bleedMm=0 }: ContentsSpreadProps) {
+export function ContentsSpread({ entries, title = 'Contents', subtitle = '', direction = 'ltr', startNumber = 1, magazineName = 'Magazoo!', design = DEFAULT_CONTENTS_DESIGN, onOverflow, mastheadSide = 'left', pageSize = 'a4',bleedMm=0,marginMm=16 }: ContentsSpreadProps) {
   // Hooks first, branch second: the two layouts are different components and
   // the rules of hooks do not care that only one of them ever renders.
   const [spill, setSpill] = useState<[boolean, boolean]>([false, false]);
@@ -522,7 +525,7 @@ export function ContentsSpread({ entries, title = 'Contents', subtitle = '', dir
   useEffect(() => { if (!mosaic) onOverflow?.(spill[0] || spill[1]); }, [mosaic, spill, onOverflow]);
   if (mosaic) return <MosaicSpread
     entries={entries} title={title} direction={direction} startNumber={startNumber}
-    magazineName={magazineName} design={design} onOverflow={onOverflow} mastheadSide={mastheadSide} pageSize={pageSize} bleedMm={bleedMm}
+    magazineName={magazineName} design={design} onOverflow={onOverflow} mastheadSide={mastheadSide} pageSize={pageSize} bleedMm={bleedMm} marginMm={marginMm}
   />;
   const split = Math.ceil(entries.length / 2);
   const groups = [entries.slice(0, split), entries.slice(split)];
@@ -531,7 +534,7 @@ export function ContentsSpread({ entries, title = 'Contents', subtitle = '', dir
   return <>{groups.map((group, index) => (
     <ContentsPage
       key={index} group={group} index={index} title={title} subtitle={subtitle} direction={direction}
-      startNumber={startNumber} magazineName={magazineName} design={design} onOverflow={report(index)} mastheadSide={mastheadSide} pageSize={pageSize}
+      startNumber={startNumber} magazineName={magazineName} design={design} onOverflow={report(index)} mastheadSide={mastheadSide} pageSize={pageSize} marginMm={marginMm}
     />
   ))}</>;
 }

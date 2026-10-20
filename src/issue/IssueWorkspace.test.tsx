@@ -77,6 +77,30 @@ it('offers canvas-side ordering without replacing the compiled proof', async () 
   expect(host.querySelector('[aria-label="Arrange articles on canvas"]')).toBeNull();
 });
 
+it('uses the large compilation-style animation while finalising page numbers',async()=>{
+ await act(async()=>root.render(<IssueWorkspace projectId="project" csrf="test-token" onClose={()=>undefined}/>));
+ let finish:(value:unknown)=>void=()=>{};
+ vi.mocked(issueApi).mockImplementation((...args)=>args[2]==='/finalize'?new Promise(resolve=>{finish=resolve;}):Promise.resolve(response));
+ await act(async()=>{[...host.querySelectorAll<HTMLButtonElement>('.studio-actions button')].find(button=>button.textContent==='Finalise issue & page numbers')!.click();});
+ expect(host.querySelector('.studio-busy--finalizing .magazoo-loader.is-card')).not.toBeNull();
+ expect(host.querySelector('.studio-busy--finalizing')?.textContent).toContain('Finalising page numbers');
+ expect(host.querySelector('.studio-busy--finalizing .magazoo-loader.is-banner')).toBeNull();
+ await act(async()=>finish({version:8,items:[{id:'article',version:4}]}));
+ expect(host.querySelector('.studio-busy--finalizing')).toBeNull();
+});
+
+it('uses a large compilation-style loading view during PDF preparation, not a floating banner',async()=>{
+ await act(async()=>root.render(<IssueWorkspace projectId="project" csrf="test-token" onClose={()=>undefined}/>));
+ let finish:()=>void=()=>{};
+ vi.mocked(exportIssuePdf).mockImplementationOnce(()=>new Promise<void>(resolve=>{finish=resolve;}));
+ await act(async()=>{[...host.querySelectorAll<HTMLButtonElement>('.studio-actions button')].find(button=>button.textContent==='Export original PDF')!.click();});
+ expect(host.querySelector('.studio-busy .workspace-loading.is-canvas-only .magazoo-loader.is-card')).not.toBeNull();
+ expect(host.querySelector('.studio-busy')?.textContent).toContain('Preparing your issue');
+ expect(host.querySelector('.studio-busy .magazoo-loader.is-banner')).toBeNull();
+ await act(async()=>finish());
+ expect(host.querySelector('.studio-busy')).toBeNull();
+});
+
 it('keeps separate online and print exports and preserves saved print bleed', async () => {
   response.plan!.printSettings = { binding: 'saddle-stitch', perfectMultiple: 2, ...{ bleedMm: 5 } };
   await act(async () => root.render(<IssueWorkspace projectId="project" csrf="test-token" onClose={() => undefined} />));

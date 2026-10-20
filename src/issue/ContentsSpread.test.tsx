@@ -26,6 +26,12 @@ beforeEach(() => {
 });
 afterEach(() => { act(() => root.unmount()); host.remove(); vi.unstubAllGlobals(); });
 
+it('uses article margin plus bleed for the contents masthead and card edges',()=>{
+ act(()=>root.render(<ContentsSpread entries={[]} marginMm={16} bleedMm={5} design={{...DEFAULT_CONTENTS_DESIGN,layout:'mosaic'}}/>));
+ for(const page of host.querySelectorAll<HTMLElement>('.issue-contents-page'))expect(page.style.getPropertyValue('--margin')).toBe('21mm');
+ expect(contentsCss).toContain('.issue-contents-page .issue-contents-masthead { padding-left:0; padding-right:0; }');
+});
+
 it('applies all three colours to both sheets in every contents layout', () => {
   for (const layout of ['mosaic', 'feature', 'sections'] as const) {
     act(() => root.render(<ContentsSpread entries={[]} design={{ ...DEFAULT_CONTENTS_DESIGN, layout, pageColor: '#102030', textColor: '#ffffff', topBarColor: '#800080' }} />));

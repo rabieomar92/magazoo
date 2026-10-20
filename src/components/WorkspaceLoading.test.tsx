@@ -1,4 +1,8 @@
+import {readFileSync} from 'node:fs';
 import {act} from 'react';import {createRoot} from 'react-dom/client';import {expect,it,vi} from 'vitest';import {WorkspaceLoading} from './WorkspaceLoading';
+it('keeps the loading paper borderless rather than drawing fake trim lines',()=>{
+ expect(readFileSync('src/components/WorkspaceLoading.css','utf8')).toMatch(/\.workspace-loading-paper\{[^}]*border:0;/);
+});
 it('matches destination chrome and reserves paper only when its size is actually known',()=>{
  vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT',true);const host=document.createElement('div'),root=createRoot(host);
  try{

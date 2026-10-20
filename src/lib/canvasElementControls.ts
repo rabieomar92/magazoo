@@ -9,7 +9,7 @@ import {articleGeometry} from './articleLayouts';
 
 export interface ElementControl {
  id:string;label:string;axis:'x'|'y';value:number;min:number;max:number;step:number;unit:string;
- paint?:'moveY'|'width';
+ paint?:'moveY'|'width'|'gateWidth'|'gateInset';
  element?:HTMLElement;
  direction?:1|-1;
  save:(doc:Doc,value:number)=>void;
@@ -78,9 +78,10 @@ export function canvasElementControls(doc:Doc,element:HTMLElement,_key?:string):
  }
  if(owner('.front-cover-story'))add('storyWidth','Story width','x',doc.design.frontCover?.storyWidth??88,40,100,(d,v)=>{d.design.frontCover={...d.design.frontCover,storyWidth:v};},undefined,1,'%');
  const gate=owner('.mag-gate-mid');
- if(gate){const field=gate.dataset.editorTarget==='gate-text-position'?'gateText':'gateTitle',dims=pageDimensions(doc.design),page=gate.closest<HTMLElement>('.page'),scale=page?page.getBoundingClientRect().width/dims.width:1,rect=gate.getBoundingClientRect();
-  add('gateWidth','Text block width','x',doc.design[field]?.width??rect.width/scale,50,dims.width-(doc.design[field]?.inset??doc.design.margin)-8,(d,v)=>{d.design[field]={...d.design[field],width:v};});
-  add('gateInset','Text block inset','x',doc.design[field]?.inset??doc.design.margin,8,dims.width-58,(d,v)=>{d.design[field]={...d.design[field],inset:v};});
+ if(gate){const field=gate.dataset.editorTarget==='gate-text-position'?'gateText':'gateTitle',dims=pageDimensions(doc.design),page=gate.closest<HTMLElement>('.page'),pageRect=page?.getBoundingClientRect(),scale=pageRect&&pageRect.width>0?pageRect.width/dims.width:1,rect=gate.getBoundingClientRect(),rtl=doc.design.textDirection==='rtl';
+  const box={...doc.design[field],inset:doc.design[field]?.inset??(pageRect&&rect.width>0?(rtl?pageRect.right-rect.right:rect.left-pageRect.left)/scale:doc.design.margin),width:doc.design[field]?.width??(rect.width>0?rect.width/scale:dims.width-2*doc.design.margin),top:doc.design[field]?.top??(pageRect&&rect.height>0?(rect.top-pageRect.top)/scale:undefined)};
+  add('gateWidth','Text block width','x',box.width,50,dims.width-box.inset-8,(d,v)=>{d.design[field]={...box,...d.design[field],width:v};},'gateWidth');onOwner('.mag-gate-mid');
+  add('gateInset','Text block inset','x',box.inset,8,Math.max(8,dims.width-box.width-8),(d,v)=>{d.design[field]={...box,...d.design[field],inset:v};},'gateInset');onOwner('.mag-gate-mid');controls[controls.length-1].direction=rtl?-1:1;
  }
  const caption=owner('[data-editor-target^="gallery-caption-"]');
  if(caption){const id=caption.dataset.editorTarget!.slice('gallery-caption-'.length),block=doc.blocks.find(b=>b.id===id);if(block?.type==='figure')add('captionPosition','Caption position','y',block.captionVerticalPosition??100,0,100,(d,v)=>{const b=d.blocks.find(b=>b.id===id);if(b?.type==='figure')b.captionVerticalPosition=v;},undefined,1,'%');}

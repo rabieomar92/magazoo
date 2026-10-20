@@ -1,9 +1,16 @@
-.canvas-element-outline{position:fixed;z-index:90;pointer-events:none;outline:1px solid #6654ed88;outline-offset:3px}
-.canvas-element-tools{position:fixed;box-sizing:border-box;display:flex;flex-wrap:wrap;align-items:center;gap:4px;width:max-content;max-width:min(500px,calc(100vw - 24px));max-height:calc(100vh - 24px);overflow:auto;padding:6px;border:1px solid #dce0e8;background:#fff;box-shadow:0 4px 18px #18203320;pointer-events:auto}
-.canvas-element-tools button{pointer-events:auto;touch-action:none;cursor:ew-resize;border:1px solid #dce0e8;border-radius:0;background:#fff;color:#353247;font:11px/1.3 system-ui;padding:5px 7px;box-shadow:0 2px 5px #00000010}
-.canvas-element-tools button:hover,.canvas-element-tools button:focus-visible{border-color:#6654ed;color:#4935d3}
-.canvas-element-value{position:absolute;bottom:100%;left:0;padding:4px 7px;background:#222339;color:white;white-space:nowrap;font:11px system-ui}
+.canvas-element-outline{position:fixed;z-index:90;pointer-events:none;outline:1px solid #63636388;outline-offset:3px}
+.canvas-element-tools{position:fixed;box-sizing:border-box;display:flex;flex-wrap:wrap;align-items:center;gap:4px;width:max-content;max-width:min(500px,calc(100vw - 24px));max-height:calc(100vh - 24px);overflow:auto;padding:6px;border:1px solid #e0e0e0;background:#ffffff;box-shadow:0 4px 18px #20202020;pointer-events:auto}
+.canvas-element-tools button{pointer-events:auto;touch-action:none;cursor:ew-resize;border:1px solid #e0e0e0;border-radius:0;background:#ffffff;color:#343434;font:11px/1.3 var(--ui-font,Arial,sans-serif);padding:5px 7px;box-shadow:0 2px 5px #00000010}
+.canvas-element-tools button:hover,.canvas-element-tools button:focus-visible{border-color:#636363;color:#454545}
+.canvas-element-value{position:absolute;bottom:100%;left:0;padding:4px 7px;background:#242424;color:white;white-space:nowrap;font:11px var(--ui-font,Arial,sans-serif)}
 @media print{.canvas-element-outline{display:none!important}}
 .canvas-element-tools button{cursor:pointer}
 .canvas-element-tools button[data-drag-axis=x]{cursor:ew-resize}
 .canvas-element-tools button[data-drag-axis=y]{cursor:ns-resize}
+.canvas-element-tools{border-radius:12px;padding:5px;gap:4px;box-shadow:0 6px 22px #00000014}
+.canvas-element-tools button[data-drag-axis]{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:36px;border:0;border-radius:8px;box-shadow:none;padding:8px 10px;background:#f5f5f5;user-select:none}
+.canvas-element-tools button[data-drag-axis]:hover{background:#ededed;color:#111}
+.canvas-element-tools button:focus-visible{outline:2px solid #111;outline-offset:1px}
+.canvas-element-tools .canvas-control-reading{font-variant-numeric:tabular-nums;min-width:56px;text-align:right;color:#111}
+.canvas-control-reading small{color:#777;font-size:10px}
+.canvas-element-tools button:last-child{border:0;border-radius:8px;box-shadow:none;min-width:32px;min-height:36px}

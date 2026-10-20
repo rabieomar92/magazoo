@@ -1,9 +1,9 @@
 .signature-preview {
   padding: 14px;
   margin-bottom: 8px;
-  border: 1px solid var(--border, #dce0e8);
+  border: 1px solid var(--border, #e0e0e0);
   border-radius: 8px;
-  background: #fff;
+  background: #ffffff;
 }
 .signature-preview-image { max-width: 100%; }
 .signature-preview-image.is-center { margin-inline: auto; }

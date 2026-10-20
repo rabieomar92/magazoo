@@ -2,14 +2,15 @@ import { useEffect, useState } from 'react';
 import type { Doc, TextStyle, GateTextRole } from '../schema/document';
 import { useDoc } from '../store/useDoc';
 import { ALL_FONTS, fontOptions } from '../lib/fonts';
-import { textStyleSelector } from '../lib/textStyles';
+import { textStyleSelector,captionBackgroundSelector } from '../lib/textStyles';
 import { LabeledSelect, LabeledNumber } from './Field';
 import { LetterSpacingField } from './LetterSpacingField';
 import {gateTypography} from '../lib/gateTypography';
 import {trackingRoleSupported} from '../lib/textTracking';
+import {clearCaptionColorOverrides} from '../lib/captionColor';
 
 type Property = keyof TextStyle | 'tracking';
-const ORDER: Record<Property, number> = {fontFamily:10,fontSize:20,fontWeight:30,italic:31,underline:32,color:40,tracking:45,lineHeight:48,align:50};
+const ORDER: Record<Property, number> = {fontFamily:10,fontSize:20,fontWeight:30,italic:31,underline:32,color:40,backgroundOpacity:42,tracking:45,lineHeight:48,align:50};
 
 function OptionalNumber({label,value,onChange,min,max,step,placeholder}: {label:string;value?:number;onChange:(n?:number)=>void;min:number;max:number;step:number;placeholder:string}) {
   const [draft,setDraft] = useState<string|null>(null);
@@ -57,6 +58,7 @@ export function TextStyleFields({group,existing,doc}: {group:string;existing:Pro
     return()=>{observer.disconnect();cancelAnimationFrame(frame);};
   },[group,doc]);
   const set = <K extends keyof TextStyle>(key:K,value:TextStyle[K]) => update(d=>{
+    if(key==='color'&&value!==undefined)clearCaptionColorOverrides(d,group);
     d.design.textStyles ??= {};
     const next={...d.design.textStyles[group]};
     if(value===undefined)delete next[key];else next[key]=value;
@@ -71,7 +73,8 @@ export function TextStyleFields({group,existing,doc}: {group:string;existing:Pro
     {wrap('fontWeight',<><LabeledSelect label="Weight" value={style.fontWeight===undefined?'':String(style.fontWeight)} options={[{value:'',label:'Template weight'},...[[300,'Light'],[400,'Regular'],[500,'Medium'],[600,'Semibold'],[700,'Bold'],[800,'Extra bold'],[900,'Black']].map(([value,label])=>({value:String(value),label:String(label)}))]} onChange={v=>set('fontWeight',v?Number(v):undefined)} /><button className="tool-btn" type="button" aria-label="Bold" aria-pressed={(style.fontWeight??baseline.weight)>=700} onClick={()=>set('fontWeight',(style.fontWeight??baseline.weight)>=700?400:700)}><b>B</b></button></>)}
     {wrap('italic',boolean('italic','Italic',style.italic??baseline.italic))}
     {wrap('underline',boolean('underline','Underline',style.underline??baseline.underline))}
-    {wrap('color',<label className="field field--inline"><span className="field-label">Text colour</span><span className="color-input"><input aria-label="Text colour" type="color" value={style.color??baseline.color} onChange={e=>set('color',e.target.value)} /><button type="button" className="style-reset-btn" title="Use template colour" onClick={()=>set('color',undefined)}>↺</button></span></label>)}
+    {wrap('color',<label className="field field--inline"><span className="field-label">Text colour</span><span className="color-input"><input aria-label="Text colour" type="color" value={style.color??baseline.color} onInput={e=>set('color',e.currentTarget.value)} onChange={e=>{if(useDoc.getState().doc.design.textStyles?.[group]?.color!==e.target.value)set('color',e.target.value);}} /><button type="button" className="style-reset-btn" title="Use template colour" onClick={()=>set('color',undefined)}>↺</button></span></label>)}
+    {captionBackgroundSelector(group)&&wrap('backgroundOpacity',<OptionalNumber label="Background opacity (%)" value={style.backgroundOpacity} min={0} max={100} step={5} placeholder="Template" onChange={v=>set('backgroundOpacity',v)}/>)}
     {gateRole ? doc.design.textDirection!=='rtl'&&wrap('tracking',<LabeledNumber label="Letter spacing" unit="px" value={gateTypography(doc.design,gateRole).letterSpacing} min={-3} max={12} step={.1} onChange={value=>update(d=>{d.design.gateTypography??={};d.design.gateTypography[gateRole]={...d.design.gateTypography[gateRole],letterSpacing:Math.max(-3,Math.min(12,value))};})}/>)
       : trackingRoleSupported(doc.templateId,group)&&wrap('tracking',<LetterSpacingField value={doc.design.textTracking?.[group]} onChange={value=>update(d=>{d.design.textTracking ??= {};if(value===undefined)delete d.design.textTracking[group];else d.design.textTracking[group]=value;})} />)}
     {wrap('lineHeight',<OptionalNumber label="Line spacing" value={style.lineHeight} min={.8} max={3} step={.05} placeholder={baseline.line} onChange={v=>set('lineHeight',v)} />)}

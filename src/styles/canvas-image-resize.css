@@ -1,7 +1,7 @@
 .canvas-height-handle{position:absolute;left:30%;width:40%;height:calc(16px * var(--canvas-control-scale,1));min-height:0;padding:0;border:0;background:transparent;cursor:ns-resize;touch-action:none;z-index:24;opacity:0;pointer-events:auto;}
 .canvas-height-handle--top{top:0}.canvas-height-handle--bottom{bottom:0}
 .page>.canvas-height-handle{position:absolute;z-index:24}
-.canvas-height-handle>span{display:block;margin:auto;width:calc(44px * var(--canvas-control-scale,1));height:calc(4px * var(--canvas-control-scale,1));background:#fff;border:1px solid #5145d9;border-radius:3px;box-shadow:0 1px 4px #0005;}
+.canvas-height-handle>span{display:block;margin:auto;width:calc(44px * var(--canvas-control-scale,1));height:calc(4px * var(--canvas-control-scale,1));background:#ffffff;border:1px solid #525252;border-radius:3px;box-shadow:0 1px 4px #00000055;}
 :hover>.canvas-height-handle,:focus-within>.canvas-height-handle,[data-height-resizing]>.canvas-height-handle{opacity:1}
-.canvas-height-handle:focus-visible{opacity:1;outline:2px solid #5145d9;outline-offset:-2px}
+.canvas-height-handle:focus-visible{opacity:1;outline:2px solid #525252;outline-offset:-2px}
 @media print{.canvas-height-handle{display:none!important}}

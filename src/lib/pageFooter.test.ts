@@ -10,9 +10,9 @@ describe('shared running footer', () => {
       for(const margin of [8,12,14,20,30]){doc.design.margin=margin;expect(footerBottomMargin(doc)).toBeCloseTo(13.4694,3);}
     }
   });
-  it('defaults to 8mm and preserves zero, fractional and saved offsets', () => {
+  it('defaults to 10mm and preserves zero, fractional and saved offsets', () => {
     const doc=emptyDoc();
-    expect(footerBottomOffset(doc)).toBe(8);
+    expect(footerBottomOffset(doc)).toBe(10);
     for (const bottomOffset of [0, 6.5, 18, 40]) {
       doc.footer={bottomOffset};
       const saved=migrate(JSON.parse(JSON.stringify(doc)));
@@ -30,7 +30,7 @@ describe('shared running footer', () => {
   });
   it('bounds invalid distances', () => {
     const doc=emptyDoc();
-    for (const [value, expected] of [[-2,0],[99,40],[NaN,8],[Infinity,8]]) {
+    for (const [value, expected] of [[-2,0],[99,40],[NaN,10],[Infinity,10]]) {
       doc.footer={bottomOffset:value};expect(footerBottomOffset(doc)).toBe(expected);
     }
   });

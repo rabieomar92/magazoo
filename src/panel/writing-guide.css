@@ -1,16 +1,16 @@
-.writing-guide {margin:8px 0 12px;padding:10px 12px;border:1px solid #e2e8f0;border-radius:10px;background:#f8fafc;color:#475467;font-size:12px;line-height:1.5;}
-.writing-guide-summary {display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;}.writing-pace {font-weight:600;color:#82591b;}.writing-pace.is-comfortable{color:#176750;}
-.writing-format,.writing-dismiss {background:transparent;border:0;color:#5a4acb;font:inherit;font-weight:600;cursor:pointer;padding:3px 0;}.writing-format:hover,.writing-dismiss:hover{text-decoration:underline;}
-.writing-metrics {display:flex;gap:10px;flex-wrap:wrap;color:#667085;font-size:11px;margin:5px 0;}
-.writing-review summary {cursor:pointer;list-style-position:inside;color:#344054;padding-top:4px;font-weight:600;}.writing-review summary>span{font-weight:400;color:#667085;}
-.writing-language {display:flex;align-items:center;justify-content:space-between;gap:10px;margin:12px 0;}.writing-language select{max-width:180px;border:1px solid #d0d5dd;background:white;border-radius:6px;padding:5px;color:#344054;font:inherit;}
-.writing-guide p {margin:6px 0;}.writing-coach-note,.writing-limits{font-size:11px;line-height:1.6;}.writing-limits{border-top:1px solid #e2e8f0;padding-top:8px;color:#667085;}
-.writing-review ul{list-style:none;margin:8px 0;padding:0;}.writing-review li{padding:10px 0;border-top:1px solid #e2e8f0;}
-.writing-kind{text-transform:uppercase;font-size:9px;letter-spacing:.06em;font-weight:700;color:#8c5317;}.writing-kind--clarity{color:#3c699b;}
-.writing-excerpt {display:block;width:100%;text-align:left;white-space:pre-wrap;overflow-wrap:anywhere;border:1px solid #e2e8f0;background:white;padding:8px;border-radius:6px;color:#344054;font:inherit;cursor:pointer;}
-.writing-excerpt mark{background:#fff0bb;color:inherit;text-decoration:underline;text-decoration-style:wavy;text-decoration-color:#b9781b;}.writing-excerpt:focus-visible{outline:2px solid #6355dd;outline-offset:2px;}
-.writing-suggestion{color:#176750;}.writing-dismiss{font-size:10px;font-weight:400;}.writing-metric-detail{font-weight:600;}
-.writing-paragraph-metrics{border-left:2px solid #bdb4ef;padding-left:10px;margin:10px 0;}
-.block-card:focus-within{border-color:#aaa1eb;box-shadow:0 0 0 2px #6355dd0a;}
-.writing-guide button:focus-visible,.writing-review summary:focus-visible{outline:2px solid #6355dd;outline-offset:3px;border-radius:3px;}
+.writing-guide {margin:8px 0 12px;padding:10px 12px;border:1px solid #e7e7e7;border-radius:10px;background:#fafafa;color:#535353;font-size:12px;line-height:1.5;}
+.writing-guide-summary {display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;}.writing-pace {font-weight:600;color:#5d5d5d;}.writing-pace.is-comfortable{color:#545454;}
+.writing-format,.writing-dismiss {background:transparent;border:0;color:#575757;font:inherit;font-weight:600;cursor:pointer;padding:3px 0;}.writing-format:hover,.writing-dismiss:hover{text-decoration:underline;}
+.writing-metrics {display:flex;gap:10px;flex-wrap:wrap;color:#6f6f6f;font-size:11px;margin:5px 0;}
+.writing-review summary {cursor:pointer;list-style-position:inside;color:#3f3f3f;padding-top:4px;font-weight:600;}.writing-review summary>span{font-weight:400;color:#6f6f6f;}
+.writing-language {display:flex;align-items:center;justify-content:space-between;gap:10px;margin:12px 0;}.writing-language select{max-width:180px;border:1px solid #d5d5d5;background:white;border-radius:6px;padding:5px;color:#3f3f3f;font:inherit;}
+.writing-guide p {margin:6px 0;}.writing-coach-note,.writing-limits{font-size:11px;line-height:1.6;}.writing-limits{border-top:1px solid #e7e7e7;padding-top:8px;color:#6f6f6f;}
+.writing-review ul{list-style:none;margin:8px 0;padding:0;}.writing-review li{padding:10px 0;border-top:1px solid #e7e7e7;}
+.writing-kind{text-transform:uppercase;font-size:9px;letter-spacing:.06em;font-weight:700;color:#5b5b5b;}.writing-kind--clarity{color:#636363;}
+.writing-excerpt {display:block;width:100%;text-align:left;white-space:pre-wrap;overflow-wrap:anywhere;border:1px solid #e7e7e7;background:white;padding:8px;border-radius:6px;color:#3f3f3f;font:inherit;cursor:pointer;}
+.writing-excerpt mark{background:#efefef;color:inherit;text-decoration:underline;text-decoration-style:wavy;text-decoration-color:#7f7f7f;}.writing-excerpt:focus-visible{outline:2px solid #626262;outline-offset:2px;}
+.writing-suggestion{color:#545454;}.writing-dismiss{font-size:10px;font-weight:400;}.writing-metric-detail{font-weight:600;}
+.writing-paragraph-metrics{border-left:2px solid #bababa;padding-left:10px;margin:10px 0;}
+.block-card:focus-within{border-color:#a8a8a8;box-shadow:0 0 0 2px #6262620a;}
+.writing-guide button:focus-visible,.writing-review summary:focus-visible{outline:2px solid #626262;outline-offset:3px;border-radius:3px;}
 @media print{.writing-guide{display:none!important;}}

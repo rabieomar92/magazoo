@@ -45,11 +45,11 @@ describe('all-template trim and top bar regressions',()=>{
    expect(host.querySelector<HTMLElement>('.tag-bar-mark')?.style.minWidth).toBe('5mm');
   }
  });
- for(const template of TEMPLATES)it(`keeps footer clearance relative to trim for ${template.id}`,()=>{
+ for(const template of TEMPLATES)it(`keeps footer clearance relative to the outer canvas for ${template.id}`,()=>{
   const doc=template.make();doc.footer={...doc.footer,enabled:true,bottomOffset:8};
   doc.design.bleedCanvas=true;doc.design.bleedMm=0;const base=footerBottomMargin(doc);
-  doc.design.bleedMm=5;expect(footerBottomOffset(doc)).toBe(8);expect(footerCanvasBottomOffset(doc)).toBe(13);
-  if(template.id!=='magazine-4'&&template.id!=='backcover-1')expect(footerBottomMargin(doc)).toBeCloseTo(base+5);
+  doc.design.bleedMm=5;expect(footerBottomOffset(doc)).toBe(8);expect(footerCanvasBottomOffset(doc)).toBe(8);
+  if(template.id!=='magazine-4'&&template.id!=='backcover-1')expect(footerBottomMargin(doc)).toBeCloseTo(base);
  });
  it('uses trim-width steps, with overlapping inner bleed, for automatic spreads',()=>{
   for(const size of Object.values(PDF_PAGE_SIZES))for(const bleed of [0,3,5,10]){

@@ -131,7 +131,7 @@ export function LabeledColor({ label, value, onChange, editorTarget }: LabeledPr
     <label className="field field--inline" id={editorTarget ? editorTargetId(editorTarget) : undefined}>
       <span className="field-label">{label}</span>
       <span className="color-input">
-        <input type="color" value={value} onChange={(e) => onChange(e.target.value)} />
+        <input type="color" value={value} onInput={(e) => onChange(e.currentTarget.value)} onChange={(e) => onChange(e.target.value)} />
         <input
           className="field-input field-input--hex"
           value={value}

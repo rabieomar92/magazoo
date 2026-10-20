@@ -27,6 +27,20 @@ it('keeps the two gatefold text blocks independent',()=>{
  canvasElementControls(doc,element).find(c=>c.id==='gateWidth')!.save(doc,90);
  expect(doc.design.gateText?.width).toBe(90);expect(doc.design.gateTitle?.width).not.toBe(90);
 });
+it('previews gate changes on the entire block and preserves its measured position',()=>{
+ const doc=presetFor('magazine-3');doc.design.pageFormat='vendor-b5';
+ const page=document.createElement('div');page.className='page';
+ const gate=document.createElement('div');gate.className='mag-gate-mid';gate.dataset.editorTarget='gate-text-position';
+ const text=document.createElement('p');gate.append(text);page.append(gate);document.body.append(page);
+ page.getBoundingClientRect=()=>({left:0,right:364,top:0,bottom:516,width:364,height:516} as DOMRect);
+ gate.getBoundingClientRect=()=>({left:40,right:280,top:240,bottom:340,width:240,height:100} as DOMRect);
+ try{
+  const controls=canvasElementControls(doc,text),width=controls.find(c=>c.id==='gateWidth')!,inset=controls.find(c=>c.id==='gateInset')!;
+  expect(width).toMatchObject({value:120,paint:'gateWidth',element:gate});
+  expect(inset).toMatchObject({value:20,paint:'gateInset',max:54,element:gate});
+  width.save(doc,110);expect(doc.design.gateText).toMatchObject({width:110,inset:20,top:120});
+ }finally{page.remove();}
+});
 it('uses existing footer, bar, QR and logo geometry fields and limits',()=>{
  const doc=presetFor('backcover-1'),host=document.createElement('div');host.innerHTML='<div class="tag-bar"><span>Issue</span></div><footer class="page-folio"><span>Footer</span></footer><div data-editor-target="image-backcover-qr"></div><div data-editor-target="image-backcover-logo"></div>';
  canvasElementControls(doc,host.querySelector('.tag-bar span')!).find(c=>c.id==='bar')!.save(doc,12);
