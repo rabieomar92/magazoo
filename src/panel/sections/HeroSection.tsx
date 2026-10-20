@@ -181,7 +181,7 @@ export function ImagePicker({ slot, title, blurb, fit = 'cover', thumbAspectRati
               rows={3} value={caption} placeholder="Describe this image; keep photo credits in the credit field."
               onChange={value => update(d => { d.meta[captionKey] = value; })} />
             {!caption.trim() && <p className="hint hint--warn" role="status">This image has no caption yet. Add a description before publishing.</p>}
-            <p className="hint">Drag this caption anywhere on its page. Arrow keys move it by 1 mm; hold Shift for 5 mm. Its font controls remain in the top toolbar.</p>
+            <p className="hint">Drag this caption anywhere on its page. Drag either side handle to resize its width; the text reflows without changing its font size. Arrow keys adjust by 1 mm; hold Shift for 5 mm. Its font controls remain in the top toolbar.</p>
             {placement&&<details className="control-disclosure"><summary>Caption position & width</summary>
               <div className="image-boundary-coordinates">
                 <LabeledNumber label="Caption X" unit="mm" min={0} max={dimensions.width} step={.5} value={placement.x} onChange={x=>update(d=>{d.design[placementKey]={...placement,x};})}/>

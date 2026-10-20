@@ -18,10 +18,10 @@ afterEach(() => {
   host.remove();
 });
 
-it('keeps the original illustrated logo intact without walking sprite layers', () => {
+it('shows a minimal spinner and label without decorative artwork', () => {
   act(() => root.render(<MagazooLoader label="Preparing pages" />));
-  expect(host.querySelectorAll('.magazoo-loader-mark')).toHaveLength(1);
-  expect(host.querySelector('.magazoo-loader-mark')?.getAttribute('src')).toContain('magazoo-mark.png');
+  expect(host.querySelector('.magazoo-loader-ring')).not.toBeNull();
+  expect(host.querySelector('img,svg,.magazoo-loader-mark')).toBeNull();
   expect(host.querySelector('.magazoo-loader-animal,.magazoo-animal-gait')).toBeNull();
   expect(host.querySelector('mask,use')).toBeNull();
   expect(host.querySelector('.magazoo-loader-shine')).toBeNull();

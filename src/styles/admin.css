@@ -208,7 +208,7 @@
 .admin-file-icon {width:24px;height:26px;border:1px solid #e0dcf5;border-radius:6px;background:linear-gradient(155deg,#fbfaff,#f0edfc);color:#7467bd;}
 .admin-file-icon .admin-icon {width:15px;height:15px;}
 .admin-file-kind {font-size:9px;letter-spacing:.065em;text-transform:uppercase;font-weight:600;color:var(--ink-3);}
-.admin-version {margin-left:auto;background:var(--surface-2);border:1px solid var(--line-2);border-radius:5px;padding:2px 5px;color:var(--ink-3);font:500 10px/1.4 var(--ui);overflow-wrap:anywhere;max-width:80px;}
+.admin-version {margin-left:auto;flex:none;white-space:nowrap;background:var(--surface-2);border:1px solid var(--line-2);border-radius:5px;padding:2px 5px;color:var(--ink-3);font:500 10px/1.4 var(--ui);max-width:80px;}
 .admin-article-card h4 {display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;margin:0 0 4px;font:650 14px/1.4 var(--ui);letter-spacing:-.02em;overflow-wrap:anywhere;}
 .admin-article-card h4 a {color:inherit;text-decoration:none;}
 .admin-article-card h4 a:hover {color:var(--brand-ink);}
@@ -317,7 +317,13 @@
 .admin-page:not(.admin-page--signin) .admin-file-icon{background:transparent;border-color:var(--line);color:var(--ink-2);}
 .admin-sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0;}
 .admin-page .admin-header .admin-flat-navigation{gap:6px;width:auto;justify-content:flex-end;}
-.admin-page .admin-header .admin-flat-navigation :is(button,a){width:40px;height:40px;min-height:40px;padding:10px;border:0;background:transparent;box-shadow:none;color:var(--ink-2);}
+.admin-page .admin-header .admin-flat-navigation :is(button,a){box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;flex:none;width:40px;height:40px;min-height:40px;padding:10px;border:0;border-radius:6px;background:transparent;box-shadow:none;color:var(--ink-2);}
+.admin-flat-navigation .admin-icon{flex:none;pointer-events:none}
+.admin-page .admin-header .admin-flat-navigation .admin-nav-account{margin-inline-start:10px;position:relative}
+.admin-nav-account:before{content:'';position:absolute;inset-inline-start:-9px;top:10px;height:20px;width:1px;background:var(--line)}
+.admin-flat-navigation :is(button,a):focus-visible{outline:2px solid var(--brand,#5748e8);outline-offset:2px}
+.admin-page .admin-article-actions :is(a,button){white-space:nowrap;flex-shrink:0}
+.admin-page .admin-article-actions>div{margin-inline-start:auto}
 .admin-page .admin-header .admin-flat-navigation :is(button,a):hover:not(:disabled){background:var(--line-2);color:var(--ink);}
 .admin-page .admin-library-heading{margin:0;font-size:20px;font-weight:600;letter-spacing:-.02em;}
 .admin-page .admin-workspace-name .admin-library-heading{font-size:15px;line-height:1.25;letter-spacing:-.01em;}
@@ -333,3 +339,10 @@
 .project-settings-dialog{width:min(680px,calc(100vw - 48px))}
 .admin-project-actions{display:flex;align-items:center;flex-wrap:wrap;gap:8px;min-width:0}
 .admin-page .admin-project-actions button{box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;min-height:38px;margin:0;white-space:nowrap}
+.admin-page .admin-pagination select{min-width:88px;padding-inline:12px 30px}
+@media(max-width:560px){
+ .admin-page .admin-library-controls{grid-template-columns:minmax(0,1fr)}
+ .admin-page .admin-project-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));width:100%;gap:8px}
+ .admin-page .admin-project-actions button{width:100%;margin:0}
+ .admin-page .admin-project-actions .danger-quiet{width:42px;justify-self:end}
+}

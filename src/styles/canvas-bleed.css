@@ -1,9 +1,9 @@
 @media screen{
  .pages[data-bleed-guides=true]{padding:var(--canvas-bleed);box-sizing:content-box}
  .pages[data-bleed-guides=true]>.page:has(>.canvas-bleed-guide){box-shadow:0 0 0 var(--canvas-bleed) var(--paper-bg,#fff),0 0 0 calc(var(--canvas-bleed) + .5px) #87909b30,0 2px 14px #0002;margin-bottom:calc(20px + 2 * var(--canvas-bleed))}
- .page>.canvas-bleed-guide{position:absolute;inset:0;box-sizing:border-box;border:.6px dashed #87909b66;z-index:90;pointer-events:none}
+ .page>.canvas-bleed-guide{position:absolute;inset:0;box-sizing:border-box;border:1px dashed #475569;box-shadow:0 0 0 1px #fff9,inset 0 0 0 1px #fff9;z-index:90;pointer-events:none}
 }
 @media print{.canvas-bleed-guide{display:none!important}}
 .page > .canvas-trim-corners{position:absolute;inset:0;width:100%;height:100%;max-width:none;max-height:none;margin:0;padding:0;pointer-events:none;z-index:91;overflow:visible}
-.canvas-trim-corners line{stroke:#677384;stroke-width:1;vector-effect:non-scaling-stroke;opacity:.65}
+.canvas-trim-corners line{stroke:#172033;stroke-width:1.75;vector-effect:non-scaling-stroke;opacity:1;filter:drop-shadow(0 0 1px #fff) drop-shadow(0 0 1px #fff)}
 @media print{.canvas-trim-corners{display:none!important}}

@@ -12,9 +12,9 @@ const pointer=(type:string,x:number,y:number)=>{
 };
 const rect=(left:number,top:number,width:number,height:number)=>({x:left,y:top,left,top,width,height,right:left+width,bottom:top+height,toJSON(){}});
 let host:HTMLDivElement,root:Root;
-function CaptionProof({readOnly=false,cover=false}:{readOnly?:boolean;cover?:boolean}){
+function CaptionProof({readOnly=false,cover=false,location=false}:{readOnly?:boolean;cover?:boolean;location?:boolean}){
   const doc=useDoc(s=>s.doc);
-  return <div className="page"><div className="cropped-photo"><PreviewReadOnly.Provider value={readOnly}><HeroCaption doc={doc} cover={cover}/></PreviewReadOnly.Provider></div></div>;
+  return <div className="page"><div className="cropped-photo"><PreviewReadOnly.Provider value={readOnly}><HeroCaption doc={doc} cover={cover} location={location}/></PreviewReadOnly.Provider></div></div>;
 }
 const source=()=>host.querySelector<HTMLElement>('[data-hero-caption-source]')!;
 const floating=()=>host.querySelector<HTMLElement>('[data-hero-caption-floating]');
@@ -33,6 +33,48 @@ beforeEach(()=>{
 afterEach(()=>{act(()=>root.unmount());host.remove();vi.restoreAllMocks();useDoc.getState().load(emptyDoc());});
 
 describe('independent hero caption canvas movement',()=>{
+  it('resizes the legacy particle-photo location label independently of the hero caption',()=>{
+    useDoc.getState().doc.meta.location='Legacy photo description';
+    act(()=>root.render(<CaptionProof location/>));
+    expect(source().dataset.editorTarget).toBe('meta-location');
+    act(()=>host.querySelector<HTMLElement>('.hero-caption-resize--right')!.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowLeft',shiftKey:true,bubbles:true})));
+    const saved=useDoc.getState().doc;
+    expect(saved.design.locationCaptionPlacement).toEqual({x:20,y:30,widthMm:55});
+    expect(saved.design.heroCaptionPlacement).toBeUndefined();
+    expect(saved.meta.heroCaption).toBe('Exact authored hero caption.');
+    expect(migrate(JSON.parse(JSON.stringify(saved))).design.locationCaptionPlacement).toEqual(saved.design.locationCaptionPlacement);
+    const copy=cloneDocForUpdate(saved);copy.design.locationCaptionPlacement!.widthMm=99;
+    expect(saved.design.locationCaptionPlacement!.widthMm).toBe(55);
+  });
+  it('resizes a native caption from its right edge without moving it and saves one undoable change',()=>{
+    act(()=>root.render(<CaptionProof/>));
+    const handle=host.querySelector<HTMLElement>('.hero-caption-resize--right')!;
+    expect(handle.getAttribute('aria-label')).toBe('Resize hero caption from right');
+    act(()=>{handle.dispatchEvent(pointer('pointerdown',170,90));window.dispatchEvent(pointer('pointermove',210,90));});
+    expect(useDoc.getState().doc.design.heroCaptionPlacement).toBeUndefined();
+    expect(floating()?.style.width).toBe('80mm');expect(floating()?.style.left).toBe('20mm');
+    act(()=>window.dispatchEvent(pointer('pointerup',210,90)));
+    expect(useDoc.getState().doc.design.heroCaptionPlacement).toEqual({x:20,y:30,widthMm:80});
+    expect(useDoc.temporal.getState().pastStates).toHaveLength(1);
+    expect(migrate(JSON.parse(JSON.stringify(useDoc.getState().doc))).design.heroCaptionPlacement?.widthMm).toBe(80);
+    act(()=>useDoc.temporal.getState().undo());expect(floating()).toBeNull();
+    act(()=>useDoc.temporal.getState().redo());expect(floating()?.style.width).toBe('80mm');
+  });
+  it('resizes from the left while holding the right edge fixed and supports keyboard cover resizing',()=>{
+    act(()=>root.render(<CaptionProof cover/>));
+    act(()=>host.querySelector<HTMLElement>('.hero-caption-resize--left')!.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowRight',shiftKey:true,bubbles:true})));
+    expect(useDoc.getState().doc.design.coverCaptionPlacement).toEqual({x:25,y:30,widthMm:55});
+    expect(useDoc.getState().doc.design.heroCaptionPlacement).toBeUndefined();
+    const handle=host.querySelector<HTMLElement>('[data-hero-caption-floating] .hero-caption-resize--left')!;
+    act(()=>{handle.dispatchEvent(pointer('pointerdown',60,90));window.dispatchEvent(pointer('pointermove',80,90));window.dispatchEvent(pointer('pointerup',80,90));});
+    expect(useDoc.getState().doc.design.coverCaptionPlacement).toEqual({x:35,y:30,widthMm:45});
+  });
+  it('cancels a native resize without persisting placement or changing caption text',()=>{
+    act(()=>root.render(<CaptionProof/>));
+    act(()=>{host.querySelector<HTMLElement>('.hero-caption-resize--right')!.dispatchEvent(pointer('pointerdown',170,90));window.dispatchEvent(pointer('pointermove',210,90));window.dispatchEvent(pointer('pointercancel',210,90));});
+    expect(floating()).toBeNull();expect(useDoc.getState().doc.design.heroCaptionPlacement).toBeUndefined();
+    expect(useDoc.temporal.getState().pastStates).toHaveLength(0);expect(source().textContent).toBe('Exact authored hero caption.');
+  });
   it('leaves the native caption slot unchanged until a deliberate drag and commits only once',()=>{
     act(()=>root.render(<CaptionProof/>));
     expect(floating()).toBeNull();expect(source().textContent).toBe('Exact authored hero caption.');

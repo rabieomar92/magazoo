@@ -1,9 +1,13 @@
 import type { ReactNode } from 'react';
-type IconName = 'search' | 'article' | 'folder' | 'plus' | 'arrow' | 'link' | 'trash' | 'refresh' | 'close' | 'shield' | 'grid' | 'upload' | 'key' | 'logout';
+type IconName = 'search' | 'article' | 'folder' | 'folder-plus' | 'file-plus' | 'edit' | 'lock' | 'plus' | 'arrow' | 'link' | 'trash' | 'refresh' | 'close' | 'shield' | 'grid' | 'upload' | 'key' | 'logout';
 
 /** Small, local UI icons; no network assets or icon-library dependency. */
 export function AdminIcon({ name }: { name: IconName }) {
   const paths: Record<IconName, ReactNode> = {
+    'folder-plus':<><path d="M3 7V5a2 2 0 0 1 2-2h5l2 3h7a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/><path d="M12 10v7M8.5 13.5h7"/></>,
+    'file-plus':<><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9L14 3v6h6"/><path d="M12 12v6M9 15h6"/></>,
+    edit:<><path d="M12 4H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h13a2 2 0 0 0 2-2v-7"/><path d="m14 6 4 4M10 14l-1 4 4-1 8-8a2.8 2.8 0 0 0-4-4z"/></>,
+    lock:<><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3"/></>,
     key:<><circle cx="8" cy="9" r="5"/><path d="m12 13 8 8m-4-4 3-3m-6 0 3-3"/></>,
     logout:<><path d="M9 4H4v16h5M13 7l5 5-5 5M8 12h10"/></>,
     search: <><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></>,
@@ -19,5 +23,5 @@ export function AdminIcon({ name }: { name: IconName }) {
     grid: <><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></>,
     upload: <path d="M12 16V3m-5 5 5-5 5 5M4 15v5h16v-5"/>,
   };
-  return <svg className="admin-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">{paths[name]}</svg>;
+  return <svg className="admin-icon" data-icon={name} width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">{paths[name]}</svg>;
 }

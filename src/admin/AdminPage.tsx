@@ -87,11 +87,11 @@ export default function AdminPage() {
     {csrf&&<header className="admin-header">
       <div className="admin-header-identity"><a className="admin-brand" href={`${import.meta.env.BASE_URL}#admin`} aria-label="Magazoo admin home"><Wordmark /></a><span className="admin-header-divider"/><div className="admin-workspace-name"><h1 className="admin-library-heading">Article library</h1><span>Magazoo! Studio</span></div></div>
       <nav aria-label="Workspace" className="admin-flat-navigation">
-        <button title="New project" disabled={busy} aria-expanded={creator==='project'} aria-controls="admin-create-panel" onClick={e=>{creatorTrigger.current=e.currentTarget;setCreator('project');}}><AdminIcon name="folder"/><span className="admin-sr-only">New project</span></button>
-        <button title="Add article" disabled={busy||!projects.length} aria-expanded={creator==='article'} aria-controls="admin-create-panel" onClick={e=>{creatorTrigger.current=e.currentTarget;setCreator('article');}}><AdminIcon name="plus"/><span className="admin-sr-only">Add article</span></button>
+        <button title="New project" disabled={busy} aria-expanded={creator==='project'} aria-controls="admin-create-panel" onClick={e=>{creatorTrigger.current=e.currentTarget;setCreator('project');}}><AdminIcon name="folder-plus"/><span className="admin-sr-only">New project</span></button>
+        <button title="Add article" disabled={busy||!projects.length} aria-expanded={creator==='article'} aria-controls="admin-create-panel" onClick={e=>{creatorTrigger.current=e.currentTarget;setCreator('article');}}><AdminIcon name="file-plus"/><span className="admin-sr-only">Add article</span></button>
         <button title="Refresh library" disabled={busy} onClick={()=>void run(()=>refresh())}><AdminIcon name="refresh"/><span className="admin-sr-only">Refresh</span></button>
-        <a title="Open editor" href={`${import.meta.env.BASE_URL}#editor`}><AdminIcon name="arrow"/><span className="admin-sr-only">Open editor</span></a>
-        <button title="Change password" disabled={busy} onClick={()=>setPasswordSettings(true)}><AdminIcon name="key"/><span className="admin-sr-only">Change password</span></button>
+        <a title="Open editor" href={`${import.meta.env.BASE_URL}#editor`}><AdminIcon name="edit"/><span className="admin-sr-only">Open editor</span></a>
+        <button className="admin-nav-account" title="Change password" disabled={busy} onClick={()=>setPasswordSettings(true)}><AdminIcon name="lock"/><span className="admin-sr-only">Change password</span></button>
         <button title="Log out" disabled={busy} onClick={()=>void run(async()=>{await api('auth/logout',csrf,'POST');setCsrf('');setProjects([]);setCreator(null);})}><AdminIcon name="logout"/><span className="admin-sr-only">Log out</span></button>
       </nav>
     </header>}

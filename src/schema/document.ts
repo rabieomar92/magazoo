@@ -473,6 +473,7 @@ export interface Design {
   /** Optional page-relative millimetres. Missing keeps the native caption slot. */
   heroCaptionPlacement?: { x:number; y:number; widthMm:number };
   coverCaptionPlacement?: { x:number; y:number; widthMm:number };
+  locationCaptionPlacement?: { x:number; y:number; widthMm:number };
   /**
    * Paper 3 and reference article layouts. Absent/false = the photograph opens the page from the top
    * edge. True prints it rising from the foot of the page with the article

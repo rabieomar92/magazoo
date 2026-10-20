@@ -1,6 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react';
 import './MagazooLoader.css';
-import { AnimatedMagazooMark } from './AnimatedMagazooMark';
+import './BusyIndicator.css';
 
 export interface MagazooLoaderProps {
   label?: ReactNode;
@@ -13,10 +13,7 @@ export interface MagazooLoaderProps {
 }
 
 /**
- * The single branded wait state used throughout Magazoo.
- *
- * The original illustrated mark has a subtle idle motion. Actual progress is
- * shown when available, without a decorative sweep or indeterminate track.
+ * Quiet shared wait state: a small ring, a label and real progress when known.
  */
 export function MagazooLoader({
   label = 'Loading Magazoo…', detail, className, variant = 'card', tone = 'light', value, max,
@@ -32,9 +29,7 @@ export function MagazooLoader({
       aria-live="polite"
       aria-busy="true"
     >
-      <span className="magazoo-loader-art" aria-hidden="true">
-        <AnimatedMagazooMark />
-      </span>
+      <span className="busy-indicator-ring magazoo-loader-ring" aria-hidden="true" />
       <span className="magazoo-loader-copy">
         <strong>{label}</strong>
         {detail && <small>{detail}</small>}

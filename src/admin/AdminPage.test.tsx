@@ -71,6 +71,7 @@ it('keeps library actions in accessible icon navigation without the large summar
   expect(host.querySelector('.admin-overview')).toBeNull();
   expect(host.querySelector('.admin-intro')).toBeNull();
   const nav=host.querySelector('.admin-flat-navigation')!;
+  expect([...nav.querySelectorAll('svg')].map(icon=>icon.getAttribute('data-icon'))).toEqual(['folder-plus','file-plus','refresh','edit','lock','logout']);
   for(const label of ['New project','Add article','Refresh','Change password','Log out']){
     const action=[...nav.querySelectorAll('button')].find(b=>b.textContent===label)!;
     expect(action).toBeDefined();expect(action.querySelector('svg')).not.toBeNull();

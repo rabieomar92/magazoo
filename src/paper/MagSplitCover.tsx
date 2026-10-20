@@ -93,7 +93,7 @@ export function MagPhotoPage({
       {photo && <SpreadPhotoImage asset={photo} geometry={photoGeometry} frame={doc.hero} behind />}
       {!photo && <MagTopBar doc={doc} pageIndex={pageIndex} fullBleed={false} />}
       {photo && <div className="mag2-photo-captions">
-        {doc.meta.location && <span className="mag2-photo-tag" data-editor-tab="content" data-editor-target="meta-location">{doc.meta.location}</span>}
+        {doc.meta.location && <HeroCaption doc={doc} location as="div" className="mag2-photo-tag" />}
         <HeroCaption doc={doc} />
       </div>}
       <PlacedImages doc={doc} pageIndex={pageIndex} />

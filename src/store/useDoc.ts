@@ -75,6 +75,7 @@ export function cloneDocForUpdate(doc: Doc): Doc {
       ...doc.design,
       heroCaptionPlacement: doc.design.heroCaptionPlacement ? {...doc.design.heroCaptionPlacement} : undefined,
       coverCaptionPlacement: doc.design.coverCaptionPlacement ? {...doc.design.coverCaptionPlacement} : undefined,
+      locationCaptionPlacement: doc.design.locationCaptionPlacement ? {...doc.design.locationCaptionPlacement} : undefined,
       textTracking: doc.design.textTracking ? { ...doc.design.textTracking } : undefined,
       textStyles: doc.design.textStyles ? Object.fromEntries(Object.entries(doc.design.textStyles).map(([key, style]) => [key, { ...style }])) : undefined,
       frontCover: doc.design.frontCover ? { ...doc.design.frontCover, text: doc.design.frontCover.text ? Object.fromEntries(Object.entries(doc.design.frontCover.text).map(([role, style]) => [role, { ...style }])) : undefined } : undefined,
