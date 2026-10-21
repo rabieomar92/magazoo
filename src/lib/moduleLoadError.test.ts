@@ -7,6 +7,6 @@ it('explains stale module failures without automatic reload or lost work',()=>{
 });
 it('retains versioned files for open tabs and consistently thresholds the brand artwork',()=>{
  expect(readFileSync('vite.config.ts','utf8')).toContain('emptyOutDir: false');
- expect(readFileSync('src/styles/wordmark.css','utf8')).toContain('img[src$="/magazoo-mark.png"] { filter:url(#magazoo-ink)');
+ expect(readFileSync('src/styles/wordmark.css','utf8')).toContain('img[src$="/magazoo-mark-hd.png"] { filter:none');
  expect(readFileSync('index.html','utf8')).toContain('filter:url(#magazoo-ink)');
 });

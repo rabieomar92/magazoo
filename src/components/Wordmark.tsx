@@ -7,7 +7,7 @@ import '../styles/wordmark.css';
 // rather than imported. `BASE_URL` keeps it correct under the GitHub Pages
 // subpath build (see vite.config.ts) the same way every other root-relative
 // reference in this app already does.
-const MAGAZOO_MARK_SRC = `${import.meta.env.BASE_URL}magazoo-mark.png`;
+const MAGAZOO_MARK_SRC = `${import.meta.env.BASE_URL}magazoo-mark-hd.png`;
 
 /**
  * The Magazoo! mark, in one place.

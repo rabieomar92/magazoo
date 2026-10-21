@@ -2,7 +2,7 @@
 .magazoo-loader.is-dark{color:#ffffff;--ml-muted:#cccccc;--ml-track:#444444;--ml-accent:#ffffff}
 .magazoo-loader-ring{width:22px;height:18px;color:var(--ml-accent)}
 .magazoo-loader-film{display:block;flex:none;width:160px;aspect-ratio:752/416;overflow:hidden;background:#ffffff;border-radius:0}
-.magazoo-loader-film :is(video,img){display:block;width:100%;height:100%;object-fit:contain;filter:url(#magazoo-ink)}
+.magazoo-loader-film :is(video,img){display:block;width:100%;height:100%;object-fit:contain;filter:none}
 .magazoo-loader.is-banner .magazoo-loader-film{width:80px}
 .magazoo-loader.is-card{flex-direction:column;gap:20px}
 .magazoo-loader.is-card .magazoo-loader-film{width:min(480px,100%)}

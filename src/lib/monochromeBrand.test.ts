@@ -2,10 +2,16 @@
 import {readFileSync} from 'node:fs';
 import {expect,it} from 'vitest';
 
-it('thresholds all illustrated brand channels to binary ink, not grayscale',()=>{
+it('keeps monochrome ink while preserving smooth edges and source transparency',()=>{
  const html=readFileSync('index.html','utf8');
  expect(html).toContain('id="magazoo-ink"');
- for(const channel of ['R','G','B','A'])expect(html).toContain(`<feFunc${channel} type="discrete" tableValues="0 1"/>`);
- for(const path of ['src/styles/wordmark.css','src/components/MagazooLoader.css','src/admin/welcome.css'])expect(readFileSync(path,'utf8')).toContain('filter:url(#magazoo-ink)');
- expect(readFileSync('src/admin/welcome.css','utf8')).toContain('filter:url(#magazoo-ink) invert(1)');
+ for(const channel of ['R','G','B'])expect(html).toContain(`<feFunc${channel} type="table" tableValues="0 0 0 0 0 1 1 1 1 1"/>`);
+ expect(html).toContain('<feFuncA type="identity"/>');
+ expect(html).not.toContain('type="discrete"');
+ const filmCss=readFileSync('src/components/MagazooLoader.css','utf8');
+ expect(filmCss).toContain('object-fit:contain;filter:none');
+ expect(filmCss).not.toContain('filter:url(#magazoo-ink)');
+ expect(readFileSync('src/admin/welcome.css','utf8')).toContain('.welcome-original-logo{filter:none}');
+ expect(readFileSync('src/admin/welcome.css','utf8')).toContain('filter:invert(1)');
+ for(const path of ['src/components/Wordmark.tsx','src/components/AnimatedMagazooMark.tsx','src/admin/WelcomePage.tsx','index.html'])expect(readFileSync(path,'utf8')).toContain('magazoo-mark-hd.png');
 });

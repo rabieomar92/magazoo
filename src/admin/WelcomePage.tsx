@@ -3,7 +3,7 @@ import {LoginBackground} from './LoginBackground';
 import './welcome.css';
 
 function Arrow(){return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg>;}
-function OriginalLogo(){return <img className="welcome-original-logo" src={`${import.meta.env.BASE_URL}magazoo-mark.png`} alt="Magazoo!"/>;}
+function OriginalLogo(){return <img className="welcome-original-logo" src={`${import.meta.env.BASE_URL}magazoo-mark-hd.png`} alt="Magazoo!"/>;}
 
 /** Static previews rendered from the saved article snapshot; raw JSON and
  * private links never ship with the public welcome page. */

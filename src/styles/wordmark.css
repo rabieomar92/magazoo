@@ -25,11 +25,11 @@
    without dwarfing its surroundings at the largest (the compile spinner and
    contents-page placeholder art, both well above 30px). */
 .brand-mark-img {
-  filter: url(#magazoo-ink);
+  filter: none;
   height: 2.2em;
   width: auto;
   display: inline-block;
   vertical-align: middle;
 }
 /* Shared artwork also appears before React and in the loader/welcome panel. */
-img[src$="/magazoo-mark.png"] { filter:url(#magazoo-ink); opacity:1; }
+img[src$="/magazoo-mark-hd.png"] { filter:none; opacity:1; }
