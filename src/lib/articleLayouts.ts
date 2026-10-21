@@ -28,7 +28,7 @@ export interface ArticleObstacle { page: number; left: number; top: number; widt
 
 /** All dimensions are physical millimetres. A single grid is shared by the
  * opening composition, continuation pages and independent placed images. */
-export function articleGeometry(id: ReferenceArticleId, design: Design, measuredHeader = 0, captionHeight = 0, footerReserve = 0, titleOffset = 0) {
+export function articleGeometry(id: ReferenceArticleId, design: Design, measuredHeader = 0, captionHeight = 0, footerReserve = 0, titleOffset = 0, heroLineHeightMm = 0) {
   const layout = ARTICLE_LAYOUTS[id];
   const { width } = pageDimensions(design);
   const height = articlePageHeight(design);
@@ -68,13 +68,16 @@ export function articleGeometry(id: ReferenceArticleId, design: Design, measured
   const image = inset
     ? { x: margin + imageColumn * (col + gutter), y: bottomHero ? imageBottom-heroHeight-(bottomBleed ? 0 : captionHeight+gutter) : bodyTop, width: span(heroColumns), height: heroHeight }
     : { x: 0, y: bottomHero ? imageBottom-heroHeight : 0, width, height: heroHeight };
+  const gridOrigin=titleWidth<span(columns)-.01?titleTextTop:bodyTop;
+  // Inset body regions start on a real text line, not the fractional measured
+  // header edge. Use that same row for an uncropped native hero frame.
+  if(inset&&!bottomHero&&heroHeight>0&&heroLineHeightMm>0)image.y=lineGridUp(image.y,heroLineHeightMm,gridOrigin);
   // Caption measurement already includes its padding. One millimetre after
   // that box is enough; a whole column gutter creates a second blank band.
   const insetCaptionSpace = captionHeight > 0 ? 1 + captionHeight : 0;
   const starts = Array.from({ length: columns }, (_, i) => !bottomHero && inset && i >= imageColumn && i < imageColumn + heroColumns && heroHeight > 0
-    ? bodyTop + heroHeight + insetCaptionSpace + (captionHeight>0?1:gutter)
+    ? image.y + heroHeight + insetCaptionSpace + (captionHeight>0?1:gutter)
     : i * (col + gutter) < titleWidth - .01 ? bodyTop : titleTextTop);
-  const gridOrigin=titleWidth<span(columns)-.01?titleTextTop:bodyTop;
   const immersionDepth=bottomHero?Math.min(requestedImmersion,Math.max(0,image.height-captionHeight-gutter-4)):nativeTitleTop-titleTop;
   return { layout, width, height, margin, gutter, columns, col, span, titleCols, titleWidth, titleTop, titleTextTop, gridOrigin, bodyTop, bottom, image, starts, bottomHero, bottomBleed, contentTop,immersionDepth };
 }

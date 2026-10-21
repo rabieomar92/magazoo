@@ -48,7 +48,7 @@ export function PageMarginTextSection({expanded=false,initialPage=1}:{expanded?:
       <p className="hint">Starts on the masthead side, alternating left and right. It moves vertically or switches sides to avoid bleed photographs. Full-page photographs use a contrast backing when no clear margin exists. The same placement is retained when compiling an issue.</p>
       <LabeledNumber label="Distance from side edge" unit="mm" value={settings.edgeOffset} min={2} max={30} step={0.5} onChange={v => set('edgeOffset', v)} />
       <LabeledNumber label="Distance from bottom edge" unit="mm" value={settings.bottomOffset} min={0} max={MAX_MARGIN_TEXT_BOTTOM_OFFSET} step={0.5} onChange={v => set('bottomOffset', v)} />
-      <p className="hint">Move vertically across the full page (0–{MAX_MARGIN_TEXT_BOTTOM_OFFSET} mm). At the top edge, the text stops moving so the complete credit stays on the sheet.</p>
+      <p className="hint">Drag up or down on the canvas (0–{MAX_MARGIN_TEXT_BOTTOM_OFFSET} mm). Horizontal movement is locked; set the distance from the side edge above. At the top edge, the complete credit stays on the sheet.</p>
       <p className="hint">Spacing and styling apply to all margin text in this document. Keep it inside a clear margin; it does not move body text or photos.</p>
       <TypographyControl group="marginText" order={10} property="fontFamily"><LabeledSelect label="Margin text font" value={settings.fontFamily} options={fontOptions(ALL_FONTS)} onChange={v => set('fontFamily', v)} /></TypographyControl>
       <TypographyControl group="marginText" order={20} property="fontSize"><LabeledNumber label="Margin text size" unit="pt" value={settings.fontSize} min={5} max={12} step={0.5} onChange={v => set('fontSize', v)} /></TypographyControl>

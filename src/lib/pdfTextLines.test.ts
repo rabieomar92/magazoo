@@ -21,6 +21,20 @@ function measureRows(rowFor:(node:Text,offset:number)=>number,hyphenAt=-1){
   }});
 }
 describe('canvas line breaks in print-only paragraphs',()=>{
+  it('keeps CSS initial-letter openers native, including compiled snapshots',()=>{
+    const {source,clone,paragraph,copy}=fixture('<span class="drop-cap">T</span>iny atoms and radiation');
+    paragraph.classList.add('flow-opener');copy.classList.add('flow-opener');
+    const before=copy.outerHTML;measureRows((_node,offset)=>offset<5?0:1);
+    freezeParagraphLines(source,clone);expect(copy.outerHTML).toBe(before);
+  });
+  it('protects compiled issue paragraphs after editor hooks have been stripped',()=>{
+    const {source,clone,paragraph,copy}=fixture('One two three');
+    for(const p of [paragraph,copy]){p.removeAttribute('data-source-block-id');p.setAttribute('data-pdf-text-paragraph','true');}
+    measureRows((_node,offset)=>offset<4?0:1);
+    freezeParagraphLines(source,clone);
+    expect(copy.dataset.pdfFixedLines).toBe('2');
+    expect(copy.querySelectorAll('.pdf-text-line')).toHaveLength(2);
+  });
   it('retains nested bold/italic wrappers on every line inside the same question',()=>{
     const {source,clone,copy}=fixture('<em class="question"><strong>First second third</strong></em> Answer follows');
     const before=source.outerHTML;

@@ -28,6 +28,7 @@ import {linkedSpreadPhoto} from '../lib/linkedSpread';
 import { usePreviewReadOnly, usePreserveSourceAnchors } from './PreviewReadOnly';
 import {DRAW_IMAGE_OUTLINE_EVENT,requestImageOutline} from '../lib/imageCanvas';
 import {CanvasImageOutline} from './CanvasImageOutline';
+import {HERO_CAPTION_LAYOUT_EVENT} from '../lib/heroCaptionPlacement';
 
 interface DragState {
   pointerId: number;
@@ -110,6 +111,7 @@ function PlacedImageItem({
   const geometry = placedImageGeometry(image, asset, design, pageHeight);
   const linkedPhoto=linkedSpreadPhoto(doc,image,design,pageHeight);
   const captionRef=useRef<HTMLElement>(null);
+  const captionLayoutSignature=useRef('');
   const captionDrag=useRef<{pointer:number;startX:number;startY:number;box:CaptionBox;scale:number;resolved:CaptionBox;originalStyle:string;originalFit?:string;moved?:boolean}|null>(null);
   const captionResize=useRef<{pointer:number;startX:number;box:CaptionBox;scale:number;side:'left'|'right';resolved:CaptionBox;originalStyle:string;originalFit?:string;moved?:boolean}|null>(null);
   const freeCaption=!!image.captionPlacement||image.wrapShape==='polygon';
@@ -158,6 +160,23 @@ function PlacedImageItem({
     calculate();document.fonts?.addEventListener('loadingdone',calculate);
     return ()=>document.fonts?.removeEventListener('loadingdone',calculate);
   },[image,asset,design,pageHeight,doc.images,doc.assets,captionWidth,freeCaption,positionCaption,geometry.visualTop,geometry.left,geometry.visualHeight]);
+  useLayoutEffect(()=>{
+    const element=captionRef.current;if(!element)return;
+    // Auto captions can settle after the parent's first wrap measurement
+    // (font load, padding, or a polygon's safe slot). Tell both layout engines
+    // to reserve the final painted box, not a stale pre-positioning rectangle.
+    const changed=()=>{
+      const signature=[element.style.left,element.style.top,element.offsetWidth,element.offsetHeight].join(':');
+      if(signature===captionLayoutSignature.current)return;
+      captionLayoutSignature.current=signature;
+      window.dispatchEvent(new Event(HERO_CAPTION_LAYOUT_EVENT));
+    };
+    changed();
+    const observer=typeof ResizeObserver==='undefined'?null:new ResizeObserver(changed);
+    observer?.observe(element);
+    document.fonts?.addEventListener('loadingdone',changed);
+    return()=>{observer?.disconnect();document.fonts?.removeEventListener('loadingdone',changed);};
+  },[image,captionWidth,freeCaption]);
   const startCaptionDrag=(event:ReactPointerEvent<HTMLElement>)=>{
     if(readOnly||event.button!==0)return;
     const page=event.currentTarget.closest<HTMLElement>('.page');if(!page)return;

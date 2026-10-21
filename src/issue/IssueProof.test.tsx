@@ -67,6 +67,7 @@ it('keeps component font overrides after the live article styles and editor targ
   expect(paragraph.style.getPropertyPriority('font-weight')).toBe('important');
   expect(copy.querySelectorAll('p')[1].style.fontWeight).toBe('');
   expect(copy.querySelector('[data-source-block-id]')).toBeNull();
+  expect(copy.querySelectorAll('p[data-pdf-text-paragraph]')).toHaveLength(2);
   expect(source.outerHTML).toBe(before);
 });
 

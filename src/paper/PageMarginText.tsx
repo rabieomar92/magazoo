@@ -44,7 +44,7 @@ export function PageMarginText({ doc, index }: { doc: Doc; index: number }) {
       data-editor-tab="design" data-editor-target={`page-margin-text-${index + 1}`}
       onPointerDown={drag.onPointerDown}
       onClick={(event) => {if(drag.consumeClick()){event.stopPropagation();return;}requestEditorTargetFocus('design', `page-margin-text-${index + 1}`);}}
-      title={drag.readOnly?undefined:'Drag to position side text · click to edit · Escape cancels'}>{text}</div>
+      title={drag.readOnly?undefined:'Drag vertically · set distance from side edge in Side text controls · Escape cancels'}>{text}</div>
     {/* Only the spacer shrinks at the top boundary, never the credit itself.
         CSS handles font changes and print without screen-space measurement. */}
     <div aria-hidden="true" className="page-margin-offset" style={{ height: `${placement.bottom}mm`, flex: '0 1 auto', minHeight: 0 }} />

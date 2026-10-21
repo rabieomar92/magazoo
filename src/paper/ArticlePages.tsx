@@ -28,7 +28,7 @@ import '../styles/article-layouts.css';
 const MM = 96 / 25.4;
 type ShapedRegion = ArticleRegion & { contour?: TightContour; seamlessContinuation?: boolean };
 type RegionContent = { region: ShapedRegion; pieces: Piece[] };
-type Layout = { regions: RegionContent[]; pages: number; header: number; caption: number; overflow: boolean; callouts: ArticleObstacle[]; free?: PlacedHighlights; source?:Doc; safety?:number };
+type Layout = { regions: RegionContent[]; pages: number; header: number; caption: number; overflow: boolean; callouts: ArticleObstacle[]; free?: PlacedHighlights; source?:Doc; safety?:number; heroLineHeightMm?:number; titleOffset?:number };
 
 function ArticleHeader({ doc }: { doc: Doc }) {
   return <header className="header article-header">
@@ -62,7 +62,7 @@ export function ArticlePages({ doc, vars, onStatus, readOnly = false }: { doc: D
   const hasCallout = doc.design.sidebar && (doc.highlights.some(h => h.trim()) || doc.references.length > 0);
   const gridDesign = useMemo(() => articleGridDesign(doc.design), [doc.design]);
   const renderDoc = layout.free && placement === 'free' ? { ...doc, highlightBox: layout.free } : doc;
-  const g = articleGeometry(id, doc.design, layout.header, layout.caption, footerBottomMargin(doc));
+  const g = articleGeometry(id, doc.design, layout.header, layout.caption, footerBottomMargin(doc),layout.titleOffset,layout.heroLineHeightMm);
   const styles = { ...vars, '--page-w': `${g.width}mm`, '--page-h': `${g.height}mm`, '--article-col': `${g.col}mm`, '--article-leading': String(doc.design.articleLeading ?? 1.28),
     '--margin':`${g.margin}mm`, '--gutter':`${g.gutter}mm`, '--col':`${g.col}mm`,
     '--article-caption-font': fontStack(doc.design.articleCaptionFont ?? 'Avenir Next LT Pro'),
@@ -84,7 +84,15 @@ export function ArticlePages({ doc, vars, onStatus, readOnly = false }: { doc: D
       const captionHeight = doc.meta.heroCaption?.trim()&&!doc.design.heroCaptionPlacement ? (caption.current?.offsetHeight ?? 0) / MM : 0;
       const title=header.current.querySelector<HTMLElement>('.title');
       const titleOffset=title?unscaledVerticalOffset(title,header.current)/MM:0;
-      const geometry = articleGeometry(id, doc.design, headerHeight, captionHeight, footerBottomMargin(doc),titleOffset);
+      const root = probes.current;
+      const lineSample=document.createElement('div');lineSample.className='body-cols article-column';
+      const lineParagraph=document.createElement('p');lineParagraph.dataset.sourceBlockId='';lineParagraph.textContent='Ag';lineSample.append(lineParagraph);root.append(lineSample);
+      const lineHeight=Number.parseFloat(getComputedStyle(lineParagraph).lineHeight);
+      lineSample.remove();
+      // Explicit crops remain authored. Automatic alignment belongs to the
+      // native, uncropped frame, never to edits of the photograph itself.
+      const heroLineHeightMm=doc.hero.crop?0:lineHeight/MM;
+      const geometry = articleGeometry(id, doc.design, headerHeight, captionHeight, footerBottomMargin(doc),titleOffset,heroLineHeightMm);
       const obstacles: ArticleObstacle[] = [];
       const imageBounds: ArticleObstacle[] = [];
       const outlines: (TightOutline & { page:number })[] = [];
@@ -134,11 +142,6 @@ export function ArticlePages({ doc, vars, onStatus, readOnly = false }: { doc: D
       if (hasCallout && placement === 'page1-flow') {
         items.push({ kind: 'figure', id: HIGHLIGHTS_BLOCK_ID, aspect: (callout.current?.offsetHeight ?? 0) / (geometry.col * MM), hasCaption: false, widthBasis: 1 });
       }
-      const root = probes.current;
-      const lineSample=document.createElement('div');lineSample.className='body-cols article-column';
-      const lineParagraph=document.createElement('p');lineParagraph.dataset.sourceBlockId='';lineParagraph.textContent='Ag';lineSample.append(lineParagraph);root.append(lineSample);
-      const lineHeight=Number.parseFloat(getComputedStyle(lineParagraph).lineHeight);
-      lineSample.remove();
       const calloutHeight = (callout.current?.offsetHeight ?? 0) / MM;
       const rail = hasCallout && (placement === 'page1' || placement === 'all');
       const railObstacle = (page: number): ArticleObstacle => ({ page, left: geometry.margin + (geometry.columns-1)*(geometry.col+geometry.gutter),
@@ -263,7 +266,7 @@ export function ArticlePages({ doc, vars, onStatus, readOnly = false }: { doc: D
         || (geometry.bottomHero && leadObstacles.length>1 && overlap(leadObstacles[0],leadObstacles[1]))
         || imageBounds.some(o => o.top + o.height > geometry.height + .5 || o.left + o.width > geometry.width + .5)
         || callouts.some(c=>c.top<0||c.top+c.height>geometry.bottom+.5||[...imageBounds,...leadObstacles].some(image=>overlap(c,image)));
-      setLayout({ regions: filled, pages, header: headerHeight, caption: captionHeight, overflow, callouts, free, source:doc,safety });
+      setLayout({ regions: filled, pages, header: headerHeight, caption: captionHeight, overflow, callouts, free, source:doc,safety,heroLineHeightMm,titleOffset });
       onStatus({ pages, overflow });
     };
     calculate();

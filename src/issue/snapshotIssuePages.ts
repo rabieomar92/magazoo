@@ -90,6 +90,10 @@ export function snapshotIssuePages(source: HTMLElement, textStyles?: Design['tex
     copy.classList.remove('pdf-export-page');
     copy.lang = original.lang || source.lang || 'en';
     copy.querySelectorAll('[data-editor-target], [data-source-block-id], [contenteditable]').forEach(element => {
+      // Keep an inert print marker after stripping editor hooks. Otherwise
+      // issue export silently skips the line-break protection used by an
+      // individual article export, letting print reflow shaped paragraphs.
+      if(element.matches('p[data-source-block-id]'))element.setAttribute('data-pdf-text-paragraph','true');
       element.removeAttribute('data-editor-target');
       element.removeAttribute('data-source-block-id');
       element.removeAttribute('contenteditable');

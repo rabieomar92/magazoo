@@ -7,6 +7,15 @@ import { paginateHosts } from './paginate';
 
 const ids = Object.keys(ARTICLE_LAYOUTS) as ReferenceArticleId[];
 describe('reference article compositions', () => {
+  it.each([3.7,4.2,5.1])('aligns an inset hero with the opening body row at %s mm leading without editing its crop',step=>{
+    const doc=presetFor('paper-8');
+    const design={...doc.design,heroAtBottom:false,headerWidthCols:2 as const};
+    const g=articleGeometry('paper-8',design,33.17,5,0,2.3,step);
+    const first=articleRegions(g,0,[],false,step).find(r=>r.column===0)!;
+    expect(g.image.y).toBeCloseTo(first.y,6);
+    expect(g.image.height).toBe(design.heroHeight);
+    expect(g.image.y).toBeGreaterThanOrEqual(g.bodyTop);
+  });
   it.each(ids)('%s releases unused preset header space after actual typography is measured',id=>{
     const doc=presetFor(id);
     for(const measured of [8,15,25,60]){

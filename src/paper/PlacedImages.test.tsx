@@ -11,6 +11,7 @@ import { useDoc } from '../store/useDoc';
 import { PlacedImages } from './PlacedImages';
 import { PreviewReadOnly, PreviewPreserveSourceAnchors } from './PreviewReadOnly';
 import {requestImageOutline} from '../lib/imageCanvas';
+import {HERO_CAPTION_LAYOUT_EVENT} from '../lib/heroCaptionPlacement';
 
 const pointerEvent = (type: string, x: number, y: number) => {
   const event = new MouseEvent(type, { bubbles: true, button: 0, clientX: x, clientY: y });
@@ -19,6 +20,18 @@ const pointerEvent = (type: string, x: number, y: number) => {
 };
 
 describe('PlacedImages', () => {
+  it.each(['paper-1','paper-2','paper-3','paper-4','paper-5','paper-6','paper-7','paper-8','magazine-1','magazine-2','magazine-3'] as const)('%s notifies wrapping after an automatic caption settles without repeated notifications',template=>{
+    const doc=emptyDoc();doc.templateId=template;doc.design.sidebar=false;
+    doc.assets.art={src:'data:image/png;base64,',naturalWidth:500,naturalHeight:500};
+    doc.images=[{id:'auto',assetId:'art',caption:'Attached caption',widthCols:2,heightMm:50,anchor:{page:1,column:0,y:100},wrapShape:'polygon'}];
+    let notifications=0;const changed=()=>{notifications++;};window.addEventListener(HERO_CAPTION_LAYOUT_EVENT,changed);
+    const host=document.createElement('div'),root=createRoot(host);
+    act(()=>root.render(<PlacedImages doc={doc} pageIndex={0} readOnly/>));
+    expect(notifications).toBeGreaterThan(0);const settled=notifications;
+    act(()=>root.render(<PlacedImages doc={doc} pageIndex={0} readOnly/>));
+    expect(notifications).toBe(settled);expect(doc.images[0].captionPlacement).toBeUndefined();
+    act(()=>root.unmount());window.removeEventListener(HERO_CAPTION_LAYOUT_EVENT,changed);
+  });
   it.each(['paper-1','paper-2','paper-3','paper-4','paper-5','paper-6','paper-7','paper-8','magazine-1','magazine-2','magazine-3'] as const)('%s retains an explicitly placed caption inside the image frame in editor and compilation',template=>{
     const doc=presetFor(template);doc.design.sidebar=false;doc.assets.art={src:'data:image/png;base64,AA',naturalWidth:500,naturalHeight:500};
     doc.images=[{id:'inside',assetId:'art',caption:'In the empty area beside the subject',widthCols:2,heightMm:80,anchor:{page:1,column:0,y:100},wrapShape:'polygon',wrapPolygon:[{x:60,y:0},{x:100,y:0},{x:100,y:100}],captionPlacement:{x:25,y:110,widthMm:25}}];

@@ -5,9 +5,9 @@ import {marginTextSettings} from '../lib/pageMarginText';
 import {currentDocumentSession,useDoc} from '../store/useDoc';
 import {usePreviewReadOnly} from './PreviewReadOnly';
 
-export function marginTextDragPosition(edge:number,bottom:number,dx:number,dy:number,right:boolean,pageHeight:number){
+export function marginTextDragPosition(edge:number,bottom:number,_dx:number,dy:number,_right:boolean,pageHeight:number){
  const round=(n:number)=>Math.round(n*10)/10;
- return {edgeOffset:round(Math.max(2,Math.min(30,edge+(right?-dx:dx)))),bottomOffset:round(Math.max(0,Math.min(pageHeight,bottom-dy)))};
+ return {edgeOffset:edge,bottomOffset:round(Math.max(0,Math.min(pageHeight,bottom-dy)))};
 }
 export function useMarginTextDrag(doc:Doc,right:boolean,displayedBottom?:number){
  const readOnly=usePreviewReadOnly(),cleanup=useRef(()=>{}),suppressClick=useRef(false);
@@ -23,14 +23,14 @@ export function useMarginTextDrag(doc:Doc,right:boolean,displayedBottom?:number)
   const reset=()=>{rail.style.transform='';text.style.cursor='';window.removeEventListener('pointermove',move,true);window.removeEventListener('pointerup',finish,true);window.removeEventListener('pointercancel',finish,true);window.removeEventListener('keydown',key,true);};
   const move=(e:PointerEvent)=>{
    if(e.pointerId!==pointer)return;
-   const dx=e.clientX-startX,dy=e.clientY-startY;if(!moved&&Math.hypot(dx,dy)<4)return;
+   const dx=e.clientX-startX,dy=e.clientY-startY;if(!moved&&Math.abs(dy)<4)return;
    moved=true;e.preventDefault();e.stopPropagation();text.style.cursor='grabbing';
    next=marginTextDragPosition(settings.edgeOffset,settings.bottomOffset,dx/scale,dy/scale,right,Math.max(0,height-text.getBoundingClientRect().height/scale));
-   rail.style.transform=`translate(${(next.edgeOffset-settings.edgeOffset)*(right?-1:1)}mm,${settings.bottomOffset-next.bottomOffset}mm)`;
+   rail.style.transform=`translateY(${settings.bottomOffset-next.bottomOffset}mm)`;
   };
   const finish=(e:PointerEvent)=>{
    if(e.pointerId!==pointer)return;reset();
-   if(moved){suppressClick.current=true;e.stopPropagation();if(e.type==='pointerup'&&session===currentDocumentSession())useDoc.getState().update(d=>{d.marginText={...d.marginText,...next};});}
+   if(moved){suppressClick.current=true;e.stopPropagation();if(e.type==='pointerup'&&session===currentDocumentSession())useDoc.getState().update(d=>{d.marginText={...d.marginText,bottomOffset:next.bottomOffset};});}
   };
   const key=(e:KeyboardEvent)=>{if(e.key==='Escape'){reset();suppressClick.current=true;}};
   cleanup.current=reset;

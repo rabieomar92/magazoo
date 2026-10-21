@@ -19,7 +19,7 @@ it.each(TEMPLATES.map(t=>t.id))('%s saves a side-text drag correctly at 50 perce
   act(()=>text.dispatchEvent(pointer('pointerdown',20,100)));act(()=>window.dispatchEvent(pointer('pointermove',30,80)));
   expect(useDoc.getState().doc.marginText?.edgeOffset).toBe(6);
   act(()=>window.dispatchEvent(pointer('pointerup',30,80)));
-  expect(useDoc.getState().doc.marginText).toMatchObject({edgeOffset:11.3,bottomOffset:30.6});
+  expect(useDoc.getState().doc.marginText).toMatchObject({edgeOffset:6,bottomOffset:30.6});
  }finally{act(()=>root.unmount());page.remove();vi.unstubAllGlobals();}
 });
 it('never changes the saved margin text in compiled/read-only previews',()=>{
