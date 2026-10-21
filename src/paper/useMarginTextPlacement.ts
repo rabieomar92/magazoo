@@ -15,7 +15,7 @@ export function useMarginTextPlacement(doc:Doc,text:string,right:boolean,edge:nu
    if(!(scale>0)){setPlacement(previous=>previous.right===right&&previous.bottom===bottom&&!previous.blocked?previous:{right,bottom,blocked:false});return;}
    const labelBox=label.getBoundingClientRect();
    const images=[...page.querySelectorAll<HTMLElement>('*')].filter(el=>!host.contains(el)&&(el.tagName==='IMG'||getComputedStyle(el).backgroundImage.includes('url('))).map(el=>el.getBoundingClientRect()).filter(box=>box.width>1&&box.height>1&&(box.left<=bounds.left+(doc.design.bleedMm??0)*scale+1||box.right>=bounds.right-(doc.design.bleedMm??0)*scale-1)).map(box=>({left:(box.left-bounds.left)/scale,right:(box.right-bounds.left)/scale,top:(box.top-bounds.top)/scale,bottom:(box.bottom-bounds.top)/scale}));
-   const next=marginTextPlacement(dimensions.width,dimensions.height,labelBox.width/scale,labelBox.height/scale,edge,bottom,right,images);
+   const next=marginTextPlacement(dimensions.width,dimensions.height,labelBox.width/scale,labelBox.height/scale,edge,bottom,right,images,doc.marginText?.avoidImages!==false);
    setPlacement(previous=>previous.right===next.right&&Math.abs(previous.bottom-next.bottom)<.05&&previous.blocked===next.blocked?previous:next);
   };
   const schedule=()=>{if(!frame)frame=requestAnimationFrame(measure);};

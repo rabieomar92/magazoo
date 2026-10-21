@@ -45,9 +45,10 @@ export function PageMarginTextSection({expanded=false,initialPage=1}:{expanded?:
             : { ...d.marginText, pages: { ...d.marginText?.pages, [String(page)]: v } };
         })} />
       <p className="hint">Page 1 is the first sheet of this document, regardless of its printed page number. Leave text blank to show nothing. Switching modes or turning this off keeps your saved text.</p>
-      <p className="hint">Starts on the masthead side, alternating left and right. It moves vertically or switches sides to avoid bleed photographs. Full-page photographs use a contrast backing when no clear margin exists. The same placement is retained when compiling an issue.</p>
+      <p className="hint">Starts on the masthead side, alternating left and right. Dragging or entering a bottom distance keeps your chosen position. Text over a photograph uses a contrast backing. The same placement is retained when compiling an issue.</p>
+      <Toggle label="Automatically avoid bleed images" checked={settings.avoidImages} onChange={v=>set('avoidImages',v)} />
       <LabeledNumber label="Distance from side edge" unit="mm" value={settings.edgeOffset} min={2} max={30} step={0.5} onChange={v => set('edgeOffset', v)} />
-      <LabeledNumber label="Distance from bottom edge" unit="mm" value={settings.bottomOffset} min={0} max={MAX_MARGIN_TEXT_BOTTOM_OFFSET} step={0.5} onChange={v => set('bottomOffset', v)} />
+      <LabeledNumber label="Distance from bottom edge" unit="mm" value={settings.bottomOffset} min={0} max={MAX_MARGIN_TEXT_BOTTOM_OFFSET} step={0.5} onChange={v => update(d=>{d.marginText={...d.marginText,bottomOffset:v,avoidImages:false};})} />
       <p className="hint">Drag up or down on the canvas (0–{MAX_MARGIN_TEXT_BOTTOM_OFFSET} mm). Horizontal movement is locked; set the distance from the side edge above. At the top edge, the complete credit stays on the sheet.</p>
       <p className="hint">Spacing and styling apply to all margin text in this document. Keep it inside a clear margin; it does not move body text or photos.</p>
       <TypographyControl group="marginText" order={10} property="fontFamily"><LabeledSelect label="Margin text font" value={settings.fontFamily} options={fontOptions(ALL_FONTS)} onChange={v => set('fontFamily', v)} /></TypographyControl>

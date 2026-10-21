@@ -34,7 +34,7 @@ describe('page margin text controls', () => {
   it('explains automatic masthead-side placement instead of offering a fixed page edge', () => {
     act(() => field<HTMLInputElement>('Show vertical margin text').click());
     expect(host.textContent).toContain('Starts on the masthead side');
-    expect(host.textContent).toContain('switches sides to avoid bleed photographs');
+    expect(host.textContent).toContain('Dragging or entering a bottom distance keeps your chosen position');
     expect([...host.querySelectorAll('.field-label')].some(label => label.textContent === 'Page edge')).toBe(false);
   });
 
@@ -46,6 +46,7 @@ describe('page margin text controls', () => {
     for (const value of [180, 250, 297, 0]) {
       enter('Distance from bottom edge', String(value));
       expect(useDoc.getState().doc.marginText?.bottomOffset).toBe(value);
+      expect(useDoc.getState().doc.marginText?.avoidImages).toBe(false);
     }
   });
 

@@ -30,7 +30,7 @@ export function useMarginTextDrag(doc:Doc,right:boolean,displayedBottom?:number)
   };
   const finish=(e:PointerEvent)=>{
    if(e.pointerId!==pointer)return;reset();
-   if(moved){suppressClick.current=true;e.stopPropagation();if(e.type==='pointerup'&&session===currentDocumentSession())useDoc.getState().update(d=>{d.marginText={...d.marginText,bottomOffset:next.bottomOffset};});}
+   if(moved){suppressClick.current=true;e.stopPropagation();if(e.type==='pointerup'&&session===currentDocumentSession())useDoc.getState().update(d=>{d.marginText={...d.marginText,bottomOffset:next.bottomOffset,avoidImages:false};});}
   };
   const key=(e:KeyboardEvent)=>{if(e.key==='Escape'){reset();suppressClick.current=true;}};
   cleanup.current=reset;

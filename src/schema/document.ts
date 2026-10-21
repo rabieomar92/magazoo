@@ -735,6 +735,8 @@ export interface NewsStory {
 
 /** Optional vertical credit/copyright text, indexed by physical page position. */
 export interface PageMarginTextSettings {
+  /** Automatic placement is disabled after an explicit canvas/numeric move. */
+  avoidImages?: boolean;
   enabled?: boolean;
   mode?: 'per-page' | 'all';
   text?: string;
