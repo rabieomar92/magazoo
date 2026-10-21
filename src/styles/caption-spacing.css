@@ -15,7 +15,12 @@
   .fm-board-caption,
   .g-img .g-cap
 ) {
-  padding: 2.5mm 3mm !important;
+  padding: var(--caption-padding-block,2.5mm) var(--caption-padding-inline,3mm) !important;
   box-sizing: border-box !important;
   overflow-wrap: anywhere;
+}
+/* News remains tight by default, but supports the same explicit controls. */
+:is(.page,.news-measure,.pdf-export-pages) .news-story figcaption {
+  padding:var(--caption-padding-block,0mm) var(--caption-padding-inline,0mm) !important;
+  box-sizing:border-box;
 }

@@ -16,7 +16,7 @@ export function MagazineCover({ doc, vars }: { doc: Doc; vars: CSSProperties }) 
   // Page 1 uses the cover image; falls back to the hero for v1 files that never
   // set one, so their look is unchanged.
   const cover = doc.cover ?? doc.hero;
-  const photo = doc.design.showHero !== false && cover.assetId ? assets[cover.assetId] : null;
+  const photo = (doc.design.showHero !== false || !!doc.design.wrappedHeroImageId) && cover.assetId ? assets[cover.assetId] : null;
   const words = mathAwareWords(meta.title);
   const mag1 = doc.templateId === 'magazine-1';
   const style: CSSProperties = {

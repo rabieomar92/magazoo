@@ -81,7 +81,7 @@ export function ArticlePages({ doc, vars, onStatus, readOnly = false }: { doc: D
     const calculate = () => {
       if (disposed || !measure.current || !header.current || !probes.current) return;
       const headerHeight = header.current.offsetHeight / MM;
-      const captionHeight = (caption.current?.offsetHeight ?? 0) / MM;
+      const captionHeight = doc.meta.heroCaption?.trim()&&!doc.design.heroCaptionPlacement ? (caption.current?.offsetHeight ?? 0) / MM : 0;
       const title=header.current.querySelector<HTMLElement>('.title');
       const titleOffset=title?unscaledVerticalOffset(title,header.current)/MM:0;
       const geometry = articleGeometry(id, doc.design, headerHeight, captionHeight, footerBottomMargin(doc),titleOffset);
@@ -330,7 +330,7 @@ export function ArticlePages({ doc, vars, onStatus, readOnly = false }: { doc: D
     </div>)}
     <div className={`article-measure${g.layout.dark ? ' article-page--dark' : ''}`} ref={measure} aria-hidden="true" style={measureStyles}>
       <div ref={header} style={{ width: `${g.titleWidth}mm` }}><ArticleHeader doc={doc}/></div>
-      <div ref={caption} className="article-inset-caption article-hero-caption" style={{ position: 'static', width: `${g.image.width}mm` }}>{captionText}</div>
+      <div ref={caption} data-editor-target="meta-hero-caption" className="article-inset-caption article-hero-caption" style={{ position: 'static', width: `${g.image.width}mm` }}>{captionText}</div>
       <div ref={callout} className="article-callout hl-col" style={{ width: `${calloutWidth}mm` }}><HighlightsBody doc={doc}/></div>
       <div ref={probes}/>
       {Array.from({ length: lastImagePage }, (_, page) => <div key={page} data-article-image-page={page} style={{ position: 'relative', width: `${g.width}mm`, height: `${g.height}mm` }}><PlacedImages doc={doc} pageIndex={page} pageHeight={g.height} readOnly includeHighlights={false}/></div>)}

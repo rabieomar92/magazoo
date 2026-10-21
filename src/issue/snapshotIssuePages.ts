@@ -2,7 +2,7 @@ import { clonePages } from '../lib/pdfExport';
 import type { Design, TextStyle } from '../schema/document';
 import { textStyleSelector,captionBackgroundSelector } from '../lib/textStyles';
 
-const STYLE_PROPERTIES: Record<Exclude<keyof TextStyle,'backgroundOpacity'>, string> = {
+const STYLE_PROPERTIES: Record<Exclude<keyof TextStyle,'backgroundOpacity'|'captionPadding'>, string> = {
   fontFamily: 'font-family', fontSize: 'font-size', fontWeight: 'font-weight',
   italic: 'font-style', underline: 'text-decoration-line', color: 'color',
   align: 'text-align', lineHeight: 'line-height',
@@ -37,6 +37,9 @@ export function snapshotIssuePages(source: HTMLElement, textStyles?: Design['tex
     const copiesByNode = new Map(Array.from(originalText, (node, i) => [node, copiedText[i]]));
     for (const [key, style] of Object.entries(textStyles ?? {})) {
       const backgroundSelector=captionBackgroundSelector(key);
+      if(backgroundSelector&&style?.captionPadding!==undefined)for(const node of original.querySelectorAll<HTMLElement>(backgroundSelector)){
+        const target=copiesByNode.get(node);if(target){const used=getComputedStyle(node);target.style.setProperty('padding',used.padding,'important');for(const property of ['--caption-padding-block','--caption-padding-inline'])target.style.setProperty(property,used.getPropertyValue(property));}
+      }
       if(backgroundSelector&&style?.backgroundOpacity!==undefined)for(const node of original.querySelectorAll<HTMLElement>(backgroundSelector)){
         const target=copiesByNode.get(node);if(target){target.style.setProperty('background',getComputedStyle(node).background,'important');target.style.setProperty('backdrop-filter','none','important');}
       }

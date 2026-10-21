@@ -47,7 +47,7 @@ describe('reference article compositions', () => {
     const doc = presetFor('paper-8');
     const g = articleGeometry('paper-8', doc.design, 40, 22);
     expect(g.bodyTop).toBeGreaterThanOrEqual(g.titleTop + 40 + 4);
-    expect(g.starts[1]).toBeGreaterThanOrEqual(g.image.y + g.image.height + 22 + 4);
+    expect(g.starts[1]).toBeCloseTo(g.image.y + g.image.height + 1 + 22 + 1);
     expect(g.col).toBe(42.5);
   });
 
@@ -225,7 +225,7 @@ describe('reference article compositions', () => {
             expect(g.image.x).toBe(g.margin+first*(g.col+g.gutter));
             expect(g.image.x+g.image.width).toBeLessThanOrEqual(g.width-g.margin+.0001);
             expect(g.starts).toEqual(Array.from({length:bodyCols},(_,i)=>
-              i>=first&&i<first+count ? g.bodyTop+g.image.height+1+5+g.gutter : g.bodyTop));
+              i>=first&&i<first+count ? g.bodyTop+g.image.height+1+5+1 : g.bodyTop));
             const regions = articleRegions(g,1);
             expect(regions.every(r=>r.width===g.col)).toBe(true);
             expect(regions.filter(r=>r.page===0).every(r=>r.x>=g.image.x+g.image.width-.0001 ||
@@ -242,8 +242,8 @@ describe('reference article compositions', () => {
     const shortCaption = articleGeometry('paper-8',design,35,3);
     const longCaption = articleGeometry('paper-8',design,35,24);
     expect(noCaption.starts[1]-(noCaption.image.y+noCaption.image.height)).toBe(design.gutter);
-    expect(shortCaption.starts[1]-(shortCaption.image.y+shortCaption.image.height+1+3)).toBe(design.gutter);
-    expect(longCaption.starts[1]-(longCaption.image.y+longCaption.image.height+1+24)).toBe(design.gutter);
+    expect(shortCaption.starts[1]-(shortCaption.image.y+shortCaption.image.height+1+3)).toBe(1);
+    expect(longCaption.starts[1]-(longCaption.image.y+longCaption.image.height+1+24)).toBe(1);
   });
 
   it('lets the inset title move upwards and downwards with its measured content', () => {

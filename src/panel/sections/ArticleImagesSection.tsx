@@ -15,7 +15,7 @@ import { LabeledNumber, LabeledRange, RowButtons, Section, SegmentField } from '
 import { MagazooLoader } from '../../components/MagazooLoader';
 import { TypographyControl } from '../TypographyToolbar';
 import { FreeformImageEditor } from '../FreeformImageEditor';
-import { wrappedHeroImage } from '../../lib/wrappedHero';
+import { wrapHeroIntoPage } from '../../lib/wrappedHero';
 import { pageDimensions } from '../../lib/pageFormat';
 import {requestImageOutline} from '../../lib/imageCanvas';
 import {ImagePanControls,ImagePanPreview} from '../ImagePanControls';
@@ -152,11 +152,7 @@ export function ArticleImagesSection() {
       </p>
       {sourceDoc.hero.assetId && sourceDoc.assets[sourceDoc.hero.assetId] && sourceDoc.design.showHero !== false && <>
         <button type="button" className="add-btn" onClick={()=>update(doc=>{
-          const image = wrappedHeroImage(doc,uid());
-          if (!image) return;
-          doc.images ??= [];
-          doc.images.push(image);
-          doc.design.showHero = false;
+          wrapHeroIntoPage(doc,uid());
         })}>Use hero as a wrapped page image</button>
         <p className="hint">Moves a copy of the hero into the text area, ready to outline and position. Its original image and caption are retained; Undo restores the hero layout.</p>
       </>}

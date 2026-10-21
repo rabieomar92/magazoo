@@ -26,6 +26,18 @@ function render(template: Parameters<typeof presetFor>[0]) {
   expect(JSON.stringify(useDoc.getState().doc)).toBe(before);
 }
 const active = () => host.querySelector<HTMLSelectElement>('[aria-label="Typography group"]')!.value;
+
+it('offers padded or tight spacing for all captions and for a selected hero caption',()=>{
+ render('paper-8');
+ for(const captionGroup of ['caption','heroCaption']){
+  group(captionGroup);
+  const select=[...host.querySelectorAll<HTMLSelectElement>('select')].find(s=>s.closest('label')?.textContent?.includes('Caption spacing'))!;
+  expect(select).toBeDefined();
+  expect([...select.options].map(o=>o.textContent)).toEqual(['Template default','With padding','Tight']);
+  act(()=>{select.value='tight';select.dispatchEvent(new Event('change',{bubbles:true}));});
+  expect(useDoc.getState().doc.design.textStyles?.[captionGroup]?.captionPadding).toBe('tight');
+ }
+});
 const visible = () => [...host.querySelectorAll<HTMLElement>('.typography-control:not([hidden])')];
 function group(value: string) {
   const select = host.querySelector<HTMLSelectElement>('[aria-label="Typography group"]')!;

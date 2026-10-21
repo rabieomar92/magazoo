@@ -35,6 +35,15 @@
 .canvas-photo-panel{box-sizing:border-box;width:min(360px,calc(100vw - 24px));max-height:calc(100vh - 24px);padding:14px;gap:10px}
 .canvas-photo-panel>strong{padding-right:30px}
 .canvas-photo-panel .canvas-outline-settings{gap:12px}
+.canvas-photo-panel:has(.canvas-crop-settings){width:min(440px,calc(100vw - 24px))}
+.canvas-photo-panel .canvas-crop-settings{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:16px;align-items:center}
+.canvas-crop-settings>label{min-width:0;white-space:nowrap}
+.canvas-crop-settings>.canvas-crop-shape{display:grid;grid-template-columns:auto minmax(0,1fr)}
+.canvas-crop-shape select{min-width:0;width:100%;max-width:100%;box-sizing:border-box}
+.canvas-crop-settings>.canvas-crop-zoom{display:grid;grid-template-columns:auto minmax(0,1fr) 4ch;gap:8px}
+.canvas-crop-settings .canvas-crop-zoom input[type="range"]{width:100%;min-width:0;margin:0;padding:0;cursor:ew-resize}
+.canvas-crop-zoom output{width:4ch;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+@media(max-width:440px){.canvas-photo-panel .canvas-crop-settings{grid-template-columns:minmax(0,1fr);gap:12px}}
 .canvas-photo-panel .canvas-outline-buttons{justify-content:flex-start}
 .canvas-photo-panel-grip{position:absolute;top:8px;right:8px;display:grid;place-items:center;width:28px;height:28px;min-height:28px;padding:5px;border:0;background:transparent;color:#727272;cursor:grab;touch-action:none}
 .canvas-photo-panel-grip:active{cursor:grabbing}

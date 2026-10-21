@@ -49,6 +49,18 @@ function edit(input: HTMLTextAreaElement, value: string) {
   });
 }
 
+it.each(['paper-1','paper-2','paper-3','paper-4','paper-5','paper-6','paper-7','paper-8','magazine-1','magazine-2'] as const)('%s offers hero wrapping directly in the hero controls',template=>{
+ const before=mount(template);
+ const button=[...node.querySelectorAll<HTMLButtonElement>('button')].find(b=>b.textContent==='Wrap text around hero');
+ expect(button).toBeDefined();
+ act(()=>button!.click());
+ expect(useDoc.getState().doc.images.at(-1)).toMatchObject({assetId:before.hero.assetId,wrapShape:'polygon'});
+ expect(node.textContent).not.toContain('Wrap text around hero');
+ act(()=>useDoc.temporal.getState().undo());
+ expect(useDoc.getState().doc.hero).toEqual(before.hero);
+ expect(useDoc.getState().doc.design.showHero).toBe(before.design.showHero);
+});
+
 it('offers bottom-edge photo bleed directly beside the image without changing its crop',()=>{
  mount('paper-3');
  act(()=>useDoc.getState().update(d=>{d.design.heroAtBottom=true;}));

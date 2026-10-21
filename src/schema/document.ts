@@ -374,6 +374,8 @@ export interface BackCoverDesign {
 export interface TextStyle {
   /** Caption black-background opacity in percent. Absent preserves template styling. */
   backgroundOpacity?: number;
+  /** Caption box insets; absent preserves the template default. */
+  captionPadding?: 'padded' | 'tight';
   fontFamily?: string;
   fontSize?: number;
   fontWeight?: number;
@@ -475,6 +477,8 @@ export interface Design {
   pageBackgroundOpacity?: number;
   /** Hide the article hero while retaining the document's top bar. */
   showHero?: boolean;
+  /** Hero converted to an editable wrapped image; the independent cover stays visible. */
+  wrappedHeroImageId?: string;
   /** Optional page-relative millimetres. Missing keeps the native caption slot. */
   heroCaptionPlacement?: { x:number; y:number; widthMm:number };
   coverCaptionPlacement?: { x:number; y:number; widthMm:number };

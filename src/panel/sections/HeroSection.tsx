@@ -16,6 +16,7 @@ import {articleGeometry,isReferenceArticle} from '../../lib/articleLayouts';
 import {paper2Grid} from '../../lib/paper2';
 import {pageDimensions} from '../../lib/pageFormat';
 import {usePdfPreferences} from '../../store/pdfPreferences';
+import {wrapHeroIntoPage} from '../../lib/wrappedHero';
 
 type Frame = ImageFrame & { assetId: string | null };
 export type ImageSlot = 'hero' | 'cover' | 'frontmatter-logo' | 'frontmatter-signature' | 'backcover-qr' | 'backcover-logo';
@@ -175,6 +176,10 @@ export function ImagePicker({ slot, title, blurb, fit = 'cover', thumbAspectRati
           </div>
 
           {children}
+          {slot==='hero'&&!hidden&&<>
+            <button type="button" className="add-btn" onClick={()=>update(d=>{wrapHeroIntoPage(d,uid());})}>Wrap text around hero</button>
+            <p className="hint">Turns the hero into a page image with editable wrap points. Move it on the canvas and edit its outline under Page images. The source photo, crop and caption are preserved. Undo restores the hero layout.</p>
+          </>}
           {slot==='hero' && doc.design.heroAtBottom===true && (doc.templateId==='paper-3'||isReferenceArticle(doc.templateId)) && <>
             <Toggle label="Extend photo to bottom bleed edge" checked={doc.design.heroBottomBleed===true}
               onChange={value=>update(d=>{d.design.heroBottomBleed=value;})}/>

@@ -14,9 +14,18 @@ import { MagazineFrontCover } from './MagazineFrontCover';
 import { MagGateB } from './MagGate';
 import { FrontMatterPages } from './FrontMatterPages';
 import { ArticlePages } from './ArticlePages';
+import {wrapHeroIntoPage} from '../lib/wrappedHero';
 
 const HERO_CAPTION = 'A carefully written image description.\nThe second line is retained.';
 const COVER_CAPTION = 'A separate cover image needs its own description.';
+
+it('keeps the independent magazine cover when its article hero is wrapped',()=>{
+ const doc=captionDoc('magazine-1');
+ wrapHeroIntoPage(doc,'wrapped-hero');
+ const html=renderToStaticMarkup(<MagazineCover doc={doc} vars={{}}/>);
+ expect(html).toContain('data:image/png;base64,cover-photo');
+ expect(doc.images.at(-1)?.anchor.page).toBe(2);
+});
 
 function captionDoc(templateId: TemplateId): Doc {
   const doc = presetFor(templateId);

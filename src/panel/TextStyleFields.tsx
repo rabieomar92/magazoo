@@ -7,10 +7,10 @@ import { LabeledSelect, LabeledNumber } from './Field';
 import { LetterSpacingField } from './LetterSpacingField';
 import {gateTypography} from '../lib/gateTypography';
 import {trackingRoleSupported} from '../lib/textTracking';
-import {clearCaptionColorOverrides} from '../lib/captionColor';
+import {clearCaptionColorOverrides,clearCaptionPaddingOverrides} from '../lib/captionColor';
 
 type Property = keyof TextStyle | 'tracking';
-const ORDER: Record<Property, number> = {fontFamily:10,fontSize:20,fontWeight:30,italic:31,underline:32,color:40,backgroundOpacity:42,tracking:45,lineHeight:48,align:50};
+const ORDER: Record<Property, number> = {fontFamily:10,fontSize:20,fontWeight:30,italic:31,underline:32,color:40,backgroundOpacity:42,captionPadding:43,tracking:45,lineHeight:48,align:50};
 
 function OptionalNumber({label,value,onChange,min,max,step,placeholder}: {label:string;value?:number;onChange:(n?:number)=>void;min:number;max:number;step:number;placeholder:string}) {
   const [draft,setDraft] = useState<string|null>(null);
@@ -59,6 +59,7 @@ export function TextStyleFields({group,existing,doc}: {group:string;existing:Pro
   },[group,doc]);
   const set = <K extends keyof TextStyle>(key:K,value:TextStyle[K]) => update(d=>{
     if(key==='color'&&value!==undefined)clearCaptionColorOverrides(d,group);
+    if(key==='captionPadding'&&value!==undefined)clearCaptionPaddingOverrides(d,group);
     d.design.textStyles ??= {};
     const next={...d.design.textStyles[group]};
     if(value===undefined)delete next[key];else next[key]=value;
@@ -75,6 +76,7 @@ export function TextStyleFields({group,existing,doc}: {group:string;existing:Pro
     {wrap('underline',boolean('underline','Underline',style.underline??baseline.underline))}
     {wrap('color',<label className="field field--inline"><span className="field-label">Text colour</span><span className="color-input"><input aria-label="Text colour" type="color" value={style.color??baseline.color} onInput={e=>set('color',e.currentTarget.value)} onChange={e=>{if(useDoc.getState().doc.design.textStyles?.[group]?.color!==e.target.value)set('color',e.target.value);}} /><button type="button" className="style-reset-btn" title="Use template colour" onClick={()=>set('color',undefined)}>↺</button></span></label>)}
     {captionBackgroundSelector(group)&&wrap('backgroundOpacity',<OptionalNumber label="Background opacity (%)" value={style.backgroundOpacity} min={0} max={100} step={5} placeholder="Template" onChange={v=>set('backgroundOpacity',v)}/>)}
+    {captionBackgroundSelector(group)&&wrap('captionPadding',<LabeledSelect label="Caption spacing" value={style.captionPadding??''} options={[{value:'',label:'Template default'},{value:'padded',label:'With padding'},{value:'tight',label:'Tight'}]} onChange={v=>set('captionPadding',(v||undefined) as TextStyle['captionPadding'])}/>)}
     {gateRole ? doc.design.textDirection!=='rtl'&&wrap('tracking',<LabeledNumber label="Letter spacing" unit="px" value={gateTypography(doc.design,gateRole).letterSpacing} min={-3} max={12} step={.1} onChange={value=>update(d=>{d.design.gateTypography??={};d.design.gateTypography[gateRole]={...d.design.gateTypography[gateRole],letterSpacing:Math.max(-3,Math.min(12,value))};})}/>)
       : trackingRoleSupported(doc.templateId,group)&&wrap('tracking',<LetterSpacingField value={doc.design.textTracking?.[group]} onChange={value=>update(d=>{d.design.textTracking ??= {};if(value===undefined)delete d.design.textTracking[group];else d.design.textTracking[group]=value;})} />)}
     {wrap('lineHeight',<OptionalNumber label="Line spacing" value={style.lineHeight} min={.8} max={3} step={.05} placeholder={baseline.line} onChange={v=>set('lineHeight',v)} />)}

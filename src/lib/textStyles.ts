@@ -60,7 +60,7 @@ export function textStyleSelector(key: string): string | undefined {
 }
 
 export function captionBackgroundSelector(key:string):string|undefined{
-  if(key==='caption')return '.placed-image figcaption, .flow-fig figcaption, .flow-eq figcaption, .fm-board-caption, .article-hero-caption, .p2-hero-cap, [data-editor-target="meta-hero-caption"], [data-editor-target="meta-cover-caption"], [data-editor-target="meta-location"], .news-story figcaption, :where(.g-img) .g-cap';
+  if(key==='caption')return '.placed-image figcaption, .flow-fig figcaption, .flow-wraprow-fig > figcaption, .flow-eq figcaption, .fm-board-caption, .hero-caption, .free-hero-caption, .mag2-photo-tag, .article-hero-caption, .p2-hero-cap, [data-editor-target="meta-hero-caption"], [data-editor-target="meta-cover-caption"], [data-editor-target="meta-location"], .news-story figcaption, :where(.g-img) .g-cap';
   if(key.startsWith('gallery-caption:'))return `[data-editor-target=${cssQuote(`gallery-caption-${key.slice(16)}`)}] .g-cap`;
   if(key.startsWith('image-caption:')||/^news:.*:caption$/.test(key))return textStyleSelector(key);
   if(['heroCaption','coverCaption','newsCaption','storyTag'].includes(key))return TEXT_SELECTORS[key];
@@ -123,6 +123,10 @@ export function textStylesCss(design: Design, scope: string, blocks:Doc['blocks'
     const scopeSelector=`[data-tracking-scope=${cssQuote(scope)}]${captionSlot?'[data-tracking-scope]':''}`;
     const output=rules.length ? [`${scopeSelector} :is(${selector}) { ${rules.map(rule=>`${rule} !important`).join(';')}; }`] : [];
     const backgroundSelector=captionBackgroundSelector(key);
+    if(backgroundSelector&&(style.captionPadding==='padded'||style.captionPadding==='tight')){
+      const tight=style.captionPadding==='tight';
+      output.push(`${scopeSelector} :is(${backgroundSelector}) { --caption-padding-block:${tight?'0mm':'2.5mm'};--caption-padding-inline:${tight?'0mm':'3mm'}; }`);
+    }
     if(backgroundSelector&&typeof style.backgroundOpacity==='number'&&Number.isFinite(style.backgroundOpacity)){
       const alpha=Math.max(0,Math.min(100,style.backgroundOpacity))/100;
       output.push(`${scopeSelector} :is(${backgroundSelector}) { background:rgba(0,0,0,${alpha}) !important;backdrop-filter:none !important; }`);
