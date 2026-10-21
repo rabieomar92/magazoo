@@ -70,6 +70,7 @@
 .banner span { flex:1; min-width:200px; }
 .banner.is-error { background:var(--bad-wash); border-color:#d5d5d5; color:var(--bad); }
 .banner.is-success { background:var(--good-wash); border-color:#e0e0e0; color:var(--good); }
+.studio > .banner:has(+ .studio-shell) { margin-bottom:14px; }
 .inline-alert { margin:10px 0 0; padding:10px 12px; border-radius:var(--r-xs); font-size:12px; line-height:1.5; background:var(--bad-wash); border:1px solid #d5d5d5; color:var(--bad); }
 
 /* --- shell ------------------------------------------------------------ */

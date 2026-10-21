@@ -13,7 +13,16 @@ export function freezeParagraphLines(source:HTMLElement,clone:HTMLElement) {
   sources.forEach((paragraph,index)=>{
     const copy=copies[index];
     if(!copy||paragraph.querySelector('.katex,.tex,.decorative-quote-mark,br,svg,img')||paragraph.classList.contains('decorative-quote'))return;
-    const nativeInitial=!!paragraph.querySelector('.drop-cap')&&!paragraph.classList.contains('cont')&&!paragraph.closest('.drop-caps-off');
+    // Flow markers also occur at continuation-column boundaries. Only the
+    // computed pseudo-element tells us whether the canvas actually enlarges
+    // this letter; a marker alone must never create a drop cap in the PDF.
+    const hasInitialMarker=!!paragraph.querySelector('.drop-cap')&&!paragraph.classList.contains('cont')&&!paragraph.closest('.drop-caps-off');
+    const pseudo=hasInitialMarker?getComputedStyle(paragraph,'::first-letter'):undefined;
+    const initialSize=Number.parseFloat(pseudo?.getPropertyValue('initial-letter')||pseudo?.getPropertyValue('-webkit-initial-letter')||'');
+    const nativeInitial=initialSize>1;
+    // Older engines use the stylesheet's floating first-letter fallback.
+    // Keep that specialised flow native instead of freezing across its float.
+    if(hasInitialMarker&&!nativeInitial&&pseudo?.cssFloat&&pseudo.cssFloat!=='none')return;
     // Native initial-letter reserves a different width for the first three
     // lines. Wrapping its marker in an indivisible print-line span prevents
     // that exclusion from flowing naturally, leaving holes or shifted words.
@@ -45,7 +54,7 @@ export function freezeParagraphLines(source:HTMLElement,clone:HTMLElement) {
           if(!rect)continue;
           const hyphen=char==='\u00ad'||rects.some(other=>other!==rect&&Math.abs(other.top-rect.top)<.5&&other.left>=rect.right-.5);
           // An enlarged ::first-letter is a float, not a different text line.
-          const drop=!!node.parentElement?.closest('.drop-cap')||rect.height/scale>leading*1.6;
+          const drop=nativeInitial&&(!!node.parentElement?.closest('.drop-cap')||rect.height/scale>leading*1.6);
           if(nativeInitial&&drop&&!initial){initial={point,rect};continue;}
           const top=rect.top/scale;
           const last=lines.at(-1);
@@ -106,13 +115,13 @@ export function freezeParagraphLines(source:HTMLElement,clone:HTMLElement) {
       if(next&&!positioned){const br=copy.ownerDocument.createElement('br');br.dataset.pdfLineBreak='true';fragment.append(br);}
     });
     if(positioned&&initial){
-      const cap=paragraph.ownerDocument.createElement('span'),pseudo=getComputedStyle(paragraph,'::first-letter');
+      const cap=paragraph.ownerDocument.createElement('span');
       cap.textContent=initial.point.node.data[initial.point.offset];
       // Keep native glyph sizing, isolated from the body paragraph's print
       // fragmentation. The neighbouring real text lines keep their canvas XY.
       cap.className='pdf-native-initial';
       cap.style.cssText='position:absolute;left:0;top:0;display:block;width:100%;height:3lh;line-height:inherit;font-size:inherit;text-indent:0';
-      cap.style.fontFamily=pseudo.fontFamily;cap.style.fontWeight=pseudo.fontWeight;cap.style.color=pseudo.color;
+      cap.style.fontFamily=pseudo!.fontFamily;cap.style.fontWeight=pseudo!.fontWeight;cap.style.color=pseudo!.color;
       fragment.prepend(copy.ownerDocument.importNode(cap,true));
       if(!clone.querySelector('[data-pdf-initial-rule]')){
         const rule=copy.ownerDocument.createElement('style');rule.dataset.pdfInitialRule='true';
