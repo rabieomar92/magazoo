@@ -35,9 +35,8 @@ export function PageMarginText({ doc, index }: { doc: Doc; index: number }) {
     fontFamily: fontStack(settings.fontFamily), fontSize: `${settings.fontSize}pt`,
     fontWeight: 400, fontStyle: 'normal', lineHeight: 1.2, letterSpacing: '0.02em',
     textAlign: 'start', textTransform: 'none',touchAction:drag.readOnly?undefined:'none',cursor:drag.readOnly?undefined:'grab',
-    color: placement.blocked?'#fff':settings.color ?? 'var(--paper-ink, #111)',
-    opacity:placement.blocked ? .9 : .8,
-    backgroundColor:placement.blocked?'rgba(0,0,0,.75)':undefined,
+    color: settings.color ?? 'var(--paper-ink, #111)',
+    opacity:.8,
   };
   return <div ref={placement.rail} className="page-margin-rail" style={railStyle} data-image-avoidance={placement.blocked?'contrast-fallback':'clear'}>
     <div className="page-margin-text" style={style} dir="auto"

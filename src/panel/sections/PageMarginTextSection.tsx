@@ -45,7 +45,7 @@ export function PageMarginTextSection({expanded=false,initialPage=1}:{expanded?:
             : { ...d.marginText, pages: { ...d.marginText?.pages, [String(page)]: v } };
         })} />
       <p className="hint">Page 1 is the first sheet of this document, regardless of its printed page number. Leave text blank to show nothing. Switching modes or turning this off keeps your saved text.</p>
-      <p className="hint">Starts on the masthead side, alternating left and right. Dragging or entering a bottom distance keeps your chosen position. Text over a photograph uses a contrast backing. The same placement is retained when compiling an issue.</p>
+      <p className="hint">Starts on the masthead side, alternating left and right. Dragging or entering a bottom distance keeps your chosen position. The same placement is retained when compiling an issue. Choose a text colour that is readable over your page.</p>
       <Toggle label="Automatically avoid bleed images" checked={settings.avoidImages} onChange={v=>set('avoidImages',v)} />
       <LabeledNumber label="Distance from side edge" unit="mm" value={settings.edgeOffset} min={2} max={30} step={0.5} onChange={v => set('edgeOffset', v)} />
       <LabeledNumber label="Distance from bottom edge" unit="mm" value={settings.bottomOffset} min={0} max={MAX_MARGIN_TEXT_BOTTOM_OFFSET} step={0.5} onChange={v => update(d=>{d.marginText={...d.marginText,bottomOffset:v,avoidImages:false};})} />
